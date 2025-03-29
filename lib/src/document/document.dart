@@ -1,7 +1,12 @@
+import 'package:novident_editor/src/document/node.dart';
+import 'package:novident_editor/src/document/root.dart';
+
 class Document {
-  final String text;
+  final Root root;
 
   Document({
-    required this.text,
-  });
+    required List<Node> nodes,
+  }) : root = Root(nodes: nodes);
+
+  Document.empty() : root = Root(nodes: []);
 }

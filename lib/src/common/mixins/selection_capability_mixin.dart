@@ -36,9 +36,7 @@ mixin SelectionCapabilityMixin<T extends StatefulWidget> on State<T> {
   Rect? getCursorRectInPosition(
     NodeSelection selectionPosition, {
     bool shiftWithBaseOffset = false,
-  }) {
-    return null;
-  }
+  });
 
   /// Return global offset from local offset.
   Offset localToGlobal(
@@ -53,25 +51,19 @@ mixin SelectionCapabilityMixin<T extends StatefulWidget> on State<T> {
   ///
   /// Only the widget rendered by [TextNode] need to implement the detail,
   ///   and the rest can return null.
-  TextSelection? getTextSelectionInSelection(DocumentSelection selection) => null;
+  DocumentSelection? getWordEdgeInOffset(Offset start);
 
   /// For [TextNode] only.
   ///
   /// Only the widget rendered by [TextNode] need to implement the detail,
   ///   and the rest can return null.
-  DocumentSelection? getWordEdgeInOffset(Offset start) => null;
+  DocumentSelection? getWordBoundaryInOffset(Offset start);
 
   /// For [TextNode] only.
   ///
   /// Only the widget rendered by [TextNode] need to implement the detail,
   ///   and the rest can return null.
-  DocumentSelection? getWordBoundaryInOffset(Offset start) => null;
-
-  /// For [TextNode] only.
-  ///
-  /// Only the widget rendered by [TextNode] need to implement the detail,
-  ///   and the rest can return null.
-  DocumentSelection? getWordBoundaryInPosition(NodeSelection position) => null;
+  DocumentSelection? getWordBoundaryInPosition(NodeSelection position);
 
   bool get shouldCursorBlink => true;
 

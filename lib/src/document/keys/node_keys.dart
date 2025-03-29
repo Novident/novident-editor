@@ -7,4 +7,5 @@ class NodeKeysDefaults {
   static final kDefaultListKey = 'list';
   static final kDefaultCodeKey = 'codeblock';
   static final kDefaultBlockquoteKey = 'quote';
+  static final kDefaultTextKey = 'text';
 }

@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:js_interop';
 
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
@@ -26,7 +27,7 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
   int? _nodeIndex;
 
   @internal
-  void clearIndex() {
+  void invalidateIndex() {
     _nodeIndex = null;
   }
 
@@ -60,12 +61,15 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
     return -1;
   }
 
+  Delta? get delta => data['text'] as Delta?;
+
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'id': id,
       'type': type,
       'data': <String, dynamic>{
         ...data,
+        if (data.containsKey('text')) 'text': (data['text'] as Delta?)?.toJson(),
       },
     };
   }

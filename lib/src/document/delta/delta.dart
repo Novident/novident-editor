@@ -18,8 +18,7 @@ class Delta {
   Delta._(this.operations);
 
   /// Creates new [Delta] from [other].
-  factory Delta.from(Delta other) =>
-      Delta._(List<Operation>.from(other.operations));
+  factory Delta.from(Delta other) => Delta._(List<Operation>.from(other.operations));
 
   /// Creates new [Delta] from a List of Operation
   factory Delta.fromOperations(List<Operation> operations) =>
@@ -28,6 +27,12 @@ class Delta {
   // Placeholder char for embed in diff()
   // ignore: unused_field
   static final String _kDefaultEmbedCharacter = String.fromCharCode(0);
+
+  String toPlainText() {
+    return map(
+      (Operation op) => op.data is! String ? _kDefaultEmbedCharacter : op.data as String,
+    ).join();
+  }
 
   /// Transforms two attribute sets.
   static Map<String, dynamic>? transformAttributes(
@@ -77,8 +82,7 @@ class Delta {
       return memo;
     });
 
-    final inverted =
-        Map<String, dynamic>.from(attr.keys.fold(baseInverted, (memo, key) {
+    final inverted = Map<String, dynamic>.from(attr.keys.fold(baseInverted, (memo, key) {
       if (base![key] != attr![key] && !base.containsKey(key)) {
         memo[key] = null;
       }
@@ -112,9 +116,8 @@ class Delta {
   /// If `dataDecoder` parameter is not null then it is used to additionally
   /// decode the operation's data object. Only applied to insert operations.
   static Delta fromJson(List data, {DataDecoder? dataDecoder}) {
-    return Delta._(data
-        .map((op) => Operation.fromJson(op, dataDecoder: dataDecoder))
-        .toList());
+    return Delta._(
+        data.map((op) => Operation.fromJson(op, dataDecoder: dataDecoder)).toList());
   }
 
   /// Returns list of operations in this delta.
@@ -132,6 +135,7 @@ class Delta {
 
   /// Returns number of operations in this delta.
   int get length => operations.length;
+  int get textLength => toPlainText().length;
 
   /// Returns [Operation] at specified [index] in this delta.
   Operation operator [](int index) => operations[index];
@@ -249,8 +253,7 @@ class Delta {
   /// Returns new operation or `null` if operations from [thisIter] and
   /// [otherIter] nullify each other. For instance, for the pair `insert('abc')`
   /// and `delete(3)` composition result would be empty string.
-  Operation? _composeOperation(
-      DeltaIterator thisIter, DeltaIterator otherIter) {
+  Operation? _composeOperation(DeltaIterator thisIter, DeltaIterator otherIter) {
     if (otherIter.isNextInsert) return otherIter.next();
     if (thisIter.isNextDelete) return thisIter.next();
 
@@ -368,8 +371,7 @@ class Delta {
       if (lastOpData is String && lastOpData.endsWith('\n')) {
         operations.removeLast();
         if (lastOpData.length > 1) {
-          insert(lastOpData.substring(0, lastOpData.length - 1),
-              lastOp.attributes);
+          insert(lastOpData.substring(0, lastOpData.length - 1), lastOp.attributes);
         }
       }
     }
@@ -412,10 +414,8 @@ class Delta {
           if (op.isDelete) {
             inverted.push(baseOp);
           } else if (op.isRetain && op.isNotPlain) {
-            final invertAttr =
-                invertAttributes(op.attributes, baseOp.attributes);
-            inverted.retain(
-                baseOp.length!, invertAttr.isEmpty ? null : invertAttr);
+            final invertAttr = invertAttributes(op.attributes, baseOp.attributes);
+            inverted.retain(baseOp.length!, invertAttr.isEmpty ? null : invertAttr);
           }
         });
         baseIndex += length;

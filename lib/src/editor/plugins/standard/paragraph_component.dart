@@ -3,9 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:novident_editor/src/common/mixins/default_selection_capibility.dart';
 import 'package:novident_editor/src/common/mixins/selection_capability_mixin.dart';
-import 'package:novident_editor/src/common/selection_capability_mixin.dart';
+import 'package:novident_editor/src/document/keys/node_keys.dart';
 import 'package:novident_editor/src/document/node.dart';
-import 'package:novident_editor/src/document/node_keys.dart';
 import 'package:novident_editor/src/editor/plugins/component_context.dart';
 import 'package:novident_editor/src/editor/plugins/component_plugin.dart';
 

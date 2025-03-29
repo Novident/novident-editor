@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
+import 'package:flutter/services.dart';
+import 'package:meta/meta.dart';
 import 'package:novident_editor/src/document/delta/iterator/delta_iterator.dart';
 import 'package:novident_editor/src/document/operations/operation.dart';
 import 'package:quiver/core.dart';
@@ -28,10 +30,51 @@ class Delta {
   // ignore: unused_field
   static final String _kDefaultEmbedCharacter = String.fromCharCode(0);
 
+  String? _cachePlainText;
+
+  @internal
+  void invalidateCache() {
+    _cachePlainText = null;
+  }
+
   String toPlainText() {
-    return map(
+    return _cachePlainText ??= map(
       (Operation op) => op.data is! String ? _kDefaultEmbedCharacter : op.data as String,
     ).join();
+  }
+
+  /// This method will return the position of the previous rune.
+  ///
+  /// Since the encoding of the [String] in Dart is UTF-16.
+  /// If you want to find the previous character of a position,
+  /// you can't just use the `position - 1` simply.
+  ///
+  /// This method can help you to compute the position of the previous character.
+  int prevRunePosition(int pos) {
+    if (pos == 0) {
+      return pos - 1;
+    }
+    final content = toPlainText();
+    final boundary = CharacterBoundary(content);
+    final index = boundary.getLeadingTextBoundaryAt(pos - 1);
+    return index ?? 0;
+  }
+
+  /// This method will return the position of the next rune.
+  ///
+  /// Since the encoding of the [String] in Dart is UTF-16.
+  /// If you want to find the next character of a position,
+  /// you can't just use the `position + 1` simply.
+  ///
+  /// This method can help you to compute the position of the next character.
+  int nextRunePosition(int pos) {
+    final content = toPlainText();
+    if (pos >= content.length - 1) {
+      return content.length;
+    }
+    final boundary = CharacterBoundary(content);
+    final index = boundary.getTrailingTextBoundaryAt(pos);
+    return index ?? content.length;
   }
 
   /// Transforms two attribute sets.
@@ -430,11 +473,11 @@ class Delta {
   /// Returns slice of this delta from [start] index (inclusive) to [end]
   /// (exclusive).
   Delta slice(int start, [int? end]) {
-    final delta = Delta();
-    var index = 0;
-    final opIterator = DeltaIterator(this);
+    final Delta delta = Delta();
+    int index = 0;
+    final DeltaIterator opIterator = DeltaIterator(this);
 
-    final actualEnd = end ?? DeltaIterator.maxLength;
+    final int actualEnd = end ?? DeltaIterator.maxLength;
 
     while (index < actualEnd && opIterator.hasNext) {
       Operation op;
@@ -447,6 +490,15 @@ class Delta {
       index += op.length!;
     }
     return delta;
+  }
+
+  /// This method joins two Delta together.
+  Delta operator +(Delta other) {
+    if (other.operations.isNotEmpty) {
+      operations.add(other.operations[0]);
+      operations.addAll(other.operations.sublist(1));
+    }
+    return Delta.fromOperations(operations);
   }
 
   /// Transforms [index] against this delta.

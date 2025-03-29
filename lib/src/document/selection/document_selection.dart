@@ -50,6 +50,14 @@ class DocumentSelection {
   /// are at the same position.
   bool get isCollapsed => start == end;
 
+  /// Returns a Boolean indicating whether the selection's have invalid points
+  /// are at the same position.
+  bool get isInvalid =>
+      start.nodeIndex == -1 ||
+      end.nodeIndex == -1 ||
+      start.offset == -1 ||
+      end.offset == -1;
+
   /// Returns a Boolean indicating whether the selection's start and end points
   /// are at the same nodeIndex.
   bool get isSingle => start.nodeIndex == end.nodeIndex;
@@ -61,8 +69,7 @@ class DocumentSelection {
 
   /// Returns a Boolean indicating whether the selection is backward.
   bool get isBackward =>
-      (start.nodeIndex < end.nodeIndex) ||
-      (isSingle && start.selection.offset < end.selection.offset);
+      (start.nodeIndex < end.nodeIndex) || (isSingle && start.offset < end.offset);
 
   /// Returns a normalized selection that direction is forward.
   DocumentSelection get normalized => isBackward ? copyWith() : reversed.copyWith();

@@ -25,13 +25,7 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
   final LayerLink layerLink = LayerLink();
 
   /// this is the cached index of the node
-  int? _nodeIndex;
   int? _length;
-
-  @internal
-  void invalidateIndex() {
-    _nodeIndex = null;
-  }
 
   @internal
   void invalidateLength() {
@@ -68,7 +62,7 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
     }
   }
 
-  int get index => _nodeIndex ??= _computeNodeIndex();
+  int get index => _computeNodeIndex();
 
   int get length => _length ??= delta?.textLength ?? 0;
 

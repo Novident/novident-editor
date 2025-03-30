@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:novident_editor/src/common/mixins/default_selection_capibility.dart';
 import 'package:novident_editor/src/common/mixins/selection_capability_mixin.dart';

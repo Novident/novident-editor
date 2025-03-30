@@ -30,11 +30,12 @@ class _NovRichTextWidgetState extends State<NovRichTextWidget>
     with SelectionCapabilityMixin {
   final GlobalKey _richKey = GlobalKey();
 
-  RenderParagraph? get _paragraph => _richKey.currentState as RenderParagraph;
+  RenderParagraph? get _paragraph =>
+      _richKey.currentContext?.findRenderObject() as RenderParagraph;
 
   @override
   Widget build(BuildContext context) {
-    final delta = widget.node.delta ?? Delta();
+    final Delta delta = widget.node.delta ?? Delta();
     // by now we only add plain text
     return RichText(
       key: _richKey,
@@ -65,7 +66,7 @@ class _NovRichTextWidgetState extends State<NovRichTextWidget>
 
   @override
   Rect getBlockRect({bool shiftWithBaseOffset = false}) {
-    return Rect.fromPoints(Offset.zero, Offset.zero);
+    return Rect.zero;
   }
 
   @override
@@ -144,7 +145,7 @@ class _NovRichTextWidgetState extends State<NovRichTextWidget>
     if (textSelection == null) {
       return [];
     }
-    final rects = paragraph
+    final List<Rect>? rects = paragraph
         ?.getBoxesForSelection(
           textSelection,
           boxHeightStyle: BoxHeightStyle.max,
@@ -161,7 +162,7 @@ class _NovRichTextWidgetState extends State<NovRichTextWidget>
       if (!selection.isCollapsed) {
         /// while selecting for an empty character, return a selection area
         /// with width of 2
-        final textPosition = TextPosition(offset: textSelection.baseOffset);
+        final TextPosition textPosition = TextPosition(offset: textSelection.baseOffset);
         position = paragraph?.getOffsetForCaret(
               textPosition,
               Rect.zero,
@@ -170,8 +171,13 @@ class _NovRichTextWidgetState extends State<NovRichTextWidget>
         height = paragraph?.getFullHeightForCaret(textPosition) ?? height;
         width = 2;
       }
-      return [
-        Rect.fromLTWH(position.dx, position.dy, width, height),
+      return <Rect>[
+        Rect.fromLTWH(
+          position.dx,
+          position.dy,
+          width,
+          height,
+        ),
       ];
     }
     return rects;
@@ -179,7 +185,7 @@ class _NovRichTextWidgetState extends State<NovRichTextWidget>
 
   @override
   DocumentSelection getSelectionInRange(Offset start, Offset end) {
-    final delta = widget.node.delta;
+    final Delta? delta = widget.node.delta;
     if (delta == null) {
       return DocumentSelection.same(
         index: widget.node.index,

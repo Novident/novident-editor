@@ -76,7 +76,7 @@ class Document implements DocumentOperations {
 
   @override
   Node? queryNodeInSelection(DocumentSelection selection) {
-    if(!selection.isSingle || !selection.isCollapsed || selection.isInvalid) return null;
+    if (!selection.isSingle || !selection.isCollapsed || selection.isInvalid) return null;
     final DocumentSelection normalized = selection.normalized;
     Node? start = queryNodeByIndex(normalized.start.nodeIndex);
     void ensureThatIsNotNull(Node? node, String nodeId) {
@@ -91,7 +91,7 @@ class Document implements DocumentOperations {
 
   @override
   Iterable<Node> queryAllNodesInSelection(DocumentSelection selection) {
-    if(selection.isInvalid) return <Node>[];
+    if (selection.isInvalid) return <Node>[];
     final DocumentSelection normalized = selection.normalized;
     Node? start = queryNodeByIndex(normalized.start.nodeIndex);
     Node? end = queryNodeByIndex(normalized.end.nodeIndex);
@@ -123,20 +123,24 @@ class Document implements DocumentOperations {
 
   @override
   String getSelectedText(DocumentSelection selection) {
-    if(selection.isCollapsed || selection.isSingle) {
-      final DocumentSelection normalized = selection.normalized; 
+    if (selection.isCollapsed || selection.isSingle) {
+      final DocumentSelection normalized = selection.normalized;
     }
     final Iterable<Node> nodes = queryAllNodesInSelection(selection);
     if (nodes.isEmpty) return '';
     StringBuffer buffer = StringBuffer();
     for (final Node node in nodes) {
       if (node.delta != null) {
+        final plain = node.delta!.toPlainText();
         buffer.writeln(
-          node.delta!.toPlainText(),
+          plain,
         );
       }
     }
-    return buffer.toString().substring(selection.startIndex, selection.endIndex);
+    return buffer.toString().substring(
+          selection.startIndex,
+          selection.endIndex,
+        );
   }
 
   @override

@@ -1,7 +1,5 @@
 <h1 align="center"><b>Novident Editor</b></h1>
-
 <p align="center">A high-performance rich-text editor for Flutter — part of the <a href="https://github.com/Novident">Novident</a> suite.</p>
-
 <p align="center">
     Fork of <a href="https://github.com/AppFlowy-IO/appflowy-editor"><b>AppFlowy Editor</b></a>,
     used under the <a href="LICENSE">Mozilla Public License 2.0</a>.
@@ -20,7 +18,15 @@ tables, code blocks and more — and ships with:
 - **zen mode** (typewriter centering, unfocused-block dimming, color neutralization without
   touching the document)
 - **aggressive caching** throughout the document model, selection pipeline and text
-  rendering — the editor stays responsive at 100k‑word documents with thousands of blocks 
+  rendering 
+
+> Planned 
+> 1. Improve perfomance on Zen Mode.
+> 2. Improve VIM mode movement, and character positioning. 
+> 3. Full customization of every default block.
+> 4. First line indent.
+> 5. Improve clipboard copy+paste content (now it copies pure plain text) 
+> 6. Translations
 
 ---
 

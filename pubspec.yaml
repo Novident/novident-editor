@@ -1,5 +1,9 @@
 name: "novident_editor"
 version: 1.0.0
+homepage: https://github.com/Novident/
+repository: https://github.com/Novident/novident-editor/
+documentation: https://github.com/Novident/novident-editor/
+issue_tracker: https://github.com/Novident/novident-editor/issues
 
 environment:
   sdk: ">=3.4.3 <4.0.0"

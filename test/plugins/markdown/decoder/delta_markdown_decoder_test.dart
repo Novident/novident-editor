@@ -1,0 +1,140 @@
+import 'package:novident_editor/novident_editor.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() async {
+  group('delta_markdown_decoder.dart', () {
+    test('bold', () {
+      final delta = Delta(
+        operations: [
+          TextInsert('Welcome to '),
+          TextInsert(
+            'Novident',
+            attributes: {
+              BuiltInAttributeKey.bold: true,
+            },
+          ),
+        ],
+      );
+      final result = DeltaMarkdownDecoder().convert('Welcome to **Novident**');
+      expect(result, delta);
+    });
+
+    test('italic', () {
+      final delta = Delta(
+        operations: [
+          TextInsert('Welcome to '),
+          TextInsert(
+            'Novident',
+            attributes: {
+              BuiltInAttributeKey.italic: true,
+            },
+          ),
+        ],
+      );
+      final result = DeltaMarkdownDecoder().convert('Welcome to _Novident_');
+      expect(result, delta);
+    });
+
+    test('strikethrough', () {
+      final delta = Delta(
+        operations: [
+          TextInsert('Welcome to '),
+          TextInsert(
+            'Novident',
+            attributes: {
+              BuiltInAttributeKey.strikethrough: true,
+            },
+          ),
+        ],
+      );
+      final result = DeltaMarkdownDecoder().convert('Welcome to ~~Novident~~');
+      expect(result, delta);
+    });
+
+    test('href', () {
+      final delta = Delta(
+        operations: [
+          TextInsert('Welcome to '),
+          TextInsert(
+            'Novident',
+            attributes: {
+              BuiltInAttributeKey.href: 'https://appflowy.io',
+            },
+          ),
+        ],
+      );
+      final result = DeltaMarkdownDecoder()
+          .convert('Welcome to [Novident](https://appflowy.io)');
+      expect(result, delta);
+    });
+
+    test('code', () {
+      final delta = Delta(
+        operations: [
+          TextInsert('Welcome to '),
+          TextInsert(
+            'Novident',
+            attributes: {
+              BuiltInAttributeKey.code: true,
+            },
+          ),
+        ],
+      );
+      final result = DeltaMarkdownDecoder().convert('Welcome to `Novident`');
+      expect(result, delta);
+    });
+
+    test('bold', () {
+      const markdown =
+          '***<u>`Welcome`</u>*** ***~~to~~*** ***[Novident](https://appflowy.io)***';
+      final delta = Delta(
+        operations: [
+          TextInsert(
+            'Welcome',
+            attributes: {
+              BuiltInAttributeKey.code: true,
+              BuiltInAttributeKey.italic: true,
+              BuiltInAttributeKey.bold: true,
+              BuiltInAttributeKey.underline: true,
+            },
+          ),
+          TextInsert(' '),
+          TextInsert(
+            'to',
+            attributes: {
+              BuiltInAttributeKey.italic: true,
+              BuiltInAttributeKey.bold: true,
+              BuiltInAttributeKey.strikethrough: true,
+            },
+          ),
+          TextInsert(' '),
+          TextInsert(
+            'Novident',
+            attributes: {
+              BuiltInAttributeKey.href: 'https://appflowy.io',
+              BuiltInAttributeKey.bold: true,
+              BuiltInAttributeKey.italic: true,
+            },
+          ),
+        ],
+      );
+      final result = DeltaMarkdownDecoder().convert(markdown);
+      expect(result, delta);
+    });
+
+    test('formula', () {
+      const markdown = 'This is a math equation \$E = MC ^ 2\$';
+      final delta = Delta(
+        operations: [
+          TextInsert('This is a math equation '),
+          TextInsert(
+            '\$',
+            attributes: {BuiltInAttributeKey.formula: 'E = MC ^ 2'},
+          ),
+        ],
+      );
+      final result = DeltaMarkdownDecoder().convert(markdown);
+      expect(result, delta);
+    });
+  });
+}

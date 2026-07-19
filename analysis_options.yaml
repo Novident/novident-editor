@@ -1,0 +1,12 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - always_declare_return_types
+    - require_trailing_commas
+    - unnecessary_raw_strings
+    - use_decorated_box
+
+analyzer:
+  exclude:
+    - lib/src/l10n/**

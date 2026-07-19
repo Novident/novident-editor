@@ -1,0 +1,34 @@
+name: example
+description: "A new Flutter project."
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.3 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  novident_editor:
+    path: ../
+  novident_split_view: ^1.0.0
+  novident_tree_view: ^1.1.0
+  novident_nodes: ^1.2.4
+  cupertino_icons: ^1.0.8
+  collection: ^1.19.1
+  equatable: ^2.0.7
+  flutter_hooks: ^0.21.2
+  vector_math: ^2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

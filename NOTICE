@@ -1,0 +1,25 @@
+NOTICE — Novident Editor
+========================
+
+Novident Editor is part of the Novident suite.
+
+This project is a fork of AppFlowy Editor
+(https://github.com/AppFlowy-IO/appflowy-editor),
+Copyright (c) AppFlowy-IO and contributors.
+
+AppFlowy Editor is dual-licensed under the GNU Affero General Public
+License v3 and the Mozilla Public License 2.0 (see the LICENSE file).
+This fork uses and redistributes it under the terms of the
+Mozilla Public License 2.0 (MPL-2.0).
+
+Modifications for the Novident suite:
+Copyright (c) 2026 Novident Team.
+
+"AppFlowy" is a trademark of its respective owners. This fork is not
+affiliated with, nor endorsed by, AppFlowy-IO. All AppFlowy branding has
+been removed from the public API; the original attribution and license
+notices are preserved in this file and in LICENSE.
+
+Additional bundled code:
+- lib/src/flutter/scrollable_positioned_list/ is derived from the Flutter
+  packages repository (BSD-3-Clause, Copyright the Flutter authors).

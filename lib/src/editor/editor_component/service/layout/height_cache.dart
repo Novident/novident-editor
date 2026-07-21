@@ -16,6 +16,13 @@ final class HeightCache {
   double _totalHeight = 0.0;
   int _blockCount = 0;
 
+  /// Number of times [reportHeight] was called with a novel height.
+  /// > 0 means at least one real layout measurement was fed back.
+  int _measurementCount = 0;
+
+  /// Indices that were invalidated and must be re-measured.
+  final Set<int> _dirty = {};
+
   final List<void Function()> _listeners = [];
 
   /// Sum of all block heights (measured + estimated).
@@ -23,6 +30,9 @@ final class HeightCache {
 
   /// Total number of registered blocks.
   int get blockCount => _blockCount;
+
+  /// Whether at least one block has been measured via [reportHeight].
+  bool get hasMeasuredBlocks => _measurementCount > 0;
 
   /// Height of the block at [index] (measured value or [defaultHeight]).
   double heightOf(int index) {
@@ -36,8 +46,9 @@ final class HeightCache {
   /// indicating that listeners should be notified.
   bool reportHeight(int index, double height) {
     RangeError.checkNotNegative(index, 'index');
+    final isDirty = _dirty.remove(index);
     final old = _heights[index];
-    if (old != null && (old - height).abs() < 1.0) {
+    if (!isDirty && old != null && (old - height).abs() < 1.0) {
       return false;
     }
     final delta = height - (old ?? defaultHeight);
@@ -101,18 +112,19 @@ final class HeightCache {
 
   /// Invalidates cached heights in the range [start, end] (inclusive).
   ///
-  /// Invalidated blocks revert to [defaultHeight] until re-measured.
+  /// The existing height estimate is preserved in [_totalHeight] until a
+  /// new measurement arrives via [reportHeight], preventing one-frame
+  /// overflow when content grows.
   void invalidateRange(int start, [int? end]) {
     RangeError.checkNotNegative(start, 'start');
     final endIdx = end ?? _blockCount - 1;
     if (endIdx < start) return;
 
     for (int i = start; i <= endIdx && i < _blockCount; i++) {
-      final removed = _heights.remove(i);
-      if (removed != null) {
-        _totalHeight -= removed;
+      if (!_heights.containsKey(i)) {
         _totalHeight += defaultHeight;
       }
+      _dirty.add(i);
     }
   }
 

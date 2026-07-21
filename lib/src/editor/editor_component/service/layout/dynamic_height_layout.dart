@@ -71,6 +71,12 @@ class _DynamicHeightLayoutState extends State<DynamicHeightLayout> {
     _controller = widget.controller ?? _createInternalController();
     _controller!.addListener(_onHeightChanged);
     widget.node.addListener(_onNodeChanged);
+
+    // Expose the controller to EditorState so _NovidentEditorState
+    // can wrap the Overlay in a SizedBox with finite height.
+    if (widget.editorState.dynamicHeightController == null) {
+      widget.editorState.dynamicHeightController = _controller;
+    }
   }
 
   @override
@@ -128,19 +134,19 @@ class _DynamicHeightLayoutState extends State<DynamicHeightLayout> {
           minHeight: _controller!.config.minHeight,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (widget.header != null) widget.header!,
-            ...items.asMap().entries.map((entry) {
-              return _buildBlock(context, entry.value);
-            }),
-            if (widget.footer != null) widget.footer!,
-          ],
-        ),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (widget.header != null) widget.header!,
+          ...items.asMap().entries.map((entry) {
+            return _buildBlock(context, entry.value);
+          }),
+          if (widget.footer != null) widget.footer!,
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBlock(BuildContext context, Node node) {
     Widget child = widget.editorState.renderer.build(context, node);

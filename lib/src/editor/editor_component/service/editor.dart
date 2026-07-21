@@ -272,11 +272,20 @@ class _NovidentEditorState extends State<NovidentEditor> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       _autoFocusIfNeeded();
     });
+
+    // Connect to dynamic height controller once the layout is mounted.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectDynamicHeightController();
+    });
   }
 
   @override
   void dispose() {
-    // dispose the scroll controller if it's created by the editor
+    final controller = editorState.dynamicHeightController;
+    if (controller != null) {
+      controller.removeListener(_onDynamicHeightChanged);
+    }
+
     if (widget.editorScrollController == null) {
       editorScrollController.dispose();
     }
@@ -305,11 +314,23 @@ class _NovidentEditorState extends State<NovidentEditor> {
     services = null;
   }
 
+  void _connectDynamicHeightController() {
+    final controller = editorState.dynamicHeightController;
+    if (controller != null) {
+      controller.addListener(_onDynamicHeightChanged);
+      if (mounted) setState(() {});
+    }
+  }
+
+  void _onDynamicHeightChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     services ??= _buildServices(context);
 
-    return Provider.value(
+    Widget content = Provider.value(
       value: editorState,
       child: FocusScope(
         child: Overlay(
@@ -322,6 +343,22 @@ class _NovidentEditorState extends State<NovidentEditor> {
         ),
       ),
     );
+
+    // Give the Overlay a finite height so _Theatre never receives
+    // unbounded constraints. The height starts at minHeight (fallback)
+    // and converges to the real content height once BlockHeightReporter
+    // measures it.
+    final dhController = editorState.dynamicHeightController;
+    if (_useDynamicHeight) {
+      final height = dhController?.currentHeight ?? 1000.0;
+      content = SizedBox(
+        width: double.infinity,
+        height: height,
+        child: content,
+      );
+    }
+
+    return content;
   }
 
   bool get _useDynamicHeight =>

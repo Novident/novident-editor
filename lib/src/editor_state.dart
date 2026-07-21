@@ -211,6 +211,9 @@ class EditorState {
   AutoScroller? autoScroller;
   ScrollableState? scrollableState;
 
+  /// The dynamic height controller, if dynamic height mode is active.
+  DynamicHeightController? dynamicHeightController;
+
   /// Configures log output parameters,
   /// such as log level and log output callbacks,
   /// with this variable.
@@ -439,6 +442,8 @@ class EditorState {
       }
 
       _applyTransactionInLocal(transaction);
+
+      _notifyDynamicHeightController(transaction);
 
       // broadcast to other users here, after applying the transaction
       if (!_observer.isClosed) {
@@ -750,6 +755,36 @@ class EditorState {
         document.delete(op.path, op.nodes.length);
       } else if (op is UpdateTextOperation) {
         document.updateText(op.path, op.delta);
+      }
+    }
+  }
+
+  void _notifyDynamicHeightController(Transaction transaction) {
+    final controller = dynamicHeightController;
+    if (controller == null) return;
+
+    for (final op in transaction.operations) {
+      if (op is InsertOperation) {
+        final path = op.path;
+        if (path.length == 1) {
+          controller.onDocumentMutation(
+            NodesInserted(atIndex: path.last, count: op.nodes.length),
+          );
+        }
+      } else if (op is DeleteOperation) {
+        final path = op.path;
+        if (path.length == 1) {
+          controller.onDocumentMutation(
+            NodesRemoved(atIndex: path.last, count: op.nodes.length),
+          );
+        }
+      } else if (op is UpdateTextOperation) {
+        final path = op.path;
+        if (path.isNotEmpty) {
+          controller.onDocumentMutation(
+            TextChanged(nodeIndex: path.first),
+          );
+        }
       }
     }
   }

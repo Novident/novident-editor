@@ -114,12 +114,24 @@ class ImageBlockComponentWidget extends BlockComponentStatefulWidget {
 }
 
 class ImageBlockComponentWidgetState extends State<ImageBlockComponentWidget>
-    with SelectableMixin, BlockComponentConfigurable {
+    with SelectableMixin, BlockComponentConfigurable, BlockHeightReporter {
   @override
   BlockComponentConfiguration get configuration => widget.configuration;
 
   @override
   Node get node => widget.node;
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleHeightReport();
+  }
+
+  @override
+  void didUpdateWidget(covariant ImageBlockComponentWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    scheduleHeightReport();
+  }
 
   final imageKey = GlobalKey();
   RenderBox? get _renderBox => context.findRenderObject() as RenderBox?;

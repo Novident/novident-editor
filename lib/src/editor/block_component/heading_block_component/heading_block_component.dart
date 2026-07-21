@@ -96,7 +96,8 @@ class _HeadingBlockComponentWidgetState
         BlockComponentConfigurable,
         BlockComponentBackgroundColorMixin,
         BlockComponentTextDirectionMixin,
-        BlockComponentAlignMixin {
+        BlockComponentAlignMixin,
+        BlockHeightReporter {
   @override
   final forwardKey = GlobalKey(debugLabel: 'flowy_rich_text');
 
@@ -107,6 +108,18 @@ class _HeadingBlockComponentWidgetState
   GlobalKey<State<StatefulWidget>> blockComponentKey = GlobalKey(
     debugLabel: HeadingBlockKeys.type,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleHeightReport();
+  }
+
+  @override
+  void didUpdateWidget(covariant HeadingBlockComponentWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    scheduleHeightReport();
+  }
 
   @override
   BlockComponentConfiguration get configuration => widget.configuration;

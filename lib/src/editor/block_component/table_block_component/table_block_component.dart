@@ -265,12 +265,24 @@ class TableBlockComponentWidget extends BlockComponentStatefulWidget {
 }
 
 class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
-    with SelectableMixin, BlockComponentConfigurable {
+    with SelectableMixin, BlockComponentConfigurable, BlockHeightReporter {
   @override
   BlockComponentConfiguration get configuration => widget.configuration;
 
   @override
   Node get node => widget.node;
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleHeightReport();
+  }
+
+  @override
+  void didUpdateWidget(covariant TableBlockComponentWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    scheduleHeightReport();
+  }
 
   late final editorState = Provider.of<EditorState>(context, listen: false);
   final _scrollController = ScrollController();

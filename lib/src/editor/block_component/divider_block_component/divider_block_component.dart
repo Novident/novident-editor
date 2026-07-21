@@ -83,12 +83,24 @@ class DividerBlockComponentWidget extends BlockComponentStatefulWidget {
 
 class _DividerBlockComponentWidgetState
     extends State<DividerBlockComponentWidget>
-    with SelectableMixin, BlockComponentConfigurable {
+    with SelectableMixin, BlockComponentConfigurable, BlockHeightReporter {
   @override
   BlockComponentConfiguration get configuration => widget.configuration;
 
   @override
   Node get node => widget.node;
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleHeightReport();
+  }
+
+  @override
+  void didUpdateWidget(covariant DividerBlockComponentWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    scheduleHeightReport();
+  }
 
   final dividerKey = GlobalKey();
   RenderBox? get _renderBox => context.findRenderObject() as RenderBox?;

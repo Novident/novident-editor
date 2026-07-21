@@ -47,6 +47,8 @@ class NovidentEditor extends StatefulWidget {
     this.autoScrollEdgeOffset = novidentEditorAutoScrollEdgeOffset,
     this.documentRules = const [],
     this.blockWrapper,
+    this.dynamicHeightConfig,
+    this.dynamicHeightController,
   })  : blockComponentBuilders =
             blockComponentBuilders ?? standardBlockComponentBuilderMap,
         characterShortcutEvents =
@@ -231,6 +233,17 @@ class NovidentEditor extends StatefulWidget {
   /// Wrap the block component with a widget.
   final BlockComponentWrapper? blockWrapper;
 
+  /// Configuration for dynamic height mode.
+  ///
+  /// When provided, the editor grows vertically as content is added,
+  /// like an HTML `<textarea>`. Internal scrolling is disabled.
+  final DynamicHeightConfig? dynamicHeightConfig;
+
+  /// External controller for dynamic height mode.
+  ///
+  /// Allows programmatic access to the current height and cache state.
+  final DynamicHeightController? dynamicHeightController;
+
   @override
   State<NovidentEditor> createState() => _NovidentEditorState();
 }
@@ -311,22 +324,42 @@ class _NovidentEditorState extends State<NovidentEditor> {
     );
   }
 
+  bool get _useDynamicHeight =>
+      widget.dynamicHeightConfig != null ||
+      widget.dynamicHeightController != null;
+
   Widget _buildServices(BuildContext context) {
-    Widget child = editorState.renderer.build(
-      context,
-      editorState.document.root,
-      header: widget.header,
-      footer: widget.footer,
-      wrapper: widget.blockWrapper,
-    );
+    final useDynamicHeight = _useDynamicHeight;
+
+    Widget child;
+    if (useDynamicHeight) {
+      child = DynamicHeightLayout(
+        node: editorState.document.root,
+        editorState: editorState,
+        header: widget.header,
+        footer: widget.footer,
+        wrapper: widget.blockWrapper,
+        controller: widget.dynamicHeightController,
+        config: widget.dynamicHeightConfig,
+      );
+      editorState.dynamicHeightController =
+          DynamicHeightControllerProvider.maybeOf(context) ??
+          widget.dynamicHeightController;
+    } else {
+      child = editorState.renderer.build(
+        context,
+        editorState.document.root,
+        header: widget.header,
+        footer: widget.footer,
+        wrapper: widget.blockWrapper,
+      );
+    }
 
     if (!widget.disableKeyboardService) {
       child = KeyboardServiceWidget(
         key: editorState.service.keyboardServiceKey,
-        // disable all the shortcuts when the editor is not editable
         characterShortcutEvents:
             widget.editable ? widget.characterShortcutEvents : [],
-        // only allow copy and select all when the editor is not editable
         commandShortcutEvents: widget.commandShortcutEvents,
         focusNode: widget.focusNode,
         contentInsertionConfiguration: widget.contentInsertionConfiguration,
@@ -346,7 +379,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
       );
     }
 
-    if (!widget.disableScrollService) {
+    if (!widget.disableScrollService && !useDynamicHeight) {
       child = ScrollServiceWidget(
         key: editorState.service.scrollServiceKey,
         editorScrollController: editorScrollController,

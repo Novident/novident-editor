@@ -104,7 +104,8 @@ class _NumberedListBlockComponentWidgetState
         BlockComponentBackgroundColorMixin,
         NestedBlockComponentStatefulWidgetMixin,
         BlockComponentTextDirectionMixin,
-        BlockComponentAlignMixin {
+        BlockComponentAlignMixin,
+        BlockHeightReporter {
   @override
   final forwardKey = GlobalKey(debugLabel: 'flowy_rich_text');
 
@@ -121,6 +122,20 @@ class _NumberedListBlockComponentWidgetState
 
   @override
   Node get node => widget.node;
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleHeightReport();
+  }
+
+  @override
+  void didUpdateWidget(
+    covariant NumberedListBlockComponentWidget oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+    scheduleHeightReport();
+  }
 
   @override
   Widget buildComponent(

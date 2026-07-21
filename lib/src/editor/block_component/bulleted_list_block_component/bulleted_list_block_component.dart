@@ -94,7 +94,8 @@ class _BulletedListBlockComponentWidgetState
         BlockComponentBackgroundColorMixin,
         NestedBlockComponentStatefulWidgetMixin,
         BlockComponentTextDirectionMixin,
-        BlockComponentAlignMixin {
+        BlockComponentAlignMixin,
+        BlockHeightReporter {
   @override
   final forwardKey = GlobalKey(debugLabel: 'flowy_rich_text');
 
@@ -111,6 +112,20 @@ class _BulletedListBlockComponentWidgetState
 
   @override
   Node get node => widget.node;
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleHeightReport();
+  }
+
+  @override
+  void didUpdateWidget(
+    covariant BulletedListBlockComponentWidget oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+    scheduleHeightReport();
+  }
 
   @override
   Widget buildComponent(

@@ -15,7 +15,7 @@
 *.ipr
 *.iws
 .idea/
-
+AGENTS.md
 # Visual Studio Code related
 .classpath
 .project

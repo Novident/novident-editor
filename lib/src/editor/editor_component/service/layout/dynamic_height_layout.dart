@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
-import 'block_height_reporter.dart';
-import 'dynamic_height_config.dart';
-import 'dynamic_height_controller.dart';
-
 /// Root layout widget for the editor in dynamic height mode.
 ///
 /// Replaces [PageBlockComponent] when the editor is configured with
@@ -126,6 +122,23 @@ class _DynamicHeightLayoutState extends State<DynamicHeightLayout> {
   @override
   Widget build(BuildContext context) {
     final items = widget.node.children;
+    final cache = _controller!.cache;
+    final hasCache = cache.hasMeasuredBlocks;
+
+    final Widget blockList = hasCache
+        ? ListView.builder(
+            shrinkWrap: false,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: items.length,
+            itemBuilder: (context, i) => _buildBlock(context, items[i]),
+          )
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: items
+                .map((e) => _buildBlock(context, e))
+                .toList(growable: false),
+          );
 
     return DynamicHeightControllerProvider(
       controller: _controller!,
@@ -134,19 +147,17 @@ class _DynamicHeightLayoutState extends State<DynamicHeightLayout> {
           minHeight: _controller!.config.minHeight,
         ),
         child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (widget.header != null) widget.header!,
-          ...items.asMap().entries.map((entry) {
-            return _buildBlock(context, entry.value);
-          }),
-          if (widget.footer != null) widget.footer!,
-        ],
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.header != null) widget.header!,
+            blockList,
+            if (widget.footer != null) widget.footer!,
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildBlock(BuildContext context, Node node) {
     Widget child = widget.editorState.renderer.build(context, node);
@@ -157,8 +168,7 @@ class _DynamicHeightLayoutState extends State<DynamicHeightLayout> {
 
     return Container(
       constraints: BoxConstraints(
-        maxWidth:
-            widget.editorState.editorStyle.maxWidth ?? double.infinity,
+        maxWidth: widget.editorState.editorStyle.maxWidth ?? double.infinity,
       ),
       padding: widget.editorState.editorStyle.padding,
       child: child,

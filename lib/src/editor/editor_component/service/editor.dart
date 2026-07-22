@@ -376,7 +376,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
       );
     }
 
-    if (!widget.disableScrollService && !useDynamicHeight) {
+    if (!widget.disableScrollService) {
       child = ScrollServiceWidget(
         key: editorState.service.scrollServiceKey,
         editorScrollController: editorScrollController,

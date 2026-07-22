@@ -17,6 +17,7 @@ class MyEditor extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
     this.autoFocus = false,
     this.footer,
+    this.dynamicHeightConfig,
   });
 
   final DocumentSession session;
@@ -32,6 +33,9 @@ class MyEditor extends StatelessWidget {
   /// final paragraphs).
   final Widget? footer;
 
+  /// When non-null the editor grows vertically as content is added.
+  final DynamicHeightConfig? dynamicHeightConfig;
+
   @override
   Widget build(BuildContext context) {
     return NovidentEditor(
@@ -40,6 +44,7 @@ class MyEditor extends StatelessWidget {
       focusNode: session.focusNode,
       autoFocus: autoFocus,
       disableAutoScroll: false,
+      dynamicHeightConfig: dynamicHeightConfig,
       editorStyle: EditorStyle.desktop(
         padding: padding,
         cursorColor: Colors.black87,

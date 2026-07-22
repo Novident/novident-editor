@@ -1,13 +1,18 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:example/common/nodes/directory.dart';
 import 'package:example/common/nodes/file.dart';
 import 'package:example/common/store/document_content_store.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
-/// Scrollable column of editors — one per [File] node inside
+import '../editor/document_session.dart';
+import '../editor/my_editor.dart';
+
+/// White "sheet of paper" centered over the gray workspace —
+/// same visual design as [EditorPane._buildPage].
+const Color _kWorkspaceBackground = Color(0xFFECECEC);
+
+/// Scrollable column of editor sheets — one per [File] node inside
 /// a [Directory].
 ///
 /// Activated by right-clicking a directory in the tree binder
@@ -58,129 +63,185 @@ class _MultiEditorViewState extends State<MultiEditorView> {
     _files = widget.directory.children.whereType<File>().toList(growable: false);
   }
 
+  /// One editor sheet — same design as [EditorPane._buildPage].
+  Widget _buildFileSheet(BuildContext context, File file) {
+    return _FileSheet(key: ValueKey(file.id), file: file);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('${_nodeName(widget.directory)} — Modo múltiple'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            tooltip: 'Cerrar modo múltiple',
-            onPressed: () => widget.store.multiEditDirectoryId.value = null,
-          ),
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: _files.length,
-        itemBuilder: (context, index) => _FileEditorTile(
-          key: ValueKey(_files[index].id),
-          node: _files[index],
-          store: widget.store,
+    return Container(
+      color: _kWorkspaceBackground,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: _files.map((f) => _buildFileSheet(context, f)).toList(),
         ),
       ),
     );
   }
-
-  String _nodeName(Directory dir) => dir.name;
 }
 
-/// One editor row in the multi-editor view: filename title + divider
-/// + [NovidentEditor] with dynamic height.
-class _FileEditorTile extends StatefulWidget {
-  final File node;
-  final DocumentContentStore store;
+/// One editor sheet per file.
+///
+/// Uses [DocumentSession] (same pattern as [EditorPane]) but without
+/// vim/word count/zen mode. The editor grows vertically via
+/// [DynamicHeightConfig].
+class _FileSheet extends StatefulWidget {
+  final File file;
 
-  const _FileEditorTile({
-    super.key,
-    required this.node,
-    required this.store,
-  });
+  const _FileSheet({super.key, required this.file});
 
   @override
-  State<_FileEditorTile> createState() => _FileEditorTileState();
+  State<_FileSheet> createState() => _FileSheetState();
 }
 
-class _FileEditorTileState extends State<_FileEditorTile> {
-  late EditorState _editorState;
-  StreamSubscription? _subscription;
-  Timer? _saveTimer;
+class _FileSheetState extends State<_FileSheet> {
+  late DocumentSession _session;
 
   @override
   void initState() {
     super.initState();
-    _initEditor();
+    _session = DocumentSession(nodeId: widget.file.id)
+      ..addListener(_onSessionChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _session.syncFromStore(DocumentContentProvider.of(context));
+  }
+
+  @override
+  void didUpdateWidget(covariant _FileSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.file.id != widget.file.id) {
+      _session.dispose();
+      _session = DocumentSession(nodeId: widget.file.id)
+        ..addListener(_onSessionChanged)
+        ..syncFromStore(DocumentContentProvider.of(context));
+    }
   }
 
   @override
   void dispose() {
-    _saveTimer?.cancel();
-    _subscription?.cancel();
-    _editorState.dispose();
+    _session.dispose();
     super.dispose();
   }
 
-  void _initEditor() {
-    final content = widget.store.contentOf(widget.node.id);
-    final document =
-        Document.fromJson(jsonDecode(content) as Map<String, dynamic>);
-
-    _editorState = EditorState(document: document)
-      ..editorStyle = const EditorStyle.desktop(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-        textStyleConfiguration: TextStyleConfiguration(
-          text: TextStyle(fontSize: 12),
-        ),
-      );
-
-    _subscription = _editorState.transactionStream.listen((_) {
-      _debouncedSave();
-    });
-  }
-
-  void _debouncedSave() {
-    _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(milliseconds: 100), _save);
-  }
-
-  void _save() {
-    widget.store.setContent(
-      widget.node.id,
-      jsonEncode(_editorState.document.toJson()),
-    );
+  void _onSessionChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.only(left: 20, right: 20),
-          child: Text(
-            widget.node.name,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black54,
-            ),
+  Widget build(BuildContext context) => _buildPage(context);
+
+  Icon _buildLeadingIcon() {
+    return Icon(
+      CupertinoIcons.doc_text_fill,
+      size: 14,
+      color: Colors.grey.shade600,
+    );
+  }
+
+  /// White "sheet of paper" centered over the gray workspace —
+  /// identical structure to [EditorPane._buildPage].
+  Widget _buildPage(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 750),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(3),
+            boxShadow: const <BoxShadow>[
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 14,
+                offset: Offset(0, 4),
+              ),
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 3,
+                offset: Offset(0, 1),
+              ),
+            ],
           ),
+          child: !_session.isReady
+              ? const SizedBox.expand()
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 15, 16, 0),
+                      child: Row(
+                        children: <Widget>[
+                          _buildLeadingIcon(),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              widget.file.name,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: MyEditor(
+                      session: _session,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 0,
+                      ),
+                      dynamicHeightConfig: const DynamicHeightConfig(
+                        minHeight: 80,
+                      ),
+                    ),
+                  ),
+                  _buildSheetStatusBar(context),
+                  ],
+                ),
         ),
-        const Divider(height: 1, thickness: 1),
-        NovidentEditor(
-          editorState: _editorState,
-          dynamicHeightConfig: const DynamicHeightConfig(minHeight: 50),
-          editorStyle: const EditorStyle.desktop(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-            textStyleConfiguration: TextStyleConfiguration(
-              text: TextStyle(fontSize: 12),
+      ),
+    );
+  }
+
+  /// Slim status bar — close button on the right.
+  Widget _buildSheetStatusBar(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 30,
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: Color(0x14000000))),
+      ),
+      child: Row(
+        children: <Widget>[
+          const Spacer(),
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 26, height: 26),
+            iconSize: 15,
+            tooltip: 'Cerrar modo múltiple',
+            icon: Icon(
+              CupertinoIcons.xmark_circle,
+              color: Colors.grey.shade600,
             ),
+            onPressed: () {
+              final store = DocumentContentProvider.of(context);
+              store.multiEditDirectoryId.value = null;
+            },
           ),
-        ),
-        const SizedBox(height: 16),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:example/common/controller/tree_controller.dart';
+import 'package:example/common/nodes/directory.dart';
 import 'package:example/common/nodes/file.dart';
+import 'package:example/common/store/document_content_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:novident_nodes/novident_nodes.dart';
@@ -7,6 +9,7 @@ import 'package:novident_split_view/novident_split_view.dart';
 
 import '../drawer/tree_view_drawer.dart';
 import '../editor/editor_pane.dart';
+import 'multi_editor_view.dart';
 
 /// Workspace colors.
 const Color _kWorkspaceBackground = Color(0xFFECECEC);
@@ -221,6 +224,7 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
     final double binderWidth = (MediaQuery.sizeOf(context).width * 0.30)
         .clamp(240.0, 320.0)
         .toDouble();
+    final store = DocumentContentProvider.of(context);
     return Scaffold(
       backgroundColor: _kWorkspaceBackground,
       body: Row(
@@ -233,9 +237,23 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
             ),
           ),
           Expanded(
-            child: NovSplitView(
-              controller: _splitController,
-              configuration: _configuration,
+            child: ValueListenableBuilder<String?>(
+              valueListenable: store.multiEditDirectoryId,
+              builder: (context, dirId, _) {
+                if (dirId != null) {
+                  final found = widget.controller.root.visitAllNodes(
+                    shouldGetNode: (n) => n.id == dirId,
+                  );
+                  if (found is Directory) {
+                    final Directory dir = found;
+                    return MultiEditorView(store: store, directory: dir);
+                  }
+                }
+                return NovSplitView(
+                  controller: _splitController,
+                  configuration: _configuration,
+                );
+              },
             ),
           ),
         ],

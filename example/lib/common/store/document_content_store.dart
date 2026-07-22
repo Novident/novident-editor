@@ -17,6 +17,10 @@ class DocumentContentStore extends ChangeNotifier {
 
   final Map<String, String> _contents;
 
+  /// When non-null, the editor area shows all files inside this
+  /// directory instead of the normal split view.
+  final multiEditDirectoryId = ValueNotifier<String?>(null);
+
   /// The JSON of an empty Novident Editor document.
   static final String emptyDocument = jsonEncode(
     Document.blank(withInitialText: true).toJson(),

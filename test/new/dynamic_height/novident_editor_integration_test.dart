@@ -239,7 +239,7 @@ void main() {
       );
       await editorState.apply(transaction);
 
-      expect(controller.cache.heightOf(0), 60.0); // reverted to default
+      expect(controller.cache.heightOf(0), 80.0); // preserved until re-measured
       controller.dispose();
       editorState.dispose();
     });

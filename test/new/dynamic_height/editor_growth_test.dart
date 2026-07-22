@@ -12,8 +12,7 @@ EditorState _editor({int paragraphs = 1, String text = 'A'}) {
       [0],
       List.generate(paragraphs, (i) => paragraphNode(text: '$text $i')),
     );
-  return EditorState(document: doc)
-    ..editorStyle = const EditorStyle.desktop();
+  return EditorState(document: doc)..editorStyle = const EditorStyle.desktop();
 }
 
 Future<void> _typeText(
@@ -23,11 +22,13 @@ Future<void> _typeText(
   int pathIndex = 0,
 }) async {
   final tx = editorState.transaction;
-  tx.add(UpdateTextOperation(
-    [pathIndex],
-    Delta()..insert(text),
-    Delta(),
-  ));
+  tx.add(
+    UpdateTextOperation(
+      [pathIndex],
+      Delta()..insert(text),
+      Delta(),
+    ),
+  );
   tx.afterSelection = Selection.collapsed(
     Position(path: [pathIndex], offset: text.length),
   );
@@ -66,11 +67,13 @@ void main() {
       final editorState = _editor(text: '');
       editorState.dynamicHeightController = controller;
 
-      await tester.buildAndPump(NovidentEditor(
-        editorState: editorState,
-        editable: true,
-        dynamicHeightController: controller,
-      ));
+      await tester.buildAndPump(
+        NovidentEditor(
+          editorState: editorState,
+          editable: true,
+          dynamicHeightController: controller,
+        ),
+      );
       await tester.pump();
       await tester.pump();
       await tester.pump();
@@ -89,9 +92,12 @@ void main() {
       final h2 = controller.currentHeight;
 
       final allDifferent = h1 != initialH || h2 != h1 || h2 != initialH;
-      expect(allDifferent, isTrue,
-          reason: 'Height should change. '
-              'initial=$initialH h1=$h1 h2=$h2');
+      expect(
+        allDifferent,
+        isTrue,
+        reason: 'Height should change. '
+            'initial=$initialH h1=$h1 h2=$h2',
+      );
 
       controller.dispose();
       editorState.dispose();
@@ -104,11 +110,13 @@ void main() {
       final editorState = _editor(text: 'Single');
       editorState.dynamicHeightController = controller;
 
-      await tester.buildAndPump(NovidentEditor(
-        editorState: editorState,
-        editable: true,
-        dynamicHeightController: controller,
-      ));
+      await tester.buildAndPump(
+        NovidentEditor(
+          editorState: editorState,
+          editable: true,
+          dynamicHeightController: controller,
+        ),
+      );
       await tester.pump();
       await tester.pump();
 
@@ -128,11 +136,13 @@ void main() {
         ..editorStyle = const EditorStyle.desktop();
       editorState.dynamicHeightController = controller;
 
-      await tester.buildAndPump(NovidentEditor(
-        editorState: editorState,
-        editable: true,
-        dynamicHeightController: controller,
-      ));
+      await tester.buildAndPump(
+        NovidentEditor(
+          editorState: editorState,
+          editable: true,
+          dynamicHeightController: controller,
+        ),
+      );
       await tester.pump();
       await tester.pump();
       await tester.pump();
@@ -161,36 +171,40 @@ void main() {
       e2.dynamicHeightController = c2;
       e3.dynamicHeightController = c3;
 
-      await tester.buildAndPump(SingleChildScrollView(
-        child: Column(children: [
-          SizedBox(
-            width: 400,
-            child: NovidentEditor(
-              editorState: e1,
-              editable: true,
-              dynamicHeightController: c1,
-            ),
+      await tester.buildAndPump(
+        SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(
+                width: 400,
+                child: NovidentEditor(
+                  editorState: e1,
+                  editable: true,
+                  dynamicHeightController: c1,
+                ),
+              ),
+              const Divider(height: 1, thickness: 2),
+              SizedBox(
+                width: 400,
+                child: NovidentEditor(
+                  editorState: e2,
+                  editable: true,
+                  dynamicHeightController: c2,
+                ),
+              ),
+              const Divider(height: 1, thickness: 2),
+              SizedBox(
+                width: 400,
+                child: NovidentEditor(
+                  editorState: e3,
+                  editable: true,
+                  dynamicHeightController: c3,
+                ),
+              ),
+            ],
           ),
-          const Divider(height: 1, thickness: 2),
-          SizedBox(
-            width: 400,
-            child: NovidentEditor(
-              editorState: e2,
-              editable: true,
-              dynamicHeightController: c2,
-            ),
-          ),
-          const Divider(height: 1, thickness: 2),
-          SizedBox(
-            width: 400,
-            child: NovidentEditor(
-              editorState: e3,
-              editable: true,
-              dynamicHeightController: c3,
-            ),
-          ),
-        ]),
-      ));
+        ),
+      );
       await tester.pump();
       await tester.pump();
       await tester.pump();
@@ -221,27 +235,31 @@ void main() {
       e1.dynamicHeightController = c1;
       e2.dynamicHeightController = c2;
 
-      await tester.buildAndPump(SingleChildScrollView(
-        child: Column(children: [
-          SizedBox(
-            width: 400,
-            child: NovidentEditor(
-              editorState: e1,
-              editable: true,
-              dynamicHeightController: c1,
-            ),
+      await tester.buildAndPump(
+        SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(
+                width: 400,
+                child: NovidentEditor(
+                  editorState: e1,
+                  editable: true,
+                  dynamicHeightController: c1,
+                ),
+              ),
+              const Divider(height: 1, thickness: 2),
+              SizedBox(
+                width: 400,
+                child: NovidentEditor(
+                  editorState: e2,
+                  editable: true,
+                  dynamicHeightController: c2,
+                ),
+              ),
+            ],
           ),
-          const Divider(height: 1, thickness: 2),
-          SizedBox(
-            width: 400,
-            child: NovidentEditor(
-              editorState: e2,
-              editable: true,
-              dynamicHeightController: c2,
-            ),
-          ),
-        ]),
-      ));
+        ),
+      );
       await tester.pump();
       await tester.pump();
       await tester.pump();

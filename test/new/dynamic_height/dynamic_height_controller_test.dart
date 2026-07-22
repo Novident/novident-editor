@@ -85,8 +85,8 @@ void main() {
           const TextChanged(nodeIndex: 0),
         );
 
-        // Height reverts to default until re-measured
-        expect(controller.currentHeight, 100.0); // 60 < minHeight 100
+        // Height preserved until re-measured
+        expect(controller.currentHeight, 120.0);
       });
 
       test('NodesInserted shifts cache and notifies', () {
@@ -160,10 +160,11 @@ void main() {
 
         controller.invalidateAll();
 
-        expect(controller.currentHeight, 180.0); // 3 × 60
-        expect(controller.cache.heightOf(0), 60.0);
-        expect(controller.cache.heightOf(1), 60.0);
-        expect(controller.cache.heightOf(2), 60.0);
+        // Heights preserved until re-measured
+        expect(controller.currentHeight, 450.0);
+        expect(controller.cache.heightOf(0), 200.0);
+        expect(controller.cache.heightOf(1), 150.0);
+        expect(controller.cache.heightOf(2), 100.0);
       });
     });
 

@@ -155,7 +155,7 @@ void main() {
     });
 
     group('invalidateRange', () {
-      test('reverts heights to default within range', () {
+      test('marks range as dirty but preserves heights', () {
         cache.onNodesInserted(0, 3);
         cache.reportHeight(0, 100.0);
         cache.reportHeight(1, 80.0);
@@ -163,29 +163,30 @@ void main() {
 
         cache.invalidateRange(0, 1);
 
-        expect(cache.heightOf(0), 60.0);
-        expect(cache.heightOf(1), 60.0);
+        // Heights preserved until re-measured
+        expect(cache.heightOf(0), 100.0);
+        expect(cache.heightOf(1), 80.0);
         expect(cache.heightOf(2), 120.0); // unaffected
       });
 
-      test('single index invalidation works', () {
+      test('single index invalidation preserves that index', () {
         cache.onNodesInserted(0, 2);
         cache.reportHeight(0, 100.0);
         cache.reportHeight(1, 80.0);
 
         cache.invalidateRange(0, 0);
 
-        expect(cache.heightOf(0), 60.0);
+        expect(cache.heightOf(0), 100.0); // preserved
         expect(cache.heightOf(1), 80.0);
       });
 
-      test('totalHeight adjusts after invalidation', () {
+      test('totalHeight unchanged after invalidation', () {
         cache.onNodesInserted(0, 2);
         cache.reportHeight(0, 200.0);
         cache.reportHeight(1, 200.0); // total = 400
 
-        cache.invalidateRange(0, 1); // both back to 60 → total = 120
-        expect(cache.totalHeight, 120.0);
+        cache.invalidateRange(0, 1); // heights preserved, total stays 400
+        expect(cache.totalHeight, 400.0);
       });
 
       test('end defaults to last block when not provided', () {
@@ -196,9 +197,10 @@ void main() {
 
         cache.invalidateRange(0);
 
-        expect(cache.heightOf(0), 60.0);
-        expect(cache.heightOf(1), 60.0);
-        expect(cache.heightOf(2), 60.0);
+        // All heights preserved until re-measured
+        expect(cache.heightOf(0), 100.0);
+        expect(cache.heightOf(1), 80.0);
+        expect(cache.heightOf(2), 120.0);
       });
     });
 
@@ -378,10 +380,10 @@ void main() {
 
         // User increases font size → all heights must be re-measured
         cache.invalidateRange(0, 2);
-        expect(cache.totalHeight, 180.0); // 3 × 60 default
-        expect(cache.heightOf(0), 60.0);
-        expect(cache.heightOf(1), 60.0);
-        expect(cache.heightOf(2), 60.0);
+        expect(cache.totalHeight, 180.0); // preserved
+        expect(cache.heightOf(0), 60.0); // preserved
+        expect(cache.heightOf(1), 80.0); // preserved
+        expect(cache.heightOf(2), 40.0); // preserved
 
         // Re-measured with larger font
         cache.reportHeight(0, 75.0);

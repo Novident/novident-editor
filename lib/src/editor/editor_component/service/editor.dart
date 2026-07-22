@@ -233,15 +233,7 @@ class NovidentEditor extends StatefulWidget {
   /// Wrap the block component with a widget.
   final BlockComponentWrapper? blockWrapper;
 
-  /// Configuration for dynamic height mode.
-  ///
-  /// When provided, the editor grows vertically as content is added,
-  /// like an HTML `<textarea>`. Internal scrolling is disabled.
   final DynamicHeightConfig? dynamicHeightConfig;
-
-  /// External controller for dynamic height mode.
-  ///
-  /// Allows programmatic access to the current height and cache state.
   final DynamicHeightController? dynamicHeightController;
 
   @override
@@ -272,20 +264,11 @@ class _NovidentEditorState extends State<NovidentEditor> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       _autoFocusIfNeeded();
     });
-
-    // Connect to dynamic height controller once the layout is mounted.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _connectDynamicHeightController();
-    });
   }
 
   @override
   void dispose() {
-    final controller = editorState.dynamicHeightController;
-    if (controller != null) {
-      controller.removeListener(_onDynamicHeightChanged);
-    }
-
+    // dispose the scroll controller if it's created by the editor
     if (widget.editorScrollController == null) {
       editorScrollController.dispose();
     }
@@ -314,23 +297,11 @@ class _NovidentEditorState extends State<NovidentEditor> {
     services = null;
   }
 
-  void _connectDynamicHeightController() {
-    final controller = editorState.dynamicHeightController;
-    if (controller != null) {
-      controller.addListener(_onDynamicHeightChanged);
-      if (mounted) setState(() {});
-    }
-  }
-
-  void _onDynamicHeightChanged() {
-    if (mounted) setState(() {});
-  }
-
   @override
   Widget build(BuildContext context) {
     services ??= _buildServices(context);
 
-    Widget content = Provider.value(
+    Widget child = Provider.value(
       value: editorState,
       child: FocusScope(
         child: Overlay(
@@ -344,21 +315,11 @@ class _NovidentEditorState extends State<NovidentEditor> {
       ),
     );
 
-    // Give the Overlay a finite height so _Theatre never receives
-    // unbounded constraints. The height starts at minHeight (fallback)
-    // and converges to the real content height once BlockHeightReporter
-    // measures it.
-    final dhController = editorState.dynamicHeightController;
     if (_useDynamicHeight) {
-      final height = dhController?.currentHeight ?? 1000.0;
-      content = SizedBox(
-        width: double.infinity,
-        height: height,
-        child: content,
-      );
+      child = IntrinsicHeight(child: child);
     }
 
-    return content;
+    return child;
   }
 
   bool get _useDynamicHeight =>
@@ -379,9 +340,6 @@ class _NovidentEditorState extends State<NovidentEditor> {
         controller: widget.dynamicHeightController,
         config: widget.dynamicHeightConfig,
       );
-      editorState.dynamicHeightController =
-          DynamicHeightControllerProvider.maybeOf(context) ??
-          widget.dynamicHeightController;
     } else {
       child = editorState.renderer.build(
         context,
@@ -395,8 +353,10 @@ class _NovidentEditorState extends State<NovidentEditor> {
     if (!widget.disableKeyboardService) {
       child = KeyboardServiceWidget(
         key: editorState.service.keyboardServiceKey,
+        // disable all the shortcuts when the editor is not editable
         characterShortcutEvents:
             widget.editable ? widget.characterShortcutEvents : [],
+        // only allow copy and select all when the editor is not editable
         commandShortcutEvents: widget.commandShortcutEvents,
         focusNode: widget.focusNode,
         contentInsertionConfiguration: widget.contentInsertionConfiguration,

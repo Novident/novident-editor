@@ -247,6 +247,8 @@ class _NovidentEditorState extends State<NovidentEditor> {
 
   late EditorScrollController editorScrollController;
 
+  DynamicHeightController? _lastController;
+
   @override
   void initState() {
     super.initState();
@@ -268,6 +270,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
 
   @override
   void dispose() {
+    _lastController?.removeListener(_onDynamicHeightChanged);
     // dispose the scroll controller if it's created by the editor
     if (widget.editorScrollController == null) {
       editorScrollController.dispose();
@@ -301,6 +304,15 @@ class _NovidentEditorState extends State<NovidentEditor> {
   Widget build(BuildContext context) {
     services ??= _buildServices(context);
 
+    // Lazily connect to the dynamic height controller so we
+    // rebuild when cache measurements change.
+    final controller = editorState.dynamicHeightController;
+    if (controller != null && _lastController != controller) {
+      _lastController?.removeListener(_onDynamicHeightChanged);
+      controller.addListener(_onDynamicHeightChanged);
+      _lastController = controller;
+    }
+
     Widget child = Provider.value(
       value: editorState,
       child: FocusScope(
@@ -316,10 +328,28 @@ class _NovidentEditorState extends State<NovidentEditor> {
     );
 
     if (_useDynamicHeight) {
-      child = IntrinsicHeight(child: child);
+      // Use IntrinsicHeight only until the first real measurement
+      // arrives; then switch to sized-box (O(1)) to avoid the
+      // double-layout pass on every subsequent frame.
+      if (controller != null && controller.cache.hasMeasuredBlocks) {
+        child = SizedBox(
+          width: double.infinity,
+          height: controller.currentHeight,
+          child: child,
+        );
+      } else {
+        child = IntrinsicHeight(child: child);
+      }
     }
 
     return child;
+  }
+
+  void _onDynamicHeightChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   bool get _useDynamicHeight =>

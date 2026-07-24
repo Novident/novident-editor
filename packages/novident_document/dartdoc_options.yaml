@@ -1,0 +1,9 @@
+# dartdoc configuration for novident_document
+dartdoc:
+  categories:
+    "Document Model":
+      markdown: doc/document_model.md
+    "Delta & Text Operations":
+      markdown: doc/delta.md
+  categoryOrder: ["Document Model", "Delta & Text Operations"]
+  showUndocumentedCategories: true

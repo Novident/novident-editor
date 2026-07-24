@@ -1,10 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:novident_editor/src/editor/util/file_picker/file_picker_service.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 
 class FilePicker implements FilePickerService {
   @override
   Future<String?> getDirectoryPath({String? title}) {
-    return fp.FilePicker.platform.getDirectoryPath();
+    return fp.FilePicker.getDirectoryPath();
   }
 
   @override
@@ -14,20 +15,14 @@ class FilePicker implements FilePickerService {
     fp.FileType type = fp.FileType.any,
     List<String>? allowedExtensions,
     Function(fp.FilePickerStatus p1)? onFileLoading,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
     bool lockParentWindow = false,
   }) async {
-    final result = await fp.FilePicker.platform.pickFiles(
+    final result = await fp.FilePicker.pickFiles(
       dialogTitle: dialogTitle,
       initialDirectory: initialDirectory,
       type: type,
       allowedExtensions: allowedExtensions,
       onFileLoading: onFileLoading,
-      allowMultiple: allowMultiple,
-      withData: withData,
-      withReadStream: withReadStream,
       lockParentWindow: lockParentWindow,
     );
     return FilePickerResult(result?.files ?? []);
@@ -35,6 +30,7 @@ class FilePicker implements FilePickerService {
 
   @override
   Future<String?> saveFile({
+    required List<int> bytes,
     String? dialogTitle,
     String? fileName,
     String? initialDirectory,
@@ -42,9 +38,10 @@ class FilePicker implements FilePickerService {
     List<String>? allowedExtensions,
     bool lockParentWindow = false,
   }) {
-    return fp.FilePicker.platform.saveFile(
+    return fp.FilePicker.saveFile(
       dialogTitle: dialogTitle,
-      fileName: fileName,
+      bytes: Uint8List.fromList([]),
+      fileName: fileName ?? '${DateTime.now().toUtc()}',
       initialDirectory: initialDirectory,
       type: type,
       allowedExtensions: allowedExtensions,

@@ -1,6 +1,8 @@
 ## 1.0.1
 
 * Chore: expose `OpIterator` to the public API.
+* Chore: export `clear` and `operations` methods from `Delta` class. 
+* Fix: `length` now uses cached plain text value when needed. 
 
 
 ## 1.0.0

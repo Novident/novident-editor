@@ -47,8 +47,7 @@ NovidentEditorSliceAttributes? defaultNovidentEditorSliceAttributes = (
   }
 
   // if the index is not 0, slice the attributes from the previous position.
-  final prevAttributes =
-      delta.slice(index - 1, index).firstOrNull?.attributes;
+  final prevAttributes = delta.slice(index - 1, index).firstOrNull?.attributes;
   if (prevAttributes == null) {
     return null;
   }
@@ -61,8 +60,7 @@ NovidentEditorSliceAttributes? defaultNovidentEditorSliceAttributes = (
   }
 
   // check if the nextAttributes includes the code.
-  final nextAttributes =
-      delta.slice(index, index + 1).firstOrNull?.attributes;
+  final nextAttributes = delta.slice(index, index + 1).firstOrNull?.attributes;
   if (nextAttributes == null) {
     return prevAttributes
       ..removeWhere(
@@ -253,6 +251,10 @@ class Delta extends Iterable<TextOperation> {
   final List<TextOperation> _operations;
   String? _plainText;
 
+  List<TextOperation> get operations => _operations;
+
+  void clear() => _operations.clear();
+
   void addAll(Iterable<TextOperation> textOperations) {
     textOperations.forEach(add);
   }
@@ -340,10 +342,11 @@ class Delta extends Iterable<TextOperation> {
   /// The length of the string of the [Delta].
   @override
   int get length {
-    return _operations.fold(
-      0,
-      (previousValue, element) => previousValue + element.length,
-    );
+    return _plainText?.length ??
+        _operations.fold(
+          0,
+          (previousValue, element) => previousValue + element.length,
+        );
   }
 
   /// Returns a Delta that is equivalent to applying the operations of own
@@ -358,8 +361,8 @@ class Delta extends Iterable<TextOperation> {
         firstOther is TextRetain &&
         firstOther.attributes == null) {
       int firstLeft = firstOther.length;
-      while (thisIter.peek() is TextInsert &&
-          thisIter.peekLength() <= firstLeft) {
+      while (
+          thisIter.peek() is TextInsert && thisIter.peekLength() <= firstLeft) {
         firstLeft -= thisIter.peekLength();
         final next = thisIter.next();
         operations.add(next);
@@ -379,8 +382,7 @@ class Delta extends Iterable<TextOperation> {
         delta.add(next);
       } else {
         // otherIs
-        final length =
-            min(thisIter.peekLength(), otherIter.peekLength());
+        final length = min(thisIter.peekLength(), otherIter.peekLength());
         final thisOp = thisIter.next(length);
         final otherOp = otherIter.next(length);
         final attributes = composeAttributes(
@@ -545,8 +547,7 @@ class Delta extends Iterable<TextOperation> {
           } else if (op is TextRetain && op.attributes != null) {
             inverted.retain(
               baseOp.length,
-              attributes:
-                  invertAttributes(baseOp.attributes, op.attributes),
+              attributes: invertAttributes(baseOp.attributes, op.attributes),
             );
           }
         }

@@ -1,3 +1,8 @@
+## 1.0.1
+
+* Chore: expose `OpIterator` to the public API.
+
+
 ## 1.0.0
 
 * Initial release: document model extracted from `novident_editor`.

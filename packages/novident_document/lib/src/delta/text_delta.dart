@@ -297,7 +297,7 @@ class Delta extends Iterable<TextOperation> {
   /// extract. The end position is optional.
   Delta slice(int start, [int? end]) {
     final result = Delta();
-    final iterator = _OpIterator(_operations);
+    final iterator = OpIterator(_operations);
     int index = 0;
 
     while ((end == null || index < end) && iterator.hasNext) {
@@ -349,8 +349,8 @@ class Delta extends Iterable<TextOperation> {
   /// Returns a Delta that is equivalent to applying the operations of own
   /// Delta, followed by another Delta.
   Delta compose(Delta other) {
-    final thisIter = _OpIterator(_operations);
-    final otherIter = _OpIterator(other._operations);
+    final thisIter = OpIterator(_operations);
+    final otherIter = OpIterator(other._operations);
     final operations = <TextOperation>[];
 
     final firstOther = otherIter.peek();
@@ -437,8 +437,8 @@ class Delta extends Iterable<TextOperation> {
     final diffResult = diff_match_patch.diff(strings[0], strings[1]);
     diff_match_patch.DiffMatchPatch().diffCleanupSemantic(diffResult);
 
-    final thisIter = _OpIterator(this);
-    final otherIter = _OpIterator(other);
+    final thisIter = OpIterator(this);
+    final otherIter = OpIterator(other);
 
     for (final diff in diffResult) {
       var length = diff.text.length;
@@ -632,8 +632,8 @@ class Delta extends Iterable<TextOperation> {
   }
 }
 
-class _OpIterator {
-  _OpIterator(
+class OpIterator {
+  OpIterator(
     Iterable<TextOperation> operations,
   ) : _operations = UnmodifiableListView(operations);
 

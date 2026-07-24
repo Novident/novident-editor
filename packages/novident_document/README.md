@@ -1,4 +1,4 @@
-# Novident Document
+# Novident Editor Document
 
 Core document model for the [Novident Editor](https://github.com/Novident/novident-editor) —
 tree nodes, rich-text deltas, paths, and attributes. Usable independently of the full
@@ -27,7 +27,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  novident_document: <latest>
+  novident_editor_document: <latest>
 ```
 
 ## Usage
@@ -35,7 +35,7 @@ dependencies:
 ### Create a document
 
 ```dart
-import 'package:novident_document/novident_document.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 
 // Blank document
 final doc = Document.blank();

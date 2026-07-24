@@ -1,4 +1,4 @@
-name: novident_document
+name: novident_editor_document
 version: 1.0.0
 description: >-
   Core document model for Novident Editor — tree nodes, rich-text delta,

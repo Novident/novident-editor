@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:novident_document/novident_document.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 
 /// Helper: creates a paragraph-like node with a delta attribute.
 Node _paragraphNode({String? text, Delta? delta}) {

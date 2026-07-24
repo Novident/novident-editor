@@ -1,5 +1,5 @@
-import 'package:novident_document/src/document.dart';
-import 'package:novident_document/src/node.dart';
+import 'package:novident_editor_document/src/document.dart';
+import 'package:novident_editor_document/src/node.dart';
 
 /// [NodeIterator] is used to traverse the nodes in visual order.
 class NodeIterator implements Iterator<Node> {

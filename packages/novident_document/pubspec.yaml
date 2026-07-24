@@ -1,5 +1,5 @@
 name: novident_editor_document
-version: 1.0.0
+version: 1.0.1
 description: >-
   Core document model for Novident Editor — tree nodes, rich-text delta,
   paths, and attributes. Reusable independently of the full editor.
@@ -12,10 +12,8 @@ environment:
   flutter: ">=3.32.0"
 
 dependencies:
-  collection: ^1.18.0
+  collection: ^1.16.0
   diff_match_patch: ^0.4.1
-  flutter:
-    sdk: flutter
   nanoid: ^1.0.0
 
 dev_dependencies:

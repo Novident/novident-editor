@@ -1,7 +1,7 @@
 library;
 
 // Re-export the document model from the standalone package
-export 'package:novident_document/novident_document.dart';
+export 'package:novident_editor_document/novident_editor_document.dart';
 
 // core part, including document, node, selection, etc.
 export 'src/core/core.dart';

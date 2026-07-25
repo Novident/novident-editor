@@ -22,7 +22,9 @@ class UnboundedViewport extends Viewport {
     double anchor = 0.0,
     required super.offset,
     super.center,
-    super.cacheExtent,
+    super.scrollCacheExtent,
+    super.clipBehavior,
+    super.paintOrder,
     super.slivers,
   }) : _anchor = anchor;
 
@@ -41,7 +43,7 @@ class UnboundedViewport extends Viewport {
           Viewport.getDefaultCrossAxisDirection(context, axisDirection),
       anchor: anchor,
       offset: offset,
-      cacheExtent: cacheExtent,
+      cacheExtent: scrollCacheExtent?.value,
     );
   }
 }
@@ -230,12 +232,12 @@ class UnboundedRenderViewport extends RenderViewport {
     final double forwardDirectionRemainingPaintExtent =
         (mainAxisExtent - centerOffset).clamp(0.0, mainAxisExtent);
 
-    switch (cacheExtentStyle) {
+    switch (scrollCacheExtent.style) {
       case CacheExtentStyle.pixel:
-        _calculatedCacheExtent = cacheExtent;
+        _calculatedCacheExtent = scrollCacheExtent.value;
         break;
       case CacheExtentStyle.viewport:
-        _calculatedCacheExtent = mainAxisExtent * cacheExtent!;
+        _calculatedCacheExtent = mainAxisExtent * scrollCacheExtent.value;
         break;
     }
 

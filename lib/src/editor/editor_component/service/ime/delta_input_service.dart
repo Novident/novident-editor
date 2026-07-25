@@ -28,8 +28,9 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
   TextInputConnection? _textInputConnection;
 
   @override
-  // ignore: override_on_non_overriding_member
-  bool onFocusReceived() => false;
+  // Returning `attached` signals that focus was handled whenever an IME
+  // connection is active. Default implementation returns false.
+  bool onFocusReceived() => attached;
 
   @override
   Future<bool> apply(List<TextEditingDelta> deltas) async {

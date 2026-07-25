@@ -142,8 +142,11 @@ void main() {
       for (var round = 0; round < 5; round++) {
         warmPaths(document);
       }
-      expect(Node.debugReindexCount, before,
-          reason: 'warm path reads must be pure cache hits');
+      expect(
+        Node.debugReindexCount,
+        before,
+        reason: 'warm path reads must be pure cache hits',
+      );
     });
 
     test('one top-level insert costs exactly ONE re-index sweep', () {
@@ -154,9 +157,12 @@ void main() {
 
       final before = Node.debugReindexCount;
       warmPaths(document);
-      expect(Node.debugReindexCount, before + 1,
-          reason: 'only the root children changed: one sweep, '
-              'untouched branches stay cached');
+      expect(
+        Node.debugReindexCount,
+        before + 1,
+        reason: 'only the root children changed: one sweep, '
+            'untouched branches stay cached',
+      );
     });
 
     test('a cross-parent move costs exactly TWO re-index sweeps', () {
@@ -170,8 +176,11 @@ void main() {
 
       final before = Node.debugReindexCount;
       warmPaths(document);
-      expect(Node.debugReindexCount, before + 2,
-          reason: 'source parent + target parent, nothing else');
+      expect(
+        Node.debugReindexCount,
+        before + 2,
+        reason: 'source parent + target parent, nothing else',
+      );
       expectConsistentTree(document);
     });
   });
@@ -195,12 +204,18 @@ void main() {
 
       final parsesBefore = Node.debugDeltaParseCount;
       for (final entry in deltas.entries) {
-        expect(identical(entry.key.delta, entry.value), true,
-            reason: 'a move must not drop the cached delta '
-                '(${entry.value?.toPlainText()})');
+        expect(
+          identical(entry.key.delta, entry.value),
+          true,
+          reason: 'a move must not drop the cached delta '
+              '(${entry.value?.toPlainText()})',
+        );
       }
-      expect(Node.debugDeltaParseCount, parsesBefore,
-          reason: 'zero re-parses after pure structural moves');
+      expect(
+        Node.debugDeltaParseCount,
+        parsesBefore,
+        reason: 'zero re-parses after pure structural moves',
+      );
       expectConsistentTree(document);
     });
   });
@@ -223,8 +238,8 @@ void main() {
       expectConsistentTree(document);
 
       // 3. the WHOLE table (big subtree) relocated to the end of root.
-      final table = allNodes(document)
-          .firstWhere((n) => n.type == TableBlockKeys.type);
+      final table =
+          allNodes(document).firstWhere((n) => n.type == TableBlockKeys.type);
       move(document, table, document.root, document.root.children.length - 1);
       expectConsistentTree(document);
       expect(table.path.length, 1);

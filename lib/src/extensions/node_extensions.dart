@@ -198,7 +198,7 @@ extension NodesExtensions<T extends Node> on List<T> {
     }
 
     selection = selection.normalized;
-    final nodes = this.normalized;
+    final nodes = normalized;
 
     if (nodes.length == 1) {
       return nodes.first.allSatisfyInSelection(selection, test);

@@ -20,12 +20,14 @@ abstract class FilePickerService {
     FileType type = FileType.any,
     List<String>? allowedExtensions,
     Function(FilePickerStatus)? onFileLoading,
+    bool allowMultiple = false,
+    bool withData = false,
+    bool withReadStream = false,
     bool lockParentWindow = false,
   }) async =>
       throw UnimplementedError('pickFiles() has not been implemented.');
 
   Future<String?> saveFile({
-    required List<int> bytes,
     String? dialogTitle,
     String? fileName,
     String? initialDirectory,

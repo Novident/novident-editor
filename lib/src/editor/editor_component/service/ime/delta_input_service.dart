@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/ime/text_input_service.dart';
 import 'package:flutter/services.dart';
@@ -30,9 +29,7 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
 
   @override
   // ignore: override_on_non_overriding_member
-  void onFocusReceived(FocusNode? focusNode, TextInput? textInput) {
-    // Placeholder to avoid pub dev issue
-  }
+  bool onFocusReceived() => false;
 
   @override
   Future<bool> apply(List<TextEditingDelta> deltas) async {

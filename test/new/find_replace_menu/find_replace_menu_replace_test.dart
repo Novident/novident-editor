@@ -308,10 +308,10 @@ void main() async {
     });
 
     testWidgets('replace all regex matches', (tester) async {
-      const patternToBeFound = 'a[a-z]p';
-      const replacePattern = 'axp';
+      const patternToBeFound = 'N[a-z]v';
+      const replacePattern = 'Nxv';
       const expectedText =
-          'Welcome to the Novident exaxple axp, an axpha-level editor for caxpuses 😁';
+          'Welcome to the Nxvident example app, an alpha-level editor for campuses 😁';
       const replaceAllBtn = Key('replaceAllButton');
       const regexButton = Key('findRegexButton');
       const caseSensitiveButton = Key('caseSensitiveButton');
@@ -357,10 +357,10 @@ void main() async {
 
     testWidgets('replace all regex matches with case insensitive',
         (tester) async {
-      const patternToBeFound = 'a[a-z]p';
-      const replacePattern = 'axp';
+      const patternToBeFound = 'n[a-z]v';
+      const replacePattern = 'Nxv';
       const expectedText =
-          'Welcome to the axpflowy exaxple axp, an axpha-level editor for caxpuses 😁';
+          'Welcome to the Nxvident example app, an alpha-level editor for campuses 😁';
       const replaceAllBtn = Key('replaceAllButton');
       const regexButton = Key('findRegexButton');
 

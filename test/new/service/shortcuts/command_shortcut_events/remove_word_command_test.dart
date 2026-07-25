@@ -217,7 +217,7 @@ void main() async {
         //fetching all the text that is still on the editor.
         node = editor.editorState.getNodeAtPath(selection.end.path)!;
 
-        const expectedText = 'Welcome to flowy 😁';
+        const expectedText = 'Welcome to ident 😁';
         expect(node.delta!.toPlainText(), expectedText);
 
         await editor.dispose();

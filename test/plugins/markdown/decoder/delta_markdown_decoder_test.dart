@@ -8,14 +8,14 @@ void main() async {
         operations: [
           TextInsert('Welcome to '),
           TextInsert(
-            'Novident',
+            'Appflowy',
             attributes: {
               BuiltInAttributeKey.bold: true,
             },
           ),
         ],
       );
-      final result = DeltaMarkdownDecoder().convert('Welcome to **Novident**');
+      final result = DeltaMarkdownDecoder().convert('Welcome to **Appflowy**');
       expect(result, delta);
     });
 
@@ -24,14 +24,14 @@ void main() async {
         operations: [
           TextInsert('Welcome to '),
           TextInsert(
-            'Novident',
+            'Appflowy',
             attributes: {
               BuiltInAttributeKey.italic: true,
             },
           ),
         ],
       );
-      final result = DeltaMarkdownDecoder().convert('Welcome to _Novident_');
+      final result = DeltaMarkdownDecoder().convert('Welcome to _Appflowy_');
       expect(result, delta);
     });
 
@@ -40,14 +40,14 @@ void main() async {
         operations: [
           TextInsert('Welcome to '),
           TextInsert(
-            'Novident',
+            'Appflowy',
             attributes: {
               BuiltInAttributeKey.strikethrough: true,
             },
           ),
         ],
       );
-      final result = DeltaMarkdownDecoder().convert('Welcome to ~~Novident~~');
+      final result = DeltaMarkdownDecoder().convert('Welcome to ~~Appflowy~~');
       expect(result, delta);
     });
 
@@ -56,7 +56,7 @@ void main() async {
         operations: [
           TextInsert('Welcome to '),
           TextInsert(
-            'Novident',
+            'Appflowy',
             attributes: {
               BuiltInAttributeKey.href: 'https://appflowy.io',
             },
@@ -64,7 +64,7 @@ void main() async {
         ],
       );
       final result = DeltaMarkdownDecoder()
-          .convert('Welcome to [Novident](https://appflowy.io)');
+          .convert('Welcome to [Appflowy](https://appflowy.io)');
       expect(result, delta);
     });
 
@@ -73,20 +73,20 @@ void main() async {
         operations: [
           TextInsert('Welcome to '),
           TextInsert(
-            'Novident',
+            'Appflowy',
             attributes: {
               BuiltInAttributeKey.code: true,
             },
           ),
         ],
       );
-      final result = DeltaMarkdownDecoder().convert('Welcome to `Novident`');
+      final result = DeltaMarkdownDecoder().convert('Welcome to `Appflowy`');
       expect(result, delta);
     });
 
     test('bold', () {
       const markdown =
-          '***<u>`Welcome`</u>*** ***~~to~~*** ***[Novident](https://appflowy.io)***';
+          '***<u>`Welcome`</u>*** ***~~to~~*** ***[Appflowy](https://appflowy.io)***';
       final delta = Delta(
         operations: [
           TextInsert(
@@ -109,7 +109,7 @@ void main() async {
           ),
           TextInsert(' '),
           TextInsert(
-            'Novident',
+            'Appflowy',
             attributes: {
               BuiltInAttributeKey.href: 'https://appflowy.io',
               BuiltInAttributeKey.bold: true,

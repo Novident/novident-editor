@@ -14,7 +14,7 @@ void main() async {
       final iconKey = GlobalKey();
       var hit = false;
       final item = ToolbarItem(
-        id: 'appflowy.toolbar.test',
+        id: 'novident.toolbar.test',
         type: 1,
         group: 0,
         iconBuilder: (isHighlight) {

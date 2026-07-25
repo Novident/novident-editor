@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../infra/testable_editor.dart';
 
-const _padding = 24.0;
+const _padding = 12.0;
 
 void main() async {
   group('indentCommand - widget test indent padding', () {

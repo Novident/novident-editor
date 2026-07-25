@@ -106,7 +106,7 @@ print(attributes);
 
 ## A Complete Code Example
 
-In the example code below we are going to test `select_all_handler.dart` by inserting 100 lines of text that read "Welcome to Appflowy 😁" and then simulating the "selectAll" shortcut key being pressed.
+In the example code below we are going to test `select_all_handler.dart` by inserting 100 lines of text that read "Welcome to Novident 😁" and then simulating the "selectAll" shortcut key being pressed.
 
 Afterwards, we will `expect` that the current selection of the editor is equal to the selection of all the lines that were generated.
 

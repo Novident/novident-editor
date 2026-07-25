@@ -16,6 +16,10 @@ void main() async {
     testWidgets('appears properly', (tester) async {
       await prepareFindAndReplaceDialog(tester);
 
+      // Before
+      // Welcome to Novident Editor 🔥!|
+      // After
+      // Welcome to Novident Editor 🔥!|
       // The prepareFindDialog method only checks if FindMenuWidget is present
       // so here we also check if FindMenuWidget contains TextField
       // and IconButtons or not.

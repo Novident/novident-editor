@@ -55,6 +55,7 @@ const myStyles = NovidentStyleRegistry({
     name: 'Base',
     fontSize: 12,
     fontFamily: 'Arial',
+    indent: NovidentStyleIndent(firstLineIndent: 30),
   ),
   'body': NovidentStyleDefinition.nextSame(
     id: 'body',
@@ -70,11 +71,13 @@ const myStyles = NovidentStyleRegistry({
     bold: true,
     spacing: NovidentStyleSpacing(before: 24, after: 12),
     next: 'body',                  // Enter → next paragraph uses 'body'
+    // Ignores the first line indent specified
+    allowGlobalFirstLineIndent: false,
   ),
 });
 
 // 2 — Wire them into the editor
-NovidentEditor(
+final editor = NovidentEditor(
   editorState: editorState,
   styles: NovidentStylesConfig(
     registry: myStyles,
@@ -82,7 +85,7 @@ NovidentEditor(
     // must be defined for default style
     //
     // if not, this will throw an assertio error
-    defaultStyle: myStyles.styles['body']!,
+    defaultStyle: myStyles.styles['base']!,
     defaultStylesByType: {
       'paragraph': myStyles.styles['body']!,
       'heading': myStyles.styles['heading-1']!,
@@ -134,36 +137,6 @@ three steps:
 | 1 | `node.attributes['styleRef']` → `registry.resolve(id)` | Block explicitly styled as "heading-1" |
 | 2 | `config.defaultStylesByType[node.type]` | All `heading` blocks default to heading-1 style |
 | 3 | `config.defaultStyle` | Catch-all fallback (e.g., "body") |
-
----
-
-## Style properties
-
-`NovidentStyleDefinition` supports all properties a block component can
-render:
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `id` | `String` | Unique identifier (used as `styleRef`) |
-| `name` | `String` | Human-readable label (shown in toolbar) |
-| `basedOn` | `String?` | Parent style ID to inherit from |
-| `next` | `String?` | Style applied to the next paragraph after Enter |
-| `fontFamily` | `String?` | CSS font family name |
-| `fontSize` | `double?` | Font size in logical pixels (default 12) |
-| `bold` | `bool?` | Bold weight |
-| `italic` | `bool?` | Italic |
-| `underline` | `bool?` | Underline |
-| `strikethrough` | `bool?` | Strikethrough |
-| `caps` | `bool?` | All caps |
-| `smallCaps` | `bool?` | Small caps |
-| `textColor` | `Color?` | Text foreground colour |
-| `textBackgroundColor` | `Color?` | Text highlight colour |
-| `alignment` | `TextAlign?` | Paragraph alignment (default left) |
-| `blockBackgroundColor` | `Color?` | Block-level background |
-| `spacing` | `NovidentStyleSpacing?` | Before, after, line-height, hanging indent |
-| `indent` | `NovidentStyleIndent?` | Left, right indentation |
-| `borderStyle` | `NovidentStyleBorder?` | Paragraph border |
-| `keep` | `NovidentStyleKeep?` | Pagination control (keep with next) |
 
 ---
 
@@ -405,24 +378,6 @@ final style = resolveEffectiveToolbarStyle(
   node,
 );
 ```
-
----
-
-## Customisation
-
-Like other toolbar items, the style/font items accept standard theming
-parameters:
-
-| Parameter | Description |
-|-----------|-------------|
-| `highlightColor` | Active state colour (border, selected text, selected background) |
-| `iconColor` | Default text/icon colour when inactive |
-| `tooltipBuilder` | Optional wrapper that adds a tooltip to the button |
-| `fontFamilies` | (font only) List of available font families |
-| `minSize` / `maxSize` | (size only) Bounds of the size list |
-| `defaultSize` | (size only) Fallback when nothing is resolved |
-
----
 
 ## Related
 

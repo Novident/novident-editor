@@ -6,11 +6,13 @@
     See <a href="NOTICE">NOTICE</a> for attribution.
 </p>
 
----
-
 Novident Editor is a **drop-in rich-text editor** for Flutter apps. It renders a document
 tree built from composable block components — paragraphs, headings, lists, quotes, images,
-tables, code blocks and more — and ships with:
+tables and more.
+
+<img src="./documentation/images/samples/editor-first-line-indent-esample.png" />
+
+## Unique Features
 
 - **vim emulation** (normal / insert / visual, remappable keybindings, pending operator `dd`)
 - **zen mode** (typewriter centering, unfocused-block dimming, color neutralization without
@@ -20,7 +22,9 @@ tables, code blocks and more — and ships with:
 - **named paragraph styles** with `basedOn` inheritance chains, similar to Word —
   font family, font size, bold, italic, spacing, colours and more, all resolved
   through a three-tier fallback (explicit style → type default → global default)
-  and exposed through customisable toolbar dropdowns 
+  and exposed through customisable toolbar dropdowns
+- **first-line indent** per style (`NovidentStyleIndent.firstLineIndent`) or
+  globally (`EditorStyle.firstLineIndent`) 
 
 > [!NOTE]
 > Planned: 
@@ -28,13 +32,10 @@ tables, code blocks and more — and ships with:
 > 1. Improve perfomance on Zen Mode.
 > 2. Improve VIM mode movement, and character positioning. 
 > 3. Full customization of every default block.
-> 4. First line indent.
 > 5. Improve clipboard copy+paste content (now it copies pure plain text) 
 > 6. Translations
 > 7. Typewriting Scrolling without Zen Mode.
 > 8. Uncouple important parts of the editor into individual packages
-
----
 
 ## Quick start
 
@@ -185,7 +186,7 @@ NovidentEditor(
         next: 'body',
       ),
     }),
-    defaultStyle: /* body */,
+    defaultStyle: /* base */,
     defaultStylesByType: {'paragraph': /* body */, 'heading': /* heading-1 */},
   ),
 );
@@ -221,7 +222,6 @@ See **[Styles — full guide](documentation/styles.md)** for every property,
 the resolution algorithm, the font provider, and how to build your own
 style registry.
 
----
 
 ## Customising block components
 

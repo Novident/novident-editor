@@ -141,6 +141,7 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
                 editorState: editorState,
                 textAlign: blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign,
                 placeholderText: placeholderText,
+                useFirstLineIndent: false,
                 textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
                   textStyleWithTextSpan(textSpan: textSpan),
                 ),

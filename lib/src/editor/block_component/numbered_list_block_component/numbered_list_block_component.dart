@@ -163,6 +163,7 @@ class _NumberedListBlockComponentWidgetState
               editorState: editorState,
               textAlign: alignment?.toTextAlign ?? textAlign,
               placeholderText: placeholderText,
+              useFirstLineIndent: false,
               textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
                 textStyleWithTextSpan(textSpan: textSpan),
               ),

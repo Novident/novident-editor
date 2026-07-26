@@ -45,6 +45,7 @@ class NovidentRichText extends StatefulWidget {
     this.cursorColor = const Color.fromARGB(255, 0, 0, 0),
     this.selectionColor = const Color.fromARGB(53, 111, 201, 231),
     this.autoCompleteTextProvider,
+    this.useFirstLineIndent = true,
     required this.delegate,
     required this.node,
     required this.editorState,
@@ -99,6 +100,14 @@ class NovidentRichText extends StatefulWidget {
 
   final Color cursorColor;
   final Color selectionColor;
+
+  /// When true, prepends a [WidgetSpan] at the start of the text for a
+  /// first-line indent effect.
+  ///
+  /// Set to `false` for blocks that use [NovidentRichText] but are not
+  /// normal paragraphs (e.g. quote blocks, callouts) and should not have
+  /// the indent applied.
+  final bool useFirstLineIndent;
 
   @override
   State<NovidentRichText> createState() => _NovidentRichTextState();
@@ -189,7 +198,42 @@ class _NovidentRichTextState extends State<NovidentRichText>
   /// Number of WidgetSpans prepended for first-line indent.
   /// Every editor offset must be shifted by this amount when translating
   /// to/from [TextPosition] offsets in the [RenderParagraph].
-  int get _widgetSpanCount => 1;
+  ///
+  /// Returns 0 when [NovidentRichText.useFirstLineIndent] is false
+  /// or no valid indent width is resolved.
+  int get _widgetSpanCount =>
+      (widget.useFirstLineIndent &&
+              _firstLineIndentWidth != null &&
+              _firstLineIndentWidth! > 0)
+          ? 1
+          : 0;
+
+  /// Resolved first-line indent width, or `null` if no indent should be
+  /// applied.
+  ///
+  /// Resolution order:
+  /// 1. Style's own [NovidentStyleIndent.firstLineIndent] if defined.
+  /// 2. Global [EditorStyle.firstLineIndent] if the style's
+  ///    [NovidentStyleDefinition.allowGlobalFirstLineIndent] is `true`.
+  /// 3. `null` otherwise.
+  double? get _firstLineIndentWidth {
+    final style = resolvedStyle;
+    if (style == null) return null;
+
+    final styleIndent = style.indent?.firstLineIndent;
+    if (styleIndent != null && styleIndent > 0) {
+      return styleIndent;
+    }
+
+    if (style.allowGlobalFirstLineIndent) {
+      final globalIndent = widget.editorState.editorStyle.firstLineIndent;
+      if (globalIndent != null && globalIndent > 0) {
+        return globalIndent;
+      }
+    }
+
+    return null;
+  }
 
   @override
   Position start() => Position(path: widget.node.path, offset: 0);
@@ -615,17 +659,17 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }
 
   TextSpan getPlaceholderTextSpan() {
-    return TextSpan(
-      children: [
-        WidgetSpan(child: const SizedBox(width: 30)),
-        TextSpan(
-          text: widget.placeholderText,
-          style: textStyleConfiguration.text.copyWith(
-            height: textStyleConfiguration.lineHeight,
-          ),
+    final children = <InlineSpan>[
+      if (_widgetSpanCount > 0)
+        WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
+      TextSpan(
+        text: widget.placeholderText,
+        style: textStyleConfiguration.text.copyWith(
+          height: textStyleConfiguration.lineHeight,
         ),
-      ],
-    );
+      ),
+    ];
+    return TextSpan(children: children);
   }
 
   TextStyle baseTextStyle() {
@@ -666,10 +710,12 @@ class _NovidentRichTextState extends State<NovidentRichText>
     required Iterable<TextInsert> textInserts,
   }) {
     int offset = 0;
-    List<InlineSpan> textSpans = [
-      // for testing by now
-      WidgetSpan(child: SizedBox(width: 30)),
-    ];
+    List<InlineSpan> textSpans = [];
+    if (_widgetSpanCount > 0) {
+      textSpans.add(
+        WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
+      );
+    }
 
     for (final textInsert in textInserts) {
       TextStyle textStyle = baseTextStyle();

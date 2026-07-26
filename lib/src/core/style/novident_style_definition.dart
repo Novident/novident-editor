@@ -34,16 +34,22 @@ class NovidentStyleIndent {
   const NovidentStyleIndent({
     this.left,
     this.right,
+    this.firstLineIndent,
   });
 
   final double? left;
   final double? right;
+
+  /// First-line indent width. When set, the first line of the paragraph
+  /// is indented by this amount via a [WidgetSpan] prepended to the text.
+  final double? firstLineIndent;
 
   NovidentStyleIndent merge(NovidentStyleIndent? other) {
     if (other == null) return this;
     return NovidentStyleIndent(
       left: other.left ?? left,
       right: other.right ?? right,
+      firstLineIndent: other.firstLineIndent ?? firstLineIndent,
     );
   }
 }
@@ -109,6 +115,7 @@ class NovidentStyleDefinition {
     this.fontSize = 12.0,
     this.textColor,
     this.textBackgroundColor,
+    this.allowGlobalFirstLineIndent = true,
   });
 
   const NovidentStyleDefinition.nextSame({
@@ -131,6 +138,7 @@ class NovidentStyleDefinition {
     this.fontSize = 12.0,
     this.textColor,
     this.textBackgroundColor,
+    this.allowGlobalFirstLineIndent = true,
   }) : next = id;
 
   final String id;
@@ -160,6 +168,14 @@ class NovidentStyleDefinition {
   final double fontSize;
   final Color? textColor;
   final Color? textBackgroundColor;
+
+  /// When true (default), the [EditorStyle.firstLineIndent] global value
+  /// is used as a fallback if this style does not define its own
+  /// [NovidentStyleIndent.firstLineIndent].
+  ///
+  /// When false, only this style's own [NovidentStyleIndent.firstLineIndent]
+  /// is considered; no global fallback is applied.
+  final bool allowGlobalFirstLineIndent;
 
   /// Merges [other] on top of this style. [other] values take precedence.
   /// Used during [basedOn] chain resolution.
@@ -193,6 +209,10 @@ class NovidentStyleDefinition {
       fontSize: other.fontSize != fontSize ? other.fontSize : fontSize,
       textColor: other.textColor ?? textColor,
       textBackgroundColor: other.textBackgroundColor ?? textBackgroundColor,
+      allowGlobalFirstLineIndent:
+          other.allowGlobalFirstLineIndent != allowGlobalFirstLineIndent
+              ? other.allowGlobalFirstLineIndent
+              : allowGlobalFirstLineIndent,
     );
   }
 

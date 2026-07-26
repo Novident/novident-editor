@@ -148,6 +148,7 @@ class _HeadingBlockComponentWidgetState
               textAlign: blockStyle.alignment ??
                   alignment?.toTextAlign ??
                   textAlign,
+              useFirstLineIndent: false,
               textSpanDecorator: (textSpan) {
                 var result = textSpan.updateTextStyle(
                   textStyleWithTextSpan(textSpan: textSpan),

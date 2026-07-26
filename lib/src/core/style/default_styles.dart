@@ -31,9 +31,6 @@ final NovidentStyleRegistry kDefaultStyleRegistry =
   _kHeadingDefaultStyles[3].id: _kHeadingDefaultStyles[3],
   _kHeadingDefaultStyles[4].id: _kHeadingDefaultStyles[4],
   _kHeadingDefaultStyles[5].id: _kHeadingDefaultStyles[5],
-  'heading-8': _kHeadingDefaultStyles[5],
-  'heading-9': _kHeadingDefaultStyles[5],
-  'heading-10': _kHeadingDefaultStyles[5],
 });
 
 // Default paragraph base style. Must be always used as part of `defaultStyle` property
@@ -45,6 +42,7 @@ const NovidentStyleDefinition kDefaultBaseStyle =
   id: '__novident_base__',
   name: 'Base',
   fontSize: 12.0,
+  fontFamily: 'Roboto',
   spacing: NovidentStyleSpacing(after: 5.0),
 );
 

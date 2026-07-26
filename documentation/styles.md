@@ -242,6 +242,12 @@ configuration, and optionally wrap themselves in a tooltip via
 
 ---
 
+Using the `NovidentStaticToolbar` and with the correct configuration you can look results like this:
+
+![Style configuration sample]
+
+---
+
 ## Default style preset
 
 The package ships with `kDefaultStyleRegistry` and `kDefaultBaseStyle`:
@@ -253,6 +259,7 @@ const kDefaultBaseStyle = NovidentStyleDefinition.nextSame(
   id: '__novident_base__',
   name: 'Base',
   fontSize: 12.0,
+  fontFamily: 'Roboto',
   spacing: NovidentStyleSpacing(after: 5.0),
 );
 
@@ -268,6 +275,84 @@ final kNormalBodyStyle = NovidentStyleDefinition.nextSame(
 You can use these as-is, extend them, or build your own from scratch.
 The `nextSame` constructor is a convenience that sets `next` to the style's
 own `id` (so pressing Enter keeps the same style).
+
+### Guaranteed font family
+
+`kDefaultBaseStyle` always defines `fontFamily: 'Roboto'`. Every style that
+inherits from it (directly or transitively via `basedOn`) is **guaranteed**
+to resolve to a non-null font family — the editor never delegates font
+selection to the platform.
+
+If you provide your own `defaultStyle`, make sure it has `fontFamily` set.
+An assertion at editor mount time validates this in debug mode.
+
+---
+
+## Font provider
+
+`NovidentFontProvider` supplies the list of available font families and a
+guaranteed non-null default. It is injected through `NovidentEditor` and
+stored on `EditorState.fontProvider`:
+
+```dart
+NovidentEditor(
+  editorState: editorState,
+  fontProvider: NovidentFontProvider.fromList(
+    ['Arial', 'Times New Roman', 'Courier New', 'Georgia'],
+    defaultFamily: 'Arial',
+  ),
+  styles: ...,
+);
+```
+
+### Built-in providers
+
+| Factory | Description |
+|---------|-------------|
+| `NovidentFontProvider.fallback()` | Universal safe set: Roboto, Arial, Times New Roman, Courier New, Georgia, Verdana, Helvetica |
+| `NovidentFontProvider.fromList(fonts, {defaultFamily})` | Custom list — you control every font the user sees |
+
+When no `fontProvider` is passed to `NovidentEditor`, the fallback is used
+automatically. This guarantees toolbar items always have fonts to display,
+even on mobile where system font enumeration is not available.
+
+### Desktop with system fonts
+
+Use the `system_fonts` package (in your own app — not bundled with the
+library) to enumerate installed fonts on desktop:
+
+```dart
+// example/ — not in the library itself
+import 'package:system_fonts/system_fonts.dart';
+
+final systemFonts = SystemFonts();
+final fontList = await systemFonts.getFontList();
+
+NovidentEditor(
+  editorState: editorState,
+  fontProvider: NovidentFontProvider.fromList(
+    fontList,
+    defaultFamily: 'Arial',
+  ),
+);
+```
+
+### How toolbar items use the provider
+
+`buildFontFamilyItem()` reads the font list from `editorState.fontProvider`
+when no explicit `fontFamilies` parameter is passed:
+
+```dart
+// Uses editorState.fontProvider.availableFonts
+buildFontFamilyItem()
+
+// Overrides with an explicit list
+buildFontFamilyItem(fontFamilies: ['Custom Font', 'Another'])
+```
+
+The resolved effective style (via `basedOn` chain) always has a non-null
+`fontFamily` because `kDefaultBaseStyle.fontFamily = 'Roboto'` acts as the
+root of every inheritance chain.
 
 ---
 

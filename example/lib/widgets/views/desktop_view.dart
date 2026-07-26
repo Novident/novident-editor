@@ -278,15 +278,8 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
 
   static final _kToolbarItems = <ToolbarItem>[
     styleToolbarItem,
-    buildFontSizeItem(defaultSize: kDefaultBaseStyle.fontSize!),
-    buildFontFamilyItem(
-      fontFamilies: [
-        'Arial',
-        'Times New Roman',
-        'Courier',
-        'San-Serif',
-      ],
-    ),
+    buildFontSizeItem(),
+    buildFontFamilyItem(),
     ...markdownFormatItems,
     quoteItem,
     bulletedListItem,

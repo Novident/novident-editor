@@ -15,3 +15,4 @@ export 'style/novident_editor_styles.dart';
 export 'style/novident_styles_config.dart';
 export 'style/novident_block_style_resolver.dart';
 export 'style/default_styles.dart';
+export 'style/novident_font_provider.dart';

@@ -13,15 +13,18 @@ const _kDropdownMaxHeight = 320.0;
 /// from a scrollable dropdown list.
 ///
 /// [fontFamilies] is the list of available font families presented to the
-/// user. The effective font is resolved from the current node's style
-/// chain (`basedOn`-merged), falling back to inline delta attributes.
+/// user. When omitted, the list is taken from [editorState.fontProvider]
+/// (which itself falls back to a universal safe set).
+///
+/// The effective font is resolved from the current node's style chain
+/// (`basedOn`-merged), falling back to inline delta attributes.
 /// When there is no selection the last known value is preserved.
 ///
 /// The dropdown colours are driven by [highlightColor] and [iconColor]
 /// (received from the toolbar's style configuration). An optional
 /// [tooltipBuilder] wraps the button in a tooltip.
 ToolbarItem buildFontFamilyItem({
-  required List<String> fontFamilies,
+  List<String>? fontFamilies,
 }) {
   return ToolbarItem(
     id: _kFontFamilyItemId,
@@ -34,9 +37,13 @@ ToolbarItem buildFontFamilyItem({
       Color? iconColor,
       ToolbarTooltipBuilder? tooltipBuilder,
     ) {
+      final families = fontFamilies ??
+          editorState.fontProvider?.availableFonts ??
+          NovidentFontProvider.fallback().availableFonts;
+
       Widget child = _FontFamilyDropdownButton(
         editorState: editorState,
-        fontFamilies: fontFamilies,
+        fontFamilies: families,
         highlightColor: highlightColor,
         iconColor: iconColor,
       );
@@ -212,8 +219,10 @@ class _FontFamilyDropdownButtonState extends State<_FontFamilyDropdownButton> {
   String _displayLabel() {
     final family = _effectiveFontFamily();
     if (family != null && family.isNotEmpty) return family;
-    if (widget.fontFamilies.isNotEmpty) return widget.fontFamilies.first;
-    return '';
+    // Show the provider's default when nothing is explicitly set.
+    final provider =
+        widget.editorState.fontProvider ?? NovidentFontProvider.fallback();
+    return provider.defaultFontFamily;
   }
 
   @override
@@ -295,14 +304,13 @@ class _FontFamilyMenuPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // When no explicit font is set, the first entry shows the default font
+    // name (from the provider) as the "clear / default state" label.
+    final defaultFamily = fontFamilies.isNotEmpty ? fontFamilies.first : '';
     final entries = <_FontFamilyEntry>[
       _FontFamilyEntry(
         family: '',
-        label: currentFamily == null
-            ? fontFamilies.isNotEmpty
-                ? fontFamilies.first
-                : ''
-            : NovidentEditorL10n.current.noStyle,
+        label: currentFamily == null ? defaultFamily : NovidentEditorL10n.current.noStyle,
         isSelected: currentFamily == null,
       ),
       ...fontFamilies.map(

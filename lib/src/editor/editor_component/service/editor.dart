@@ -48,6 +48,7 @@ class NovidentEditor extends StatefulWidget {
     this.documentRules = const [],
     this.blockWrapper,
     this.styles,
+    this.fontProvider,
   })  : blockComponentBuilders =
             blockComponentBuilders ?? standardBlockComponentBuilderMap,
         characterShortcutEvents =
@@ -237,6 +238,13 @@ class NovidentEditor extends StatefulWidget {
   /// Provides [NovidentEditorStyles] to the widget tree via [InheritedWidget].
   final NovidentStylesConfig? styles;
 
+  /// Font provider for the editor.
+  ///
+  /// Supplies the list of available font families and a guaranteed non-null
+  /// default font. When omitted, [NovidentFontProvider.fallback] is used
+  /// (a small universal set safe on every platform).
+  final NovidentFontProvider? fontProvider;
+
   @override
   State<NovidentEditor> createState() => _NovidentEditorState();
 }
@@ -388,6 +396,15 @@ class _NovidentEditorState extends State<NovidentEditor> {
   void _updateValues() {
     editorState.editorStyle = widget.editorStyle;
     editorState.editorStyles = widget.styles;
+    editorState.fontProvider =
+        widget.fontProvider ?? NovidentFontProvider.fallback();
+
+    assert(
+      widget.styles == null ||
+          widget.styles!.defaultStyle.fontFamily != null,
+      'NovidentStylesConfig.defaultStyle must have a non-null fontFamily. '
+      'Set fontFamily on your default style or use kDefaultBaseStyle.',
+    );
     editorState.editable = widget.editable;
     editorState.showHeader = widget.header != null;
     editorState.showFooter = widget.footer != null;

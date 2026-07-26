@@ -204,8 +204,21 @@ first, then the resolved node style (through the `basedOn` chain), and
 finally a hard default. Colours and tooltips are fully customisable via the
 standard toolbar theming parameters.
 
+Font families are managed through `NovidentFontProvider` — inject your own
+list (or use `system_fonts` on desktop) and the editor guarantees every
+style resolves to a non-null font:
+
+```dart
+NovidentEditor(
+  fontProvider: NovidentFontProvider.fromList(
+    ['Arial', 'Times New Roman', 'Georgia'],
+    defaultFamily: 'Arial',
+  ),
+);
+```
+
 See **[Styles — full guide](documentation/styles.md)** for every property,
-the resolution algorithm, programmatic usage, and how to build your own
+the resolution algorithm, the font provider, and how to build your own
 style registry.
 
 ---

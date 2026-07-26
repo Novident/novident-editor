@@ -147,17 +147,17 @@ class NovidentStyleDefinition {
   final NovidentStyleIndent? indent;
   final NovidentStyleBorder? borderStyle;
   final NovidentStyleKeep? keep;
-  final TextAlign? alignment;
+  final TextAlign alignment;
   final Color? blockBackgroundColor;
 
-  final bool? bold;
-  final bool? italic;
-  final bool? underline;
-  final bool? strikethrough;
-  final bool? caps;
-  final bool? smallCaps;
+  final bool bold;
+  final bool italic;
+  final bool underline;
+  final bool strikethrough;
+  final bool caps;
+  final bool smallCaps;
   final String? fontFamily;
-  final double? fontSize;
+  final double fontSize;
   final Color? textColor;
   final Color? textBackgroundColor;
 
@@ -179,16 +179,18 @@ class NovidentStyleDefinition {
           ? borderStyle?.merge(other.borderStyle) ?? other.borderStyle
           : borderStyle,
       keep: other.keep != null ? keep?.merge(other.keep) ?? other.keep : keep,
-      alignment: other.alignment ?? alignment,
+      alignment: other.alignment != alignment ? other.alignment : alignment,
       blockBackgroundColor: other.blockBackgroundColor ?? blockBackgroundColor,
-      bold: other.bold ?? bold,
-      italic: other.italic ?? italic,
-      underline: other.underline ?? underline,
-      strikethrough: other.strikethrough ?? strikethrough,
-      caps: other.caps ?? caps,
-      smallCaps: other.smallCaps ?? smallCaps,
+      bold: other.bold != bold ? other.bold : bold,
+      italic: other.italic != italic ? other.italic : italic,
+      underline: other.underline != underline ? other.underline : underline,
+      strikethrough: other.strikethrough != strikethrough
+          ? other.strikethrough
+          : strikethrough,
+      caps: other.caps != caps ? other.caps : caps,
+      smallCaps: other.smallCaps != smallCaps ? other.smallCaps : smallCaps,
       fontFamily: other.fontFamily ?? fontFamily,
-      fontSize: other.fontSize ?? fontSize,
+      fontSize: other.fontSize != fontSize ? other.fontSize : fontSize,
       textColor: other.textColor ?? textColor,
       textBackgroundColor: other.textBackgroundColor ?? textBackgroundColor,
     );

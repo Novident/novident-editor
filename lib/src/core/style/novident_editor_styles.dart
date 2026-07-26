@@ -20,6 +20,10 @@ class NovidentEditorStyles extends InheritedWidget {
     final typeDefault = config.defaultStylesByType[node.type];
     if (typeDefault != null) return typeDefault;
 
+    assert(
+      config.defaultStyle.fontFamily != null,
+      'NovidentStylesConfig.defaultStyle must have a non-null fontFamily.',
+    );
     return config.defaultStyle;
   }
 

@@ -4,6 +4,8 @@ export 'items/alignment_toolbar_items.dart';
 export 'items/bulleted_list_toolbar_item.dart';
 export 'items/color/color.dart';
 export 'items/format_toolbar_items.dart';
+export 'items/font_family_toolbar_item.dart';
+export 'items/font_size_toolbar_item.dart';
 export 'items/heading_toolbar_items.dart';
 export 'items/icon_item_widget.dart';
 export 'items/link/link_toolbar_item.dart';

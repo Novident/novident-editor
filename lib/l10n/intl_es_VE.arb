@@ -32,5 +32,9 @@
   "@text": {},
   "underline": "",
   "@underline": {},
-  "noStyle": "No Style"
+  "noStyle": "No Style",
+  "fontFamily": "Familia tipográfica",
+  "@fontFamily": {},
+  "fontSize": "Tamaño de fuente",
+  "@fontSize": {}
 }

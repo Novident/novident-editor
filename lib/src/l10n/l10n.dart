@@ -1890,6 +1890,26 @@ class NovidentEditorLocalizations {
       args: [],
     );
   }
+
+  /// `Font Family`
+  String get fontFamily {
+    return Intl.message(
+      'Font Family',
+      name: 'fontFamily',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Font Size`
+  String get fontSize {
+    return Intl.message(
+      'Font Size',
+      name: 'fontSize',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate

@@ -31,17 +31,21 @@ final NovidentStyleRegistry kDefaultStyleRegistry =
   _kHeadingDefaultStyles[3].id: _kHeadingDefaultStyles[3],
   _kHeadingDefaultStyles[4].id: _kHeadingDefaultStyles[4],
   _kHeadingDefaultStyles[5].id: _kHeadingDefaultStyles[5],
+  'heading-8': _kHeadingDefaultStyles[5],
+  'heading-9': _kHeadingDefaultStyles[5],
+  'heading-10': _kHeadingDefaultStyles[5],
 });
 
 // Default paragraph base style. Must be always used as part of `defaultStyle` property
 // since kNormalBodyStyle base it self on the default one
 //
 // This style acts like a fallback when required
-const NovidentStyleDefinition kDefaultBaseStyle = NovidentStyleDefinition(
+const NovidentStyleDefinition kDefaultBaseStyle =
+    NovidentStyleDefinition.nextSame(
   id: '__novident_base__',
   name: 'Base',
   fontSize: 12.0,
-  spacing: NovidentStyleSpacing(after: 5.0, hanging: 1, lineHeight: 1.0),
+  spacing: NovidentStyleSpacing(after: 5.0),
 );
 
 final NovidentStyleDefinition kNormalBodyStyle =

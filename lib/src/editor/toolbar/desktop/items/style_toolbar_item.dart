@@ -12,14 +12,33 @@ final styleToolbarItem = ToolbarItem(
     Color? iconColor,
     ToolbarTooltipBuilder? tooltipBuilder,
   ) {
-    return _StyleDropdownButton(editorState: editorState);
+    Widget child = _StyleDropdownButton(
+      editorState: editorState,
+      highlightColor: highlightColor,
+      iconColor: iconColor,
+    );
+    if (tooltipBuilder != null) {
+      child = tooltipBuilder(
+        context,
+        'editor.style',
+        NovidentEditorL10n.current.noStyle,
+        child,
+      );
+    }
+    return child;
   },
 );
 
 class _StyleDropdownButton extends StatefulWidget {
-  const _StyleDropdownButton({required this.editorState});
+  const _StyleDropdownButton({
+    required this.editorState,
+    required this.highlightColor,
+    required this.iconColor,
+  });
 
   final EditorState editorState;
+  final Color highlightColor;
+  final Color? iconColor;
 
   @override
   State<_StyleDropdownButton> createState() => _StyleDropdownButtonState();
@@ -29,6 +48,13 @@ class _StyleDropdownButtonState extends State<_StyleDropdownButton> {
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   bool _isOpen = false;
+
+  Color get _highlightColor => widget.highlightColor;
+  Color get _textColor => widget.iconColor ?? Colors.grey.shade700;
+  Color get _arrowColor =>
+      widget.iconColor?.withAlpha(180) ?? Colors.grey.shade500;
+  Color get _selectedBg => _highlightColor.withAlpha(30);
+  Color get _selectedText => _highlightColor;
 
   void _toggleOverlay() {
     if (_isOpen) {
@@ -97,6 +123,10 @@ class _StyleDropdownButtonState extends State<_StyleDropdownButton> {
                   allStyles: allStyles,
                   currentStyleRef: currentStyleRef,
                   noStyleLabel: NovidentEditorL10n.current.noStyle,
+                  highlightColor: _highlightColor,
+                  selectedBg: _selectedBg,
+                  selectedText: _selectedText,
+                  textColor: _textColor,
                   onSelected: _selectStyle,
                 ),
               ),
@@ -136,14 +166,14 @@ class _StyleDropdownButtonState extends State<_StyleDropdownButton> {
       child: InkWell(
         onTap: _toggleOverlay,
         borderRadius: BorderRadius.circular(4),
-        hoverColor: const Color(0x0A000000),
+        hoverColor: Colors.black.withAlpha(10),
         child: Container(
           height: 28,
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
-              color: _isOpen ? const Color(0xFF448AFF) : Colors.transparent,
+              color: _isOpen ? _highlightColor : Colors.transparent,
               width: 1,
             ),
           ),
@@ -151,16 +181,15 @@ class _StyleDropdownButtonState extends State<_StyleDropdownButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 70, maxWidth: 130),
+                constraints:
+                    const BoxConstraints(minWidth: 70, maxWidth: 130),
                 child: Text(
                   _currentLabel(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
-                    color: _isOpen
-                        ? const Color(0xFF448AFF)
-                        : Colors.grey.shade700,
+                    color: _isOpen ? _highlightColor : _textColor,
                   ),
                 ),
               ),
@@ -168,9 +197,7 @@ class _StyleDropdownButtonState extends State<_StyleDropdownButton> {
               Icon(
                 _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
                 size: 16,
-                color: _isOpen
-                    ? const Color(0xFF448AFF)
-                    : Colors.grey.shade500,
+                color: _isOpen ? _highlightColor : _arrowColor,
               ),
             ],
           ),
@@ -185,12 +212,20 @@ class _StyleMenuPanel extends StatelessWidget {
     required this.allStyles,
     required this.currentStyleRef,
     required this.noStyleLabel,
+    required this.highlightColor,
+    required this.selectedBg,
+    required this.selectedText,
+    required this.textColor,
     required this.onSelected,
   });
 
   final List<NovidentStyleDefinition> allStyles;
   final String? currentStyleRef;
   final String noStyleLabel;
+  final Color highlightColor;
+  final Color selectedBg;
+  final Color selectedText;
+  final Color textColor;
   final ValueChanged<String> onSelected;
 
   @override
@@ -203,7 +238,7 @@ class _StyleMenuPanel extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color(0x1A000000)),
+          border: Border.all(color: Colors.black.withAlpha(26)),
           boxShadow: const [
             BoxShadow(
               color: Color(0x1A000000),
@@ -221,12 +256,18 @@ class _StyleMenuPanel extends StatelessWidget {
               _StyleMenuItem(
                 label: noStyleLabel,
                 isSelected: currentStyleRef == null,
+                selectedBg: selectedBg,
+                selectedText: selectedText,
+                textColor: textColor,
                 onTap: () => onSelected(''),
               ),
               ...allStyles.map(
                 (style) => _StyleMenuItem(
                   label: style.name,
                   isSelected: style.id == currentStyleRef,
+                  selectedBg: selectedBg,
+                  selectedText: selectedText,
+                  textColor: textColor,
                   onTap: () => onSelected(style.id),
                 ),
               ),
@@ -242,11 +283,17 @@ class _StyleMenuItem extends StatelessWidget {
   const _StyleMenuItem({
     required this.label,
     required this.isSelected,
+    required this.selectedBg,
+    required this.selectedText,
+    required this.textColor,
     required this.onTap,
   });
 
   final String label;
   final bool isSelected;
+  final Color selectedBg;
+  final Color selectedText;
+  final Color textColor;
   final VoidCallback onTap;
 
   @override
@@ -258,7 +305,7 @@ class _StyleMenuItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         alignment: Alignment.centerLeft,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE3F2FD) : null,
+          color: isSelected ? selectedBg : null,
         ),
         child: Text(
           label,
@@ -267,7 +314,7 @@ class _StyleMenuItem extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? const Color(0xFF1565C0) : Colors.grey.shade800,
+            color: isSelected ? selectedText : textColor,
           ),
         ),
       ),

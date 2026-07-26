@@ -219,7 +219,8 @@ class _FontFamilyDropdownButtonState extends State<_FontFamilyDropdownButton> {
   String _displayLabel() {
     final family = _effectiveFontFamily();
     if (family != null && family.isNotEmpty) return family;
-    // Show the provider's default when nothing is explicitly set.
+    // When nothing is explicitly set the button shows the provider's
+    // default — this matches what kDefaultBaseStyle resolves to.
     final provider =
         widget.editorState.fontProvider ?? NovidentFontProvider.fallback();
     return provider.defaultFontFamily;

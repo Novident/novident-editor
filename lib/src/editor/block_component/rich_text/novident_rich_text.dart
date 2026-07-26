@@ -200,13 +200,21 @@ class _NovidentRichTextState extends State<NovidentRichText>
   /// Every editor offset must be shifted by this amount when translating
   /// to/from [TextPosition] offsets in the [RenderParagraph].
   ///
-  /// Returns 0 when [NovidentRichText.useFirstLineIndent] is false
-  /// or no valid indent width is resolved.
-  int get _widgetSpanCount => (widget.useFirstLineIndent &&
-          _firstLineIndentWidth != null &&
-          _firstLineIndentWidth! > 0)
-      ? 1
-      : 0;
+  /// Returns 0 when:
+  /// - [NovidentRichText.useFirstLineIndent] is false,
+  /// - no valid indent width is resolved, or
+  /// - the node is inside a table cell.
+  int get _widgetSpanCount {
+    if (!widget.useFirstLineIndent ||
+        _firstLineIndentWidth == null ||
+        _firstLineIndentWidth! <= 0) {
+      return 0;
+    }
+    if (widget.node.findParent((e) => e.type == TableBlockKeys.type) != null) {
+      return 0;
+    }
+    return 1;
+  }
 
   /// Resolved first-line indent width, or `null` if no indent should be
   /// applied.

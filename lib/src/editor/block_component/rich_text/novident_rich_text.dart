@@ -446,7 +446,18 @@ class _NovidentRichTextState extends State<NovidentRichText>
     textSpan = adjustTextSpan(textSpan);
     final delta = widget.node.delta;
     if (delta != null && delta.isNotEmpty) {
-      textSpan = textSpan.copyWith(text: '');
+      // Preserve WidgetSpans for indent layout, clear visible text.
+      final preservedChildren = <InlineSpan>[
+        for (final child in textSpan.children ?? <InlineSpan>[])
+          if (child is WidgetSpan)
+            child
+          else if (child is TextSpan)
+            child.copyWith(text: ''),
+      ];
+      textSpan = TextSpan(
+        children: preservedChildren,
+        style: textSpan.style,
+      );
     }
     return RichText(
       key: placeholderTextKey,
@@ -605,10 +616,15 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   TextSpan getPlaceholderTextSpan() {
     return TextSpan(
-      text: widget.placeholderText,
-      style: textStyleConfiguration.text.copyWith(
-        height: textStyleConfiguration.lineHeight,
-      ),
+      children: [
+        WidgetSpan(child: const SizedBox(width: 30)),
+        TextSpan(
+          text: widget.placeholderText,
+          style: textStyleConfiguration.text.copyWith(
+            height: textStyleConfiguration.lineHeight,
+          ),
+        ),
+      ],
     );
   }
 

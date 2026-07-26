@@ -26,6 +26,7 @@ Node todoListNode({
   Delta? delta,
   String? textDirection,
   Attributes? attributes,
+  String? styleRef,
   Iterable<Node>? children,
 }) {
   return Node(
@@ -35,6 +36,7 @@ Node todoListNode({
       TodoListBlockKeys.delta:
           (delta ?? (Delta()..insert(text ?? ''))).toJson(),
       if (attributes != null) ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null) TodoListBlockKeys.textDirection: textDirection,
     },
     children: children ?? [],
@@ -149,6 +151,8 @@ class _TodoListBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
@@ -174,7 +178,7 @@ class _TodoListBlockComponentWidgetState
               delegate: this,
               node: widget.node,
               editorState: editorState,
-              textAlign: alignment?.toTextAlign ?? textAlign,
+              textAlign: blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign,
               placeholderText: placeholderText,
               textDirection: textDirection,
               textSpanDecorator: (textSpan) => textSpan
@@ -197,9 +201,9 @@ class _TodoListBlockComponentWidgetState
     );
 
     child = Container(
-      decoration: withBackgroundColor ? decoration : null,
+      decoration: blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
       key: blockComponentKey,
-      padding: padding,
+      padding: blockStyle.applyToPadding(padding),
       child: child,
     );
 

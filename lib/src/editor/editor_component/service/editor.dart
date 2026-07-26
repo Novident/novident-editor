@@ -47,6 +47,7 @@ class NovidentEditor extends StatefulWidget {
     this.autoScrollEdgeOffset = novidentEditorAutoScrollEdgeOffset,
     this.documentRules = const [],
     this.blockWrapper,
+    this.styles,
   })  : blockComponentBuilders =
             blockComponentBuilders ?? standardBlockComponentBuilderMap,
         characterShortcutEvents =
@@ -231,6 +232,11 @@ class NovidentEditor extends StatefulWidget {
   /// Wrap the block component with a widget.
   final BlockComponentWrapper? blockWrapper;
 
+  /// Styles configuration for the editor.
+  ///
+  /// Provides [NovidentEditorStyles] to the widget tree via [InheritedWidget].
+  final NovidentStylesConfig? styles;
+
   @override
   State<NovidentEditor> createState() => _NovidentEditorState();
 }
@@ -296,7 +302,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
   Widget build(BuildContext context) {
     services ??= _buildServices(context);
 
-    return Provider.value(
+    Widget editor = Provider.value(
       value: editorState,
       child: FocusScope(
         child: Overlay(
@@ -309,6 +315,15 @@ class _NovidentEditorState extends State<NovidentEditor> {
         ),
       ),
     );
+
+    if (widget.styles != null) {
+      editor = NovidentEditorStyles(
+        config: widget.styles!,
+        child: editor,
+      );
+    }
+
+    return editor;
   }
 
   Widget _buildServices(BuildContext context) {
@@ -372,6 +387,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
 
   void _updateValues() {
     editorState.editorStyle = widget.editorStyle;
+    editorState.editorStyles = widget.styles;
     editorState.editable = widget.editable;
     editorState.showHeader = widget.header != null;
     editorState.showFooter = widget.footer != null;

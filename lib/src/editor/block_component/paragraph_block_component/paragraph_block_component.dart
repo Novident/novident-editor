@@ -18,6 +18,7 @@ Node paragraphNode({
   Delta? delta,
   String? textDirection,
   Attributes? attributes,
+  String? styleRef,
   Iterable<Node> children = const [],
 }) {
   return Node(
@@ -26,6 +27,7 @@ Node paragraphNode({
       ParagraphBlockKeys.delta:
           (delta ?? (Delta()..insert(text ?? ''))).toJson(),
       if (attributes != null) ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null)
         ParagraphBlockKeys.textDirection: textDirection,
     },
@@ -152,6 +154,11 @@ class _ParagraphBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+    final effectivePadding = blockStyle.applyToPadding(padding);
+    final effectiveTextAlign =
+        blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign;
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
@@ -166,7 +173,7 @@ class _ParagraphBlockComponentWidgetState
             delegate: this,
             node: widget.node,
             editorState: editorState,
-            textAlign: alignment?.toTextAlign ?? textAlign,
+            textAlign: effectiveTextAlign,
             placeholderText: _showPlaceholder ? placeholderText : ' ',
             textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
               textStyleWithTextSpan(
@@ -186,10 +193,13 @@ class _ParagraphBlockComponentWidgetState
       ),
     );
 
+    var effectiveDecoration = withBackgroundColor ? decoration : null;
+    effectiveDecoration = blockStyle.applyToDecoration(effectiveDecoration);
+
     child = Container(
       key: blockComponentKey,
-      decoration: withBackgroundColor ? decoration : null,
-      padding: padding,
+      decoration: effectiveDecoration,
+      padding: effectivePadding,
       child: child,
     );
 

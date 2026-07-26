@@ -31,7 +31,7 @@ class _FormatToolbarItem extends ToolbarItem {
   }) : super(
           id: 'editor.$id',
           group: 2,
-          isActive: onlyShowInTextType,
+          isActive: showInTextTypeEvenWithoutSelection,
           builder: (
             context,
             editorState,
@@ -39,14 +39,17 @@ class _FormatToolbarItem extends ToolbarItem {
             iconColor,
             tooltipBuilder,
           ) {
-            final selection = editorState.selection!;
-            final nodes = editorState.getNodesInSelection(selection);
-            final isHighlight = nodes.allSatisfyInSelection(
-              selection,
-              (delta) =>
-                  delta.isNotEmpty &&
-                  delta.everyAttributes((attr) => attr[name] == true),
-            );
+            bool isHighlight = false;
+            if (editorState.selection != null) {
+              final selection = editorState.selection!;
+              final nodes = editorState.getNodesInSelection(selection);
+              isHighlight = nodes.allSatisfyInSelection(
+                selection,
+                (delta) =>
+                    delta.isNotEmpty &&
+                    delta.everyAttributes((attr) => attr[name] == true),
+              );
+            }
 
             final child = SVGIconItemWidget(
               iconName: 'toolbar/$name',

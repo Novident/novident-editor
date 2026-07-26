@@ -5,9 +5,18 @@ const _kBulletedListItemId = 'editor.bulleted_list';
 final ToolbarItem bulletedListItem = ToolbarItem(
   id: _kBulletedListItemId,
   group: 3,
-  isActive: onlyShowInTextType,
+  isActive: showInTextTypeEvenWithoutSelection,
   builder: (context, editorState, highlightColor, iconColor, tooltipBuilder) {
-    final selection = editorState.selection!;
+    final selection = editorState.selection;
+    if (selection == null) {
+      return SVGIconItemWidget(
+        iconName: 'toolbar/bulleted_list',
+        isHighlight: false,
+        highlightColor: highlightColor,
+        iconColor: iconColor,
+        onPressed: () {},
+      );
+    }
     final node = editorState.getNodeAtPath(selection.start.path)!;
     final isHighlight = node.type == 'bulleted_list';
     final child = SVGIconItemWidget(

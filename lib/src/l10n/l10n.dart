@@ -1880,6 +1880,16 @@ class NovidentEditorLocalizations {
       args: [],
     );
   }
+
+  /// `No Style`
+  String get noStyle {
+    return Intl.message(
+      'No Style',
+      name: 'noStyle',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate

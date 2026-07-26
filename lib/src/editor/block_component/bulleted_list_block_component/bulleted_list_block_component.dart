@@ -20,6 +20,7 @@ Node bulletedListNode({
   Delta? delta,
   String? textDirection,
   Attributes? attributes,
+  String? styleRef,
   Iterable<Node>? children,
 }) {
   return Node(
@@ -28,6 +29,7 @@ Node bulletedListNode({
       BulletedListBlockKeys.delta:
           (delta ?? (Delta()..insert(text ?? ''))).toJson(),
       if (attributes != null) ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null)
         BulletedListBlockKeys.textDirection: textDirection,
     },
@@ -121,6 +123,8 @@ class _BulletedListBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
@@ -142,7 +146,7 @@ class _BulletedListBlockComponentWidgetState
               delegate: this,
               node: widget.node,
               editorState: editorState,
-              textAlign: alignment?.toTextAlign ?? textAlign,
+              textAlign: blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign,
               placeholderText: placeholderText,
               textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
                 textStyleWithTextSpan(textSpan: textSpan),
@@ -162,9 +166,9 @@ class _BulletedListBlockComponentWidgetState
     );
 
     child = Container(
-      decoration: withBackgroundColor ? decoration : null,
+      decoration: blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
       key: blockComponentKey,
-      padding: padding,
+      padding: blockStyle.applyToPadding(padding),
       child: child,
     );
 

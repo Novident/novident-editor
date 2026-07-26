@@ -22,6 +22,7 @@ Node numberedListNode({
   Attributes? attributes,
   int? number,
   String? textDirection,
+  String? styleRef,
   Iterable<Node>? children,
 }) {
   attributes ??= {
@@ -32,6 +33,7 @@ Node numberedListNode({
     type: NumberedListBlockKeys.type,
     attributes: {
       ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null)
         NumberedListBlockKeys.textDirection: textDirection,
     },
@@ -131,6 +133,8 @@ class _NumberedListBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
@@ -178,8 +182,8 @@ class _NumberedListBlockComponentWidgetState
 
     child = Container(
       key: blockComponentKey,
-      decoration: withBackgroundColor ? decoration : null,
-      padding: padding,
+      decoration: blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
+      padding: blockStyle.applyToPadding(padding),
       child: child,
     );
 

@@ -140,6 +140,12 @@ class EditorState {
   /// The style of the editor.
   late EditorStyle editorStyle;
 
+  /// The styles configuration for the editor.
+  ///
+  /// Set by [NovidentEditor] during init. Used by [insertNewLine] to resolve
+  /// [NovidentStyleDefinition.next] when creating consecutive paragraphs.
+  NovidentStylesConfig? editorStyles;
+
   /// Customizes how the caret is painted by the selection areas.
   ///
   /// When not null, it is consulted every time a caret is painted — return

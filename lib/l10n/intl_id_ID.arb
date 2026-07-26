@@ -31,5 +31,6 @@
   "text": "teks",
   "@text": {},
   "underline": "menggarisbawahi",
-  "@underline": {}
+  "@underline": {},
+  "noStyle": "No Style"
 }

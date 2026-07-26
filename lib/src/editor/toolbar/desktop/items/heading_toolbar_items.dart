@@ -11,7 +11,7 @@ class _HeadingToolbarItem extends ToolbarItem {
       : super(
           id: 'editor.h$level',
           group: 1,
-          isActive: onlyShowInSingleSelectionAndTextType,
+          isActive: showInSingleSelectionEvenWithoutSelection,
           builder: (
             context,
             editorState,
@@ -19,7 +19,16 @@ class _HeadingToolbarItem extends ToolbarItem {
             iconColor,
             tooltipBuilder,
           ) {
-            final selection = editorState.selection!;
+            final selection = editorState.selection;
+            if (selection == null) {
+              return SVGIconItemWidget(
+                iconName: 'toolbar/h$level',
+                isHighlight: false,
+                highlightColor: highlightColor,
+                iconColor: iconColor,
+                onPressed: () {},
+              );
+            }
             final node = editorState.getNodeAtPath(selection.start.path)!;
             final isHighlight =
                 node.type == 'heading' && node.attributes['level'] == level;

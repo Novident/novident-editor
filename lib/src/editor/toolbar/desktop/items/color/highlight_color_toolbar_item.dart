@@ -6,11 +6,20 @@ ToolbarItem buildHighlightColorItem({List<ColorOption>? colorOptions}) {
   return ToolbarItem(
     id: _kHighlightColorItemId,
     group: 4,
-    isActive: onlyShowInTextType,
+    isActive: showInTextTypeEvenWithoutSelection,
     builder: (context, editorState, highlightColor, iconColor, tooltipBuilder) {
+      final selection = editorState.selection;
+      if (selection == null) {
+        return SVGIconItemWidget(
+          iconName: 'toolbar/highlight_color',
+          isHighlight: false,
+          highlightColor: highlightColor,
+          iconColor: iconColor,
+          onPressed: () {},
+        );
+      }
       String? highlightColorHex;
 
-      final selection = editorState.selection!;
       final nodes = editorState.getNodesInSelection(selection);
       final isHighlight = nodes.allSatisfyInSelection(selection, (delta) {
         if (delta.everyAttributes((attr) => attr.isEmpty)) {

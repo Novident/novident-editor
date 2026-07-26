@@ -27,7 +27,7 @@ class _TextDirectionToolbarItem extends ToolbarItem {
   }) : super(
           id: 'editor.$id',
           group: 7,
-          isActive: onlyShowInTextType,
+          isActive: showInTextTypeEvenWithoutSelection,
           builder: (
             context,
             editorState,
@@ -35,7 +35,16 @@ class _TextDirectionToolbarItem extends ToolbarItem {
             iconColor,
             tooltipBuilder,
           ) {
-            final selection = editorState.selection!;
+            final selection = editorState.selection;
+            if (selection == null) {
+              return SVGIconItemWidget(
+                iconName: 'toolbar/$iconName',
+                isHighlight: false,
+                highlightColor: highlightColor,
+                iconColor: iconColor,
+                onPressed: () {},
+              );
+            }
             final nodes = editorState.getNodesInSelection(selection);
             final isHighlight = nodes.every(
               (n) => n.attributes[blockComponentTextDirection] == name,

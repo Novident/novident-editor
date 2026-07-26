@@ -84,6 +84,10 @@ final Set<String> toolbarItemWhiteList = {
   HeadingBlockKeys.type,
 };
 
+bool showAlways(EditorState editorState) {
+  return true;
+}
+
 bool onlyShowInSingleSelectionAndTextType(EditorState editorState) {
   final selection = editorState.selection;
   if (selection == null || !selection.isSingle) {
@@ -105,4 +109,20 @@ bool onlyShowInTextType(EditorState editorState) {
   return nodes.every(
     (node) => node.delta != null && toolbarItemWhiteList.contains(node.type),
   );
+}
+
+/// Like [onlyShowInTextType] but also returns `true` when there is no
+/// selection — allowing toolbar items to render even without a selection.
+bool showInTextTypeEvenWithoutSelection(EditorState editorState) {
+  final selection = editorState.selection;
+  if (selection == null) return true;
+  return onlyShowInTextType(editorState);
+}
+
+/// Like [onlyShowInSingleSelectionAndTextType] but also returns `true` when
+/// there is no selection — allowing toolbar items to render even without one.
+bool showInSingleSelectionEvenWithoutSelection(EditorState editorState) {
+  final selection = editorState.selection;
+  if (selection == null) return true;
+  return onlyShowInSingleSelectionAndTextType(editorState);
 }

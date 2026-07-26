@@ -9,9 +9,14 @@ class DividerBlockKeys {
 }
 
 // creating a new callout node
-Node dividerNode() {
+Node dividerNode({
+  String? styleRef,
+}) {
   return Node(
     type: DividerBlockKeys.type,
+    attributes: {
+      if (styleRef != null) blockComponentStyleRef: styleRef,
+    },
   );
 }
 

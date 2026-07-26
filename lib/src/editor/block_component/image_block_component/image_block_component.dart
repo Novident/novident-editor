@@ -35,6 +35,7 @@ Node imageNode({
   String align = 'center',
   double? height,
   double? width,
+  String? styleRef,
 }) {
   return Node(
     type: ImageBlockKeys.type,
@@ -43,6 +44,7 @@ Node imageNode({
       ImageBlockKeys.align: align,
       ImageBlockKeys.height: height,
       ImageBlockKeys.width: width,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
     },
   );
 }

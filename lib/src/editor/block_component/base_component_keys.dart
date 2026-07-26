@@ -28,3 +28,7 @@ const blockComponentTextDirectionRTL = 'rtl';
 /// its value must be one of the following:
 ///  - left, right, center.
 const blockComponentAlign = 'align';
+
+/// References a [NovidentStyleDefinition.id] to apply reusable formatting
+/// to this block. Resolved via [NovidentEditorStyles].
+const blockComponentStyleRef = 'styleRef';

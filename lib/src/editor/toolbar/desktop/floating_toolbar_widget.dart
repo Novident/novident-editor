@@ -33,6 +33,7 @@ class FloatingToolbarWidget extends StatefulWidget {
     this.placeHolderBuilder,
     this.padding,
     this.decoration,
+    this.showWhenNoSelection = false,
   });
 
   final List<ToolbarItem> items;
@@ -48,6 +49,10 @@ class FloatingToolbarWidget extends StatefulWidget {
   final double floatingToolbarHeight;
   final EdgeInsets? padding;
   final Decoration? decoration;
+
+  /// When `true`, items are shown even when there is no text selection.
+  /// Defaults to `false` (backward-compatible behavior).
+  final bool showWhenNoSelection;
 
   @override
   State<FloatingToolbarWidget> createState() => _FloatingToolbarWidgetState();
@@ -129,7 +134,10 @@ class _FloatingToolbarWidgetState extends State<FloatingToolbarWidget> {
 
   Iterable<ToolbarItem> _computeActiveItems() {
     final activeItems = widget.items
-        .where((e) => e.isActive?.call(widget.editorState) ?? false)
+        .where((e) {
+          if (widget.showWhenNoSelection) return true;
+          return e.isActive?.call(widget.editorState) ?? false;
+        })
         .toList();
     if (activeItems.isEmpty) {
       return [];

@@ -14,6 +14,7 @@ class MyEditor extends StatelessWidget {
     super.key,
     required this.session,
     this.zenController,
+    this.styles,
     this.padding = const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
     this.autoFocus = false,
     this.footer,
@@ -24,6 +25,8 @@ class MyEditor extends StatelessWidget {
   /// When non-null the editor renders with the zen visuals and disables
   /// the native caret auto-scroll in favor of the typewriter centering.
   final ZenModeController? zenController;
+
+  final NovidentStylesConfig? styles;
 
   final EdgeInsets padding;
   final bool autoFocus;
@@ -58,6 +61,7 @@ class MyEditor extends StatelessWidget {
         ...standardCommandShortcutEvents,
       ],
       characterShortcutEvents: standardCharacterShortcutEvents,
+      styles: styles,
     );
   }
 }

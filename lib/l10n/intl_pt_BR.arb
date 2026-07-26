@@ -178,5 +178,6 @@
   "upload": "Enviar",
   "uploadImage": "Enviar",
   "urlHint": "URL",
-  "urlImage": "URL"
+  "urlImage": "URL",
+  "noStyle": "No Style"
 }

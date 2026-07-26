@@ -569,35 +569,34 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }
 
   TextStyle baseTextStyle() {
+    final resolvedStyle = this.resolvedStyle;
     TextStyle style = textStyleConfiguration.text.copyWith(
       height: resolvedStyle?.spacing?.lineHeight ??
           textStyleConfiguration.lineHeight,
     );
     if (resolvedStyle == null) return style;
-    if (resolvedStyle!.bold == true) {
+    style = style.combine(TextStyle(fontSize: resolvedStyle.fontSize));
+    if (resolvedStyle.bold == true) {
       style = style.combine(textStyleConfiguration.bold);
     }
-    if (resolvedStyle!.italic == true) {
+    if (resolvedStyle.italic == true) {
       style = style.combine(textStyleConfiguration.italic);
     }
-    if (resolvedStyle!.underline == true) {
+    if (resolvedStyle.underline == true) {
       style = style.combine(textStyleConfiguration.underline);
     }
-    if (resolvedStyle!.strikethrough == true) {
+    if (resolvedStyle.strikethrough == true) {
       style = style.combine(textStyleConfiguration.strikethrough);
     }
-    if (resolvedStyle!.fontSize != null) {
-      style = style.combine(TextStyle(fontSize: resolvedStyle!.fontSize));
+    if (resolvedStyle.fontFamily != null) {
+      style = style.combine(TextStyle(fontFamily: resolvedStyle.fontFamily));
     }
-    if (resolvedStyle!.fontFamily != null) {
-      style = style.combine(TextStyle(fontFamily: resolvedStyle!.fontFamily));
+    if (resolvedStyle.textColor != null) {
+      style = style.combine(TextStyle(color: resolvedStyle.textColor));
     }
-    if (resolvedStyle!.textColor != null) {
-      style = style.combine(TextStyle(color: resolvedStyle!.textColor));
-    }
-    if (resolvedStyle!.textBackgroundColor != null) {
+    if (resolvedStyle.textBackgroundColor != null) {
       style = style.combine(
-        TextStyle(backgroundColor: resolvedStyle!.textBackgroundColor),
+        TextStyle(backgroundColor: resolvedStyle.textBackgroundColor),
       );
     }
     return style;

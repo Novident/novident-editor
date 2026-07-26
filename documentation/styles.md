@@ -78,6 +78,10 @@ NovidentEditor(
   editorState: editorState,
   styles: NovidentStylesConfig(
     registry: myStyles,
+    // font family and font size 
+    // must be defined for default style
+    //
+    // if not, this will throw an assertio error
     defaultStyle: myStyles.styles['body']!,
     defaultStylesByType: {
       'paragraph': myStyles.styles['body']!,
@@ -244,7 +248,7 @@ configuration, and optionally wrap themselves in a tooltip via
 
 Using the `NovidentStaticToolbar` and with the correct configuration you can look results like this:
 
-![Style configuration sample]
+<img src="./images/samples/styles-example.png" />
 
 ---
 

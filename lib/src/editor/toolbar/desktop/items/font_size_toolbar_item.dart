@@ -152,8 +152,7 @@ class _FontSizeDropdownButtonState extends State<_FontSizeDropdownButton> {
         return delta.everyAttributes((attr) {
           final raw = attr[NovidentRichTextKeys.fontSize];
           if (raw != null) {
-            fromDelta =
-                (raw is num) ? raw.toDouble() : double.tryParse('$raw');
+            fromDelta = (raw is num) ? raw.toDouble() : double.tryParse('$raw');
           }
           return true;
         });
@@ -169,8 +168,7 @@ class _FontSizeDropdownButtonState extends State<_FontSizeDropdownButton> {
         return delta.everyAttributes((attr) {
           final raw = attr[NovidentRichTextKeys.fontSize];
           if (raw != null) {
-            fromDelta =
-                (raw is num) ? raw.toDouble() : double.tryParse('$raw');
+            fromDelta = (raw is num) ? raw.toDouble() : double.tryParse('$raw');
           }
           return true;
         });
@@ -186,7 +184,7 @@ class _FontSizeDropdownButtonState extends State<_FontSizeDropdownButton> {
         node,
       );
       final fromStyle = style.fontSize;
-      if (fromStyle != null) return fromStyle;
+      return fromStyle;
     }
 
     return widget.defaultSize;
@@ -263,8 +261,7 @@ class _FontSizeDropdownButtonState extends State<_FontSizeDropdownButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ConstrainedBox(
-                constraints:
-                    const BoxConstraints(minWidth: 36, maxWidth: 52),
+                constraints: const BoxConstraints(minWidth: 36, maxWidth: 52),
                 child: Text(
                   currentSize.truncateToDouble() == currentSize
                       ? '${currentSize.toInt()}'

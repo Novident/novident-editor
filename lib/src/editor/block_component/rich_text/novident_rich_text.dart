@@ -182,6 +182,15 @@ class _NovidentRichTextState extends State<NovidentRichText>
     );
   }
 
+  bool get isParagraph =>
+      widget.node.type == ParagraphBlockKeys.type &&
+      !(widget.node.attributes[blockComponentStyleRef]?.startWith('heading') ?? true);
+
+  /// Number of WidgetSpans prepended for first-line indent.
+  /// Every editor offset must be shifted by this amount when translating
+  /// to/from [TextPosition] offsets in the [RenderParagraph].
+  int get _widgetSpanCount => 1;
+
   @override
   Position start() => Position(path: widget.node.path, offset: 0);
 
@@ -217,7 +226,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
       return null;
     }
 
-    final textPosition = TextPosition(offset: position.offset);
+    final textPosition = TextPosition(
+      offset: position.offset + _widgetSpanCount,
+    );
     double? placeholderCursorHeight =
         _placeholderRenderParagraph?.getFullHeightForCaret(textPosition);
     Offset? placeholderCursorOffset =
@@ -268,46 +279,77 @@ class _NovidentRichTextState extends State<NovidentRichText>
   @override
   Position getPositionInOffset(Offset start) {
     final offset = _renderParagraph?.globalToLocal(start) ?? Offset.zero;
-    final baseOffset =
+    final rawOffset =
         _renderParagraph?.getPositionForOffset(offset).offset ?? -1;
+    final baseOffset = (rawOffset - _widgetSpanCount).clamp(0, rawOffset);
     return Position(path: widget.node.path, offset: baseOffset);
   }
 
   @override
   Selection? getWordEdgeInOffset(Offset offset) {
     final localOffset = _renderParagraph?.globalToLocal(offset) ?? Offset.zero;
-    final textPosition = _renderParagraph?.getPositionForOffset(localOffset) ??
-        const TextPosition(offset: 0);
-    final textRange =
-        _renderParagraph?.getWordBoundary(textPosition) ?? TextRange.empty;
-    final wordEdgeOffset = textPosition.offset <= textRange.start
+    final rawTextPosition =
+        _renderParagraph?.getPositionForOffset(localOffset) ??
+            const TextPosition(offset: 0);
+    // Shift past the WidgetSpan so getWordBoundary operates on real text.
+    final shiftedTextPosition = TextPosition(
+      offset: rawTextPosition.offset
+          .clamp(_widgetSpanCount, rawTextPosition.offset),
+      affinity: rawTextPosition.affinity,
+    );
+    final textRange = _renderParagraph?.getWordBoundary(shiftedTextPosition) ??
+        TextRange.empty;
+    final wordEdgeOffset = shiftedTextPosition.offset <= textRange.start
         ? textRange.start
         : textRange.end;
 
     return Selection.collapsed(
-      Position(path: widget.node.path, offset: wordEdgeOffset),
+      Position(
+        path: widget.node.path,
+        offset: wordEdgeOffset - _widgetSpanCount,
+      ),
     );
   }
 
   @override
   Selection? getWordBoundaryInOffset(Offset offset) {
     final localOffset = _renderParagraph?.globalToLocal(offset) ?? Offset.zero;
-    final textPosition = _renderParagraph?.getPositionForOffset(localOffset) ??
-        const TextPosition(offset: 0);
-    final textRange =
-        _renderParagraph?.getWordBoundary(textPosition) ?? TextRange.empty;
-    final start = Position(path: widget.node.path, offset: textRange.start);
-    final end = Position(path: widget.node.path, offset: textRange.end);
+    final rawTextPosition =
+        _renderParagraph?.getPositionForOffset(localOffset) ??
+            const TextPosition(offset: 0);
+    // Shift past the WidgetSpan so getWordBoundary operates on real text.
+    final shiftedTextPosition = TextPosition(
+      offset: rawTextPosition.offset
+          .clamp(_widgetSpanCount, rawTextPosition.offset),
+      affinity: rawTextPosition.affinity,
+    );
+    final textRange = _renderParagraph?.getWordBoundary(shiftedTextPosition) ??
+        TextRange.empty;
+    final start = Position(
+      path: widget.node.path,
+      offset: textRange.start - _widgetSpanCount,
+    );
+    final end = Position(
+      path: widget.node.path,
+      offset: textRange.end - _widgetSpanCount,
+    );
     return Selection(start: start, end: end);
   }
 
   @override
   Selection? getWordBoundaryInPosition(Position position) {
-    final textPosition = TextPosition(offset: position.offset);
+    final textPosition =
+        TextPosition(offset: position.offset + _widgetSpanCount);
     final textRange =
         _renderParagraph?.getWordBoundary(textPosition) ?? TextRange.empty;
-    final start = Position(path: widget.node.path, offset: textRange.start);
-    final end = Position(path: widget.node.path, offset: textRange.end);
+    final start = Position(
+      path: widget.node.path,
+      offset: textRange.start - _widgetSpanCount,
+    );
+    final end = Position(
+      path: widget.node.path,
+      offset: textRange.end - _widgetSpanCount,
+    );
     return Selection(start: start, end: end);
   }
 
@@ -370,10 +412,12 @@ class _NovidentRichTextState extends State<NovidentRichText>
     }
     final localStart = _renderParagraph?.globalToLocal(start) ?? Offset.zero;
     final localEnd = _renderParagraph?.globalToLocal(end) ?? Offset.zero;
-    final baseOffset =
+    final rawBase =
         _renderParagraph?.getPositionForOffset(localStart).offset ?? -1;
-    final extentOffset =
+    final rawExtent =
         _renderParagraph?.getPositionForOffset(localEnd).offset ?? -1;
+    final baseOffset = (rawBase - _widgetSpanCount).clamp(0, rawBase);
+    final extentOffset = (rawExtent - _widgetSpanCount).clamp(0, rawExtent);
     return Selection.single(
       path: widget.node.path,
       startOffset: baseOffset,
@@ -606,7 +650,10 @@ class _NovidentRichTextState extends State<NovidentRichText>
     required Iterable<TextInsert> textInserts,
   }) {
     int offset = 0;
-    List<InlineSpan> textSpans = [];
+    List<InlineSpan> textSpans = [
+      // for testing by now
+      WidgetSpan(child: SizedBox(width: 30)),
+    ];
 
     for (final textInsert in textInserts) {
       TextStyle textStyle = baseTextStyle();
@@ -718,30 +765,30 @@ class _NovidentRichTextState extends State<NovidentRichText>
       if (path.equals(normalized.start.path)) {
         if (normalized.isCollapsed) {
           textSelection = TextSelection.collapsed(
-            offset: normalized.startIndex,
+            offset: normalized.startIndex + _widgetSpanCount,
           );
         } else {
           textSelection = TextSelection(
-            baseOffset: normalized.startIndex,
-            extentOffset: normalized.endIndex,
+            baseOffset: normalized.startIndex + _widgetSpanCount,
+            extentOffset: normalized.endIndex + _widgetSpanCount,
           );
         }
       }
     } else {
       if (path.equals(normalized.start.path)) {
         textSelection = TextSelection(
-          baseOffset: normalized.startIndex,
-          extentOffset: length,
+          baseOffset: normalized.startIndex + _widgetSpanCount,
+          extentOffset: length + _widgetSpanCount,
         );
       } else if (path.equals(normalized.end.path)) {
         textSelection = TextSelection(
-          baseOffset: 0,
-          extentOffset: normalized.endIndex,
+          baseOffset: _widgetSpanCount,
+          extentOffset: normalized.endIndex + _widgetSpanCount,
         );
       } else {
         textSelection = TextSelection(
-          baseOffset: 0,
-          extentOffset: length,
+          baseOffset: _widgetSpanCount,
+          extentOffset: length + _widgetSpanCount,
         );
       }
     }

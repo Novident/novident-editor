@@ -5,9 +5,18 @@ const _kQuoteItemId = 'editor.quote';
 final ToolbarItem quoteItem = ToolbarItem(
   id: _kQuoteItemId,
   group: 3,
-  isActive: onlyShowInSingleSelectionAndTextType,
+  isActive: showInSingleSelectionEvenWithoutSelection,
   builder: (context, editorState, highlightColor, iconColor, tooltipBuilder) {
-    final selection = editorState.selection!;
+    final selection = editorState.selection;
+    if (selection == null) {
+      return SVGIconItemWidget(
+        iconName: 'toolbar/quote',
+        isHighlight: false,
+        highlightColor: highlightColor,
+        iconColor: iconColor,
+        onPressed: () {},
+      );
+    }
     final node = editorState.getNodeAtPath(selection.start.path)!;
     final isHighlight = node.type == 'quote';
     final child = SVGIconItemWidget(

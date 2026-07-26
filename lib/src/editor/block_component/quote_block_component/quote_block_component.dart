@@ -19,6 +19,7 @@ Node quoteNode({
   Delta? delta,
   String? textDirection,
   Attributes? attributes,
+  String? styleRef,
   Iterable<Node>? children,
 }) {
   attributes ??= {'delta': (delta ?? Delta()).toJson()};
@@ -26,6 +27,7 @@ Node quoteNode({
     type: QuoteBlockKeys.type,
     attributes: {
       ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null) QuoteBlockKeys.textDirection: textDirection,
     },
     children: children ?? [],
@@ -116,6 +118,8 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
@@ -135,7 +139,7 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
                 delegate: this,
                 node: widget.node,
                 editorState: editorState,
-                textAlign: alignment?.toTextAlign ?? textAlign,
+                textAlign: blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign,
                 placeholderText: placeholderText,
                 textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
                   textStyleWithTextSpan(textSpan: textSpan),
@@ -156,9 +160,9 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
     );
 
     child = Container(
-      decoration: decoration,
+      decoration: blockStyle.applyToDecoration(decoration),
       key: blockComponentKey,
-      padding: padding,
+      padding: blockStyle.applyToPadding(padding),
       child: child,
     );
 

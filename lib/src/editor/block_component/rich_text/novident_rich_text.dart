@@ -133,6 +133,15 @@ class _NovidentRichTextState extends State<NovidentRichText>
       widget.textSpanOverlayBuilder ??
       widget.editorState.editorStyle.textSpanOverlayBuilder;
 
+  NovidentStyleDefinition? get resolvedStyle =>
+      NovidentEditorStyles.maybeOf(context)?.resolveStyle(
+        widget.node,
+      ) ??
+      defaultStyle;
+
+  NovidentStyleDefinition? get defaultStyle =>
+      NovidentEditorStyles.maybeOf(context)?.config.defaultStyle;
+
   @override
   void initState() {
     super.initState();
@@ -423,12 +432,18 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return RichText(
       key: textKey,
       textAlign: widget.textAlign ?? TextAlign.start,
+      strutStyle: resolvedStyle?.spacing != null &&
+              resolvedStyle?.spacing?.hanging != null
+          ? StrutStyle(
+              leading: resolvedStyle!.spacing!.hanging!,
+              leadingDistribution: TextLeadingDistribution.proportional,
+            )
+          : null,
       textHeightBehavior: TextHeightBehavior(
         applyHeightToFirstAscent:
             textStyleConfiguration.applyHeightToFirstAscent,
         applyHeightToLastDescent:
             textStyleConfiguration.applyHeightToLastDescent,
-        leadingDistribution: textStyleConfiguration.leadingDistribution,
       ),
       text: textSpan,
       textDirection: textDirection(),
@@ -553,16 +568,49 @@ class _NovidentRichTextState extends State<NovidentRichText>
     );
   }
 
+  TextStyle baseTextStyle() {
+    final resolvedStyle = this.resolvedStyle;
+    TextStyle style = textStyleConfiguration.text.copyWith(
+      height: resolvedStyle?.spacing?.lineHeight ??
+          textStyleConfiguration.lineHeight,
+    );
+    if (resolvedStyle == null) return style;
+    style = style.combine(TextStyle(fontSize: resolvedStyle.fontSize));
+    if (resolvedStyle.bold == true) {
+      style = style.combine(textStyleConfiguration.bold);
+    }
+    if (resolvedStyle.italic == true) {
+      style = style.combine(textStyleConfiguration.italic);
+    }
+    if (resolvedStyle.underline == true) {
+      style = style.combine(textStyleConfiguration.underline);
+    }
+    if (resolvedStyle.strikethrough == true) {
+      style = style.combine(textStyleConfiguration.strikethrough);
+    }
+    if (resolvedStyle.fontFamily != null) {
+      style = style.combine(TextStyle(fontFamily: resolvedStyle.fontFamily));
+    }
+    if (resolvedStyle.textColor != null) {
+      style = style.combine(TextStyle(color: resolvedStyle.textColor));
+    }
+    if (resolvedStyle.textBackgroundColor != null) {
+      style = style.combine(
+        TextStyle(backgroundColor: resolvedStyle.textBackgroundColor),
+      );
+    }
+    return style;
+  }
+
   TextSpan getTextSpan({
     required Iterable<TextInsert> textInserts,
   }) {
     int offset = 0;
     List<InlineSpan> textSpans = [];
+
     for (final textInsert in textInserts) {
-      TextStyle textStyle = textStyleConfiguration.text.copyWith(
-        height: textStyleConfiguration.lineHeight,
-      );
-      final attributes = textInsert.attributes;
+      TextStyle textStyle = baseTextStyle();
+      final Attributes? attributes = textInsert.attributes;
       if (attributes != null) {
         if (attributes.bold == true) {
           textStyle = textStyle.combine(textStyleConfiguration.bold);
@@ -616,8 +664,17 @@ class _NovidentRichTextState extends State<NovidentRichText>
           );
         }
       }
+
+      String displayText = textInsert.text;
+      if (resolvedStyle?.caps == true) {
+        displayText = displayText.toUpperCase();
+        // by now we set small caps just as lowercase
+      } else if (resolvedStyle?.smallCaps == true) {
+        displayText = displayText.toLowerCase();
+      }
+
       final textSpan = TextSpan(
-        text: textInsert.text,
+        text: displayText,
         style: textStyle,
       );
       textSpans.add(

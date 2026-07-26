@@ -2,6 +2,7 @@ import 'package:example/common/nodes/file.dart';
 import 'package:example/common/store/document_content_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_split_view/novident_split_view.dart';
 
 import 'document_session.dart';
@@ -14,16 +15,20 @@ import 'zen_editor_view.dart';
 ///
 /// Every pane owns its own [DocumentSession] (editor, scroll, focus and
 /// vim state), but the document content lives in the
-/// [DocumentContentStore] (keyed by node id): edits are written there,
-/// the store notifies, and every pane showing the same document re-reads
+/// [DocumentContentProvider] (keyed by node id): edits are written there,
+/// the provider notifies, and every pane showing the same document re-reads
 /// it — duplicated panes stay in sync for free, with no extra wiring.
 class EditorPane extends StatefulWidget {
   final File file;
   final bool isFocused;
+  final FocusedEditorNotifier toolbarNotifier;
+  final NovidentStylesConfig? styles;
 
   const EditorPane({
     required this.file,
     required this.isFocused,
+    required this.toolbarNotifier,
+    this.styles,
     super.key,
   });
 
@@ -38,10 +43,15 @@ class _EditorPaneState extends State<EditorPane> {
   void initState() {
     super.initState();
     _session = _createSession();
+    // Notify the toolbar after the first frame so it picks up the
+    // editor state even when the pane gains focus asynchronously
+    // (e.g. via SplitController.open / focusPane).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _notifyToolbar();
+    });
   }
 
   DocumentSession _createSession() {
-    // vim mode is enabled by default across the whole app.
     return DocumentSession(nodeId: widget.file.id)
       ..addListener(_onSessionChanged);
   }
@@ -49,20 +59,21 @@ class _EditorPaneState extends State<EditorPane> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Registers the dependency: every store change re-runs this and
-    // lets the pane pick up external edits of its document.
     _session.syncFromStore(DocumentContentProvider.of(context));
   }
 
   @override
   void didUpdateWidget(covariant EditorPane oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // The pane key includes the node id, so a different id normally
-    // recreates the whole state. This is just a safety net.
     if (oldWidget.file.id != widget.file.id) {
       _session.dispose();
       _session = _createSession()
         ..syncFromStore(DocumentContentProvider.of(context));
+    }
+    if (oldWidget.isFocused != widget.isFocused) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _notifyToolbar();
+      });
     }
   }
 
@@ -72,11 +83,26 @@ class _EditorPaneState extends State<EditorPane> {
     super.dispose();
   }
 
-  /// The session replaced its editor (external store change): remount.
-  void _onSessionChanged() {
-    if (mounted) {
-      setState(() {});
+  void _sessionChanged() {
+    if (_session.isReady && widget.isFocused) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _notifyToolbar();
+      });
     }
+  }
+
+  void _notifyToolbar() {
+    if (widget.isFocused && _session.isReady) {
+      widget.toolbarNotifier.value = _session.editorState;
+    } else if (!widget.isFocused &&
+        widget.toolbarNotifier.value == _session.editorState) {
+      widget.toolbarNotifier.value = null;
+    }
+  }
+
+  void _onSessionChanged() {
+    _sessionChanged();
+    if (mounted) setState(() {});
   }
 
   /// Leading icon of the library's [PaneHeader]: the title, the close
@@ -161,6 +187,7 @@ class _EditorPaneState extends State<EditorPane> {
                         padding: const EdgeInsets.only(top: 15),
                         child: MyEditor(
                           session: _session,
+                          styles: widget.styles,
                         ),
                       ),
                     ),
@@ -174,6 +201,11 @@ class _EditorPaneState extends State<EditorPane> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isFocused && _session.isReady) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _notifyToolbar();
+      });
+    }
     return PaneHeader(
       // Drag the header to move this pane anywhere (center = swap).
       draggable: true,

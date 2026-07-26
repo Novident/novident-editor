@@ -31,5 +31,6 @@
   "text": "текст",
   "@text": {},
   "underline": "подчеркнуть",
-  "@underline": {}
+  "@underline": {},
+  "noStyle": "No Style"
 }

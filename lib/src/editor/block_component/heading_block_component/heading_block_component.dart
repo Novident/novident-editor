@@ -26,6 +26,7 @@ Node headingNode({
   Delta? delta,
   String? textDirection,
   Attributes? attributes,
+  String? styleRef,
 }) {
   assert(level >= 1 && level <= 6);
   return Node(
@@ -34,6 +35,7 @@ Node headingNode({
       HeadingBlockKeys.delta: (delta ?? (Delta()..insert(text ?? ''))).toJson(),
       HeadingBlockKeys.level: level.clamp(1, 6),
       if (attributes != null) ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null) HeadingBlockKeys.textDirection: textDirection,
     },
   );
@@ -125,11 +127,12 @@ class _HeadingBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle =
+        NovidentBlockStyleResolver.resolve(context, widget.node);
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
-      // Related issue: https://github.com/AppFlowy-IO/appflowy-editor/issues/3175
-      // make the width of the rich text as small as possible to avoid
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,7 +145,9 @@ class _HeadingBlockComponentWidgetState
               delegate: this,
               node: widget.node,
               editorState: editorState,
-              textAlign: alignment?.toTextAlign ?? textAlign,
+              textAlign: blockStyle.alignment ??
+                  alignment?.toTextAlign ??
+                  textAlign,
               textSpanDecorator: (textSpan) {
                 var result = textSpan.updateTextStyle(
                   textStyleWithTextSpan(textSpan: textSpan),
@@ -185,9 +190,12 @@ class _HeadingBlockComponentWidgetState
       child: child,
     );
 
+    final effectivePadding = blockStyle.applyToPadding(padding);
+    final effectiveDecoration = blockStyle.applyToDecoration(decoration);
+
     child = Container(
-      padding: padding,
-      decoration: decoration,
+      padding: effectivePadding,
+      decoration: effectiveDecoration,
       child: child,
     );
 

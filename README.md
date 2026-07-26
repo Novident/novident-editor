@@ -16,7 +16,11 @@ tables, code blocks and more — and ships with:
 - **zen mode** (typewriter centering, unfocused-block dimming, color neutralization without
   touching the document)
 - **aggressive caching** throughout the document model, selection pipeline and text
-  rendering 
+  rendering
+- **named paragraph styles** with `basedOn` inheritance chains, similar to Word —
+  font family, font size, bold, italic, spacing, colours and more, all resolved
+  through a three-tier fallback (explicit style → type default → global default)
+  and exposed through customisable toolbar dropdowns 
 
 > [!NOTE]
 > Planned: 
@@ -146,6 +150,76 @@ ListenableBuilder(
   ),
 );
 ```
+
+---
+
+## Styles
+
+Novident Editor includes a **named paragraph style system** with `basedOn`
+inheritance — define a base style once and every derived style inherits its
+font, size, spacing and colours automatically:
+
+```dart
+NovidentEditor(
+  editorState: editorState,
+  styles: NovidentStylesConfig(
+    registry: NovidentStyleRegistry({
+      'base': NovidentStyleDefinition(
+        id: 'base', 
+        name: 'Base',
+        fontSize: 12, 
+        fontFamily: 'Arial',
+      ),
+      'body': NovidentStyleDefinition.nextSame(
+        id: 'body', 
+        name: 'Body',
+        basedOn: 'base',
+        spacing: NovidentStyleSpacing(after: 8),
+      ),
+      'heading-1': NovidentStyleDefinition(
+        id: 'heading-1', 
+        name: 'Heading 1',
+        basedOn: 'base',
+        fontSize: 32, bold: true,
+        spacing: NovidentStyleSpacing(before: 24, after: 12),
+        next: 'body',
+      ),
+    }),
+    defaultStyle: /* body */,
+    defaultStylesByType: {'paragraph': /* body */, 'heading': /* heading-1 */},
+  ),
+);
+```
+
+Three toolbar items ship out of the box:
+
+| Item | What it does |
+|------|-------------|
+| `styleToolbarItem` | Dropdown — applies a named style to the current block |
+| `buildFontFamilyItem(fontFamilies: [...])` | Dropdown — applies inline font family |
+| `buildFontSizeItem(minSize: 1, maxSize: 99)` | Scrollable dropdown — applies inline font size |
+
+All three resolve the **current** value by checking inline delta attributes
+first, then the resolved node style (through the `basedOn` chain), and
+finally a hard default. Colours and tooltips are fully customisable via the
+standard toolbar theming parameters.
+
+Font families are managed through `NovidentFontProvider` — inject your own
+list (or use `system_fonts` on desktop) and the editor guarantees every
+style resolves to a non-null font:
+
+```dart
+NovidentEditor(
+  fontProvider: NovidentFontProvider.fromList(
+    ['Arial', 'Times New Roman', 'Georgia'],
+    defaultFamily: 'Arial',
+  ),
+);
+```
+
+See **[Styles — full guide](documentation/styles.md)** for every property,
+the resolution algorithm, the font provider, and how to build your own
+style registry.
 
 ---
 

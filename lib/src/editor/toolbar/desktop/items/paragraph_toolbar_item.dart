@@ -5,9 +5,18 @@ const _kParagraphItemId = 'editor.paragraph';
 final ToolbarItem paragraphItem = ToolbarItem(
   id: _kParagraphItemId,
   group: 1,
-  isActive: onlyShowInSingleSelectionAndTextType,
+  isActive: showInSingleSelectionEvenWithoutSelection,
   builder: (context, editorState, highlightColor, iconColor, tooltipBuilder) {
-    final selection = editorState.selection!;
+    final selection = editorState.selection;
+    if (selection == null) {
+      return SVGIconItemWidget(
+        iconName: 'toolbar/text',
+        isHighlight: false,
+        highlightColor: highlightColor,
+        iconColor: iconColor,
+        onPressed: () {},
+      );
+    }
     final node = editorState.getNodeAtPath(selection.start.path)!;
     final isHighlight = node.type == 'paragraph';
     final delta = (node.delta ?? Delta()).toJson();

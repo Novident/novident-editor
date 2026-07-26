@@ -2,6 +2,7 @@ import 'package:example/common/controller/tree_controller.dart';
 import 'package:example/common/nodes/file.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:novident_editor/novident_editor.dart' hide Node;
 import 'package:novident_nodes/novident_nodes.dart';
 import 'package:novident_split_view/novident_split_view.dart';
 
@@ -31,6 +32,7 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
   late final TreeController treeController;
   final SplitViewController _splitController = SplitViewController();
   late final SplitViewConfiguration _configuration;
+  final FocusedEditorNotifier _toolbarNotifier = FocusedEditorNotifier();
 
   @override
   void initState() {
@@ -46,8 +48,6 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
     _configuration = SplitViewConfiguration(
       paneBuilder: _buildPane,
       emptyPlaceholder: _buildEmptySplitTarget,
-      // The mixin already restricts dragging to File; this app-level
-      // rule is here to show where cross validations belong.
       onWillAcceptSplit: (SplitDragAndDropDetails<Node> details) =>
           details.draggedNode is File,
     );
@@ -61,6 +61,7 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
       ..invalidateSelection()
       ..dispose();
     _splitController.dispose();
+    _toolbarNotifier.dispose();
     super.dispose();
   }
 
@@ -94,8 +95,11 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
       return _buildMissingDocumentPane(pane);
     }
     return EditorPane(
+      key: ValueKey(node.id),
       file: node,
       isFocused: pane.isFocused,
+      toolbarNotifier: _toolbarNotifier,
+      styles: _kStyles,
     );
   }
 
@@ -233,13 +237,59 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
             ),
           ),
           Expanded(
-            child: NovSplitView(
-              controller: _splitController,
-              configuration: _configuration,
+            child: Column(
+              children: [
+                ValueListenableBuilder<EditorState?>(
+                  valueListenable: _toolbarNotifier,
+                  builder: (
+                    context,
+                    editorState,
+                    _,
+                  ) {
+                    return LayoutBuilder(builder: (
+                      context,
+                      constraints,
+                    ) {
+                      return SizedBox(
+                        width: constraints.maxWidth,
+                        child: NovidentStaticToolbar(
+                          items: _kToolbarItems,
+                          editorState: editorState,
+                          stylesConfig: _kStyles,
+                          showWhenNoSelection: true,
+                        ),
+                      );
+                    });
+                  },
+                ),
+                Expanded(
+                  child: NovSplitView(
+                    controller: _splitController,
+                    configuration: _configuration,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+
+  static final _kToolbarItems = <ToolbarItem>[
+    styleToolbarItem,
+    buildFontSizeItem(),
+    buildFontFamilyItem(),
+    ...markdownFormatItems,
+    quoteItem,
+    bulletedListItem,
+    numberedListItem,
+    linkItem,
+    ...alignmentItems,
+  ];
+
+  static final _kStyles = NovidentStylesConfig(
+    defaultStyle: kDefaultBaseStyle,
+    registry: kDefaultStyleRegistry,
+  );
 }

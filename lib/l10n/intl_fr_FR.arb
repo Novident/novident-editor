@@ -31,5 +31,6 @@
   "text": "Texte",
   "@text": {},
   "underline": "Souligné",
-  "@underline": {}
+  "@underline": {},
+  "noStyle": "No Style"
 }

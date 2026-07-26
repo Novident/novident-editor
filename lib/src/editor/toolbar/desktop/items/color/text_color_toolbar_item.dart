@@ -8,10 +8,19 @@ ToolbarItem buildTextColorItem({
   return ToolbarItem(
     id: _kTextColorItemId,
     group: 4,
-    isActive: onlyShowInTextType,
+    isActive: showInTextTypeEvenWithoutSelection,
     builder: (context, editorState, highlightColor, iconColor, tooltipBuilder) {
+      final selection = editorState.selection;
+      if (selection == null) {
+        return SVGIconItemWidget(
+          iconName: 'toolbar/text_color',
+          isHighlight: false,
+          highlightColor: highlightColor,
+          iconColor: iconColor,
+          onPressed: () {},
+        );
+      }
       String? textColorHex;
-      final selection = editorState.selection!;
       final nodes = editorState.getNodesInSelection(selection);
       final isHighlight = nodes.allSatisfyInSelection(selection, (delta) {
         if (delta.everyAttributes((attr) => attr.isEmpty)) {

@@ -53,6 +53,11 @@ extension TextTransforms on EditorState {
       'delta': slicedDelta.toJson(),
     };
 
+    final nextStyleRef = _resolveNextStyleRef(node);
+    if (nextStyleRef != null) {
+      attributes[blockComponentStyleRef] = nextStyleRef;
+    }
+
     // Copy the text direction from the current node.
     final textDirection =
         node.attributes[blockComponentTextDirection] as String?;
@@ -432,5 +437,22 @@ extension TextTransforms on EditorState {
     }
 
     return null;
+  }
+
+  /// Resolves the [NovidentStyleDefinition.next] style ID for [node].
+  ///
+  /// Returns `null` when no styles are configured, the node has no style,
+  /// or the resolved style has no [next] defined.
+  String? _resolveNextStyleRef(Node node) {
+    final config = editorStyles;
+    if (config == null) return null;
+    final styleRef = node.attributes[blockComponentStyleRef] as String?;
+    if (styleRef != null && styleRef.isNotEmpty) {
+      final resolved = config.registry.resolve(styleRef);
+      return resolved?.next;
+    }
+    final typeDefault = config.defaultStylesByType[node.type];
+    if (typeDefault != null) return typeDefault.next;
+    return config.defaultStyle.next;
   }
 }

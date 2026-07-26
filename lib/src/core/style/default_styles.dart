@@ -63,6 +63,7 @@ const _kHeadingDefaultStyles = <NovidentStyleDefinition>[
     bold: true,
     spacing: NovidentStyleSpacing(before: 24, after: 12),
     next: 'normal',
+    allowGlobalFirstLineIndent: false,
   ),
   NovidentStyleDefinition(
     id: 'heading-2',
@@ -71,6 +72,7 @@ const _kHeadingDefaultStyles = <NovidentStyleDefinition>[
     bold: true,
     spacing: NovidentStyleSpacing(before: 20, after: 10),
     next: 'normal',
+    allowGlobalFirstLineIndent: false,
   ),
   NovidentStyleDefinition(
     id: 'heading-3',
@@ -79,6 +81,7 @@ const _kHeadingDefaultStyles = <NovidentStyleDefinition>[
     bold: true,
     spacing: NovidentStyleSpacing(before: 16, after: 8),
     next: 'normal',
+    allowGlobalFirstLineIndent: false,
   ),
   NovidentStyleDefinition(
     id: 'heading-4',
@@ -87,6 +90,7 @@ const _kHeadingDefaultStyles = <NovidentStyleDefinition>[
     bold: true,
     spacing: NovidentStyleSpacing(before: 14, after: 6),
     next: 'normal',
+    allowGlobalFirstLineIndent: false,
   ),
   NovidentStyleDefinition(
     id: 'heading-5',
@@ -95,6 +99,7 @@ const _kHeadingDefaultStyles = <NovidentStyleDefinition>[
     bold: true,
     spacing: NovidentStyleSpacing(before: 12, after: 4),
     next: 'normal',
+    allowGlobalFirstLineIndent: false,
   ),
   NovidentStyleDefinition(
     id: 'heading-6',
@@ -103,5 +108,6 @@ const _kHeadingDefaultStyles = <NovidentStyleDefinition>[
     bold: true,
     spacing: NovidentStyleSpacing(before: 10, after: 4),
     next: 'normal',
+    allowGlobalFirstLineIndent: false,
   ),
 ];

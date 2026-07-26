@@ -157,7 +157,7 @@ class _ParagraphBlockComponentWidgetState
     final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
     final effectivePadding = blockStyle.applyToPadding(padding);
     final effectiveTextAlign =
-        blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign;
+        alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign;
 
     Widget child = Container(
       width: double.infinity,

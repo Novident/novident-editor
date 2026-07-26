@@ -125,7 +125,7 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
       alignment: alignment,
       child: IntrinsicHeight(
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           textDirection: textDirection,
@@ -139,7 +139,8 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
                 delegate: this,
                 node: widget.node,
                 editorState: editorState,
-                textAlign: blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign,
+                textAlign:
+                    alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
                 placeholderText: placeholderText,
                 useFirstLineIndent: false,
                 textSpanDecorator: (textSpan) => textSpan.updateTextStyle(

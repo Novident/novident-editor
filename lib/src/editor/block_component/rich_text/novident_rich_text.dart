@@ -191,9 +191,10 @@ class _NovidentRichTextState extends State<NovidentRichText>
     );
   }
 
-  bool get isParagraph =>
-      widget.node.type == ParagraphBlockKeys.type &&
-      !(widget.node.attributes[blockComponentStyleRef]?.startWith('heading') ?? true);
+  /// Effective text alignment: explicit [NovidentRichText.textAlign] >
+  /// [NovidentStyleDefinition.alignment] from resolved style > start.
+  TextAlign get _effectiveTextAlign =>
+      widget.textAlign ?? resolvedStyle?.alignment ?? TextAlign.start;
 
   /// Number of WidgetSpans prepended for first-line indent.
   /// Every editor offset must be shifted by this amount when translating
@@ -201,12 +202,11 @@ class _NovidentRichTextState extends State<NovidentRichText>
   ///
   /// Returns 0 when [NovidentRichText.useFirstLineIndent] is false
   /// or no valid indent width is resolved.
-  int get _widgetSpanCount =>
-      (widget.useFirstLineIndent &&
-              _firstLineIndentWidth != null &&
-              _firstLineIndentWidth! > 0)
-          ? 1
-          : 0;
+  int get _widgetSpanCount => (widget.useFirstLineIndent &&
+          _firstLineIndentWidth != null &&
+          _firstLineIndentWidth! > 0)
+      ? 1
+      : 0;
 
   /// Resolved first-line indent width, or `null` if no indent should be
   /// applied.
@@ -233,6 +233,330 @@ class _NovidentRichTextState extends State<NovidentRichText>
     }
 
     return null;
+  }
+
+  Widget _buildPlaceholderText(BuildContext context) {
+    var textSpan = getPlaceholderTextSpan();
+    if (widget.placeholderTextSpanDecorator != null) {
+      textSpan = widget.placeholderTextSpanDecorator!(textSpan);
+    }
+    textSpan = adjustTextSpan(textSpan);
+    final delta = widget.node.delta;
+    if (delta != null && delta.isNotEmpty) {
+      // Preserve WidgetSpans for indent layout, clear visible text.
+      final preservedChildren = <InlineSpan>[
+        for (final child in textSpan.children ?? <InlineSpan>[])
+          if (child is WidgetSpan)
+            child
+          else if (child is TextSpan)
+            child.copyWith(text: ''),
+      ];
+      textSpan = TextSpan(
+        children: preservedChildren,
+        style: textSpan.style,
+      );
+    }
+    return RichText(
+      key: placeholderTextKey,
+      textAlign: _effectiveTextAlign,
+      textHeightBehavior: TextHeightBehavior(
+        applyHeightToFirstAscent:
+            textStyleConfiguration.applyHeightToFirstAscent,
+        applyHeightToLastDescent:
+            textStyleConfiguration.applyHeightToLastDescent,
+        leadingDistribution: textStyleConfiguration.leadingDistribution,
+      ),
+      text: textSpan,
+      textDirection: textDirection(),
+      textScaler: TextScaler.linear(
+        widget.editorState.editorStyle.textScaleFactor,
+      ),
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _buildRichText(BuildContext context) {
+    final textInserts = widget.node.delta!.whereType<TextInsert>();
+    TextSpan textSpan = getTextSpan(textInserts: textInserts);
+    if (widget.textSpanDecorator != null) {
+      textSpan = widget.textSpanDecorator!(textSpan);
+    }
+    textSpan = adjustTextSpan(textSpan);
+    return RichText(
+      key: textKey,
+      textAlign: _effectiveTextAlign,
+      strutStyle: resolvedStyle?.spacing != null &&
+              resolvedStyle?.spacing?.hanging != null
+          ? StrutStyle(
+              leading: resolvedStyle!.spacing!.hanging!,
+              leadingDistribution: TextLeadingDistribution.proportional,
+            )
+          : null,
+      textHeightBehavior: TextHeightBehavior(
+        applyHeightToFirstAscent:
+            textStyleConfiguration.applyHeightToFirstAscent,
+        applyHeightToLastDescent:
+            textStyleConfiguration.applyHeightToLastDescent,
+      ),
+      text: textSpan,
+      textDirection: textDirection(),
+      textScaler:
+          TextScaler.linear(widget.editorState.editorStyle.textScaleFactor),
+    );
+  }
+
+  List<Widget> _buildRichTextOverlay(BuildContext context) {
+    if (textKey.currentContext == null) return [];
+    return textSpanOverlayBuilder?.call(
+          context,
+          widget.node,
+          this,
+        ) ??
+        [];
+  }
+
+  void confirmContextEnabled() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && textKey.currentContext == null) {
+        confirmContextEnabled();
+      } else if (mounted && textKey.currentContext != null) {
+        setState(() {});
+      }
+    });
+  }
+
+  Widget _buildAutoCompleteRichText() {
+    final textInserts = widget.node.delta!.whereType<TextInsert>();
+    TextSpan textSpan = getTextSpan(textInserts: textInserts);
+    if (widget.textSpanDecorator != null) {
+      textSpan = widget.textSpanDecorator!(textSpan);
+    }
+    textSpan = adjustTextSpan(textSpan);
+    return ValueListenableBuilder(
+      valueListenable: widget.editorState.selectionNotifier,
+      builder: (_, __, ___) {
+        final autoCompleteText = autoCompleteTextProvider?.call(
+          context,
+          widget.node,
+          textSpan,
+        );
+        if (autoCompleteText == null || autoCompleteText.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        textSpan = getTextSpan(
+          textInserts: [
+            ...textInserts.map(
+              (e) => TextInsert(
+                e.text,
+                attributes: {
+                  NovidentRichTextKeys.transparent: true,
+                },
+              ),
+            ),
+            TextInsert(
+              autoCompleteText,
+              attributes: {
+                NovidentRichTextKeys.autoComplete: true,
+              },
+            ),
+          ],
+        );
+        return RichText(
+          textAlign: _effectiveTextAlign,
+          textHeightBehavior: TextHeightBehavior(
+            applyHeightToFirstAscent:
+                textStyleConfiguration.applyHeightToFirstAscent,
+            applyHeightToLastDescent:
+                textStyleConfiguration.applyHeightToLastDescent,
+            leadingDistribution: textStyleConfiguration.leadingDistribution,
+          ),
+          text: textSpan,
+          textDirection: textDirection(),
+          textScaler:
+              TextScaler.linear(widget.editorState.editorStyle.textScaleFactor),
+        );
+      },
+    );
+  }
+
+  // https://github.com/flutter/flutter/pull/143954
+  // https://github.com/AppFlowy-IO/appflowy-editor/issues/819#issuecomment-2177833413
+  // This is a workaround for the issue that
+  //  the caret height of the text is not calculated correctly if the parent style is null.
+  TextSpan adjustTextSpan(TextSpan textSpan) {
+    if (textSpan.style == null && textSpan.children != null) {
+      double height = 0.0;
+      double fontSize = 0.0;
+      textSpan.visitChildren((span) {
+        final style = span.style;
+        if (style != null) {
+          if (style.height != null) {
+            height = max(height, style.height!);
+          }
+          if (style.fontSize != null) {
+            fontSize = max(fontSize, style.fontSize!);
+          }
+        }
+        return true;
+      });
+      if (height == 0.0 || fontSize == 0.0) {
+        return textSpan;
+      }
+      textSpan = textSpan.copyWith(
+        style: textStyleConfiguration.text.copyWith(
+          height: height,
+          fontSize: fontSize,
+        ),
+      );
+    }
+    return textSpan;
+  }
+
+  TextSpan getPlaceholderTextSpan() {
+    final children = <InlineSpan>[
+      if (_widgetSpanCount > 0)
+        WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
+      TextSpan(
+        text: widget.placeholderText,
+        style: textStyleConfiguration.text.copyWith(
+          height: textStyleConfiguration.lineHeight,
+        ),
+      ),
+    ];
+    return TextSpan(children: children);
+  }
+
+  TextStyle baseTextStyle() {
+    final resolved = resolvedStyle;
+    // Start from the global text configuration with resolved line height.
+    TextStyle style = textStyleConfiguration.text.copyWith(
+      height:
+          resolved?.spacing?.lineHeight ?? textStyleConfiguration.lineHeight,
+    );
+    if (resolved == null) return style;
+
+    final resolvedTextStyle = TextStyle(
+      fontSize: resolved.fontSize,
+      fontWeight: resolved.bold ? FontWeight.bold : null,
+      fontStyle: resolved.italic ? FontStyle.italic : null,
+      decoration: TextDecoration.combine([
+        if (resolved.overline) TextDecoration.overline,
+        if (resolved.underline) TextDecoration.underline,
+        if (resolved.strikethrough) TextDecoration.lineThrough,
+      ]),
+      fontFamily: resolved.fontFamily,
+      color: resolved.textColor,
+      backgroundColor: resolved.textBackgroundColor,
+      decorationStyle: resolved.decorationStyle,
+      letterSpacing: resolved.letterSpacing,
+      wordSpacing: resolved.wordSpacing,
+      fontVariations: resolved.fontVariations,
+      shadows: resolved.fontShadows,
+      foreground: resolved.fontForeground,
+      background: resolved.fontBackground,
+      fontFeatures: resolved.fontFeatures,
+      decorationColor: resolved.decorationColor, 
+    );
+    return style.merge(resolvedTextStyle);
+  }
+
+  TextSpan getTextSpan({
+    required Iterable<TextInsert> textInserts,
+  }) {
+    int offset = 0;
+    List<InlineSpan> textSpans = [];
+    if (_widgetSpanCount > 0) {
+      textSpans.add(
+        WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
+      );
+    }
+
+    for (final textInsert in textInserts) {
+      TextStyle textStyle = baseTextStyle();
+      final Attributes? attributes = textInsert.attributes;
+      if (attributes != null) {
+        if (attributes.bold == true) {
+          textStyle = textStyle.combine(textStyleConfiguration.bold);
+        }
+        if (attributes.italic == true) {
+          textStyle = textStyle.combine(textStyleConfiguration.italic);
+        }
+        if (attributes.underline == true) {
+          textStyle = textStyle.combine(textStyleConfiguration.underline);
+        }
+        if (attributes.strikethrough == true) {
+          textStyle = textStyle.combine(textStyleConfiguration.strikethrough);
+        }
+        if (attributes.href != null) {
+          textStyle = textStyle.combine(textStyleConfiguration.href);
+        }
+        if (attributes.code == true) {
+          textStyle = textStyle.combine(textStyleConfiguration.code);
+        }
+        if (attributes.backgroundColor != null) {
+          textStyle = textStyle.combine(
+            TextStyle(backgroundColor: attributes.backgroundColor),
+          );
+        }
+        if (attributes.findBackgroundColor != null) {
+          textStyle = textStyle.combine(
+            TextStyle(backgroundColor: attributes.findBackgroundColor),
+          );
+        }
+        if (attributes.color != null) {
+          textStyle = textStyle.combine(
+            TextStyle(color: attributes.color),
+          );
+        }
+        if (attributes.fontFamily != null) {
+          textStyle = textStyle.combine(
+            TextStyle(fontFamily: attributes.fontFamily),
+          );
+        }
+        if (attributes.fontSize != null) {
+          textStyle = textStyle.combine(
+            TextStyle(fontSize: attributes.fontSize),
+          );
+        }
+        if (attributes.autoComplete == true) {
+          textStyle = textStyle.combine(textStyleConfiguration.autoComplete);
+        }
+        if (attributes.transparent == true) {
+          textStyle = textStyle.combine(
+            const TextStyle(color: Colors.transparent),
+          );
+        }
+      }
+
+      String displayText = textInsert.text;
+      if (resolvedStyle?.caps == true) {
+        displayText = displayText.toUpperCase();
+        // by now we set small caps just as lowercase
+      } else if (resolvedStyle?.smallCaps == true) {
+        displayText = displayText.toLowerCase();
+      }
+
+      final textSpan = TextSpan(
+        text: displayText,
+        style: textStyle,
+      );
+      textSpans.add(
+        textSpanDecoratorForAttribute != null
+            ? textSpanDecoratorForAttribute!(
+                context,
+                widget.node,
+                offset,
+                textInsert,
+                textSpan,
+                widget.textSpanDecorator?.call(textSpan) ?? textSpan,
+              )
+            : textSpan,
+      );
+      offset += textInsert.length;
+    }
+    return TextSpan(
+      children: textSpans,
+    );
   }
 
   @override
@@ -480,329 +804,6 @@ class _NovidentRichTextState extends State<NovidentRichText>
   @override
   TextDirection textDirection() {
     return widget.textDirection;
-  }
-
-  Widget _buildPlaceholderText(BuildContext context) {
-    var textSpan = getPlaceholderTextSpan();
-    if (widget.placeholderTextSpanDecorator != null) {
-      textSpan = widget.placeholderTextSpanDecorator!(textSpan);
-    }
-    textSpan = adjustTextSpan(textSpan);
-    final delta = widget.node.delta;
-    if (delta != null && delta.isNotEmpty) {
-      // Preserve WidgetSpans for indent layout, clear visible text.
-      final preservedChildren = <InlineSpan>[
-        for (final child in textSpan.children ?? <InlineSpan>[])
-          if (child is WidgetSpan)
-            child
-          else if (child is TextSpan)
-            child.copyWith(text: ''),
-      ];
-      textSpan = TextSpan(
-        children: preservedChildren,
-        style: textSpan.style,
-      );
-    }
-    return RichText(
-      key: placeholderTextKey,
-      textHeightBehavior: TextHeightBehavior(
-        applyHeightToFirstAscent:
-            textStyleConfiguration.applyHeightToFirstAscent,
-        applyHeightToLastDescent:
-            textStyleConfiguration.applyHeightToLastDescent,
-        leadingDistribution: textStyleConfiguration.leadingDistribution,
-      ),
-      text: textSpan,
-      textDirection: textDirection(),
-      textScaler: TextScaler.linear(
-        widget.editorState.editorStyle.textScaleFactor,
-      ),
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildRichText(BuildContext context) {
-    final textInserts = widget.node.delta!.whereType<TextInsert>();
-    TextSpan textSpan = getTextSpan(textInserts: textInserts);
-    if (widget.textSpanDecorator != null) {
-      textSpan = widget.textSpanDecorator!(textSpan);
-    }
-    textSpan = adjustTextSpan(textSpan);
-    return RichText(
-      key: textKey,
-      textAlign: widget.textAlign ?? TextAlign.start,
-      strutStyle: resolvedStyle?.spacing != null &&
-              resolvedStyle?.spacing?.hanging != null
-          ? StrutStyle(
-              leading: resolvedStyle!.spacing!.hanging!,
-              leadingDistribution: TextLeadingDistribution.proportional,
-            )
-          : null,
-      textHeightBehavior: TextHeightBehavior(
-        applyHeightToFirstAscent:
-            textStyleConfiguration.applyHeightToFirstAscent,
-        applyHeightToLastDescent:
-            textStyleConfiguration.applyHeightToLastDescent,
-      ),
-      text: textSpan,
-      textDirection: textDirection(),
-      textScaler:
-          TextScaler.linear(widget.editorState.editorStyle.textScaleFactor),
-    );
-  }
-
-  List<Widget> _buildRichTextOverlay(BuildContext context) {
-    if (textKey.currentContext == null) return [];
-    return textSpanOverlayBuilder?.call(
-          context,
-          widget.node,
-          this,
-        ) ??
-        [];
-  }
-
-  void confirmContextEnabled() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && textKey.currentContext == null) {
-        confirmContextEnabled();
-      } else if (mounted && textKey.currentContext != null) {
-        setState(() {});
-      }
-    });
-  }
-
-  Widget _buildAutoCompleteRichText() {
-    final textInserts = widget.node.delta!.whereType<TextInsert>();
-    TextSpan textSpan = getTextSpan(textInserts: textInserts);
-    if (widget.textSpanDecorator != null) {
-      textSpan = widget.textSpanDecorator!(textSpan);
-    }
-    textSpan = adjustTextSpan(textSpan);
-    return ValueListenableBuilder(
-      valueListenable: widget.editorState.selectionNotifier,
-      builder: (_, __, ___) {
-        final autoCompleteText = autoCompleteTextProvider?.call(
-          context,
-          widget.node,
-          textSpan,
-        );
-        if (autoCompleteText == null || autoCompleteText.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        textSpan = getTextSpan(
-          textInserts: [
-            ...textInserts.map(
-              (e) => TextInsert(
-                e.text,
-                attributes: {
-                  NovidentRichTextKeys.transparent: true,
-                },
-              ),
-            ),
-            TextInsert(
-              autoCompleteText,
-              attributes: {
-                NovidentRichTextKeys.autoComplete: true,
-              },
-            ),
-          ],
-        );
-        return RichText(
-          textAlign: widget.textAlign ?? TextAlign.start,
-          textHeightBehavior: TextHeightBehavior(
-            applyHeightToFirstAscent:
-                textStyleConfiguration.applyHeightToFirstAscent,
-            applyHeightToLastDescent:
-                textStyleConfiguration.applyHeightToLastDescent,
-            leadingDistribution: textStyleConfiguration.leadingDistribution,
-          ),
-          text: textSpan,
-          textDirection: textDirection(),
-          textScaler:
-              TextScaler.linear(widget.editorState.editorStyle.textScaleFactor),
-        );
-      },
-    );
-  }
-
-  // https://github.com/flutter/flutter/pull/143954
-  // https://github.com/AppFlowy-IO/appflowy-editor/issues/819#issuecomment-2177833413
-  // This is a workaround for the issue that
-  //  the caret height of the text is not calculated correctly if the parent style is null.
-  TextSpan adjustTextSpan(TextSpan textSpan) {
-    if (textSpan.style == null && textSpan.children != null) {
-      double height = 0.0;
-      double fontSize = 0.0;
-      textSpan.visitChildren((span) {
-        final style = span.style;
-        if (style != null) {
-          if (style.height != null) {
-            height = max(height, style.height!);
-          }
-          if (style.fontSize != null) {
-            fontSize = max(fontSize, style.fontSize!);
-          }
-        }
-        return true;
-      });
-      if (height == 0.0 || fontSize == 0.0) {
-        return textSpan;
-      }
-      textSpan = textSpan.copyWith(
-        style: textStyleConfiguration.text.copyWith(
-          height: height,
-          fontSize: fontSize,
-        ),
-      );
-    }
-    return textSpan;
-  }
-
-  TextSpan getPlaceholderTextSpan() {
-    final children = <InlineSpan>[
-      if (_widgetSpanCount > 0)
-        WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
-      TextSpan(
-        text: widget.placeholderText,
-        style: textStyleConfiguration.text.copyWith(
-          height: textStyleConfiguration.lineHeight,
-        ),
-      ),
-    ];
-    return TextSpan(children: children);
-  }
-
-  TextStyle baseTextStyle() {
-    final resolvedStyle = this.resolvedStyle;
-    TextStyle style = textStyleConfiguration.text.copyWith(
-      height: resolvedStyle?.spacing?.lineHeight ??
-          textStyleConfiguration.lineHeight,
-    );
-    if (resolvedStyle == null) return style;
-    style = style.combine(TextStyle(fontSize: resolvedStyle.fontSize));
-    if (resolvedStyle.bold == true) {
-      style = style.combine(textStyleConfiguration.bold);
-    }
-    if (resolvedStyle.italic == true) {
-      style = style.combine(textStyleConfiguration.italic);
-    }
-    if (resolvedStyle.underline == true) {
-      style = style.combine(textStyleConfiguration.underline);
-    }
-    if (resolvedStyle.strikethrough == true) {
-      style = style.combine(textStyleConfiguration.strikethrough);
-    }
-    if (resolvedStyle.fontFamily != null) {
-      style = style.combine(TextStyle(fontFamily: resolvedStyle.fontFamily));
-    }
-    if (resolvedStyle.textColor != null) {
-      style = style.combine(TextStyle(color: resolvedStyle.textColor));
-    }
-    if (resolvedStyle.textBackgroundColor != null) {
-      style = style.combine(
-        TextStyle(backgroundColor: resolvedStyle.textBackgroundColor),
-      );
-    }
-    return style;
-  }
-
-  TextSpan getTextSpan({
-    required Iterable<TextInsert> textInserts,
-  }) {
-    int offset = 0;
-    List<InlineSpan> textSpans = [];
-    if (_widgetSpanCount > 0) {
-      textSpans.add(
-        WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
-      );
-    }
-
-    for (final textInsert in textInserts) {
-      TextStyle textStyle = baseTextStyle();
-      final Attributes? attributes = textInsert.attributes;
-      if (attributes != null) {
-        if (attributes.bold == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.bold);
-        }
-        if (attributes.italic == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.italic);
-        }
-        if (attributes.underline == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.underline);
-        }
-        if (attributes.strikethrough == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.strikethrough);
-        }
-        if (attributes.href != null) {
-          textStyle = textStyle.combine(textStyleConfiguration.href);
-        }
-        if (attributes.code == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.code);
-        }
-        if (attributes.backgroundColor != null) {
-          textStyle = textStyle.combine(
-            TextStyle(backgroundColor: attributes.backgroundColor),
-          );
-        }
-        if (attributes.findBackgroundColor != null) {
-          textStyle = textStyle.combine(
-            TextStyle(backgroundColor: attributes.findBackgroundColor),
-          );
-        }
-        if (attributes.color != null) {
-          textStyle = textStyle.combine(
-            TextStyle(color: attributes.color),
-          );
-        }
-        if (attributes.fontFamily != null) {
-          textStyle = textStyle.combine(
-            TextStyle(fontFamily: attributes.fontFamily),
-          );
-        }
-        if (attributes.fontSize != null) {
-          textStyle = textStyle.combine(
-            TextStyle(fontSize: attributes.fontSize),
-          );
-        }
-        if (attributes.autoComplete == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.autoComplete);
-        }
-        if (attributes.transparent == true) {
-          textStyle = textStyle.combine(
-            const TextStyle(color: Colors.transparent),
-          );
-        }
-      }
-
-      String displayText = textInsert.text;
-      if (resolvedStyle?.caps == true) {
-        displayText = displayText.toUpperCase();
-        // by now we set small caps just as lowercase
-      } else if (resolvedStyle?.smallCaps == true) {
-        displayText = displayText.toLowerCase();
-      }
-
-      final textSpan = TextSpan(
-        text: displayText,
-        style: textStyle,
-      );
-      textSpans.add(
-        textSpanDecoratorForAttribute != null
-            ? textSpanDecoratorForAttribute!(
-                context,
-                widget.node,
-                offset,
-                textInsert,
-                textSpan,
-                widget.textSpanDecorator?.call(textSpan) ?? textSpan,
-              )
-            : textSpan,
-      );
-      offset += textInsert.length;
-    }
-    return TextSpan(
-      children: textSpans,
-    );
   }
 
   TextSelection? textSelectionFromEditorSelection(Selection? selection) {

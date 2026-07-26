@@ -108,13 +108,23 @@ class NovidentStyleDefinition {
     this.bold = false,
     this.italic = false,
     this.underline = false,
+    this.overline = false,
     this.strikethrough = false,
     this.caps = false,
     this.smallCaps = false,
+    this.decorationStyle,
+    this.decorationColor,
     this.fontFamily,
     this.fontSize = 12.0,
     this.textColor,
     this.textBackgroundColor,
+    this.letterSpacing,
+    this.fontVariations,
+    this.fontBackground,
+    this.fontForeground,
+    this.wordSpacing,
+    this.fontFeatures,
+    this.fontShadows,
     this.allowGlobalFirstLineIndent = true,
   });
 
@@ -131,13 +141,23 @@ class NovidentStyleDefinition {
     this.bold = false,
     this.italic = false,
     this.underline = false,
+    this.overline = false,
     this.strikethrough = false,
     this.caps = false,
     this.smallCaps = false,
+    this.decorationStyle,
+    this.decorationColor,
     this.fontFamily,
     this.fontSize = 12.0,
     this.textColor,
     this.textBackgroundColor,
+    this.letterSpacing,
+    this.fontVariations,
+    this.fontShadows,
+    this.fontFeatures,
+    this.fontBackground,
+    this.fontForeground,
+    this.wordSpacing,
     this.allowGlobalFirstLineIndent = true,
   }) : next = id;
 
@@ -161,11 +181,21 @@ class NovidentStyleDefinition {
   final bool bold;
   final bool italic;
   final bool underline;
+  final bool overline;
   final bool strikethrough;
   final bool caps;
   final bool smallCaps;
+  final TextDecorationStyle? decorationStyle;
+  final Color? decorationColor;
+  final List<FontVariation>? fontVariations;
+  final List<FontFeature>? fontFeatures;
+  final List<Shadow>? fontShadows;
+  final Paint? fontForeground;
+  final Paint? fontBackground;
   final String? fontFamily;
   final double fontSize;
+  final double? letterSpacing;
+  final double? wordSpacing;
   final Color? textColor;
   final Color? textBackgroundColor;
 
@@ -185,6 +215,15 @@ class NovidentStyleDefinition {
       name: other.name,
       basedOn: other.basedOn ?? basedOn,
       next: other.next ?? next,
+      decorationStyle: other.decorationStyle ?? decorationStyle,
+      decorationColor: other.decorationColor ?? decorationColor,
+      fontVariations: other.fontVariations ?? fontVariations,
+      fontShadows: other.fontShadows ?? fontShadows,
+      fontFeatures: other.fontFeatures ?? fontFeatures,
+      fontBackground: other.fontBackground ?? fontBackground,
+      fontForeground: other.fontForeground ?? fontForeground,
+      letterSpacing: other.letterSpacing ?? letterSpacing,
+      wordSpacing: other.wordSpacing ?? wordSpacing,
       spacing: other.spacing != null
           ? spacing?.merge(other.spacing) ?? other.spacing
           : spacing,
@@ -200,6 +239,7 @@ class NovidentStyleDefinition {
       bold: other.bold != bold ? other.bold : bold,
       italic: other.italic != italic ? other.italic : italic,
       underline: other.underline != underline ? other.underline : underline,
+      overline: other.overline != overline ? other.overline : overline,
       strikethrough: other.strikethrough != strikethrough
           ? other.strikethrough
           : strikethrough,

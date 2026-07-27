@@ -74,48 +74,132 @@ class TableNode {
     return TableNode(node: Node.fromJson(json));
   }
 
-  static TableNode fromList<T>(List<List<T>> cols, {TableConfig? config}) {
+  /// Creates a [TableNode] from a grid of plain strings.
+  ///
+  /// Each cell is automatically wrapped in a [paragraphNode]. For full control
+  /// over cell content (headings, styled text, nested blocks), use [fromNodes]
+  /// instead.
+  ///
+  /// The outer list represents **columns** (column-major order). Each inner
+  /// list contains the rows for that column. The first sublist is the first
+  /// column rendered on the left.
+  ///
+  /// Example (renders as a 2×2 table with Name/Elara on the left column):
+  /// ```dart
+  /// final table = TableNode.fromList([
+  ///   ['Name', 'Elara'],   // ← column 0
+  ///   ['Role', 'Mage'],    // ← column 1
+  /// ]);
+  /// // | Name | Role  |
+  /// // | Elara| Mage  |
+  /// ```
+  static TableNode fromList(
+    List<List<String>> cols, {
+    TableConfig? config,
+  }) {
+    assert(cols.isNotEmpty, 'cols must not be empty');
+    assert(cols[0].isNotEmpty, 'rows must not be empty');
     assert(
-      T == String ||
-          (T == Node &&
-              cols.every(
-                (col) => col.every((n) => (n as Node).delta != null),
-              )),
+      cols.every((col) => col.length == cols[0].length),
+      'all columns must have the same number of rows',
     );
-    assert(cols.isNotEmpty);
-    assert(cols[0].isNotEmpty);
-    assert(cols.every((col) => col.length == cols[0].length));
 
     config = config ?? TableConfig();
 
-    Node node = Node(
-      type: TableBlockKeys.type,
-      attributes: {}
-        ..addAll({
-          TableBlockKeys.colsLen: cols.length,
-          TableBlockKeys.rowsLen: cols[0].length,
-        })
-        ..addAll(config.toJson()),
-    );
-    for (var i = 0; i < cols.length; i++) {
-      for (var j = 0; j < cols[0].length; j++) {
+    final tableAttrs = <String, Object>{
+      TableBlockKeys.colsLen: cols.length,
+      TableBlockKeys.rowsLen: cols[0].length,
+      ...config.toJson(),
+    };
+
+    final node = Node(type: TableBlockKeys.type, attributes: tableAttrs);
+
+    for (var c = 0; c < cols.length; c++) {
+      for (var r = 0; r < cols[0].length; r++) {
         final cell = Node(
           type: TableCellBlockKeys.type,
           attributes: {
-            TableCellBlockKeys.colPosition: i,
-            TableCellBlockKeys.rowPosition: j,
+            TableCellBlockKeys.colPosition: c,
+            TableCellBlockKeys.rowPosition: r,
           },
         );
+        cell.insert(paragraphNode(text: cols[c][r]));
+        node.insert(cell);
+      }
+    }
 
-        late Node cellChild;
-        if (T == String) {
-          cellChild = paragraphNode(
-            delta: Delta()..insert(cols[i][j] as String),
+    return TableNode(node: node);
+  }
+
+  /// Creates a [TableNode] from a grid of [Node]s.
+  ///
+  /// Unlike [fromList], this accepts any node type as cell content —
+  /// [headingNode], styled [paragraphNode]s, or custom block components.
+  ///
+  /// The outer list represents **columns** (column-major order). Each inner
+  /// list contains the rows for that column.
+  ///
+  /// For per-cell attributes (width, background colors), wrap the content
+  /// with [tableCellNode] before passing it. When a node is already a cell
+  /// wrapper (`type == 'table/cell'`), its attributes are preserved and only
+  /// `colPosition`/`rowPosition` are overridden.
+  ///
+  /// Example (renders as a 2×2 table with a heading on the top-left):
+  /// ```dart
+  /// final table = TableNode.fromNodes([
+  ///   [headingNode(level: 3, text: 'Name'), paragraphNode(text: 'Elara')], // col 0
+  ///   [paragraphNode(text: 'Role'),          paragraphNode(text: 'Mage')],  // col 1
+  /// ]);
+  /// // | Name (h3) | Role  |
+  /// // | Elara      | Mage  |
+  /// ```
+  static TableNode fromNodes(
+    List<List<Node>> cols, {
+    TableConfig? config,
+  }) {
+    assert(cols.isNotEmpty, 'cols must not be empty');
+    assert(cols[0].isNotEmpty, 'rows must not be empty');
+    assert(
+      cols.every((col) => col.length == cols[0].length),
+      'all columns must have the same number of rows',
+    );
+
+    config = config ?? TableConfig();
+
+    final tableAttrs = <String, Object>{
+      TableBlockKeys.colsLen: cols.length,
+      TableBlockKeys.rowsLen: cols[0].length,
+      ...config.toJson(),
+    };
+
+    final node = Node(type: TableBlockKeys.type, attributes: tableAttrs);
+
+    for (var c = 0; c < cols.length; c++) {
+      for (var r = 0; r < cols[0].length; r++) {
+        final content = cols[c][r];
+
+        final Node cell;
+        if (content.type == TableCellBlockKeys.type) {
+          // Already a cell wrapper (e.g. from tableCellNode) — keep its
+          // attributes (width, background, etc.) but override positions.
+          cell = content.copyWith(
+            attributes: {
+              ...content.attributes,
+              TableCellBlockKeys.colPosition: c,
+              TableCellBlockKeys.rowPosition: r,
+            },
           );
         } else {
-          cellChild = cols[i][j] as Node;
+          // Raw content node — wrap in a fresh cell.
+          cell = Node(
+            type: TableCellBlockKeys.type,
+            attributes: {
+              TableCellBlockKeys.colPosition: c,
+              TableCellBlockKeys.rowPosition: r,
+            },
+          );
+          cell.insert(content);
         }
-        cell.insert(cellChild);
 
         node.insert(cell);
       }

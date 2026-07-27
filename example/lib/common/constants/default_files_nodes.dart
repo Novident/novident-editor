@@ -10,6 +10,8 @@ import 'package:example/common/nodes/file.dart';
 import 'package:novident_editor/novident_editor.dart' show Document;
 import 'package:novident_nodes/novident_nodes.dart';
 
+import 'contents/readme_document.dart';
+
 String _content(Document document) => jsonEncode(document.toJson());
 
 // The File instances are shared between [defaultNodes] (structure) and
@@ -57,6 +59,7 @@ final Map<String, String> defaultDocumentContents = <String, String>{
   _tavern.id: _content(tavernDocument),
   _elara.id: _content(characterElaraDocument),
   _hollowForest.id: _content(placeHollowForestDocument),
+  _readme.id: _content(readmeDocument)
 };
 
 /// Default project structure.

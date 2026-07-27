@@ -27,16 +27,43 @@ typedef TableBlockCellComponentColorBuilder = Color? Function(
   Node node,
 );
 
-Node tableCellNode(String text, int rowPosition, int colPosition) {
+/// Creates a table-cell [Node] with full control over its attributes.
+///
+/// The [child] is the content node rendered inside the cell (typically a
+/// [paragraphNode] or [headingNode]).
+///
+/// Example:
+/// ```dart
+/// tableCellNode(
+///   rowPosition: 0,
+///   colPosition: 1,
+///   child: paragraphNode(text: 'Hello'),
+///   width: 120,
+///   rowBackgroundColor: '0xFFE3F2FD',
+/// )
+/// ```
+Node tableCellNode({
+  required int rowPosition,
+  required int colPosition,
+  required Node child,
+  double? width,
+  double? height,
+  String? rowBackgroundColor,
+  String? colBackgroundColor,
+}) {
   return Node(
     type: TableCellBlockKeys.type,
     attributes: {
       TableCellBlockKeys.rowPosition: rowPosition,
       TableCellBlockKeys.colPosition: colPosition,
+      if (width != null) TableCellBlockKeys.width: width,
+      if (height != null) TableCellBlockKeys.height: height,
+      if (rowBackgroundColor != null)
+        TableCellBlockKeys.rowBackgroundColor: rowBackgroundColor,
+      if (colBackgroundColor != null)
+        TableCellBlockKeys.colBackgroundColor: colBackgroundColor,
     },
-    children: [
-      paragraphNode(text: text),
-    ],
+    children: [child],
   );
 }
 

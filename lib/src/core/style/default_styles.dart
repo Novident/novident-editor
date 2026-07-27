@@ -25,12 +25,12 @@ import 'package:novident_editor/src/core/style/novident_style_registry.dart';
 final NovidentStyleRegistry kDefaultStyleRegistry =
     NovidentStyleRegistry(<String, NovidentStyleDefinition>{
   kNormalBodyStyle.id: kNormalBodyStyle,
-  _kHeadingDefaultStyles[0].id: _kHeadingDefaultStyles[0],
-  _kHeadingDefaultStyles[1].id: _kHeadingDefaultStyles[1],
-  _kHeadingDefaultStyles[2].id: _kHeadingDefaultStyles[2],
-  _kHeadingDefaultStyles[3].id: _kHeadingDefaultStyles[3],
-  _kHeadingDefaultStyles[4].id: _kHeadingDefaultStyles[4],
-  _kHeadingDefaultStyles[5].id: _kHeadingDefaultStyles[5],
+  kHeadingDefaultStyles[0].id: kHeadingDefaultStyles[0],
+  kHeadingDefaultStyles[1].id: kHeadingDefaultStyles[1],
+  kHeadingDefaultStyles[2].id: kHeadingDefaultStyles[2],
+  kHeadingDefaultStyles[3].id: kHeadingDefaultStyles[3],
+  kHeadingDefaultStyles[4].id: kHeadingDefaultStyles[4],
+  kHeadingDefaultStyles[5].id: kHeadingDefaultStyles[5],
 });
 
 // Default paragraph base style. Must be always used as part of `defaultStyle` property
@@ -55,7 +55,7 @@ final NovidentStyleDefinition kNormalBodyStyle =
 
 /// Default heading styles matching built-in heading levels from legacy
 /// `HeadingBlockComponent`.
-const _kHeadingDefaultStyles = <NovidentStyleDefinition>[
+const kHeadingDefaultStyles = <NovidentStyleDefinition>[
   NovidentStyleDefinition(
     id: 'heading-1',
     name: 'Heading 1',

@@ -46,6 +46,7 @@ class MyEditor extends StatelessWidget {
       editorStyle: EditorStyle.desktop(
         padding: padding,
         cursorColor: Colors.black87,
+        firstLineIndent: 30, 
         selectionColor: const Color(0x33448AFF),
         textStyleConfiguration: const TextStyleConfiguration(
           lineHeight: 1,

@@ -28,6 +28,7 @@ class EditorStyle {
     this.mobileDragHandleLeftExtend,
     this.mobileDragHandleHeightExtend,
     this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
+    this.firstLineIndent,
   });
 
   // The padding of the editor.
@@ -105,6 +106,11 @@ class EditorStyle {
 
   final double textScaleFactor;
 
+  /// Global first-line indent width applied to paragraphs whose style
+  /// has [NovidentStyleDefinition.allowGlobalFirstLineIndent] enabled
+  /// and does not define its own [NovidentStyleIndent.firstLineIndent].
+  final double? firstLineIndent;
+
   const EditorStyle.desktop({
     EdgeInsets? padding,
     Color? cursorColor,
@@ -116,6 +122,7 @@ class EditorStyle {
     this.cursorWidth = 2.0,
     this.textScaleFactor = 1.0,
     this.maxWidth,
+    this.firstLineIndent,
   })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 100),
         cursorColor = cursorColor ?? const Color(0xFF00BCF0),
         selectionColor =
@@ -158,6 +165,7 @@ class EditorStyle {
     this.mobileDragHandleLeftExtend,
     this.mobileDragHandleHeightExtend,
     this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
+    this.firstLineIndent,
   })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 20),
         cursorColor = cursorColor ?? const Color(0xFF00BCF0),
         dragHandleColor = dragHandleColor ?? const Color(0xFF00BCF0),
@@ -191,6 +199,7 @@ class EditorStyle {
     double? mobileDragHandleLeftExtend,
     double? mobileDragHandleHeightExtend,
     Duration? autoDismissCollapsedHandleDuration,
+    double? firstLineIndent,
   }) {
     return EditorStyle(
       padding: padding ?? this.padding,
@@ -223,6 +232,7 @@ class EditorStyle {
           mobileDragHandleHeightExtend ?? this.mobileDragHandleHeightExtend,
       autoDismissCollapsedHandleDuration: autoDismissCollapsedHandleDuration ??
           this.autoDismissCollapsedHandleDuration,
+      firstLineIndent: firstLineIndent ?? this.firstLineIndent,
     );
   }
 }

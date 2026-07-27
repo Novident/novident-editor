@@ -157,7 +157,7 @@ class _TodoListBlockComponentWidgetState
       width: double.infinity,
       alignment: alignment,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         textDirection: textDirection,
@@ -178,8 +178,9 @@ class _TodoListBlockComponentWidgetState
               delegate: this,
               node: widget.node,
               editorState: editorState,
-              textAlign: blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign,
+              textAlign: alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
               placeholderText: placeholderText,
+              useFirstLineIndent: false,
               textDirection: textDirection,
               textSpanDecorator: (textSpan) => textSpan
                   .updateTextStyle(textStyleWithTextSpan())

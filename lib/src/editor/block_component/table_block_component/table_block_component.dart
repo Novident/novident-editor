@@ -9,6 +9,12 @@ class TableBlockKeys {
 
   static const String type = 'table';
 
+  /// Default column weight applied to columns without an explicit
+  /// [TableCellBlockKeys.colWeight] attribute.
+  static const String colDefaultWeight = 'colDefaultWeight';
+
+  /// Legacy absolute pixel width. Kept for backward compatibility; layout
+  /// now uses [colDefaultWeight] and [TableCellBlockKeys.colWeight].
   static const String colDefaultWidth = 'colDefaultWidth';
 
   static const String rowDefaultHeight = 'rowDefaultHeight';
@@ -38,7 +44,15 @@ class TableBlockKeys {
 }
 
 class TableStyle {
+  /// Default column weight for columns without an explicit
+  /// [TableCellBlockKeys.colWeight].
+  final double colWeight;
+
+  /// Legacy default column width in pixels. Deprecated in favour of
+  /// [colWeight].
+  @Deprecated('Use colWeight instead')
   final double colWidth;
+
   final double rowHeight;
   final double colMinimumWidth;
   final double borderWidth;
@@ -74,7 +88,8 @@ class TableStyle {
   final bool showAddRowButton;
 
   const TableStyle({
-    this.colWidth = 160,
+    this.colWeight = 1.0,
+    @Deprecated('Use colWeight instead') this.colWidth = 160,
     this.rowHeight = 40,
     this.colMinimumWidth = 40,
     this.borderWidth = 2,
@@ -93,6 +108,9 @@ class TableStyle {
 class TableDefaults {
   const TableDefaults._();
 
+  static double colDefaultWeight = 1.0;
+
+  @Deprecated('Use colDefaultWeight instead')
   static double colWidth = 160.0;
 
   static double rowHeight = 40.0;
@@ -146,6 +164,7 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
   @override
   BlockComponentWidget build(BlockComponentContext blockComponentContext) {
     final node = blockComponentContext.node;
+    TableDefaults.colDefaultWeight = tableStyle.colWeight;
     TableDefaults.colWidth = tableStyle.colWidth;
     TableDefaults.rowHeight = tableStyle.rowHeight;
     TableDefaults.colMinimumWidth = tableStyle.colMinimumWidth;

@@ -15,6 +15,18 @@ class TableCellBlockKeys {
 
   static const String height = 'height';
 
+  /// Relative weight of the column this cell belongs to.
+  ///
+  /// Columns with higher [colWeight] get proportionally more horizontal
+  /// space. A column without an explicit [colWeight] defaults to 1.0.
+  ///
+  /// Replaces the legacy [width] attribute for layout purposes, though
+  /// [width] is still stored for backward compatibility.
+  static const String colWeight = 'colWeight';
+
+  /// Legacy absolute pixel width. Still written by the resize logic for
+  /// backward compatibility, but no longer used for layout. Use [colWeight]
+  /// instead.
   static const String width = 'width';
 
   static const String rowBackgroundColor = 'rowBackgroundColor';
@@ -46,6 +58,7 @@ Node tableCellNode({
   required int rowPosition,
   required int colPosition,
   required Node child,
+  double? colWeight,
   double? width,
   double? height,
   String? rowBackgroundColor,
@@ -56,6 +69,7 @@ Node tableCellNode({
     attributes: {
       TableCellBlockKeys.rowPosition: rowPosition,
       TableCellBlockKeys.colPosition: colPosition,
+      if (colWeight != null) TableCellBlockKeys.colWeight: colWeight,
       if (width != null) TableCellBlockKeys.width: width,
       if (height != null) TableCellBlockKeys.height: height,
       if (rowBackgroundColor != null)

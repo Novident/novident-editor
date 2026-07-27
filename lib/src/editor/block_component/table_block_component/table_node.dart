@@ -241,12 +241,88 @@ class TableNode {
       ) +
       _config.borderWidth;
 
-  double getColWidth(int col) =>
-      double.tryParse(
-        _cells[col][0].attributes[TableCellBlockKeys.width].toString(),
-      ) ??
-      _config.colDefaultWidth;
+  /// Returns the relative weight of column [col].
+  ///
+  /// Reads [TableCellBlockKeys.colWeight] from the first cell of the column.
+  /// Falls back to [TableConfig.colDefaultWeight] (default 1.0) when the
+  /// attribute is absent.
+  double getColWeight(int col) {
+    final weight = double.tryParse(
+      _cells[col][0].attributes[TableCellBlockKeys.colWeight].toString(),
+    );
+    if (weight != null) return weight;
 
+    // Migration path: legacy documents may only have pixel width.
+    // Convert to a proportional weight.
+    final width = double.tryParse(
+      _cells[col][0].attributes[TableCellBlockKeys.width].toString(),
+    );
+    if (width != null) return width / TableDefaults.colWidth;
+
+    return _config.colDefaultWeight;
+  }
+
+  /// Returns the sum of all column weights for proportional distribution.
+  double get totalWeight =>
+      List.generate(colsLen, (i) => i).fold<double>(
+        0,
+        (prev, i) => prev + getColWeight(i),
+      );
+
+  /// Distributes [availableWidth] (pixels available for content) across
+  /// columns according to their weights.
+  ///
+  /// Each column receives at least [TableConfig.colMinimumWidth] pixels.
+  List<double> distributeColumnWidths(double availableWidth) {
+    final totalBorders = _config.borderWidth * (colsLen + 1);
+    final usableWidth = (availableWidth - totalBorders).clamp(0, double.infinity);
+
+    final weights = List.generate(colsLen, getColWeight);
+    final sumWeights = weights.fold<double>(0, (a, b) => a + b);
+
+    if (sumWeights == 0) {
+      return List.filled(colsLen, _config.colMinimumWidth);
+    }
+
+    // First pass: proportional distribution
+    final widths = List.generate(colsLen, (i) {
+      return (weights[i] / sumWeights * usableWidth)
+          .clamp(_config.colMinimumWidth, double.infinity);
+    });
+
+    // Reclaim excess from clamped-down columns and redistribute
+    double totalUsed = widths.fold(0, (a, b) => a + b);
+    if (totalUsed < usableWidth) {
+      final unclampedSum = weights
+          .asMap()
+          .entries
+          .where((e) => widths[e.key] > _config.colMinimumWidth)
+          .fold<double>(0, (a, e) => a + weights[e.key]);
+
+      if (unclampedSum > 0) {
+        final extra = usableWidth - totalUsed;
+        for (var i = 0; i < colsLen; i++) {
+          if (widths[i] > _config.colMinimumWidth) {
+            widths[i] += (weights[i] / unclampedSum) * extra;
+          }
+        }
+      }
+    }
+
+    return widths;
+  }
+
+  /// Legacy pixel-width accessor. Delegates to the weight system; the
+  /// actual rendered width depends on available space (see
+  /// [distributeColumnWidths]).
+  ///
+  /// Returns the weight scaled by [TableDefaults.colWidth] for backward
+  /// compatibility with code that expects a pixel value.
+  double getColWidth(int col) =>
+      getColWeight(col) * TableDefaults.colWidth;
+
+  /// Total intrinsic width in legacy pixel units. Prefer [totalWeight] for
+  /// layout decisions.
   double get tableWidth =>
       List.generate(colsLen, (idx) => idx).fold<double>(
         0,
@@ -254,19 +330,28 @@ class TableNode {
       ) +
       _config.borderWidth;
 
-  void setColWidth(
+  /// Sets the weight of column [col] and updates all cells in that column.
+  ///
+  /// This is the replacement for the legacy [setColWidth]. When the user
+  /// drags a column border, the new pixel width is converted to a weight
+  /// relative to the available space.
+  void setColWeight(
     int col,
-    double w, {
+    double weight, {
     Transaction? transaction,
     bool force = false,
   }) {
-    w = w < _config.colMinimumWidth ? _config.colMinimumWidth : w;
-    if (getColWidth(col) != w || force) {
-      for (int i = 0; i < rowsLen; i++) {
+    final clamped = weight < 0.1 ? 0.1 : weight;
+    if (getColWeight(col) != clamped || force) {
+      for (var i = 0; i < rowsLen; i++) {
         if (transaction != null) {
-          transaction.updateNode(_cells[col][i], {TableCellBlockKeys.width: w});
+          transaction.updateNode(
+            _cells[col][i],
+            {TableCellBlockKeys.colWeight: clamped},
+          );
         } else {
-          _cells[col][i].updateAttributes({TableCellBlockKeys.width: w});
+          _cells[col][i]
+              .updateAttributes({TableCellBlockKeys.colWeight: clamped});
         }
         updateRowHeight(i, transaction: transaction);
       }
@@ -276,6 +361,18 @@ class TableNode {
         node.updateAttributes(node.attributes);
       }
     }
+  }
+
+  /// Legacy pixel-width setter. Converts the pixel value to a weight and
+  /// delegates to [setColWeight].
+  void setColWidth(
+    int col,
+    double w, {
+    Transaction? transaction,
+    bool force = false,
+  }) {
+    setColWeight(col, w / TableDefaults.colWidth,
+        transaction: transaction, force: force);
   }
 
   void updateRowHeight(

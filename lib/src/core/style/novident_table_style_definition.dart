@@ -2,54 +2,70 @@ import 'package:flutter/material.dart';
 
 import 'novident_style_definition.dart';
 
-/// Style configuration for the table header row (row index 0).
-///
-/// Applied when [NovidentTableStyleDefinition.firstRowHeader] is `true`.
-class NovidentTableHeaderStyle {
-  const NovidentTableHeaderStyle({
+/// Style configuration for a specific row range in a table (header, footer,
+/// or any custom row set via [NovidentTableStyleDefinition.rowStyles]).
+class NovidentTableRowStyle {
+  const NovidentTableRowStyle({
     this.backgroundColor,
     this.bold = false,
     this.fontSize,
     this.alignment,
+    this.textColor,
     this.height,
+    this.topBorderColor,
+    this.topBorderWidth,
     this.bottomBorderColor,
     this.bottomBorderWidth,
     this.padding,
   });
 
-  /// Background color for every cell in the first row.
+  /// Background color for every cell in this row.
+  ///
+  /// Overrides per-cell [TableCellBlockKeys.rowBackgroundColor] when set.
   final Color? backgroundColor;
 
-  /// Whether header text is bold.
+  /// Whether text in this row is bold.
   final bool bold;
 
-  /// Font size override for header cells.
+  /// Font size override for cells in this row.
   final double? fontSize;
 
-  /// Text alignment for header cells.
+  /// Text alignment for cells in this row.
   final TextAlign? alignment;
 
-  /// Explicit row height for the header row. Falls back to
+  /// Text color for cells in this row.
+  final Color? textColor;
+
+  /// Explicit row height. Falls back to
   /// [NovidentTableStyleDefinition.rowDefaultHeight] when `null`.
   final double? height;
 
-  /// Color of the border below the header row.
+  /// Color of the border above this row.
+  final Color? topBorderColor;
+
+  /// Thickness of the border above this row.
+  final double? topBorderWidth;
+
+  /// Color of the border below this row.
   final Color? bottomBorderColor;
 
-  /// Thickness of the border below the header row.
+  /// Thickness of the border below this row.
   final double? bottomBorderWidth;
 
-  /// Padding override for header cells.
+  /// Padding override for cells in this row.
   final EdgeInsets? padding;
 
-  NovidentTableHeaderStyle merge(NovidentTableHeaderStyle? other) {
+  NovidentTableRowStyle merge(NovidentTableRowStyle? other) {
     if (other == null) return this;
-    return NovidentTableHeaderStyle(
+    return NovidentTableRowStyle(
       backgroundColor: other.backgroundColor ?? backgroundColor,
       bold: other.bold || bold,
       fontSize: other.fontSize ?? fontSize,
       alignment: other.alignment ?? alignment,
+      textColor: other.textColor ?? textColor,
       height: other.height ?? height,
+      topBorderColor: other.topBorderColor ?? topBorderColor,
+      topBorderWidth: other.topBorderWidth ?? topBorderWidth,
       bottomBorderColor: other.bottomBorderColor ?? bottomBorderColor,
       bottomBorderWidth: other.bottomBorderWidth ?? bottomBorderWidth,
       padding: other.padding ?? padding,
@@ -59,13 +75,16 @@ class NovidentTableHeaderStyle {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is NovidentTableHeaderStyle &&
+      other is NovidentTableRowStyle &&
           runtimeType == other.runtimeType &&
           backgroundColor == other.backgroundColor &&
           bold == other.bold &&
           fontSize == other.fontSize &&
           alignment == other.alignment &&
+          textColor == other.textColor &&
           height == other.height &&
+          topBorderColor == other.topBorderColor &&
+          topBorderWidth == other.topBorderWidth &&
           bottomBorderColor == other.bottomBorderColor &&
           bottomBorderWidth == other.bottomBorderWidth &&
           padding == other.padding;
@@ -76,7 +95,10 @@ class NovidentTableHeaderStyle {
         bold,
         fontSize,
         alignment,
+        textColor,
         height,
+        topBorderColor,
+        topBorderWidth,
         bottomBorderColor,
         bottomBorderWidth,
         padding,
@@ -92,7 +114,7 @@ class NovidentTableHeaderStyle {
 ///
 /// Resolution priority (highest to lowest):
 /// 1. Per-node attributes ([TableBlockKeys], [TableCellBlockKeys])
-/// 2. Style referenced via `tableStyleRef` node attribute
+/// 2. Style referenced via `styleRef` node attribute
 /// 3. Default style for the `'table'` block type (`defaultStylesByType['table']`)
 /// 4. [kDefaultTableStyle] global fallback
 /// 5. [TableDefaults] hardcoded constants
@@ -108,19 +130,38 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     this.borderWidth = 2.0,
     this.borderColor,
     this.borderHoverColor,
+    this.innerBorderColor,
+    this.outerBorderColor,
+    this.borderStyle = BorderStyle.solid,
+    this.borderRadius,
+    this.noBorder = false,
+    this.cellPadding,
+    this.cellAlignment,
+    this.cellVerticalAlignment,
+    this.cellTextOverflow,
     this.cellVerticalPadding = 8.0,
     this.enableHorizontalScroll = true,
     this.tablePadding = const EdgeInsets.only(top: 10, left: 10, bottom: 4),
     this.showAddColumnButton = true,
     this.showAddRowButton = true,
-    // ── Header ─────────────────────────────────────────
-    this.firstRowHeader = false,
+    // ── Row striping ───────────────────────────────────
+    this.evenRowColor,
+    this.oddRowColor,
+    // ── Header & footer ────────────────────────────────
+    this.headerRowCount = 0,
     this.headerStyle,
+    this.footerRowCount = 0,
+    this.footerStyle,
+    // ── Per-column / per-row defaults ──────────────────
+    this.columnWeights,
+    this.rowHeights,
+    // ── Selection ──────────────────────────────────────
+    this.selectionHighlightColor,
     // ── Inherited from NovidentStyleDefinition ─────────
     super.next,
     super.spacing,
     super.indent,
-    super.borderStyle,
+    super.borderStyle: super.borderStyle,
     super.keep,
     super.alignment,
     super.blockBackgroundColor,
@@ -149,73 +190,88 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
 
   // ── Table layout ─────────────────────────────────────
 
-  /// Default column weight for columns without an explicit
-  /// [TableCellBlockKeys.colWeight] attribute.
   final double colDefaultWeight;
-
-  /// Default row height in pixels.
   final double rowDefaultHeight;
-
-  /// Minimum column width in pixels.
   final double colMinimumWidth;
-
-  /// Border width in pixels between cells and around the table.
   final double borderWidth;
-
-  /// Border color. Overridable per-table via [TableBlockKeys.borderColor].
   final Color? borderColor;
-
-  /// Border color when hovering over a resizable border.
   final Color? borderHoverColor;
 
-  /// Extra vertical space for row height synchronization.
+  /// Border color for internal cell dividers (between rows and columns).
+  /// When `null`, [borderColor] is used for all borders.
+  final Color? innerBorderColor;
+
+  /// Border color for the outer perimeter of the table.
+  /// When `null`, [borderColor] is used for all borders.
+  final Color? outerBorderColor;
+
+  /// Border line style (solid, dashed, dotted, etc.). Defaults to solid.
+  final BorderStyle borderStyle;
+
+  /// Corner radius for the table's outer border.
+  final BorderRadius? borderRadius;
+
+  /// When `true`, no borders are drawn anywhere on the table —
+  /// [borderWidth], [borderColor], [borderStyle], etc. are all ignored.
+  final bool noBorder;
+
+  /// Padding inside every cell. Overrides the builder-level cell padding.
+  final EdgeInsets? cellPadding;
+
+  /// Default horizontal text alignment for cell content.
+  final TextAlign? cellAlignment;
+
+  /// Vertical alignment of cell content within the row.
+  final CrossAxisAlignment? cellVerticalAlignment;
+
+  /// How overflowing text in cells is handled.
+  final TextOverflow? cellTextOverflow;
+
   final double cellVerticalPadding;
-
-  /// Whether the table gets its own internal horizontal scroll view.
   final bool enableHorizontalScroll;
-
-  /// Padding around the table content.
   final EdgeInsets tablePadding;
-
-  /// Whether the trailing "add column" button is shown.
   final bool showAddColumnButton;
-
-  /// Whether the trailing "add row" button is shown.
   final bool showAddRowButton;
 
-  // ── Merge ───────────────────────────────────────────
+  // ── Row striping ─────────────────────────────────────
 
-  /// Merges [other] on top of this style.
-  ///
-  /// Overrides [NovidentStyleDefinition.merge] to preserve table-specific
-  /// properties when either style in the chain is a table style.
-  @override
-  NovidentStyleDefinition merge(NovidentStyleDefinition other) {
-    if (other is NovidentTableStyleDefinition) {
-      return _mergeWithTable(other);
-    }
-    // Plain paragraph style — inherit text props, keep table props.
-    return _copyWithParent(other);
-  }
+  /// Background color for even-numbered rows (0-indexed: rows 0, 2, 4…).
+  /// Overridden by per-cell background colors and [headerStyle] / [footerStyle].
+  final Color? evenRowColor;
 
-  /// Public entry point for merging with explicit table-awareness.
-  /// Use this when the caller knows [other] may be a table style and
-  /// wants the full table merge (including the reverse case where `this`
-  /// is a plain style and [other] is a table style).
-  NovidentTableStyleDefinition mergeTable(NovidentStyleDefinition other) {
-    if (other is NovidentTableStyleDefinition) {
-      return _mergeWithTable(other);
-    }
-    return _copyWithParent(other);
-  }
+  /// Background color for odd-numbered rows (1, 3, 5…).
+  final Color? oddRowColor;
 
-  // ── Header ───────────────────────────────────────────
+  // ── Header & footer ──────────────────────────────────
 
-  /// When `true`, the first row renders using [headerStyle].
-  final bool firstRowHeader;
+  /// Number of rows at the top of the table treated as header.
+  /// Rows `0` through `headerRowCount - 1` use [headerStyle].
+  final int headerRowCount;
 
-  /// Style applied to the first row when [firstRowHeader] is `true`.
-  final NovidentTableHeaderStyle? headerStyle;
+  /// Style applied to header rows (first [headerRowCount] rows).
+  final NovidentTableRowStyle? headerStyle;
+
+  /// Number of rows at the bottom of the table treated as footer.
+  /// Rows `rowsLen - footerRowCount` through `rowsLen - 1` use [footerStyle].
+  final int footerRowCount;
+
+  /// Style applied to footer rows (last [footerRowCount] rows).
+  final NovidentTableRowStyle? footerStyle;
+
+  // ── Per-column / per-row defaults ────────────────────
+
+  /// Default column weights keyed by column index.
+  /// Columns not listed here use [colDefaultWeight].
+  final Map<int, double>? columnWeights;
+
+  /// Default row heights keyed by row index.
+  /// Rows not listed here use [rowDefaultHeight].
+  final Map<int, double>? rowHeights;
+
+  // ── Selection ────────────────────────────────────────
+
+  /// Highlight color when cells are selected.
+  final Color? selectionHighlightColor;
 
   // ── Convenience constructor ──────────────────────────
 
@@ -231,16 +287,32 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     this.borderWidth = 2.0,
     this.borderColor,
     this.borderHoverColor,
+    this.innerBorderColor,
+    this.outerBorderColor,
+    this.borderStyle = BorderStyle.solid,
+    this.borderRadius,
+    this.noBorder = false,
+    this.cellPadding,
+    this.cellAlignment,
+    this.cellVerticalAlignment,
+    this.cellTextOverflow,
     this.cellVerticalPadding = 8.0,
     this.enableHorizontalScroll = true,
     this.tablePadding = const EdgeInsets.only(top: 10, left: 10, bottom: 4),
     this.showAddColumnButton = true,
     this.showAddRowButton = true,
-    this.firstRowHeader = false,
+    this.evenRowColor,
+    this.oddRowColor,
+    this.headerRowCount = 0,
     this.headerStyle,
+    this.footerRowCount = 0,
+    this.footerStyle,
+    this.columnWeights,
+    this.rowHeights,
+    this.selectionHighlightColor,
     super.spacing,
     super.indent,
-    super.borderStyle,
+    super.borderStyle: super.borderStyle,
     super.keep,
     super.alignment,
     super.blockBackgroundColor,
@@ -267,32 +339,62 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     super.allowGlobalFirstLineIndent,
   }) : super.nextSame();
 
-  /// Merges [parent] text properties under this table style.
-  /// [parent] (the more specific/child style) takes precedence.
+  // ── Merge ───────────────────────────────────────────
+
+  @override
+  NovidentStyleDefinition merge(NovidentStyleDefinition other) {
+    if (other is NovidentTableStyleDefinition) {
+      return _mergeWithTable(other);
+    }
+    return _copyWithParent(other);
+  }
+
+  NovidentTableStyleDefinition mergeTable(NovidentStyleDefinition other) {
+    if (other is NovidentTableStyleDefinition) {
+      return _mergeWithTable(other);
+    }
+    return _copyWithParent(other);
+  }
+
   NovidentTableStyleDefinition _copyWithParent(NovidentStyleDefinition parent) {
     return NovidentTableStyleDefinition(
       id: id,
       name: name,
       basedOn: basedOn,
-      // Table props — keep ours (only table styles have these)
+      // Table props — keep ours
       colDefaultWeight: colDefaultWeight,
       rowDefaultHeight: rowDefaultHeight,
       colMinimumWidth: colMinimumWidth,
       borderWidth: borderWidth,
       borderColor: borderColor,
       borderHoverColor: borderHoverColor,
+      innerBorderColor: innerBorderColor,
+      outerBorderColor: outerBorderColor,
+      borderStyle: borderStyle,
+      borderRadius: borderRadius,
+      noBorder: noBorder,
+      cellPadding: cellPadding,
+      cellAlignment: cellAlignment,
+      cellVerticalAlignment: cellVerticalAlignment,
+      cellTextOverflow: cellTextOverflow,
       cellVerticalPadding: cellVerticalPadding,
       enableHorizontalScroll: enableHorizontalScroll,
       tablePadding: tablePadding,
       showAddColumnButton: showAddColumnButton,
       showAddRowButton: showAddRowButton,
-      firstRowHeader: firstRowHeader,
+      evenRowColor: evenRowColor,
+      oddRowColor: oddRowColor,
+      headerRowCount: headerRowCount,
       headerStyle: headerStyle,
+      footerRowCount: footerRowCount,
+      footerStyle: footerStyle,
+      columnWeights: columnWeights,
+      rowHeights: rowHeights,
+      selectionHighlightColor: selectionHighlightColor,
       // Text props — parent (child/override) > this (accumulated/base)
       next: parent.next ?? next,
       spacing: parent.spacing ?? spacing,
       indent: parent.indent ?? indent,
-      borderStyle: parent.borderStyle ?? borderStyle,
       keep: parent.keep ?? keep,
       alignment:
           parent.alignment != alignment ? parent.alignment : alignment,
@@ -333,15 +435,30 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       name: other.name,
       basedOn: other.basedOn ?? basedOn,
       // Table props — other overrides
-      colDefaultWeight:
-          other.colDefaultWeight != 1.0 ? other.colDefaultWeight : colDefaultWeight,
-      rowDefaultHeight:
-          other.rowDefaultHeight != 40.0 ? other.rowDefaultHeight : rowDefaultHeight,
-      colMinimumWidth:
-          other.colMinimumWidth != 40.0 ? other.colMinimumWidth : colMinimumWidth,
-      borderWidth: other.borderWidth != 2.0 ? other.borderWidth : borderWidth,
+      colDefaultWeight: other.colDefaultWeight != 1.0
+          ? other.colDefaultWeight
+          : colDefaultWeight,
+      rowDefaultHeight: other.rowDefaultHeight != 40.0
+          ? other.rowDefaultHeight
+          : rowDefaultHeight,
+      colMinimumWidth: other.colMinimumWidth != 40.0
+          ? other.colMinimumWidth
+          : colMinimumWidth,
+      borderWidth:
+          other.borderWidth != 2.0 ? other.borderWidth : borderWidth,
       borderColor: other.borderColor ?? borderColor,
       borderHoverColor: other.borderHoverColor ?? borderHoverColor,
+      innerBorderColor: other.innerBorderColor ?? innerBorderColor,
+      outerBorderColor: other.outerBorderColor ?? outerBorderColor,
+      borderStyle:
+          other.borderStyle != BorderStyle.solid ? other.borderStyle : borderStyle,
+      borderRadius: other.borderRadius ?? borderRadius,
+      noBorder: other.noBorder || noBorder,
+      cellPadding: other.cellPadding ?? cellPadding,
+      cellAlignment: other.cellAlignment ?? cellAlignment,
+      cellVerticalAlignment:
+          other.cellVerticalAlignment ?? cellVerticalAlignment,
+      cellTextOverflow: other.cellTextOverflow ?? cellTextOverflow,
       cellVerticalPadding: other.cellVerticalPadding != 8.0
           ? other.cellVerticalPadding
           : cellVerticalPadding,
@@ -349,22 +466,38 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
           other.enableHorizontalScroll != enableHorizontalScroll
               ? other.enableHorizontalScroll
               : enableHorizontalScroll,
-      tablePadding: other.tablePadding,
-      showAddColumnButton: other.showAddColumnButton != showAddColumnButton
-          ? other.showAddColumnButton
-          : showAddColumnButton,
+      tablePadding: other.tablePadding != tablePadding
+          ? other.tablePadding
+          : tablePadding,
+      showAddColumnButton:
+          other.showAddColumnButton != showAddColumnButton
+              ? other.showAddColumnButton
+              : showAddColumnButton,
       showAddRowButton: other.showAddRowButton != showAddRowButton
           ? other.showAddRowButton
           : showAddRowButton,
-      firstRowHeader: other.firstRowHeader || firstRowHeader,
+      evenRowColor: other.evenRowColor ?? evenRowColor,
+      oddRowColor: other.oddRowColor ?? oddRowColor,
+      headerRowCount: other.headerRowCount > 0
+          ? other.headerRowCount
+          : headerRowCount,
       headerStyle: other.headerStyle != null
           ? headerStyle?.merge(other.headerStyle) ?? other.headerStyle
           : headerStyle,
+      footerRowCount: other.footerRowCount > 0
+          ? other.footerRowCount
+          : footerRowCount,
+      footerStyle: other.footerStyle != null
+          ? footerStyle?.merge(other.footerStyle) ?? other.footerStyle
+          : footerStyle,
+      columnWeights: other.columnWeights ?? columnWeights,
+      rowHeights: other.rowHeights ?? rowHeights,
+      selectionHighlightColor:
+          other.selectionHighlightColor ?? selectionHighlightColor,
       // Text props — other overrides
       next: other.next ?? next,
       spacing: other.spacing ?? spacing,
       indent: other.indent ?? indent,
-      borderStyle: other.borderStyle ?? borderStyle,
       keep: other.keep ?? keep,
       alignment: other.alignment != alignment ? other.alignment : alignment,
       blockBackgroundColor:

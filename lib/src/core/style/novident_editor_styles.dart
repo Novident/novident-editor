@@ -29,6 +29,11 @@ class NovidentEditorStyles extends InheritedWidget {
       config.defaultStyle.fontFamily != null,
       'NovidentStylesConfig.defaultStyle must have a non-null fontFamily.',
     );
+    assert(
+      config.defaultStyle.fontSize > 0,
+      'NovidentStylesConfig.defaultStyle must have a '
+      'fontSize major than zero. Found "${config.defaultStyle.fontSize}"',
+    );
     return config.defaultStyle;
   }
 

@@ -78,7 +78,10 @@ layout properties.
 const myTableStyle = NovidentTableStyleDefinition.nextSame(
   id: 'my-table',
   name: 'My Table',
-  basedOn: '__novident_table__',   // inherit defaults
+  // default table style has some properties
+  // already defined, so, you can just skip them
+  // if you dont care about them
+  basedOn: kDefaultTableStyle.id,   // inherit defaults
   borderColor: Color(0xFF2196F3),
   borderWidth: 1.0,
   colDefaultWeight: 1.0,

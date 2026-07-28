@@ -23,13 +23,13 @@ final kReadmeStripedTable = NovidentTableStyleDefinition.nextSame(
   id: 'readme-striped',
   name: 'Striped',
   basedOn: kDefaultTableStyle.id,
-  evenRowColor: const Color(0xFFF5F5F5),
+  evenRowColor: const Color(0xFFEEEEEE),
   oddRowColor: const Color(0xFFFFFFFF),
   headerRowCount: 1,
   headerStyle: const NovidentTableRowStyle(
     bold: true,
     alignment: TextAlign.center,
-    backgroundColor: Color(0xFF1565C0),
+    backgroundColor: Color(0xFF1976D2),
     textColor: Colors.white,
   ),
 );
@@ -54,7 +54,8 @@ final kReadmeColoredTable = NovidentTableStyleDefinition.nextSame(
     backgroundColor: Color(0xFFE3F2FD),
     bold: true,
   ),
-  evenRowColor: const Color(0xFFFFF3E0),
+  evenRowColor: const Color(0xFFFFF8E1),
+  oddRowColor: const Color(0xFFFFF3E0),
 );
 
 // ── Document ────────────────────────────────────────────
@@ -107,35 +108,49 @@ final Document readmeDocument = Document(
           paragraphNode(text: 'row striping'),
           paragraphNode(text: '✅'),
         ],
-      ]).node
-        ..attributes['styleRef'] = 'readme-plain',
+      ]).node,
+
+      // ── 3) Style: noBorder (borderless table) ────────
+      paragraphNode(text: '3. Borderless table (style: readme-plain)'),
+      TableNode.fromNodes(
+        [
+          [
+            paragraphNode(text: 'Feature'),
+            paragraphNode(text: 'Supports'),
+          ],
+          [
+            paragraphNode(text: 'noBorder'),
+            paragraphNode(text: '✅'),
+          ],
+          [
+            paragraphNode(text: 'row striping'),
+            paragraphNode(text: '✅'),
+          ],
+        ],
+        styleRef: 'readme-plain',
+      ).node,
 
       // ── 4) Style: zebra stripes + colored header ──────
       paragraphNode(text: '4. Striped table (style: readme-striped)'),
-      TableNode.fromNodes([
+      TableNode.fromNodes(
         [
-          paragraphNode(text: 'Name'),
-          paragraphNode(text: 'Elara'),
+          [paragraphNode(text: 'Name'), paragraphNode(text: 'Elara')],
+          [paragraphNode(text: 'Role'), paragraphNode(text: 'Mage')],
+          [paragraphNode(text: 'Level'), paragraphNode(text: '8')],
         ],
-        [
-          paragraphNode(text: 'Role'),
-          paragraphNode(text: 'Mage'),
-        ],
-        [
-          paragraphNode(text: 'Level'),
-          paragraphNode(text: '8'),
-        ],
-      ]).node
-        ..attributes['styleRef'] = 'readme-striped',
+        styleRef: 'readme-striped',
+      ).node,
 
       // ── 5) Style: colored header + evenRow ───────────
       paragraphNode(text: '5. Colored table (style: readme-colored)'),
-      TableNode.fromNodes([
-        [paragraphNode(text: 'Header A'), paragraphNode(text: 'Value 1')],
-        [paragraphNode(text: 'Header B'), paragraphNode(text: 'Value 2')],
-        [paragraphNode(text: 'Header C'), paragraphNode(text: 'Value 3')],
-      ]).node
-        ..attributes['styleRef'] = 'readme-colored',
+      TableNode.fromNodes(
+        [
+          [paragraphNode(text: 'Header A'), paragraphNode(text: 'Value 1')],
+          [paragraphNode(text: 'Header B'), paragraphNode(text: 'Value 2')],
+          [paragraphNode(text: 'Header C'), paragraphNode(text: 'Value 3')],
+        ],
+        styleRef: 'readme-colored',
+      ).node,
     ],
   ),
 );

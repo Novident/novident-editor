@@ -332,7 +332,6 @@ class TableNode {
         (a, b) => a + b,
       );
       final diff = totalUsed - usableWidth;
-      debugPrint('Diff: $diff');
 
       if (diff.abs() < 0.5) break; // converged
 

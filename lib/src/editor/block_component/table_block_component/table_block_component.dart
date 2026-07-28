@@ -99,7 +99,7 @@ class TableStyle {
     this.borderHoverColor = TableDefaults.borderHoverColor,
     this.cellVerticalPadding = 8.0,
     this.enableHorizontalScroll = true,
-    this.tablePadding = const EdgeInsets.only(top: 10, left: 10, bottom: 4),
+    this.tablePadding = const EdgeInsets.only(top: 10, left: 0, bottom: 4),
     this.showAddColumnButton = true,
     this.showAddRowButton = true,
   });
@@ -296,14 +296,6 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
 
   @override
   Widget build(BuildContext context) {
-    final tableView = TableView(
-      tableNode: widget.tableNode,
-      editorState: editorState,
-      menuBuilder: widget.menuBuilder,
-      actionMenuItems: widget.actionMenuItems,
-      tableStyle: widget.tableStyle,
-    );
-
     // per-table override of the style value; see
     // [TableBlockKeys.enableHorizontalScroll].
     final enableHorizontalScroll = context.select((Node n) {
@@ -312,28 +304,62 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
         }) ??
         widget.tableStyle.enableHorizontalScroll;
 
-    Widget child;
-    if (enableHorizontalScroll) {
-      child = Scrollbar(
-        controller: _scrollController,
-        child: SingleChildScrollView(
-          padding: widget.tableStyle.tablePadding,
-          controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          child: tableView,
-        ),
-      );
-    } else {
-      child = Padding(
-        padding: widget.tableStyle.tablePadding,
-        child: tableView,
-      );
-    }
+    Widget tableArea = LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        final tableNode = widget.tableNode;
+        final tablePadding = widget.tableStyle.tablePadding;
 
-    child = Padding(
+        // Minimum total width: all columns at colMinimumWidth + borders.
+        final minWidth =
+            (tableNode.config.colMinimumWidth * tableNode.colsLen) +
+                tableNode.config.borderWidth * (tableNode.colsLen + 1);
+
+        if (enableHorizontalScroll && availableWidth < minWidth) {
+          // Content overflows — render at minimum intrinsic widths.
+          final scrollWidths = tableNode.distributeColumnWidths(minWidth);
+          return Scrollbar(
+            controller: _scrollController,
+            child: SingleChildScrollView(
+              padding: tablePadding,
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: minWidth,
+                child: TableView(
+                  tableNode: tableNode,
+                  editorState: editorState,
+                  menuBuilder: widget.menuBuilder,
+                  actionMenuItems: widget.actionMenuItems,
+                  tableStyle: widget.tableStyle,
+                  columnWidths: scrollWidths,
+                ),
+              ),
+            ),
+          );
+        } else {
+          // Content fits — distribute available width by weights.
+          final contentWidth = availableWidth - tablePadding.horizontal;
+          final fittedWidths = tableNode.distributeColumnWidths(contentWidth);
+          return Padding(
+            padding: tablePadding,
+            child: TableView(
+              tableNode: tableNode,
+              editorState: editorState,
+              menuBuilder: widget.menuBuilder,
+              actionMenuItems: widget.actionMenuItems,
+              tableStyle: widget.tableStyle,
+              columnWidths: fittedWidths,
+            ),
+          );
+        }
+      },
+    );
+
+    Widget child = Padding(
       key: tableKey,
       padding: padding,
-      child: child,
+      child: tableArea,
     );
 
     child = BlockSelectionContainer(
@@ -448,8 +474,8 @@ SelectionMenuItem tableMenuItem = SelectionMenuItem(
     }
 
     final tableNode = TableNode.fromList([
-      ['', ''],
-      ['', ''],
+      ['', '', ''],
+      ['', '', ''],
     ]);
 
     final transaction = editorState.transaction;

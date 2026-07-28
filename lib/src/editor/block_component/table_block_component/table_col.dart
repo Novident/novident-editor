@@ -1,7 +1,6 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_action_handler.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_col_border.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/util.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,6 +10,7 @@ class TableCol extends StatefulWidget {
     required this.tableNode,
     required this.editorState,
     required this.colIdx,
+    required this.colWidth,
     required this.tableStyle,
     this.menuBuilder,
     this.actionMenuItems,
@@ -19,6 +19,10 @@ class TableCol extends StatefulWidget {
   final int colIdx;
   final EditorState editorState;
   final TableNode tableNode;
+
+  /// Pre-calculated width in pixels (from
+  /// [TableNode.distributeColumnWidths]).
+  final double colWidth;
 
   final TableBlockComponentMenuBuilder? menuBuilder;
 
@@ -62,9 +66,7 @@ class _TableColState extends State<TableCol> {
 
     children.addAll([
       SizedBox(
-        width: context.select(
-          (Node n) => getCellNode(n, widget.colIdx, 0)?.cellWidth,
-        ),
+        width: widget.colWidth,
         child: Stack(
           children: [
             MouseRegion(
@@ -91,6 +93,7 @@ class _TableColState extends State<TableCol> {
         tableNode: widget.tableNode,
         editorState: widget.editorState,
         colIdx: widget.colIdx,
+        currentColWidth: widget.colWidth,
         borderColor: borderColor,
         borderHoverColor: widget.tableStyle.borderHoverColor,
       ),

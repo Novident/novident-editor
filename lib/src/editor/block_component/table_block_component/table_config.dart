@@ -8,32 +8,49 @@ class TableConfig {
     double? colMinimumWidth,
     double? borderWidth,
   }) {
-    this.colDefaultWeight =
-        colDefaultWeight ?? TableDefaults.colDefaultWeight;
-    this.colDefaultWidth =
-        colDefaultWidth ?? TableDefaults.colWidth;
+    this.colDefaultWeight = colDefaultWeight ?? TableDefaults.colDefaultWeight;
+    this.colDefaultWidth = colDefaultWidth ?? TableDefaults.colWidth;
     this.rowDefaultHeight = rowDefaultHeight ?? TableDefaults.rowHeight;
     this.colMinimumWidth = colMinimumWidth ?? TableDefaults.colMinimumWidth;
     this.borderWidth = borderWidth ?? TableDefaults.borderWidth;
   }
 
-  static TableConfig fromJson(Map<String, dynamic> json) {
-    double func(String key, double defaultVal) => json.containsKey(key)
-        ? double.tryParse(json[key].toString())!
-        : defaultVal;
+  static double parseAttributeToDouble(
+    String key,
+    double defaultVal,
+    Map<String, dynamic> json,
+  ) =>
+      json.containsKey(key)
+          ? double.tryParse(json[key].toString())!
+          : defaultVal;
 
+  static TableConfig fromJson(Map<String, dynamic> json) {
     return TableConfig(
-      colDefaultWeight: func(
+      colDefaultWeight: parseAttributeToDouble(
         TableBlockKeys.colDefaultWeight,
         TableDefaults.colDefaultWeight,
+        json,
       ),
-      colDefaultWidth:
-          func(TableBlockKeys.colDefaultWidth, TableDefaults.colWidth),
-      rowDefaultHeight:
-          func(TableBlockKeys.rowDefaultHeight, TableDefaults.rowHeight),
-      colMinimumWidth:
-          func(TableBlockKeys.colMinimumWidth, TableDefaults.colMinimumWidth),
-      borderWidth: func(TableBlockKeys.borderWidth, TableDefaults.borderWidth),
+      colDefaultWidth: parseAttributeToDouble(
+        TableBlockKeys.colDefaultWidth,
+        TableDefaults.colWidth,
+        json,
+      ),
+      rowDefaultHeight: parseAttributeToDouble(
+        TableBlockKeys.rowDefaultHeight,
+        TableDefaults.rowHeight,
+        json,
+      ),
+      colMinimumWidth: parseAttributeToDouble(
+        TableBlockKeys.colMinimumWidth,
+        TableDefaults.colMinimumWidth,
+        json,
+      ),
+      borderWidth: parseAttributeToDouble(
+        TableBlockKeys.borderWidth,
+        TableDefaults.borderWidth,
+        json,
+      ),
     );
   }
 

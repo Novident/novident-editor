@@ -11,6 +11,7 @@ class TableColBorder extends StatefulWidget {
     required this.resizable,
     required this.borderColor,
     required this.borderHoverColor,
+    this.currentColWidth,
   });
 
   final bool resizable;
@@ -20,6 +21,11 @@ class TableColBorder extends StatefulWidget {
 
   final Color borderColor;
   final Color borderHoverColor;
+
+  /// The current rendered width in pixels of the column this border
+  /// belongs to. Used to convert mouse drag pixels to proportional
+  /// weight deltas.
+  final double? currentColWidth;
 
   @override
   State<TableColBorder> createState() => _TableColBorderState();
@@ -51,22 +57,53 @@ class _TableColBorderState extends State<TableColBorder> {
         },
         onHorizontalDragEnd: (_) {
           final transaction = widget.editorState.transaction;
-          widget.tableNode.setColWidth(
-            widget.colIdx,
-            widget.tableNode.getColWidth(widget.colIdx),
+          final col = widget.colIdx;
+          final nextCol = col + 1;
+          widget.tableNode.setColWeight(
+            col,
+            widget.tableNode.getColWeight(col),
             transaction: transaction,
             force: true,
           );
+          if (nextCol < widget.tableNode.colsLen) {
+            widget.tableNode.setColWeight(
+              nextCol,
+              widget.tableNode.getColWeight(nextCol),
+              transaction: transaction,
+              force: true,
+            );
+          }
           transaction.afterSelection = transaction.beforeSelection;
           widget.editorState.apply(transaction);
           setState(() => _borderDragging = false);
         },
         onHorizontalDragUpdate: (DragUpdateDetails details) {
-          final colWidth = widget.tableNode.getColWidth(widget.colIdx);
-          widget.tableNode.setColWidth(
-            widget.colIdx,
-            colWidth + details.delta.dx,
-          );
+          final col = widget.colIdx;
+          final nextCol = col + 1;
+          if (nextCol >= widget.tableNode.colsLen) return;
+
+          // Convert pixel delta to weight delta using the actual
+          // rendered column width for 1:1 pixel-to-visual mapping.
+          final colWidth =
+              widget.currentColWidth ?? TableDefaults.colWidth;
+          final colWeight = widget.tableNode.getColWeight(col);
+          final weightDelta = colWidth > 0
+              ? details.delta.dx * colWeight / colWidth
+              : details.delta.dx / TableDefaults.colWidth;
+
+          // Calculate new weights: left grows, right shrinks.
+          final leftWeight =
+              widget.tableNode.getColWeight(col) + weightDelta;
+          final rightWeight =
+              widget.tableNode.getColWeight(nextCol) - weightDelta;
+
+          // Clamp: neither column can go below minimum.
+          final minWeight = widget.tableNode.config.colMinimumWidth /
+              TableDefaults.colWidth;
+          if (leftWeight < minWeight || rightWeight < minWeight) return;
+
+          widget.tableNode.setColWeight(col, leftWeight);
+          widget.tableNode.setColWeight(nextCol, rightWeight);
         },
         child: Container(
           key: _borderKey,

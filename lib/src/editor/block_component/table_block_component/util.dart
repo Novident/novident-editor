@@ -22,8 +22,16 @@ extension TableCellNodeDynamicExtension on dynamic {
 }
 
 extension TableCellNodeAttributesExtension on Node {
+  /// Returns this cell's contribution to its column's width for layout
+  /// calculations.
+  ///
+  /// Prefers [TableCellBlockKeys.colWeight] × [TableDefaults.colWidth] over
+  /// the legacy [TableCellBlockKeys.width] for consistent weight-based
+  /// layouts.
   double get cellWidth {
     assert(type == TableCellBlockKeys.type);
+    final weight = attributes[TableCellBlockKeys.colWeight]?.toDouble();
+    if (weight != null) return weight * TableDefaults.colWidth;
     return attributes[TableCellBlockKeys.width]?.toDouble() ??
         TableDefaults.colWidth;
   }

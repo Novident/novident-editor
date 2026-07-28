@@ -3,12 +3,13 @@ import 'package:novident_editor/src/editor/block_component/table_block_component
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_col.dart';
 import 'package:flutter/material.dart';
 
-class TableView extends StatefulWidget {
+class TableView extends StatelessWidget {
   const TableView({
     super.key,
     required this.editorState,
     required this.tableNode,
     required this.tableStyle,
+    required this.columnWidths,
     this.menuBuilder,
     this.actionMenuItems,
   });
@@ -22,75 +23,77 @@ class TableView extends StatefulWidget {
 
   final TableStyle tableStyle;
 
-  @override
-  State<TableView> createState() => _TableViewState();
-}
+  /// Pre-calculated pixel widths for each column (from
+  /// [TableNode.distributeColumnWidths]).
+  final List<double> columnWidths;
 
-class _TableViewState extends State<TableView> {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    final totalBorders =
+        tableNode.config.borderWidth * (tableNode.colsLen + 1);
+    final totalWidth =
+        columnWidths.fold<double>(0, (a, b) => a + b) + totalBorders;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          // `start` keeps the add-row button (whose width comes from the
-          // `tableWidth` computation) anchored to the left edge of the grid.
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Stack(
           children: [
             Row(
-              // `start` keeps the add-column button (whose height comes from
-              // the `colsHeight` attribute) anchored to the top of the grid.
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ..._buildColumns(context),
-                if (widget.tableStyle.showAddColumnButton)
-                  TableActionButton(
-                    padding: const EdgeInsets.only(left: 0),
-                    icon: widget.tableStyle.addIcon,
-                    width: 28,
-                    height: widget.tableNode.colsHeight,
-                    onPressed: () {
-                      TableActions.add(
-                        widget.tableNode.node,
-                        widget.tableNode.colsLen,
-                        widget.editorState,
-                        TableDirection.col,
-                      );
-                    },
-                  ),
-              ],
+              children: _buildColumns(context),
             ),
-            if (widget.tableStyle.showAddRowButton)
-              TableActionButton(
-                padding: const EdgeInsets.only(top: 1, right: 30),
-                icon: widget.tableStyle.addIcon,
-                height: 28,
-                width: widget.tableNode.tableWidth,
-                onPressed: () {
-                  TableActions.add(
-                    widget.tableNode.node,
-                    widget.tableNode.rowsLen,
-                    widget.editorState,
-                    TableDirection.row,
-                  );
-                },
+            if (tableStyle.showAddColumnButton)
+              Positioned(
+                right: -28,
+                top: 0,
+                child: TableActionButton(
+                  padding: const EdgeInsets.only(left: 0),
+                  icon: tableStyle.addIcon,
+                  width: 28,
+                  height: tableNode.colsHeight,
+                  onPressed: () {
+                    TableActions.add(
+                      tableNode.node,
+                      tableNode.colsLen,
+                      editorState,
+                      TableDirection.col,
+                    );
+                  },
+                ),
               ),
           ],
         ),
+        if (tableStyle.showAddRowButton)
+          TableActionButton(
+            padding: const EdgeInsets.only(top: 1, right: 0),
+            icon: tableStyle.addIcon,
+            height: 28,
+            width: totalWidth,
+            onPressed: () {
+              TableActions.add(
+                tableNode.node,
+                tableNode.rowsLen,
+                editorState,
+                TableDirection.row,
+              );
+            },
+          ),
       ],
     );
   }
 
   List<Widget> _buildColumns(BuildContext context) {
     return List.generate(
-      widget.tableNode.colsLen,
+      tableNode.colsLen,
       (i) => TableCol(
         colIdx: i,
-        editorState: widget.editorState,
-        tableNode: widget.tableNode,
-        menuBuilder: widget.menuBuilder,
-        actionMenuItems: widget.actionMenuItems,
-        tableStyle: widget.tableStyle,
+        colWidth: columnWidths[i],
+        editorState: editorState,
+        tableNode: tableNode,
+        menuBuilder: menuBuilder,
+        actionMenuItems: actionMenuItems,
+        tableStyle: tableStyle,
       ),
     );
   }

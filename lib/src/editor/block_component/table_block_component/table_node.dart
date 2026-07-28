@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/table_config.dart';
 
 class TableNode {
   final TableConfig _config;
@@ -263,8 +262,7 @@ class TableNode {
   }
 
   /// Returns the sum of all column weights for proportional distribution.
-  double get totalWeight =>
-      List.generate(colsLen, (i) => i).fold<double>(
+  double get totalWeight => List.generate(colsLen, (i) => i).fold<double>(
         0,
         (prev, i) => prev + getColWeight(i),
       );
@@ -275,29 +273,49 @@ class TableNode {
   /// Each column receives at least [TableConfig.colMinimumWidth] pixels.
   List<double> distributeColumnWidths(double availableWidth) {
     final totalBorders = _config.borderWidth * (colsLen + 1);
-    final usableWidth = (availableWidth - totalBorders).clamp(0, double.infinity);
+    final usableWidth =
+        (availableWidth - totalBorders).clamp(0, double.infinity);
 
-    final weights = List.generate(colsLen, getColWeight);
-    final sumWeights = weights.fold<double>(0, (a, b) => a + b);
+    final weights = List.generate(
+      colsLen,
+      getColWeight,
+    );
+    final sumWeights = weights.fold<double>(
+      0,
+      (
+        a,
+        b,
+      ) =>
+          a + b,
+    );
 
     if (sumWeights == 0) {
       return List.filled(colsLen, _config.colMinimumWidth);
     }
 
     // First pass: proportional distribution
-    final widths = List.generate(colsLen, (i) {
-      return (weights[i] / sumWeights * usableWidth)
-          .clamp(_config.colMinimumWidth, double.infinity);
-    });
+    final widths = List.generate(
+      colsLen,
+      (i) => (weights[i] / sumWeights * usableWidth).clamp(
+        _config.colMinimumWidth,
+        double.infinity,
+      ),
+    );
 
     // Reclaim excess from clamped-down columns and redistribute
-    double totalUsed = widths.fold(0, (a, b) => a + b);
+    double totalUsed = widths.fold(
+      0,
+      (a, b) => a + b,
+    );
     if (totalUsed < usableWidth) {
       final unclampedSum = weights
           .asMap()
           .entries
           .where((e) => widths[e.key] > _config.colMinimumWidth)
-          .fold<double>(0, (a, e) => a + weights[e.key]);
+          .fold<double>(
+            0,
+            (a, e) => a + weights[e.key],
+          );
 
       if (unclampedSum > 0) {
         final extra = usableWidth - totalUsed;
@@ -318,8 +336,7 @@ class TableNode {
   ///
   /// Returns the weight scaled by [TableDefaults.colWidth] for backward
   /// compatibility with code that expects a pixel value.
-  double getColWidth(int col) =>
-      getColWeight(col) * TableDefaults.colWidth;
+  double getColWidth(int col) => getColWeight(col) * TableDefaults.colWidth;
 
   /// Total intrinsic width in legacy pixel units. Prefer [totalWeight] for
   /// layout decisions.

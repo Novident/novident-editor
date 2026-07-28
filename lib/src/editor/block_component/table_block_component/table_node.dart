@@ -285,8 +285,10 @@ class TableNode {
   /// columns according to their weights.
   ///
   /// Each column receives at least [TableConfig.colMinimumWidth] pixels.
-  List<double> distributeColumnWidths(double availableWidth,
-      {bool noBorder = false}) {
+  List<double> distributeColumnWidths(
+    double availableWidth, {
+    bool noBorder = false,
+  }) {
     final totalBorders = noBorder ? 0.0 : _config.borderWidth * (colsLen + 1);
     final usableWidth =
         (availableWidth - totalBorders).clamp(0, double.infinity);

@@ -238,37 +238,59 @@ extension SelectionTransform on EditorState {
         ? selection.startIndex
         : selection.endIndex;
     {
-      // the cursor is at the start of the node
-      // move the cursor to the end of the previous node
+      // Navigate into non-text blocks (e.g. tables) instead of
+      // selecting the block itself (which has no visible cursor).
+      Position? textPosAt(Node node, bool atStart) {
+        if (node.type == TableBlockKeys.type && node.children.isNotEmpty) {
+          final cell = atStart ? node.children.first : node.children.last;
+          if (cell.children.isNotEmpty && cell.children.first.delta != null) {
+            final child = cell.children.first;
+            return Position(
+              path: child.path,
+              offset: atStart ? 0 : child.delta!.length,
+            );
+          }
+        }
+        return null;
+      }
+
+      // Cursor at the start — move to the end of the previous node.
       if (direction == SelectionMoveDirection.forward &&
           start != null &&
           start.offset >= offset) {
-        final previousEnd = node
-            .previousNodeWhere((element) => element.selectable != null)
-            ?.selectable
-            ?.end();
-        if (previousEnd != null) {
-          updateSelectionWithReason(
-            Selection.collapsed(previousEnd),
-            reason: SelectionUpdateReason.uiEvent,
-          );
+        final candidate = node.previousNodeWhere(
+          (element) => element.selectable != null,
+        );
+        if (candidate != null) {
+          final target =
+              textPosAt(candidate, false) ??
+              candidate.selectable?.end();
+          if (target != null) {
+            updateSelectionWithReason(
+              Selection.collapsed(target),
+              reason: SelectionUpdateReason.uiEvent,
+            );
+          }
         }
         return;
       }
-      // the cursor is at the end of the node
-      // move the cursor to the start of the next node
+      // Cursor at the end — move to the start of the next node.
       else if (direction == SelectionMoveDirection.backward &&
           end != null &&
           end.offset <= offset) {
-        final nextStart = node
-            .nextNodeWhere((element) => element.selectable != null)
-            ?.selectable
-            ?.start();
-        if (nextStart != null) {
-          updateSelectionWithReason(
-            Selection.collapsed(nextStart),
-            reason: SelectionUpdateReason.uiEvent,
-          );
+        final candidate = node.nextNodeWhere(
+          (element) => element.selectable != null,
+        );
+        if (candidate != null) {
+          final target =
+              textPosAt(candidate, true) ??
+              candidate.selectable?.start();
+          if (target != null) {
+            updateSelectionWithReason(
+              Selection.collapsed(target),
+              reason: SelectionUpdateReason.uiEvent,
+            );
+          }
         }
         return;
       }
@@ -277,6 +299,12 @@ extension SelectionTransform on EditorState {
     final delta = node.delta;
     switch (range) {
       case SelectionMoveRange.character:
+        // The following UnimplementedError was thrown while 
+        //    processing the key message handler:
+        // UnimplementedError
+        // When the exception was thrown, this was the stack:
+        // #0      SelectionTransform.moveCursor
+        // (package:novident_editor/src/editor/command/selection_commands.dart:293:11)
         if (delta != null) {
           // move the cursor to the left or right by one character
           updateSelectionWithReason(

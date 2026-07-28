@@ -12,6 +12,7 @@ class TableCol extends StatefulWidget {
     required this.colIdx,
     required this.colWidth,
     required this.tableStyle,
+    this.tableStyleDef,
     this.menuBuilder,
     this.actionMenuItems,
   });
@@ -31,6 +32,9 @@ class TableCol extends StatefulWidget {
 
   final TableStyle tableStyle;
 
+  /// Resolved [NovidentTableStyleDefinition] for this table.
+  final NovidentTableStyleDefinition? tableStyleDef;
+
   @override
   State<TableCol> createState() => _TableColState();
 }
@@ -44,6 +48,9 @@ class _TableColState extends State<TableCol> {
   Widget build(BuildContext context) {
     // per-table override of the style border color; see
     // [TableBlockKeys.borderColor].
+    final style = widget.tableStyleDef;
+    final noBorder = style?.noBorder ?? false;
+
     final borderColor = context.select((Node n) {
           final value = n.attributes[TableBlockKeys.borderColor];
           return value is String ? value.tryToColor() : null;
@@ -51,7 +58,7 @@ class _TableColState extends State<TableCol> {
         widget.tableStyle.borderColor;
 
     List<Widget> children = [];
-    if (widget.colIdx == 0) {
+    if (widget.colIdx == 0 && !noBorder) {
       children.add(
         TableColBorder(
           resizable: false,
@@ -88,15 +95,16 @@ class _TableColState extends State<TableCol> {
           ],
         ),
       ),
-      TableColBorder(
-        resizable: true,
-        tableNode: widget.tableNode,
-        editorState: widget.editorState,
-        colIdx: widget.colIdx,
-        currentColWidth: widget.colWidth,
-        borderColor: borderColor,
-        borderHoverColor: widget.tableStyle.borderHoverColor,
-      ),
+      if (!noBorder)
+        TableColBorder(
+          resizable: true,
+          tableNode: widget.tableNode,
+          editorState: widget.editorState,
+          colIdx: widget.colIdx,
+          currentColWidth: widget.colWidth,
+          borderColor: borderColor,
+          borderHoverColor: widget.tableStyle.borderHoverColor,
+        ),
     ]);
 
     // `start` keeps the vertical borders (whose height comes from the
@@ -111,32 +119,62 @@ class _TableColState extends State<TableCol> {
   }
 
   List<Widget> _buildCells(BuildContext context, Color borderColor) {
+    final style = widget.tableStyleDef;
+    final noBorder = style?.noBorder ?? false;
     final rowsLen = widget.tableNode.rowsLen;
     final List<Widget> cells = [];
-    final Widget cellBorder = Container(
-      height: widget.tableNode.config.borderWidth,
-      color: borderColor,
-    );
 
-    for (var i = 0; i < rowsLen; i++) {
-      final node = widget.tableNode.getCell(widget.colIdx, i);
-      updateRowHeightCallback(i);
-      addListener(node, i);
-      addListener(node.children.first, i);
+    final cellBorder = noBorder
+        ? const SizedBox.shrink()
+        : Container(
+            height: widget.tableNode.config.borderWidth,
+            color: borderColor,
+          );
+
+    for (var r = 0; r < rowsLen; r++) {
+      final node = widget.tableNode.getCell(widget.colIdx, r);
+      final cellColor = _cellBackgroundColor(r, style);
+      updateRowHeightCallback(r);
+      addListener(node, r);
+      addListener(node.children.first, r);
 
       cells.addAll([
-        widget.editorState.renderer.build(
-          context,
-          node,
-        ),
+        if (cellColor != null)
+          ColoredBox(
+            color: cellColor,
+            child: widget.editorState.renderer.build(context, node),
+          )
+        else
+          widget.editorState.renderer.build(context, node),
         cellBorder,
       ]);
     }
 
+    final topBorder = noBorder ? const SizedBox.shrink() : cellBorder;
     return [
-      cellBorder,
+      topBorder,
       ...cells,
     ];
+  }
+
+  /// Returns the background color for row [r] based on the table style.
+  Color? _cellBackgroundColor(int r, NovidentTableStyleDefinition? style) {
+    if (style == null) return null;
+
+    // Header rows take priority.
+    if (r < style.headerRowCount) {
+      return style.headerStyle?.backgroundColor;
+    }
+    // Footer rows.
+    final footerStart = widget.tableNode.rowsLen - style.footerRowCount;
+    if (r >= footerStart) {
+      return style.footerStyle?.backgroundColor;
+    }
+    // Zebra striping.
+    if (r.isEven && style.evenRowColor != null) return style.evenRowColor;
+    if (r.isOdd && style.oddRowColor != null) return style.oddRowColor;
+
+    return null;
   }
 
   void addListener(Node node, int row) {

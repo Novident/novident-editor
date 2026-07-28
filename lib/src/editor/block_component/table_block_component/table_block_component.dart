@@ -95,8 +95,8 @@ class TableStyle {
     this.borderWidth = 2,
     this.addIcon = TableDefaults.addIcon,
     this.handlerIcon = TableDefaults.handlerIcon,
-    this.borderColor = TableDefaults.borderColor,
-    this.borderHoverColor = TableDefaults.borderHoverColor,
+    this.borderColor = Colors.grey,
+    this.borderHoverColor = Colors.blue,
     this.cellVerticalPadding = 8.0,
     this.enableHorizontalScroll = true,
     this.tablePadding = const EdgeInsets.only(top: 10, left: 0, bottom: 4),
@@ -355,22 +355,31 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
     return h;
   }
 
-  List<double> _columnWidths(double availableWidth, TableNode tableNode) {
+  List<double> _columnWidths(double availableWidth, TableNode tableNode, {bool noBorder = false}) {
     final hash = _weightHash(tableNode);
     if (availableWidth == _cachedAvailableWidth &&
         hash == _cachedWeightHash &&
+        _cachedNoBorder == noBorder &&
         _cachedWidths != null &&
         _cachedWidths!.length == tableNode.colsLen) {
       return _cachedWidths!;
     }
     _cachedAvailableWidth = availableWidth;
     _cachedWeightHash = hash;
-    _cachedWidths = tableNode.distributeColumnWidths(availableWidth);
+    _cachedNoBorder = noBorder;
+    _cachedWidths =
+        tableNode.distributeColumnWidths(availableWidth, noBorder: noBorder);
     return _cachedWidths!;
   }
 
+  bool _cachedNoBorder = false;
+
   @override
   Widget build(BuildContext context) {
+    final style = widget.tableStyleDef;
+    final noBorder = style?.noBorder ?? false;
+    final borderPx = noBorder ? 0.0 : widget.tableNode.config.borderWidth;
+
     final enableHorizontalScroll = context.select((Node n) {
           final value = n.attributes[TableBlockKeys.enableHorizontalScroll];
           return value is bool ? value : null;
@@ -386,11 +395,12 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
         // Minimum total width: all columns at colMinimumWidth + borders.
         final minWidth =
             (tableNode.config.colMinimumWidth * tableNode.colsLen) +
-                tableNode.config.borderWidth * (tableNode.colsLen + 1);
+                borderPx * (tableNode.colsLen + 1);
 
         if (enableHorizontalScroll && availableWidth < minWidth) {
           // Content overflows — render at minimum intrinsic widths.
-          final scrollWidths = _columnWidths(minWidth, tableNode);
+          final scrollWidths =
+              _columnWidths(minWidth, tableNode, noBorder: noBorder);
           return Scrollbar(
             controller: _scrollController,
             child: SingleChildScrollView(
@@ -405,6 +415,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
                   menuBuilder: widget.menuBuilder,
                   actionMenuItems: widget.actionMenuItems,
                   tableStyle: widget.tableStyle,
+                  tableStyleDef: widget.tableStyleDef,
                   columnWidths: scrollWidths,
                 ),
               ),
@@ -413,7 +424,8 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
         } else {
           // Content fits — distribute available width by weights.
           final contentWidth = availableWidth - tablePadding.horizontal;
-          final fittedWidths = _columnWidths(contentWidth, tableNode);
+          final fittedWidths =
+              _columnWidths(contentWidth, tableNode, noBorder: noBorder);
           return Padding(
             padding: tablePadding,
             child: TableView(
@@ -422,6 +434,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
               menuBuilder: widget.menuBuilder,
               actionMenuItems: widget.actionMenuItems,
               tableStyle: widget.tableStyle,
+              tableStyleDef: widget.tableStyleDef,
               columnWidths: fittedWidths,
             ),
           );

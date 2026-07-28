@@ -291,5 +291,8 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
   static final _kStyles = NovidentStylesConfig(
     defaultStyle: kDefaultBaseStyle,
     registry: kDefaultStyleRegistry,
+    defaultStylesByType: <String, NovidentStyleDefinition>{
+      'table': kDefaultTableStyle,
+    },
   );
 }

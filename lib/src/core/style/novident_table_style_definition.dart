@@ -132,7 +132,7 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     this.borderHoverColor,
     this.innerBorderColor,
     this.outerBorderColor,
-    this.borderStyle = BorderStyle.solid,
+    this.borderLineStyle = BorderStyle.solid,
     this.borderRadius,
     this.noBorder = false,
     this.cellPadding,
@@ -161,7 +161,7 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     super.next,
     super.spacing,
     super.indent,
-    super.borderStyle: super.borderStyle,
+    super.borderStyle,
     super.keep,
     super.alignment,
     super.blockBackgroundColor,
@@ -206,7 +206,7 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   final Color? outerBorderColor;
 
   /// Border line style (solid, dashed, dotted, etc.). Defaults to solid.
-  final BorderStyle borderStyle;
+  final BorderStyle borderLineStyle;
 
   /// Corner radius for the table's outer border.
   final BorderRadius? borderRadius;
@@ -289,7 +289,7 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     this.borderHoverColor,
     this.innerBorderColor,
     this.outerBorderColor,
-    this.borderStyle = BorderStyle.solid,
+    this.borderLineStyle = BorderStyle.solid,
     this.borderRadius,
     this.noBorder = false,
     this.cellPadding,
@@ -312,7 +312,7 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     this.selectionHighlightColor,
     super.spacing,
     super.indent,
-    super.borderStyle: super.borderStyle,
+    super.borderStyle,
     super.keep,
     super.alignment,
     super.blockBackgroundColor,
@@ -370,7 +370,7 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       borderHoverColor: borderHoverColor,
       innerBorderColor: innerBorderColor,
       outerBorderColor: outerBorderColor,
-      borderStyle: borderStyle,
+      borderLineStyle: borderLineStyle,
       borderRadius: borderRadius,
       noBorder: noBorder,
       cellPadding: cellPadding,
@@ -450,8 +450,9 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       borderHoverColor: other.borderHoverColor ?? borderHoverColor,
       innerBorderColor: other.innerBorderColor ?? innerBorderColor,
       outerBorderColor: other.outerBorderColor ?? outerBorderColor,
-      borderStyle:
-          other.borderStyle != BorderStyle.solid ? other.borderStyle : borderStyle,
+      borderLineStyle: other.borderLineStyle != BorderStyle.solid
+          ? other.borderLineStyle
+          : borderLineStyle,
       borderRadius: other.borderRadius ?? borderRadius,
       noBorder: other.noBorder || noBorder,
       cellPadding: other.cellPadding ?? cellPadding,

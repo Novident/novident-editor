@@ -142,11 +142,35 @@ class _NovidentRichTextState extends State<NovidentRichText>
       widget.textSpanOverlayBuilder ??
       widget.editorState.editorStyle.textSpanOverlayBuilder;
 
-  NovidentStyleDefinition? get resolvedStyle =>
-      NovidentEditorStyles.maybeOf(context)?.resolveStyle(
-        widget.node,
-      ) ??
-      defaultStyle;
+  /// Resolves the effective style for this node.
+  ///
+  /// When inside a table cell, inherits text formatting properties
+  /// (font size, bold, color, alignment, etc.) from the resolved
+  /// [NovidentTableStyleDefinition] of the parent table as a fallback.
+  /// The cell's own `styleRef` / node type default still takes priority.
+  NovidentStyleDefinition? get resolvedStyle {
+    final own =
+        NovidentEditorStyles.maybeOf(context)?.resolveStyle(widget.node);
+
+    // Inherit text props from the parent table style when inside a cell.
+    final tableNode =
+        widget.node.findParent((n) => n.type == TableBlockKeys.type);
+    if (tableNode != null) {
+      final tableStyle =
+          NovidentEditorStyles.maybeOf(context)?.resolveStyle(tableNode);
+      if (tableStyle is NovidentTableStyleDefinition) {
+        // Cell style overrides table style. Table style provides
+        // text formatting as a fallback for cells without their own style.
+        if (own is NovidentTableStyleDefinition) {
+          return tableStyle.mergeTable(own);
+        }
+        return tableStyle.merge(own ?? tableStyle)
+            as NovidentTableStyleDefinition?;
+      }
+    }
+
+    return own ?? defaultStyle;
+  }
 
   NovidentStyleDefinition? get defaultStyle =>
       NovidentEditorStyles.maybeOf(context)?.config.defaultStyle;

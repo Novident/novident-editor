@@ -10,6 +10,7 @@ class TableView extends StatelessWidget {
     required this.tableNode,
     required this.tableStyle,
     required this.columnWidths,
+    this.tableStyleDef,
     this.menuBuilder,
     this.actionMenuItems,
   });
@@ -17,15 +18,12 @@ class TableView extends StatelessWidget {
   final EditorState editorState;
   final TableNode tableNode;
   final TableBlockComponentMenuBuilder? menuBuilder;
-
-  /// The entries of the default context menu of the column handlers.
   final List<TableActionMenuItem>? actionMenuItems;
-
   final TableStyle tableStyle;
-
-  /// Pre-calculated pixel widths for each column (from
-  /// [TableNode.distributeColumnWidths]).
   final List<double> columnWidths;
+
+  /// Resolved [NovidentTableStyleDefinition] for this table.
+  final NovidentTableStyleDefinition? tableStyleDef;
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +92,7 @@ class TableView extends StatelessWidget {
         menuBuilder: menuBuilder,
         actionMenuItems: actionMenuItems,
         tableStyle: tableStyle,
+        tableStyleDef: tableStyleDef,
       ),
     );
   }

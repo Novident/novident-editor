@@ -25,6 +25,7 @@ tables and more.
   and exposed through customisable toolbar dropdowns
 - **first-line indent** per style (`NovidentStyleIndent.firstLineIndent`) or
   globally (`EditorStyle.firstLineIndent`) 
+- **fully control over tables** using **NovidentTableStyleDefinition** now devs can control all about the table style.
 
 > [!NOTE]
 > Planned: 

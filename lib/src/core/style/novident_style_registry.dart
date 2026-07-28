@@ -51,10 +51,7 @@ class NovidentStyleRegistry {
     visited.add(basedOnId);
     final resolvedParent = _resolveChain(parent, visited);
 
-    // Use the table-aware merge when either side is a table style.
-    if (definition is NovidentTableStyleDefinition) {
-      return definition.mergeTable(resolvedParent);
-    }
+    // Use the table-aware merge when the base is a table style.
     if (resolvedParent is NovidentTableStyleDefinition) {
       return resolvedParent.mergeTable(definition);
     }

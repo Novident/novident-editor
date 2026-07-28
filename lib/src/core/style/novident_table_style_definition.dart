@@ -123,7 +123,6 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     required super.id,
     required super.name,
     super.basedOn,
-    // ── Table layout ───────────────────────────────────
     this.colDefaultWeight = 1.0,
     this.rowDefaultHeight = 40.0,
     this.colMinimumWidth = 40.0,
@@ -144,20 +143,15 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     this.tablePadding = const EdgeInsets.only(top: 10, left: 10, bottom: 4),
     this.showAddColumnButton = true,
     this.showAddRowButton = true,
-    // ── Row striping ───────────────────────────────────
     this.evenRowColor,
     this.oddRowColor,
-    // ── Header & footer ────────────────────────────────
     this.headerRowCount = 0,
     this.headerStyle,
     this.footerRowCount = 0,
     this.footerStyle,
-    // ── Per-column / per-row defaults ──────────────────
     this.columnWeights,
     this.rowHeights,
-    // ── Selection ──────────────────────────────────────
     this.selectionHighlightColor,
-    // ── Inherited from NovidentStyleDefinition ─────────
     super.next,
     super.spacing,
     super.indent,
@@ -188,7 +182,6 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     super.allowGlobalFirstLineIndent,
   });
 
-  // ── Table layout ─────────────────────────────────────
 
   final double colDefaultWeight;
   final double rowDefaultHeight;
@@ -233,7 +226,6 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   final bool showAddColumnButton;
   final bool showAddRowButton;
 
-  // ── Row striping ─────────────────────────────────────
 
   /// Background color for even-numbered rows (0-indexed: rows 0, 2, 4…).
   /// Overridden by per-cell background colors and [headerStyle] / [footerStyle].
@@ -242,7 +234,6 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   /// Background color for odd-numbered rows (1, 3, 5…).
   final Color? oddRowColor;
 
-  // ── Header & footer ──────────────────────────────────
 
   /// Number of rows at the top of the table treated as header.
   /// Rows `0` through `headerRowCount - 1` use [headerStyle].
@@ -258,7 +249,6 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   /// Style applied to footer rows (last [footerRowCount] rows).
   final NovidentTableRowStyle? footerStyle;
 
-  // ── Per-column / per-row defaults ────────────────────
 
   /// Default column weights keyed by column index.
   /// Columns not listed here use [colDefaultWeight].
@@ -268,12 +258,10 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   /// Rows not listed here use [rowDefaultHeight].
   final Map<int, double>? rowHeights;
 
-  // ── Selection ────────────────────────────────────────
 
   /// Highlight color when cells are selected.
   final Color? selectionHighlightColor;
 
-  // ── Convenience constructor ──────────────────────────
 
   /// Convenience: same as the default constructor but sets [next] to [id]
   /// so pressing Enter at the end of a styled table keeps the same style.
@@ -339,7 +327,6 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     super.allowGlobalFirstLineIndent,
   }) : super.nextSame();
 
-  // ── Merge ───────────────────────────────────────────
 
   @override
   NovidentStyleDefinition merge(NovidentStyleDefinition other) {
@@ -391,38 +378,38 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       columnWeights: columnWeights,
       rowHeights: rowHeights,
       selectionHighlightColor: selectionHighlightColor,
-      // Text props — parent (child/override) > this (accumulated/base)
-      next: parent.next ?? next,
-      spacing: parent.spacing ?? spacing,
-      indent: parent.indent ?? indent,
-      keep: parent.keep ?? keep,
+      // Text props — this (child/specific) > parent (base/fallback)
+      next: next ?? parent.next,
+      spacing: spacing ?? parent.spacing,
+      indent: indent ?? parent.indent,
+      keep: keep ?? parent.keep,
       alignment:
-          parent.alignment != alignment ? parent.alignment : alignment,
+          alignment != TextAlign.left ? alignment : parent.alignment,
       blockBackgroundColor:
-          parent.blockBackgroundColor ?? blockBackgroundColor,
-      bold: parent.bold || bold,
-      italic: parent.italic || italic,
-      underline: parent.underline || underline,
-      overline: parent.overline || overline,
-      strikethrough: parent.strikethrough || strikethrough,
-      caps: parent.caps || caps,
-      smallCaps: parent.smallCaps || smallCaps,
-      decorationStyle: parent.decorationStyle ?? decorationStyle,
-      decorationColor: parent.decorationColor ?? decorationColor,
-      fontFamily: parent.fontFamily ?? fontFamily,
-      fontSize: parent.fontSize != 12.0 ? parent.fontSize : fontSize,
-      textColor: parent.textColor ?? textColor,
+          blockBackgroundColor ?? parent.blockBackgroundColor,
+      bold: bold || parent.bold,
+      italic: italic || parent.italic,
+      underline: underline || parent.underline,
+      overline: overline || parent.overline,
+      strikethrough: strikethrough || parent.strikethrough,
+      caps: caps || parent.caps,
+      smallCaps: smallCaps || parent.smallCaps,
+      decorationStyle: decorationStyle ?? parent.decorationStyle,
+      decorationColor: decorationColor ?? parent.decorationColor,
+      fontFamily: fontFamily ?? parent.fontFamily,
+      fontSize: fontSize != 12.0 ? fontSize : parent.fontSize,
+      textColor: textColor ?? parent.textColor,
       textBackgroundColor:
-          parent.textBackgroundColor ?? textBackgroundColor,
-      letterSpacing: parent.letterSpacing ?? letterSpacing,
-      fontVariations: parent.fontVariations ?? fontVariations,
-      fontBackground: parent.fontBackground ?? fontBackground,
-      fontForeground: parent.fontForeground ?? fontForeground,
-      wordSpacing: parent.wordSpacing ?? wordSpacing,
-      fontFeatures: parent.fontFeatures ?? fontFeatures,
-      fontShadows: parent.fontShadows ?? fontShadows,
+          textBackgroundColor ?? parent.textBackgroundColor,
+      letterSpacing: letterSpacing ?? parent.letterSpacing,
+      fontVariations: fontVariations ?? parent.fontVariations,
+      fontBackground: fontBackground ?? parent.fontBackground,
+      fontForeground: fontForeground ?? parent.fontForeground,
+      wordSpacing: wordSpacing ?? parent.wordSpacing,
+      fontFeatures: fontFeatures ?? parent.fontFeatures,
+      fontShadows: fontShadows ?? parent.fontShadows,
       allowGlobalFirstLineIndent:
-          parent.allowGlobalFirstLineIndent != allowGlobalFirstLineIndent
+          allowGlobalFirstLineIndent
               ? parent.allowGlobalFirstLineIndent
               : allowGlobalFirstLineIndent,
     );

@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:novident_editor/novident_editor.dart';
 
 class TableNode {

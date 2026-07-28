@@ -128,27 +128,29 @@ class TableStyle {
 class TableDefaults {
   const TableDefaults._();
 
-  static double colDefaultWeight = 1.0;
+  static double colDefaultWeight = kDefaultTableStyle.colDefaultWeight;
 
   @Deprecated('Use colDefaultWeight instead')
   static double colWidth = 160.0;
 
-  static double rowHeight = 40.0;
+  static double rowHeight = kDefaultTableStyle.rowDefaultHeight;
 
-  static double colMinimumWidth = 40.0;
+  static double colMinimumWidth = kDefaultTableStyle.colMinimumWidth;
 
-  static double borderWidth = 2.0;
+  static double borderWidth = kDefaultTableStyle.borderWidth;
 
   /// See [TableStyle.cellVerticalPadding].
-  static double cellVerticalPadding = 8.0;
+  static double cellVerticalPadding = kDefaultTableStyle.cellVerticalPadding;
+
+  static final Color borderColor =
+      kDefaultTableStyle.borderColor ?? Colors.grey;
+
+  static final Color borderHoverColor =
+      kDefaultTableStyle.borderColor ?? Colors.blue;
 
   static const Widget addIcon = Icon(Icons.add, size: 20);
 
   static const Widget handlerIcon = Icon(Icons.drag_indicator);
-
-  static const Color borderColor = Colors.grey;
-
-  static const Color borderHoverColor = Colors.blue;
 }
 
 enum TableDirection { row, col }
@@ -341,10 +343,34 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
   late final editorState = Provider.of<EditorState>(context, listen: false);
   final _scrollController = ScrollController();
 
+  double _cachedAvailableWidth = -1;
+  int _cachedWeightHash = -1;
+  List<double>? _cachedWidths;
+
+  int _weightHash(TableNode t) {
+    var h = t.colsLen;
+    for (var i = 0; i < t.colsLen; i++) {
+      h = h * 31 + (t.getColWeight(i) * 1000).round();
+    }
+    return h;
+  }
+
+  List<double> _columnWidths(double availableWidth, TableNode tableNode) {
+    final hash = _weightHash(tableNode);
+    if (availableWidth == _cachedAvailableWidth &&
+        hash == _cachedWeightHash &&
+        _cachedWidths != null &&
+        _cachedWidths!.length == tableNode.colsLen) {
+      return _cachedWidths!;
+    }
+    _cachedAvailableWidth = availableWidth;
+    _cachedWeightHash = hash;
+    _cachedWidths = tableNode.distributeColumnWidths(availableWidth);
+    return _cachedWidths!;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // per-table override of the style value; see
-    // [TableBlockKeys.enableHorizontalScroll].
     final enableHorizontalScroll = context.select((Node n) {
           final value = n.attributes[TableBlockKeys.enableHorizontalScroll];
           return value is bool ? value : null;
@@ -364,7 +390,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
 
         if (enableHorizontalScroll && availableWidth < minWidth) {
           // Content overflows — render at minimum intrinsic widths.
-          final scrollWidths = tableNode.distributeColumnWidths(minWidth);
+          final scrollWidths = _columnWidths(minWidth, tableNode);
           return Scrollbar(
             controller: _scrollController,
             child: SingleChildScrollView(
@@ -387,7 +413,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
         } else {
           // Content fits — distribute available width by weights.
           final contentWidth = availableWidth - tablePadding.horizontal;
-          final fittedWidths = tableNode.distributeColumnWidths(contentWidth);
+          final fittedWidths = _columnWidths(contentWidth, tableNode);
           return Padding(
             padding: tablePadding,
             child: TableView(

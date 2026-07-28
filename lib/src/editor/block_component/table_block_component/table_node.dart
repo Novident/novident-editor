@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:novident_editor/novident_editor.dart';
 
 class TableNode {
@@ -95,6 +96,7 @@ class TableNode {
   static TableNode fromList(
     List<List<String>> cols, {
     TableConfig? config,
+    String? styleRef,
   }) {
     assert(cols.isNotEmpty, 'cols must not be empty');
     assert(cols[0].isNotEmpty, 'rows must not be empty');
@@ -111,7 +113,13 @@ class TableNode {
       ...config.toJson(),
     };
 
-    final node = Node(type: TableBlockKeys.type, attributes: tableAttrs);
+    final node = Node(
+      type: TableBlockKeys.type,
+      attributes: {
+        ...tableAttrs,
+        blockComponentStyleRef: styleRef,
+      },
+    );
 
     for (var c = 0; c < cols.length; c++) {
       for (var r = 0; r < cols[0].length; r++) {
@@ -155,6 +163,7 @@ class TableNode {
   static TableNode fromNodes(
     List<List<Node>> cols, {
     TableConfig? config,
+    String? styleRef,
   }) {
     assert(cols.isNotEmpty, 'cols must not be empty');
     assert(cols[0].isNotEmpty, 'rows must not be empty');
@@ -171,7 +180,13 @@ class TableNode {
       ...config.toJson(),
     };
 
-    final node = Node(type: TableBlockKeys.type, attributes: tableAttrs);
+    final node = Node(
+      type: TableBlockKeys.type,
+      attributes: {
+        ...tableAttrs,
+        blockComponentStyleRef: styleRef,
+      },
+    );
 
     for (var c = 0; c < cols.length; c++) {
       for (var r = 0; r < cols[0].length; r++) {
@@ -293,36 +308,62 @@ class TableNode {
       return List.filled(colsLen, _config.colMinimumWidth);
     }
 
-    // First pass: proportional distribution
+    // First pass: pure proportional — no clamping yet.
     final widths = List.generate(
       colsLen,
-      (i) => (weights[i] / sumWeights * usableWidth).clamp(
-        _config.colMinimumWidth,
-        double.infinity,
-      ),
+      (i) => weights[i] / sumWeights * usableWidth,
     );
 
-    // Reclaim excess from clamped-down columns and redistribute
-    double totalUsed = widths.fold(
-      0,
-      (a, b) => a + b,
-    );
-    if (totalUsed < usableWidth) {
-      final unclampedSum = weights
-          .asMap()
-          .entries
-          .where((e) => widths[e.key] > _config.colMinimumWidth)
-          .fold<double>(
-            0,
-            (a, e) => a + weights[e.key],
-          );
+    // Apply minimum width and iterate until the total fits.
+    // When columns are clamped UP to colMinimumWidth, shrinking the
+    // remaining columns may push them below minimum too — so we loop
+    // until convergence (max 10 iterations to avoid infinite loops).
+    for (var iter = 0; iter < 10; iter++) {
+      // Clamp any column that is still below minimum.
+      for (var i = 0; i < colsLen; i++) {
+        if (widths[i] < _config.colMinimumWidth) {
+          widths[i] = _config.colMinimumWidth;
+        }
+      }
 
-      if (unclampedSum > 0) {
-        final extra = usableWidth - totalUsed;
+      double totalUsed = widths.fold(
+        0,
+        (a, b) => a + b,
+      );
+      final diff = totalUsed - usableWidth;
+      debugPrint('Diff: $diff');
+
+      if (diff.abs() < 0.5) break; // converged
+
+      if (diff > 0) {
+        // Overflow — shrink columns that are above minimum.
+        final shrinkable = <int>[];
+        double shrinkableTotal = 0;
         for (var i = 0; i < colsLen; i++) {
           if (widths[i] > _config.colMinimumWidth) {
-            widths[i] += (weights[i] / unclampedSum) * extra;
+            shrinkable.add(i);
+            shrinkableTotal += widths[i];
           }
+        }
+        if (shrinkable.isEmpty) break; // all at min, can't shrink more
+        for (final i in shrinkable) {
+          widths[i] = (widths[i] - (widths[i] / shrinkableTotal) * diff)
+              .clamp(_config.colMinimumWidth, double.infinity);
+        }
+      } else {
+        // Extra space — grow columns above minimum.
+        final growable = <int>[];
+        double growableTotal = 0;
+        for (var i = 0; i < colsLen; i++) {
+          if (widths[i] > _config.colMinimumWidth) {
+            growable.add(i);
+            growableTotal += weights[i];
+          }
+        }
+        if (growable.isEmpty) break;
+        final extra = -diff; // positive
+        for (final i in growable) {
+          widths[i] += (weights[i] / growableTotal) * extra;
         }
       }
     }

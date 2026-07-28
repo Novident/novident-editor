@@ -13,7 +13,12 @@ class NovidentEditorStyles extends InheritedWidget {
   NovidentStyleDefinition resolveStyle(Node node) {
     final styleRef = node.attributes[blockComponentStyleRef] as String?;
     if (styleRef != null && styleRef.isNotEmpty) {
-      final resolved = config.registry.resolve(styleRef);
+      final resolved = config.registry.resolve(
+        styleRef,
+        baseStyle: config.defaultStyle,
+        forType: node.type,
+        byTypes: config.defaultStylesByType,
+      );
       if (resolved != null) return resolved;
     }
 

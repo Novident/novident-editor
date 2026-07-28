@@ -448,7 +448,12 @@ extension TextTransforms on EditorState {
     if (config == null) return null;
     final styleRef = node.attributes[blockComponentStyleRef] as String?;
     if (styleRef != null && styleRef.isNotEmpty) {
-      final resolved = config.registry.resolve(styleRef);
+      final resolved = config.registry.resolve(
+        styleRef,
+        baseStyle: config.defaultStyle,
+        byTypes: config.defaultStylesByType,
+        forType: node.type,
+      );
       return resolved?.next;
     }
     final typeDefault = config.defaultStylesByType[node.type];

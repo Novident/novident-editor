@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/table_action_handler.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_col_border.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +10,6 @@ class TableCol extends StatefulWidget {
     required this.editorState,
     required this.colIdx,
     required this.colWidth,
-    required this.tableStyle,
     this.tableStyleDef,
     this.menuBuilder,
     this.actionMenuItems,
@@ -30,8 +28,6 @@ class TableCol extends StatefulWidget {
   /// The entries of the default context menu of the column handler.
   final List<TableActionMenuItem>? actionMenuItems;
 
-  final TableStyle tableStyle;
-
   /// Resolved [NovidentTableStyleDefinition] for this table.
   final NovidentTableStyleDefinition? tableStyleDef;
 
@@ -40,25 +36,25 @@ class TableCol extends StatefulWidget {
 }
 
 class _TableColState extends State<TableCol> {
-  bool _colActionVisiblity = false;
-
-  Map<String, void Function()> listeners = {};
+  Map<String, VoidCallback> listeners = <String, VoidCallback>{};
 
   @override
   Widget build(BuildContext context) {
     // per-table override of the style border color; see
     // [TableBlockKeys.borderColor].
-    final style = widget.tableStyleDef;
-    final noBorder = style?.noBorder ?? false;
+    final style = widget.tableStyleDef ?? kDefaultTableStyle;
+    final noBorder = style.noBorder;
 
-    final borderColor = context.select((Node n) {
-          final value = n.attributes[TableBlockKeys.borderColor];
-          return value is String ? value.tryToColor() : null;
-        }) ??
-        widget.tableStyle.borderColor;
+    final borderColor = noBorder
+        ? null
+        : context.select((Node n) {
+              final value = n.attributes[TableBlockKeys.borderColor];
+              return value is String ? value.tryToColor() : null;
+            }) ??
+            style.borderColor;
 
     List<Widget> children = [];
-    if (widget.colIdx == 0 && !noBorder) {
+    if (widget.colIdx == 0 && !noBorder && borderColor != null) {
       children.add(
         TableColBorder(
           resizable: false,
@@ -66,7 +62,9 @@ class _TableColState extends State<TableCol> {
           editorState: widget.editorState,
           colIdx: widget.colIdx,
           borderColor: borderColor,
-          borderHoverColor: widget.tableStyle.borderHoverColor,
+          tableStyleDef: style,
+          borderHoverColor:
+              widget.tableStyleDef?.borderHoverColor ?? Colors.transparent,
         ),
       );
     }
@@ -77,33 +75,28 @@ class _TableColState extends State<TableCol> {
         child: Stack(
           children: [
             MouseRegion(
-              onEnter: (_) => setState(() => _colActionVisiblity = true),
-              onExit: (_) => setState(() => _colActionVisiblity = false),
-              child: Column(children: _buildCells(context, borderColor)),
-            ),
-            TableActionHandler(
-              visible: _colActionVisiblity,
-              node: widget.tableNode.node,
-              editorState: widget.editorState,
-              position: widget.colIdx,
-              transform: Matrix4.translationValues(0.0, -12, 0.0),
-              alignment: Alignment.topCenter,
-              menuBuilder: widget.menuBuilder,
-              actionMenuItems: widget.actionMenuItems,
-              dir: TableDirection.col,
+              // onEnter: (_) => setState(() => _colActionVisiblity = true),
+              // onExit: (_) => setState(() => _colActionVisiblity = false),
+              child: Column(
+                children: _buildCells(
+                  context,
+                  borderColor,
+                ),
+              ),
             ),
           ],
         ),
       ),
-      if (!noBorder)
+      if (!noBorder && borderColor != null)
         TableColBorder(
           resizable: true,
           tableNode: widget.tableNode,
           editorState: widget.editorState,
           colIdx: widget.colIdx,
           currentColWidth: widget.colWidth,
+          tableStyleDef: style,
           borderColor: borderColor,
-          borderHoverColor: widget.tableStyle.borderHoverColor,
+          borderHoverColor: widget.tableStyleDef?.borderHoverColor,
         ),
     ]);
 
@@ -118,13 +111,13 @@ class _TableColState extends State<TableCol> {
     );
   }
 
-  List<Widget> _buildCells(BuildContext context, Color borderColor) {
+  List<Widget> _buildCells(BuildContext context, Color? borderColor) {
     final style = widget.tableStyleDef;
     final noBorder = style?.noBorder ?? false;
     final rowsLen = widget.tableNode.rowsLen;
     final List<Widget> cells = [];
 
-    final cellBorder = noBorder
+    final cellBorder = noBorder || borderColor == null
         ? const SizedBox.shrink()
         : Container(
             height: widget.tableNode.config.borderWidth,
@@ -195,6 +188,7 @@ class _TableColState extends State<TableCol> {
         final transaction = widget.editorState.transaction;
         widget.tableNode.updateRowHeight(
           row,
+          style: widget.tableStyleDef ?? kDefaultTableStyle,
           editorState: widget.editorState,
           transaction: transaction,
         );

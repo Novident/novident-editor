@@ -285,9 +285,9 @@ class TableNode {
   /// columns according to their weights.
   ///
   /// Each column receives at least [TableConfig.colMinimumWidth] pixels.
-  List<double> distributeColumnWidths(double availableWidth, {bool noBorder = false}) {
-    final totalBorders =
-        noBorder ? 0.0 : _config.borderWidth * (colsLen + 1);
+  List<double> distributeColumnWidths(double availableWidth,
+      {bool noBorder = false}) {
+    final totalBorders = noBorder ? 0.0 : _config.borderWidth * (colsLen + 1);
     final usableWidth =
         (availableWidth - totalBorders).clamp(0, double.infinity);
 
@@ -395,6 +395,7 @@ class TableNode {
   void setColWeight(
     int col,
     double weight, {
+    NovidentTableStyleDefinition? style,
     Transaction? transaction,
     bool force = false,
   }) {
@@ -407,10 +408,15 @@ class TableNode {
             {TableCellBlockKeys.colWeight: clamped},
           );
         } else {
-          _cells[col][i]
-              .updateAttributes({TableCellBlockKeys.colWeight: clamped});
+          _cells[col][i].updateAttributes({
+            TableCellBlockKeys.colWeight: clamped,
+          });
         }
-        updateRowHeight(i, transaction: transaction);
+        updateRowHeight(
+          i,
+          transaction: transaction,
+          style: style,
+        );
       }
       if (transaction != null) {
         transaction.updateNode(node, node.attributes);
@@ -425,15 +431,22 @@ class TableNode {
   void setColWidth(
     int col,
     double w, {
+    NovidentTableStyleDefinition? style,
     Transaction? transaction,
     bool force = false,
   }) {
-    setColWeight(col, w / TableDefaults.colWidth,
-        transaction: transaction, force: force);
+    setColWeight(
+      col,
+      w / (style?.colMinimumWidth ?? TableDefaults.colWidth),
+      style: style,
+      transaction: transaction,
+      force: force,
+    );
   }
 
   void updateRowHeight(
     int row, {
+    NovidentTableStyleDefinition? style,
     EditorState? editorState,
     Transaction? transaction,
   }) {
@@ -444,7 +457,7 @@ class TableNode {
         .map<double>(
           (c) =>
               c[row].children.first.rect.height +
-              TableDefaults.cellVerticalPadding,
+              (style?.cellVerticalPadding ?? 0),
         )
         .reduce(max);
 
@@ -478,12 +491,18 @@ class TableNode {
     if (node.attributes[TableBlockKeys.colsHeight] != colsHeight &&
         !colsHeight.isNaN) {
       if (transaction != null) {
-        transaction.updateNode(node, {TableBlockKeys.colsHeight: colsHeight});
+        transaction.updateNode(node, {
+          TableBlockKeys.colsHeight: colsHeight,
+        });
         if (editorState != null && editorState.editable != true) {
-          node.updateAttributes({TableBlockKeys.colsHeight: colsHeight});
+          node.updateAttributes({
+            TableBlockKeys.colsHeight: colsHeight,
+          });
         }
       } else {
-        node.updateAttributes({TableBlockKeys.colsHeight: colsHeight});
+        node.updateAttributes({
+          TableBlockKeys.colsHeight: colsHeight,
+        });
       }
     }
   }

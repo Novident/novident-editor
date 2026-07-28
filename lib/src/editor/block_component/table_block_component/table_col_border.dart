@@ -10,17 +10,19 @@ class TableColBorder extends StatefulWidget {
     required this.colIdx,
     required this.resizable,
     required this.borderColor,
-    required this.borderHoverColor,
+    this.tableStyleDef,
+    this.borderHoverColor,
     this.currentColWidth,
   });
 
+  final NovidentTableStyleDefinition? tableStyleDef;
   final bool resizable;
   final int colIdx;
   final TableNode tableNode;
   final EditorState editorState;
 
   final Color borderColor;
-  final Color borderHoverColor;
+  final Color? borderHoverColor;
 
   /// The current rendered width in pixels of the column this border
   /// belongs to. Used to convert mouse drag pixels to proportional
@@ -62,6 +64,7 @@ class _TableColBorderState extends State<TableColBorder> {
           widget.tableNode.setColWeight(
             col,
             widget.tableNode.getColWeight(col),
+            style: widget.tableStyleDef,
             transaction: transaction,
             force: true,
           );
@@ -69,6 +72,7 @@ class _TableColBorderState extends State<TableColBorder> {
             widget.tableNode.setColWeight(
               nextCol,
               widget.tableNode.getColWeight(nextCol),
+              style: widget.tableStyleDef,
               transaction: transaction,
               force: true,
             );
@@ -84,26 +88,32 @@ class _TableColBorderState extends State<TableColBorder> {
 
           // Convert pixel delta to weight delta using the actual
           // rendered column width for 1:1 pixel-to-visual mapping.
-          final colWidth =
-              widget.currentColWidth ?? TableDefaults.colWidth;
+          final colWidth = widget.currentColWidth ?? TableDefaults.colWidth;
           final colWeight = widget.tableNode.getColWeight(col);
           final weightDelta = colWidth > 0
               ? details.delta.dx * colWeight / colWidth
               : details.delta.dx / TableDefaults.colWidth;
 
           // Calculate new weights: left grows, right shrinks.
-          final leftWeight =
-              widget.tableNode.getColWeight(col) + weightDelta;
+          final leftWeight = widget.tableNode.getColWeight(col) + weightDelta;
           final rightWeight =
               widget.tableNode.getColWeight(nextCol) - weightDelta;
 
           // Clamp: neither column can go below minimum.
-          final minWeight = widget.tableNode.config.colMinimumWidth /
-              TableDefaults.colWidth;
+          final minWeight =
+              widget.tableNode.config.colMinimumWidth / TableDefaults.colWidth;
           if (leftWeight < minWeight || rightWeight < minWeight) return;
 
-          widget.tableNode.setColWeight(col, leftWeight);
-          widget.tableNode.setColWeight(nextCol, rightWeight);
+          widget.tableNode.setColWeight(
+            col,
+            leftWeight,
+            style: widget.tableStyleDef,
+          );
+          widget.tableNode.setColWeight(
+            nextCol,
+            rightWeight,
+            style: widget.tableStyleDef,
+          );
         },
         child: Container(
           key: _borderKey,

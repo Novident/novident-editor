@@ -43,88 +43,6 @@ class TableBlockKeys {
   static const String borderColor = 'borderColor';
 }
 
-class TableStyle {
-  /// Default column weight for columns without an explicit
-  /// [TableCellBlockKeys.colWeight].
-  final double colWeight;
-
-  /// Legacy default column width in pixels. Deprecated in favour of
-  /// [colWeight].
-  @Deprecated('Use colWeight instead')
-  final double colWidth;
-
-  final double rowHeight;
-  final double colMinimumWidth;
-  final double borderWidth;
-  final Widget addIcon;
-  final Widget handlerIcon;
-  final Color borderColor;
-  final Color borderHoverColor;
-
-  /// Extra vertical space added to the measured height of a cell's content
-  /// when synchronizing the row heights.
-  ///
-  /// Defaults to 8 — the default vertical padding of a paragraph block. If
-  /// you customize the vertical padding of the blocks rendered inside the
-  /// cells (or the cell padding itself), adjust this value accordingly,
-  /// otherwise the vertical borders will not match the real column height.
-  final double cellVerticalPadding;
-
-  /// Whether the table gets its own internal horizontal scroll view.
-  ///
-  /// When false, the table is laid out at its intrinsic width without an
-  /// internal `SingleChildScrollView`/`Scrollbar`, letting the consumer
-  /// decide how to handle the overflow (e.g. an external scroll view or a
-  /// constrained layout).
-  final bool enableHorizontalScroll;
-
-  /// The padding around the table content.
-  final EdgeInsets tablePadding;
-
-  /// Whether the trailing "add column" button is shown.
-  final bool showAddColumnButton;
-
-  /// Whether the trailing "add row" button is shown.
-  final bool showAddRowButton;
-
-  const TableStyle({
-    this.colWeight = 1.0,
-    @Deprecated('Use colWeight instead') this.colWidth = 160,
-    this.rowHeight = 40,
-    this.colMinimumWidth = 40,
-    this.borderWidth = 2,
-    this.addIcon = TableDefaults.addIcon,
-    this.handlerIcon = TableDefaults.handlerIcon,
-    this.borderColor = Colors.grey,
-    this.borderHoverColor = Colors.blue,
-    this.cellVerticalPadding = 8.0,
-    this.enableHorizontalScroll = true,
-    this.tablePadding = const EdgeInsets.only(top: 10, left: 0, bottom: 4),
-    this.showAddColumnButton = true,
-    this.showAddRowButton = true,
-  });
-
-  /// Converts the legacy [TableStyle] to a [NovidentTableStyleDefinition]
-  /// for use with the style system.
-  NovidentTableStyleDefinition toDefinition() {
-    return NovidentTableStyleDefinition(
-      id: '__table_style_legacy__',
-      name: 'Legacy TableStyle',
-      colDefaultWeight: colWeight,
-      rowDefaultHeight: rowHeight,
-      colMinimumWidth: colMinimumWidth,
-      borderWidth: borderWidth,
-      borderColor: borderColor,
-      borderHoverColor: borderHoverColor,
-      cellVerticalPadding: cellVerticalPadding,
-      enableHorizontalScroll: enableHorizontalScroll,
-      tablePadding: tablePadding,
-      showAddColumnButton: showAddColumnButton,
-      showAddRowButton: showAddRowButton,
-    );
-  }
-}
-
 class TableDefaults {
   const TableDefaults._();
 
@@ -167,13 +85,11 @@ typedef TableBlockComponentMenuBuilder = Widget Function(
 class TableBlockComponentBuilder extends BlockComponentBuilder {
   TableBlockComponentBuilder({
     super.configuration,
-    this.tableStyle = const TableStyle(),
     this.menuBuilder,
     this.actionMenuItems,
   });
 
   final TableBlockComponentMenuBuilder? menuBuilder;
-  final TableStyle tableStyle;
 
   /// The entries of the default context menu of the column handlers.
   ///
@@ -191,12 +107,9 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
     // Resolve the effective style for this table node.
     final styles = NovidentEditorStyles.maybeOf(context);
     final resolved = styles?.resolveStyle(node);
-    final tableStyleDef =
-        resolved is NovidentTableStyleDefinition ? resolved : null;
-
-    // Apply style defaults, then override with builder-level tableStyle.
-    _applyDefaults(tableStyleDef ?? tableStyle.toDefinition());
-    _applyNodeOverrides(node);
+    final tableStyleDef = resolved is NovidentTableStyleDefinition
+        ? resolved
+        : kDefaultTableStyle;
 
     return TableBlockComponentWidget(
       key: node.key,
@@ -205,34 +118,21 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
       configuration: configuration,
       menuBuilder: menuBuilder,
       actionMenuItems: actionMenuItems,
-      tableStyle: tableStyle,
       tableStyleDef: tableStyleDef,
       showActions: showActions(node),
       actionBuilder: (context, state) => actionBuilder(
         blockComponentContext,
         state,
       ),
-      actionTrailingBuilder: (context, state) => actionTrailingBuilder(
+      actionTrailingBuilder: (
+        context,
+        state,
+      ) =>
+          actionTrailingBuilder(
         blockComponentContext,
         state,
       ),
     );
-  }
-
-  /// Applies the effective style to [TableDefaults].
-  void _applyDefaults(NovidentTableStyleDefinition style) {
-    TableDefaults.colDefaultWeight = style.colDefaultWeight;
-    TableDefaults.colWidth = style.colDefaultWeight * 160; // legacy compat
-    TableDefaults.rowHeight = style.rowDefaultHeight;
-    TableDefaults.colMinimumWidth = style.colMinimumWidth;
-    TableDefaults.borderWidth = style.borderWidth;
-    TableDefaults.cellVerticalPadding = style.cellVerticalPadding;
-  }
-
-  /// Per-node attributes override the style defaults.
-  void _applyNodeOverrides(Node node) {
-    // borderColor and enableHorizontalScroll are handled per-render
-    // via context.select in the widget's build method.
   }
 
   @override
@@ -305,7 +205,6 @@ class TableBlockComponentWidget extends BlockComponentStatefulWidget {
     super.key,
     required this.tableNode,
     required super.node,
-    this.tableStyle = const TableStyle(),
     this.tableStyleDef,
     this.menuBuilder,
     this.actionMenuItems,
@@ -321,8 +220,6 @@ class TableBlockComponentWidget extends BlockComponentStatefulWidget {
 
   /// The entries of the default context menu of the column handlers.
   final List<TableActionMenuItem>? actionMenuItems;
-
-  final TableStyle tableStyle;
 
   /// The resolved [NovidentTableStyleDefinition] for this table, if any.
   final NovidentTableStyleDefinition? tableStyleDef;
@@ -355,7 +252,11 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
     return h;
   }
 
-  List<double> _columnWidths(double availableWidth, TableNode tableNode, {bool noBorder = false}) {
+  List<double> _columnWidths(
+    double availableWidth,
+    TableNode tableNode, {
+    bool noBorder = false,
+  }) {
     final hash = _weightHash(tableNode);
     if (availableWidth == _cachedAvailableWidth &&
         hash == _cachedWeightHash &&
@@ -376,21 +277,22 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
 
   @override
   Widget build(BuildContext context) {
-    final style = widget.tableStyleDef;
-    final noBorder = style?.noBorder ?? false;
+    final NovidentTableStyleDefinition style =
+        widget.tableStyleDef ?? kDefaultTableStyle;
+    final noBorder = style.noBorder;
     final borderPx = noBorder ? 0.0 : widget.tableNode.config.borderWidth;
 
     final enableHorizontalScroll = context.select((Node n) {
           final value = n.attributes[TableBlockKeys.enableHorizontalScroll];
           return value is bool ? value : null;
         }) ??
-        widget.tableStyle.enableHorizontalScroll;
+        style.enableHorizontalScroll;
 
     Widget tableArea = LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
         final tableNode = widget.tableNode;
-        final tablePadding = widget.tableStyle.tablePadding;
+        final tablePadding = style.tablePadding;
 
         // Minimum total width: all columns at colMinimumWidth + borders.
         final minWidth =
@@ -399,8 +301,11 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
 
         if (enableHorizontalScroll && availableWidth < minWidth) {
           // Content overflows — render at minimum intrinsic widths.
-          final scrollWidths =
-              _columnWidths(minWidth, tableNode, noBorder: noBorder);
+          final scrollWidths = _columnWidths(
+            minWidth,
+            tableNode,
+            noBorder: noBorder,
+          );
           return Scrollbar(
             controller: _scrollController,
             child: SingleChildScrollView(
@@ -414,8 +319,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
                   editorState: editorState,
                   menuBuilder: widget.menuBuilder,
                   actionMenuItems: widget.actionMenuItems,
-                  tableStyle: widget.tableStyle,
-                  tableStyleDef: widget.tableStyleDef,
+                  tableStyleDef: style,
                   columnWidths: scrollWidths,
                 ),
               ),
@@ -424,8 +328,11 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
         } else {
           // Content fits — distribute available width by weights.
           final contentWidth = availableWidth - tablePadding.horizontal;
-          final fittedWidths =
-              _columnWidths(contentWidth, tableNode, noBorder: noBorder);
+          final fittedWidths = _columnWidths(
+            contentWidth,
+            tableNode,
+            noBorder: noBorder,
+          );
           return Padding(
             padding: tablePadding,
             child: TableView(
@@ -433,8 +340,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
               editorState: editorState,
               menuBuilder: widget.menuBuilder,
               actionMenuItems: widget.actionMenuItems,
-              tableStyle: widget.tableStyle,
-              tableStyleDef: widget.tableStyleDef,
+              tableStyleDef: style,
               columnWidths: fittedWidths,
             ),
           );

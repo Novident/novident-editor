@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:novident_editor/src/infra/log.dart';
 
 import 'novident_style_definition.dart';
 import 'novident_table_style_definition.dart';
@@ -24,32 +25,60 @@ class NovidentStyleRegistry {
   ///
   /// Returns `null` when the style ID is not registered.
   /// Cyclic [basedOn] references are detected and broken.
-  NovidentStyleDefinition? resolve(String id) {
+  NovidentStyleDefinition? resolve(
+    String id, {
+    required NovidentStyleDefinition baseStyle,
+    String? forType,
+    Map<String, dynamic>? byTypes,
+  }) {
     final definition = _styles[id];
     if (definition == null) return null;
-    return _resolveChain(definition, <String>{});
+    return _resolveChain(
+      definition,
+      <String>{},
+      baseStyle: baseStyle,
+      byTypes: byTypes,
+      forType: forType,
+    );
   }
 
   NovidentStyleDefinition _resolveChain(
     NovidentStyleDefinition definition,
-    Set<String> visited,
-  ) {
+    Set<String> visited, {
+    required NovidentStyleDefinition baseStyle,
+    String? forType,
+    Map<String, dynamic>? byTypes,
+  }) {
     final basedOnId = definition.basedOn;
     if (basedOnId == null) return definition;
 
     if (visited.contains(basedOnId)) {
-      debugPrint(
+      NovidentEditorLog.ui.warn(
         'NovidentStyleRegistry: cyclic basedOn reference detected '
         'in style "${definition.id}" → "$basedOnId". Breaking chain.',
       );
       return definition;
     }
 
-    final parent = _styles[basedOnId];
+    NovidentStyleDefinition? parent = _styles[basedOnId];
+    if (parent == null && byTypes != null && forType != null) {
+      parent = byTypes[forType];
+    }
+
+    if (parent == null && baseStyle.id == basedOnId) {
+      parent = baseStyle;
+    }
+
     if (parent == null) return definition;
 
     visited.add(basedOnId);
-    final resolvedParent = _resolveChain(parent, visited);
+    final resolvedParent = _resolveChain(
+      parent,
+      visited,
+      baseStyle: baseStyle,
+      byTypes: byTypes,
+      forType: forType,
+    );
 
     // Use the table-aware merge when the base is a table style.
     if (resolvedParent is NovidentTableStyleDefinition) {
@@ -60,7 +89,9 @@ class NovidentStyleRegistry {
 
   /// Returns a new [NovidentStyleRegistry] with [styles] added/overridden.
   NovidentStyleRegistry copyWith(Map<String, NovidentStyleDefinition> styles) {
-    final merged = Map<String, NovidentStyleDefinition>.from(_styles);
+    final merged = Map<String, NovidentStyleDefinition>.from(
+      _styles,
+    );
     merged.addAll(styles);
     return NovidentStyleRegistry(merged);
   }
@@ -69,8 +100,13 @@ class NovidentStyleRegistry {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is NovidentStyleRegistry &&
-          mapEquals(other._styles, _styles);
+          mapEquals(
+            other._styles,
+            _styles,
+          );
 
   @override
-  int get hashCode => _styles.hashCode;
+  int get hashCode => Object.hashAll([
+        ..._styles.entries,
+      ]);
 }

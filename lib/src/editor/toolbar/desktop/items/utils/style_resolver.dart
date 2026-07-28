@@ -19,7 +19,12 @@ NovidentStyleDefinition resolveEffectiveToolbarStyle(
 
   final styleRef = node.attributes[blockComponentStyleRef] as String?;
   if (styleRef != null && styleRef.isNotEmpty) {
-    final resolved = config.registry.resolve(styleRef);
+    final resolved = config.registry.resolve(
+      styleRef,
+      baseStyle: config.defaultStyle,
+      byTypes: config.defaultStylesByType,
+      forType: node.type,
+    );
     if (resolved != null) return resolved;
   }
 

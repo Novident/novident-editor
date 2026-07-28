@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:novident_editor/src/core/style/novident_style_definition.dart';
 import 'package:novident_editor/src/core/style/novident_style_registry.dart';
 import 'package:novident_editor/src/core/style/novident_table_style_definition.dart';
@@ -32,7 +33,6 @@ final NovidentStyleRegistry kDefaultStyleRegistry =
   kHeadingDefaultStyles[3].id: kHeadingDefaultStyles[3],
   kHeadingDefaultStyles[4].id: kHeadingDefaultStyles[4],
   kHeadingDefaultStyles[5].id: kHeadingDefaultStyles[5],
-  kDefaultTableStyle.id: kDefaultTableStyle,
 });
 
 // Default paragraph base style. Must be always used as part of `defaultStyle` property
@@ -122,10 +122,13 @@ final kDefaultTableStyle = NovidentTableStyleDefinition.nextSame(
   id: '__novident_table__',
   name: 'Default Table',
   basedOn: kDefaultBaseStyle.id,
+  borderColor: Colors.black,
+  borderHoverColor: Colors.black,
+  borderLineStyle: BorderStyle.solid,
+  borderWidth: 1.0,
   colDefaultWeight: 1.0,
   rowDefaultHeight: 40.0,
   colMinimumWidth: 20.0,
-  borderWidth: 2.0,
   cellVerticalPadding: 5.0,
   enableHorizontalScroll: false,
 );

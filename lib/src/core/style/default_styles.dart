@@ -1,5 +1,8 @@
+import 'package:flutter/material.dart';
+
 import 'package:novident_editor/src/core/style/novident_style_definition.dart';
 import 'package:novident_editor/src/core/style/novident_style_registry.dart';
+import 'package:novident_editor/src/core/style/novident_table_style_definition.dart';
 
 /// A sensible preset of styles modelled after Microsoft Word defaults.
 ///
@@ -31,6 +34,7 @@ final NovidentStyleRegistry kDefaultStyleRegistry =
   kHeadingDefaultStyles[3].id: kHeadingDefaultStyles[3],
   kHeadingDefaultStyles[4].id: kHeadingDefaultStyles[4],
   kHeadingDefaultStyles[5].id: kHeadingDefaultStyles[5],
+  kDefaultTableStyle.id: kDefaultTableStyle,
 });
 
 // Default paragraph base style. Must be always used as part of `defaultStyle` property
@@ -111,3 +115,25 @@ const kHeadingDefaultStyles = <NovidentStyleDefinition>[
     allowGlobalFirstLineIndent: false,
   ),
 ];
+
+/// Default table style used as the global fallback for all table blocks.
+///
+/// Provides sensible defaults for borders, column weights, row heights,
+/// and enables the header row with a subtle background.
+final kDefaultTableStyle = NovidentTableStyleDefinition.nextSame(
+  id: '__novident_table__',
+  name: 'Default Table',
+  basedOn: kDefaultBaseStyle.id,
+  fontSize: 12.0,
+  colDefaultWeight: 1.0,
+  rowDefaultHeight: 40.0,
+  colMinimumWidth: 40.0,
+  borderWidth: 2.0,
+  cellVerticalPadding: 8.0,
+  enableHorizontalScroll: true,
+  firstRowHeader: true,
+  headerStyle: NovidentTableHeaderStyle(
+    bold: true,
+    alignment: TextAlign.center,
+  ),
+);

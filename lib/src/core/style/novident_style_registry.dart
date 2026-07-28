@@ -1,5 +1,7 @@
-import 'package:novident_editor/src/core/style/novident_style_definition.dart';
 import 'package:flutter/foundation.dart';
+
+import 'novident_style_definition.dart';
+import 'novident_table_style_definition.dart';
 
 /// Immutable registry of [NovidentStyleDefinition] keyed by [NovidentStyleDefinition.id].
 ///
@@ -49,6 +51,13 @@ class NovidentStyleRegistry {
     visited.add(basedOnId);
     final resolvedParent = _resolveChain(parent, visited);
 
+    // Use the table-aware merge when either side is a table style.
+    if (definition is NovidentTableStyleDefinition) {
+      return definition.mergeTable(resolvedParent);
+    }
+    if (resolvedParent is NovidentTableStyleDefinition) {
+      return resolvedParent.mergeTable(definition);
+    }
     return resolvedParent.merge(definition);
   }
 

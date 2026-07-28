@@ -103,6 +103,26 @@ class TableStyle {
     this.showAddColumnButton = true,
     this.showAddRowButton = true,
   });
+
+  /// Converts the legacy [TableStyle] to a [NovidentTableStyleDefinition]
+  /// for use with the style system.
+  NovidentTableStyleDefinition toDefinition() {
+    return NovidentTableStyleDefinition(
+      id: '__table_style_legacy__',
+      name: 'Legacy TableStyle',
+      colDefaultWeight: colWeight,
+      rowDefaultHeight: rowHeight,
+      colMinimumWidth: colMinimumWidth,
+      borderWidth: borderWidth,
+      borderColor: borderColor,
+      borderHoverColor: borderHoverColor,
+      cellVerticalPadding: cellVerticalPadding,
+      enableHorizontalScroll: enableHorizontalScroll,
+      tablePadding: tablePadding,
+      showAddColumnButton: showAddColumnButton,
+      showAddRowButton: showAddRowButton,
+    );
+  }
 }
 
 class TableDefaults {
@@ -164,12 +184,18 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
   @override
   BlockComponentWidget build(BlockComponentContext blockComponentContext) {
     final node = blockComponentContext.node;
-    TableDefaults.colDefaultWeight = tableStyle.colWeight;
-    TableDefaults.colWidth = tableStyle.colWidth;
-    TableDefaults.rowHeight = tableStyle.rowHeight;
-    TableDefaults.colMinimumWidth = tableStyle.colMinimumWidth;
-    TableDefaults.borderWidth = tableStyle.borderWidth;
-    TableDefaults.cellVerticalPadding = tableStyle.cellVerticalPadding;
+    final context = blockComponentContext.buildContext;
+
+    // Resolve the effective style for this table node.
+    final styles = NovidentEditorStyles.maybeOf(context);
+    final resolved = styles?.resolveStyle(node);
+    final tableStyleDef =
+        resolved is NovidentTableStyleDefinition ? resolved : null;
+
+    // Apply style defaults, then override with builder-level tableStyle.
+    _applyDefaults(tableStyleDef ?? tableStyle.toDefinition());
+    _applyNodeOverrides(node);
+
     return TableBlockComponentWidget(
       key: node.key,
       tableNode: TableNode(node: node),
@@ -178,6 +204,7 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
       menuBuilder: menuBuilder,
       actionMenuItems: actionMenuItems,
       tableStyle: tableStyle,
+      tableStyleDef: tableStyleDef,
       showActions: showActions(node),
       actionBuilder: (context, state) => actionBuilder(
         blockComponentContext,
@@ -188,6 +215,22 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
         state,
       ),
     );
+  }
+
+  /// Applies the effective style to [TableDefaults].
+  void _applyDefaults(NovidentTableStyleDefinition style) {
+    TableDefaults.colDefaultWeight = style.colDefaultWeight;
+    TableDefaults.colWidth = style.colDefaultWeight * 160; // legacy compat
+    TableDefaults.rowHeight = style.rowDefaultHeight;
+    TableDefaults.colMinimumWidth = style.colMinimumWidth;
+    TableDefaults.borderWidth = style.borderWidth;
+    TableDefaults.cellVerticalPadding = style.cellVerticalPadding;
+  }
+
+  /// Per-node attributes override the style defaults.
+  void _applyNodeOverrides(Node node) {
+    // borderColor and enableHorizontalScroll are handled per-render
+    // via context.select in the widget's build method.
   }
 
   @override
@@ -261,6 +304,7 @@ class TableBlockComponentWidget extends BlockComponentStatefulWidget {
     required this.tableNode,
     required super.node,
     this.tableStyle = const TableStyle(),
+    this.tableStyleDef,
     this.menuBuilder,
     this.actionMenuItems,
     super.showActions,
@@ -277,6 +321,9 @@ class TableBlockComponentWidget extends BlockComponentStatefulWidget {
   final List<TableActionMenuItem>? actionMenuItems;
 
   final TableStyle tableStyle;
+
+  /// The resolved [NovidentTableStyleDefinition] for this table, if any.
+  final NovidentTableStyleDefinition? tableStyleDef;
 
   @override
   State<TableBlockComponentWidget> createState() =>

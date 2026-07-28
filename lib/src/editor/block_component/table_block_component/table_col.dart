@@ -53,6 +53,8 @@ class _TableColState extends State<TableCol> {
             }) ??
             style.borderColor;
 
+    final colsHeight = widget.tableNode.colsHeight;
+
     List<Widget> children = [];
     if (widget.colIdx == 0 && !noBorder && borderColor != null) {
       children.add(
@@ -62,6 +64,7 @@ class _TableColState extends State<TableCol> {
           editorState: widget.editorState,
           colIdx: widget.colIdx,
           borderColor: borderColor,
+          colsHeight: colsHeight,
           tableStyleDef: style,
           borderHoverColor:
               widget.tableStyleDef?.borderHoverColor ?? Colors.transparent,
@@ -72,19 +75,8 @@ class _TableColState extends State<TableCol> {
     children.addAll([
       SizedBox(
         width: widget.colWidth,
-        child: Stack(
-          children: [
-            MouseRegion(
-              // onEnter: (_) => setState(() => _colActionVisiblity = true),
-              // onExit: (_) => setState(() => _colActionVisiblity = false),
-              child: Column(
-                children: _buildCells(
-                  context,
-                  borderColor,
-                ),
-              ),
-            ),
-          ],
+        child: Column(
+          children: _buildCells(context, borderColor),
         ),
       ),
       if (!noBorder && borderColor != null)
@@ -94,6 +86,7 @@ class _TableColState extends State<TableCol> {
           editorState: widget.editorState,
           colIdx: widget.colIdx,
           currentColWidth: widget.colWidth,
+          colsHeight: colsHeight,
           tableStyleDef: style,
           borderColor: borderColor,
           borderHoverColor: widget.tableStyleDef?.borderHoverColor,
@@ -179,22 +172,22 @@ class _TableColState extends State<TableCol> {
     node.addListener(listeners[node.id]!);
   }
 
-  void updateRowHeightCallback(int row) =>
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (row >= widget.tableNode.rowsLen) {
-          return;
-        }
+  void updateRowHeightCallback(int row) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (row >= widget.tableNode.rowsLen) return;
 
-        final transaction = widget.editorState.transaction;
-        widget.tableNode.updateRowHeight(
-          row,
-          style: widget.tableStyleDef ?? kDefaultTableStyle,
-          editorState: widget.editorState,
-          transaction: transaction,
-        );
-        if (transaction.operations.isNotEmpty) {
-          transaction.afterSelection = transaction.beforeSelection;
-          widget.editorState.apply(transaction);
-        }
-      });
+      final transaction = widget.editorState.transaction;
+      widget.tableNode.updateRowHeight(
+        row,
+        style: widget.tableStyleDef ?? kDefaultTableStyle,
+        editorState: widget.editorState,
+        transaction: transaction,
+      );
+      if (transaction.operations.isNotEmpty) {
+        transaction.afterSelection = transaction.beforeSelection;
+        widget.editorState.apply(transaction);
+      }
+      if (mounted) setState(() {});
+    });
+  }
 }

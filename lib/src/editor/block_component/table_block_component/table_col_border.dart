@@ -1,6 +1,5 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class TableColBorder extends StatefulWidget {
   const TableColBorder({
@@ -10,6 +9,7 @@ class TableColBorder extends StatefulWidget {
     required this.colIdx,
     required this.resizable,
     required this.borderColor,
+    required this.colsHeight,
     this.tableStyleDef,
     this.borderHoverColor,
     this.currentColWidth,
@@ -23,6 +23,7 @@ class TableColBorder extends StatefulWidget {
 
   final Color borderColor;
   final Color? borderHoverColor;
+  final double colsHeight;
 
   /// The current rendered width in pixels of the column this border
   /// belongs to. Used to convert mouse drag pixels to proportional
@@ -118,9 +119,7 @@ class _TableColBorderState extends State<TableColBorder> {
         child: Container(
           key: _borderKey,
           width: widget.tableNode.config.borderWidth,
-          height: context.select(
-            (Node n) => n.attributes[TableBlockKeys.colsHeight],
-          ),
+          height: widget.colsHeight,
           color: _borderHovering || _borderDragging
               ? widget.borderHoverColor
               : widget.borderColor,
@@ -132,9 +131,7 @@ class _TableColBorderState extends State<TableColBorder> {
   Container buildFixedBorder(BuildContext context) {
     return Container(
       width: widget.tableNode.config.borderWidth,
-      height: context.select(
-        (Node n) => n.attributes[TableBlockKeys.colsHeight],
-      ),
+      height: widget.colsHeight,
       color: widget.borderColor,
     );
   }

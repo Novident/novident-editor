@@ -244,6 +244,26 @@ detailed walkthrough.
 
 ---
 
+## Tables
+
+Tables render with a weight-based column layout that fills available width.
+Define reusable table styles with `NovidentTableStyleDefinition` for zebra
+striping, coloured headers, borderless layouts, and more.
+
+```dart
+final table = TableNode.fromList([
+  ['Name', 'Elara'],   // column 0
+  ['Role', 'Mage'],    // column 1
+]);
+editorState.insertNode(path, table.node);
+```
+
+See **[Tables — full guide](documentation/tables.md)** for creation,
+styling, column weights, keyboard shortcuts, and the complete property
+reference.
+
+---
+
 ## License
 
 Novident Editor is a fork of **AppFlowy Editor**

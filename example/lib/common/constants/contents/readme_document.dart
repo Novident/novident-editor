@@ -1,155 +1,141 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
-// ── Custom table styles (registered in the editor's styles config) ──
-//
-// These styles demonstrate how to use NovidentTableStyleDefinition.
-// They are referenced by name via the 'styleRef' node attribute.
-//
-// Usage in the editor:
-//   styles: NovidentStylesConfig(
-//     registry: NovidentStyleRegistry({
-//       ...kDefaultStyleRegistry.styles,
-//       'readme-striped': kReadmeStripedTable,
-//       'readme-plain': kReadmePlainTable,
-//       'readme-colored': kReadmeColoredTable,
-//     }),
-//     defaultStyle: kDefaultBaseStyle,
-//     defaultStylesByType: {'table': kDefaultTableStyle},
-//   ),
-
-/// Zebra-striped table: alternating even/odd row colors.
 final kReadmeStripedTable = NovidentTableStyleDefinition.nextSame(
   id: 'readme-striped',
   name: 'Striped',
   basedOn: kDefaultTableStyle.id,
-  evenRowColor: const Color(0xFFEEEEEE),
+  evenRowColor: const Color(0xFFF5F5F5),
   oddRowColor: const Color(0xFFFFFFFF),
   headerRowCount: 1,
   headerStyle: const NovidentTableRowStyle(
     bold: true,
     alignment: TextAlign.center,
-    backgroundColor: Color(0xFF1976D2),
+    backgroundColor: Color(0xFF37474F),
     textColor: Colors.white,
+    height: 44,
   ),
 );
 
-/// Borderless table: clean, no borders anywhere.
 final kReadmePlainTable = NovidentTableStyleDefinition.nextSame(
   id: 'readme-plain',
   name: 'Plain',
   basedOn: kDefaultTableStyle.id,
   noBorder: true,
-  cellPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  cellPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
 );
 
-/// Colored table: styled header row via the style system.
-/// No per-cell attributes needed — the style handles everything.
-final kReadmeColoredTable = NovidentTableStyleDefinition.nextSame(
-  id: 'readme-colored',
-  name: 'Colored',
+final kReadmeAccentTable = NovidentTableStyleDefinition.nextSame(
+  id: 'readme-accent',
+  name: 'Accent',
   basedOn: kDefaultTableStyle.id,
   headerRowCount: 1,
   headerStyle: const NovidentTableRowStyle(
-    backgroundColor: Color(0xFFE3F2FD),
     bold: true,
+    backgroundColor: Color(0xFFFFF8E1),
+    bottomBorderColor: Color(0xFFFFCC02),
+    bottomBorderWidth: 2.5,
   ),
-  evenRowColor: const Color(0xFFFFF8E1),
-  oddRowColor: const Color(0xFFFFF3E0),
+  evenRowColor: const Color(0xFFFFFDE7),
+  oddRowColor: const Color(0xFFFFF8E1),
 );
-
-// ── Document ────────────────────────────────────────────
 
 final Document readmeDocument = Document(
   root: pageNode(
     children: <Node>[
       paragraphNode(text: 'Readme', styleRef: kHeadingDefaultStyles[0].id),
       paragraphNode(text: 'So, this is just an example'),
-
-      // ── 1) fromList — plain text, column-major ────────
-      paragraphNode(text: '1. Basic table (fromList)'),
+      paragraphNode(
+          text: '1. Basic table', styleRef: kHeadingDefaultStyles[1].id),
       TableNode.fromList([
-        ['Name', 'Elara', 'Doran'], // column 0
-        ['Role', 'Mage', 'Warrior'], // column 1
-        ['Level', '8', '6'], // column 2
+        ['Name', 'Elara', 'Doran'],
+        ['Role', 'Mage', 'Warrior'],
+        ['Level', '8', '6'],
       ]).node,
-
-      // ── 2) fromNodes — any node type, column-major ────
-      paragraphNode(text: '2. Table with mixed nodes (fromNodes)'),
+      paragraphNode(
+          text: '2. Mixed content', styleRef: kHeadingDefaultStyles[1].id),
       TableNode.fromNodes([
         [
           headingNode(level: 3, text: 'Item'),
           paragraphNode(text: 'Potion'),
+          paragraphNode(text: 'Scroll'),
         ],
         [
           paragraphNode(text: 'Price'),
           paragraphNode(text: '15 gp'),
+          paragraphNode(text: '50 gp'),
         ],
         [
           paragraphNode(
             delta: Delta()..insert('Stock', attributes: {'bold': true}),
           ),
           paragraphNode(text: '12'),
+          paragraphNode(text: '5'),
         ],
       ]).node,
-
-      // ── 3) Style: noBorder (borderless table) ────────
-      paragraphNode(text: '3. Borderless table (style: readme-plain)'),
-      TableNode.fromNodes([
-        [
-          paragraphNode(text: 'Feature'),
-          paragraphNode(text: 'Supports'),
-        ],
-        [
-          paragraphNode(text: 'noBorder'),
-          paragraphNode(text: '✅'),
-        ],
-        [
-          paragraphNode(text: 'row striping'),
-          paragraphNode(text: '✅'),
-        ],
-      ]).node,
-
-      // ── 3) Style: noBorder (borderless table) ────────
-      paragraphNode(text: '3. Borderless table (style: readme-plain)'),
+      paragraphNode(
+          text: '3. Borderless', styleRef: kHeadingDefaultStyles[1].id),
       TableNode.fromNodes(
         [
-          [
-            paragraphNode(text: 'Feature'),
-            paragraphNode(text: 'Supports'),
-          ],
-          [
-            paragraphNode(text: 'noBorder'),
-            paragraphNode(text: '✅'),
-          ],
-          [
-            paragraphNode(text: 'row striping'),
-            paragraphNode(text: '✅'),
-          ],
+          [paragraphNode(text: 'Feature'), paragraphNode(text: 'Status')],
+          [paragraphNode(text: 'noBorder'), paragraphNode(text: '✅')],
+          [paragraphNode(text: 'cellPadding'), paragraphNode(text: '✅')],
         ],
         styleRef: 'readme-plain',
       ).node,
-
-      // ── 4) Style: zebra stripes + colored header ──────
-      paragraphNode(text: '4. Striped table (style: readme-striped)'),
+      paragraphNode(
+          text: '4. Striped with header',
+          styleRef: kHeadingDefaultStyles[1].id),
       TableNode.fromNodes(
         [
-          [paragraphNode(text: 'Name'), paragraphNode(text: 'Elara')],
-          [paragraphNode(text: 'Role'), paragraphNode(text: 'Mage')],
-          [paragraphNode(text: 'Level'), paragraphNode(text: '8')],
+          [
+            paragraphNode(text: 'Name'),
+            paragraphNode(text: 'Role'),
+            paragraphNode(text: 'Level')
+          ],
+          [
+            paragraphNode(text: 'Elara'),
+            paragraphNode(text: 'Mage'),
+            paragraphNode(text: '8')
+          ],
+          [
+            paragraphNode(text: 'Doran'),
+            paragraphNode(text: 'Warrior'),
+            paragraphNode(text: '6')
+          ],
+          [
+            paragraphNode(text: 'Lyra'),
+            paragraphNode(text: 'Rogue'),
+            paragraphNode(text: '4')
+          ],
         ],
         styleRef: 'readme-striped',
       ).node,
-
-      // ── 5) Style: colored header + evenRow ───────────
-      paragraphNode(text: '5. Colored table (style: readme-colored)'),
+      paragraphNode(text: '5. Accent', styleRef: kHeadingDefaultStyles[1].id),
       TableNode.fromNodes(
         [
-          [paragraphNode(text: 'Header A'), paragraphNode(text: 'Value 1')],
-          [paragraphNode(text: 'Header B'), paragraphNode(text: 'Value 2')],
-          [paragraphNode(text: 'Header C'), paragraphNode(text: 'Value 3')],
+          [
+            paragraphNode(text: 'Task'),
+            paragraphNode(text: 'Owner'),
+            paragraphNode(text: 'Due')
+          ],
+          [
+            paragraphNode(text: 'Design system'),
+            paragraphNode(text: 'Elara'),
+            paragraphNode(text: 'Aug 12')
+          ],
+          [
+            paragraphNode(text: 'Table styles'),
+            paragraphNode(text: 'Doran'),
+            paragraphNode(text: 'Aug 20')
+          ],
+          [
+            paragraphNode(text: 'Documentation'),
+            paragraphNode(text: 'Lyra'),
+            paragraphNode(text: 'Sep 1')
+          ],
         ],
-        styleRef: 'readme-colored',
+        styleRef: 'readme-accent',
       ).node,
     ],
   ),

@@ -89,10 +89,10 @@ extension PositionExtension on Position {
 
     /// Depth-first search starting from [node] (inclusive), matching the first
     /// descendant (or the node itself) that satisfies [test].
-    Node? _firstMatch(Node node, bool Function(Node) test) {
+    Node? firstMatch(Node node, bool Function(Node) test) {
       if (test(node)) return node;
       for (final child in node.children) {
-        final found = _firstMatch(child, test);
+        final found = firstMatch(child, test);
         if (found != null) return found;
       }
       return null;
@@ -100,7 +100,7 @@ extension PositionExtension on Position {
 
     /// O(1) cell lookup using column-major index: col * numRows + row.
     /// Falls back to linear scan if the index is corrupted.
-    Node? _cellAt(Node table, int col, int row, int numRows) {
+    Node? cellAt(Node table, int col, int row, int numRows) {
       final index = col * numRows + row;
       if (index >= 0 && index < table.children.length) {
         final cell = table.children[index];
@@ -118,23 +118,23 @@ extension PositionExtension on Position {
     }
 
     /// Returns the number of rows in a table.
-    int _numRows(Node table) {
+    int numRows(Node table) {
       final lastCell = table.children.last;
       return (lastCell.attributes[TableCellBlockKeys.rowPosition] as int) + 1;
     }
 
     /// Navigate to the cell at (sameCol, nextRow). Returns null if at the
     /// table's vertical boundary (no adjacent row in that direction).
-    Position? _navigateToCell(Node cell, Node table, bool upwards) {
+    Position? navigateToCell(Node cell, Node table, bool upwards) {
       final col =
           cell.attributes[TableCellBlockKeys.colPosition] as int?;
       final row =
           cell.attributes[TableCellBlockKeys.rowPosition] as int?;
       if (col == null || row == null) return null;
-      final nRows = _numRows(table);
+      final nRows = numRows(table);
       final nextRow = upwards ? row - 1 : row + 1;
       if (nextRow < 0 || nextRow >= nRows) return null;
-      final nextCell = _cellAt(table, col, nextRow, nRows);
+      final nextCell = cellAt(table, col, nextRow, nRows);
       if (nextCell == null ||
           nextCell.children.isEmpty ||
           nextCell.children.first.delta == null) {
@@ -150,7 +150,7 @@ extension PositionExtension on Position {
     /// Navigate out of the table to the adjacent block above or below.
     /// [atStart] controls whether to enter the destination block at its
     /// start ([atStart]==true) or end ([atStart]==false).
-    Position? _navigateOutOfTable(Node table, bool upwards, bool atStart) {
+    Position? navigateOutOfTable(Node table, bool upwards, bool atStart) {
       Node? outNode;
       if (upwards) {
         final prev = table.previous;
@@ -160,7 +160,7 @@ extension PositionExtension on Position {
       } else {
         final next = table.next;
         if (next == null) return null;
-        outNode = _firstMatch(next, (n) => n.selectable != null);
+        outNode = firstMatch(next, (n) => n.selectable != null);
       }
       if (outNode == null) return null;
       final entry = textEntry(outNode, atStart);
@@ -280,7 +280,7 @@ extension PositionExtension on Position {
         if (hitNode?.parent?.type == TableCellBlockKeys.type) {
           final table = currentCell!.parent;
           if (table != null) {
-            final cellPos = _navigateToCell(currentCell, table, upwards);
+            final cellPos = navigateToCell(currentCell, table, upwards);
             if (cellPos != null) return cellPos;
           }
         }
@@ -289,10 +289,10 @@ extension PositionExtension on Position {
         if (hitNode?.type == TableBlockKeys.type) {
           final tableNode = currentCell!.parent!;
           // Try adjacent row first — we may just be between cells.
-          final cellPos = _navigateToCell(currentCell, tableNode, upwards);
+          final cellPos = navigateToCell(currentCell, tableNode, upwards);
           if (cellPos != null) return cellPos;
           // At the edge — navigate out.
-          final outPos = _navigateOutOfTable(tableNode, upwards, !upwards);
+          final outPos = navigateOutOfTable(tableNode, upwards, !upwards);
           if (outPos != null) return outPos;
         }
         // Navigate into non-text blocks (tables) instead of selecting
@@ -363,7 +363,7 @@ extension PositionExtension on Position {
               !identical(srcCell, destNode.parent)) {
             final srcTable = srcCell.parent;
             if (srcTable != null) {
-              final cellPos = _navigateToCell(srcCell, srcTable, upwards);
+              final cellPos = navigateToCell(srcCell, srcTable, upwards);
               if (cellPos != null) return cellPos;
             }
           }
@@ -374,10 +374,10 @@ extension PositionExtension on Position {
               destNode.type == TableBlockKeys.type) {
             final tableNode = srcCell.parent!;
             // Try adjacent row first.
-            final cellPos = _navigateToCell(srcCell, tableNode, upwards);
+            final cellPos = navigateToCell(srcCell, tableNode, upwards);
             if (cellPos != null) return cellPos;
             // At the edge — navigate out.
-            final outPos = _navigateOutOfTable(tableNode, upwards, !upwards);
+            final outPos = navigateOutOfTable(tableNode, upwards, !upwards);
             if (outPos != null) return outPos;
           }
 
@@ -428,11 +428,11 @@ extension PositionExtension on Position {
       final table = cellParent.parent;
       if (table != null && table.type == TableBlockKeys.type) {
         // Try adjacent row first.
-        final cellPos = _navigateToCell(cellParent, table, upwards);
+        final cellPos = navigateToCell(cellParent, table, upwards);
         if (cellPos != null) return cellPos;
         // At the edge — navigate out.
         // downwards = true when going down (entering next block at start).
-        final outPos = _navigateOutOfTable(table, upwards, !upwards);
+        final outPos = navigateOutOfTable(table, upwards, !upwards);
         if (outPos != null) return outPos;
       }
     }

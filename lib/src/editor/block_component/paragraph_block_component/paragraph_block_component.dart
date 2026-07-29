@@ -154,8 +154,13 @@ class _ParagraphBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
-    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+    final blockStyle = NovidentBlockStyleResolver.resolve(
+      context,
+      widget.node,
+    );
     final effectivePadding = blockStyle.applyToPadding(padding);
+    //TODO: alignment.toTextAlign should be replaced
+    // by another method or enum that supports jutify alignment
     final effectiveTextAlign =
         alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign;
 

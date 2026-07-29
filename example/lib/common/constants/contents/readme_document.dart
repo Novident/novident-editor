@@ -10,7 +10,6 @@ final kReadmeStripedTable = NovidentTableStyleDefinition.nextSame(
   headerRowCount: 1,
   headerStyle: const NovidentTableRowStyle(
     bold: true,
-    alignment: TextAlign.center,
     backgroundColor: Color(0xFF37474F),
     textColor: Colors.white,
     height: 44,

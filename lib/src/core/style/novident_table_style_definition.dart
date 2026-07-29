@@ -9,7 +9,6 @@ class NovidentTableRowStyle {
     this.backgroundColor,
     this.bold = false,
     this.fontSize,
-    this.alignment,
     this.textColor,
     this.height,
     this.topBorderColor,
@@ -29,9 +28,6 @@ class NovidentTableRowStyle {
 
   /// Font size override for cells in this row.
   final double? fontSize;
-
-  /// Text alignment for cells in this row.
-  final TextAlign? alignment;
 
   /// Text color for cells in this row.
   final Color? textColor;
@@ -61,7 +57,6 @@ class NovidentTableRowStyle {
       backgroundColor: other.backgroundColor ?? backgroundColor,
       bold: other.bold || bold,
       fontSize: other.fontSize ?? fontSize,
-      alignment: other.alignment ?? alignment,
       textColor: other.textColor ?? textColor,
       height: other.height ?? height,
       topBorderColor: other.topBorderColor ?? topBorderColor,
@@ -80,7 +75,6 @@ class NovidentTableRowStyle {
           backgroundColor == other.backgroundColor &&
           bold == other.bold &&
           fontSize == other.fontSize &&
-          alignment == other.alignment &&
           textColor == other.textColor &&
           height == other.height &&
           topBorderColor == other.topBorderColor &&
@@ -94,7 +88,6 @@ class NovidentTableRowStyle {
         backgroundColor,
         bold,
         fontSize,
-        alignment,
         textColor,
         height,
         topBorderColor,
@@ -182,7 +175,6 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     super.allowGlobalFirstLineIndent,
   });
 
-
   final double colDefaultWeight;
   final double rowDefaultHeight;
   final double colMinimumWidth;
@@ -226,14 +218,12 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   final bool showAddColumnButton;
   final bool showAddRowButton;
 
-
   /// Background color for even-numbered rows (0-indexed: rows 0, 2, 4…).
   /// Overridden by per-cell background colors and [headerStyle] / [footerStyle].
   final Color? evenRowColor;
 
   /// Background color for odd-numbered rows (1, 3, 5…).
   final Color? oddRowColor;
-
 
   /// Number of rows at the top of the table treated as header.
   /// Rows `0` through `headerRowCount - 1` use [headerStyle].
@@ -249,7 +239,6 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   /// Style applied to footer rows (last [footerRowCount] rows).
   final NovidentTableRowStyle? footerStyle;
 
-
   /// Default column weights keyed by column index.
   /// Columns not listed here use [colDefaultWeight].
   final Map<int, double>? columnWeights;
@@ -258,10 +247,8 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   /// Rows not listed here use [rowDefaultHeight].
   final Map<int, double>? rowHeights;
 
-
   /// Highlight color when cells are selected.
   final Color? selectionHighlightColor;
-
 
   /// Convenience: same as the default constructor but sets [next] to [id]
   /// so pressing Enter at the end of a styled table keeps the same style.
@@ -327,23 +314,32 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     super.allowGlobalFirstLineIndent,
   }) : super.nextSame();
 
-
   @override
-  NovidentStyleDefinition merge(NovidentStyleDefinition other) {
+  NovidentStyleDefinition merge(
+    NovidentStyleDefinition other, {
+    bool isHeader = false,
+  }) {
     if (other is NovidentTableStyleDefinition) {
-      return _mergeWithTable(other);
+      return _mergeWithTable(other, isHeader: isHeader);
     }
-    return _copyWithParent(other);
+    return _copyWithParent(other, isHeader: isHeader);
   }
 
-  NovidentTableStyleDefinition mergeTable(NovidentStyleDefinition other) {
+  NovidentTableStyleDefinition mergeTable(
+    NovidentStyleDefinition other, {
+    bool isHeader = false,
+  }) {
     if (other is NovidentTableStyleDefinition) {
-      return _mergeWithTable(other);
+      return _mergeWithTable(other, isHeader: isHeader);
     }
-    return _copyWithParent(other);
+    return _copyWithParent(other, isHeader: isHeader);
   }
 
-  NovidentTableStyleDefinition _copyWithParent(NovidentStyleDefinition parent) {
+  NovidentTableStyleDefinition _copyWithParent(
+    NovidentStyleDefinition parent, {
+    bool isHeader = false,
+  }) {
+    final hs = isHeader ? headerStyle : null;
     return NovidentTableStyleDefinition(
       id: id,
       name: name,
@@ -378,16 +374,17 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       columnWeights: columnWeights,
       rowHeights: rowHeights,
       selectionHighlightColor: selectionHighlightColor,
-      // Text props — this (child/specific) > parent (base/fallback)
+      // Text props — headerStyle (if header) > this > parent
       next: next ?? parent.next,
       spacing: spacing ?? parent.spacing,
       indent: indent ?? parent.indent,
       keep: keep ?? parent.keep,
-      alignment:
-          alignment != TextAlign.left ? alignment : parent.alignment,
-      blockBackgroundColor:
-          blockBackgroundColor ?? parent.blockBackgroundColor,
-      bold: bold || parent.bold,
+      alignment: alignment != parent.alignment ? alignment : parent.alignment,
+      blockBackgroundColor: isHeader
+          ? (hs?.backgroundColor ?? blockBackgroundColor) ??
+              parent.blockBackgroundColor
+          : blockBackgroundColor ?? parent.blockBackgroundColor,
+      bold: isHeader ? (hs?.bold ?? bold) || parent.bold : bold || parent.bold,
       italic: italic || parent.italic,
       underline: underline || parent.underline,
       overline: overline || parent.overline,
@@ -397,10 +394,17 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       decorationStyle: decorationStyle ?? parent.decorationStyle,
       decorationColor: decorationColor ?? parent.decorationColor,
       fontFamily: fontFamily ?? parent.fontFamily,
-      fontSize: fontSize != 12.0 ? fontSize : parent.fontSize,
-      textColor: textColor ?? parent.textColor,
-      textBackgroundColor:
-          textBackgroundColor ?? parent.textBackgroundColor,
+      fontSize: isHeader
+          ? (hs?.fontSize ?? fontSize) != 12.0
+              ? (hs?.fontSize ?? fontSize)
+              : parent.fontSize
+          : fontSize != 12.0
+              ? fontSize
+              : parent.fontSize,
+      textColor: isHeader
+          ? (hs?.textColor ?? textColor) ?? parent.textColor
+          : textColor ?? parent.textColor,
+      textBackgroundColor: textBackgroundColor ?? parent.textBackgroundColor,
       letterSpacing: letterSpacing ?? parent.letterSpacing,
       fontVariations: fontVariations ?? parent.fontVariations,
       fontBackground: fontBackground ?? parent.fontBackground,
@@ -408,15 +412,17 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       wordSpacing: wordSpacing ?? parent.wordSpacing,
       fontFeatures: fontFeatures ?? parent.fontFeatures,
       fontShadows: fontShadows ?? parent.fontShadows,
-      allowGlobalFirstLineIndent:
-          allowGlobalFirstLineIndent
-              ? parent.allowGlobalFirstLineIndent
-              : allowGlobalFirstLineIndent,
+      allowGlobalFirstLineIndent: allowGlobalFirstLineIndent
+          ? parent.allowGlobalFirstLineIndent
+          : allowGlobalFirstLineIndent,
     );
   }
 
   NovidentTableStyleDefinition _mergeWithTable(
-      NovidentTableStyleDefinition other) {
+    NovidentTableStyleDefinition other, {
+    bool isHeader = false,
+  }) {
+    final hs = isHeader ? headerStyle : null;
     return NovidentTableStyleDefinition(
       id: other.id,
       name: other.name,
@@ -431,8 +437,7 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       colMinimumWidth: other.colMinimumWidth != 40.0
           ? other.colMinimumWidth
           : colMinimumWidth,
-      borderWidth:
-          other.borderWidth != 2.0 ? other.borderWidth : borderWidth,
+      borderWidth: other.borderWidth != 2.0 ? other.borderWidth : borderWidth,
       borderColor: other.borderColor ?? borderColor,
       borderHoverColor: other.borderHoverColor ?? borderHoverColor,
       innerBorderColor: other.innerBorderColor ?? innerBorderColor,
@@ -457,24 +462,21 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       tablePadding: other.tablePadding != tablePadding
           ? other.tablePadding
           : tablePadding,
-      showAddColumnButton:
-          other.showAddColumnButton != showAddColumnButton
-              ? other.showAddColumnButton
-              : showAddColumnButton,
+      showAddColumnButton: other.showAddColumnButton != showAddColumnButton
+          ? other.showAddColumnButton
+          : showAddColumnButton,
       showAddRowButton: other.showAddRowButton != showAddRowButton
           ? other.showAddRowButton
           : showAddRowButton,
       evenRowColor: other.evenRowColor ?? evenRowColor,
       oddRowColor: other.oddRowColor ?? oddRowColor,
-      headerRowCount: other.headerRowCount > 0
-          ? other.headerRowCount
-          : headerRowCount,
+      headerRowCount:
+          other.headerRowCount > 0 ? other.headerRowCount : headerRowCount,
       headerStyle: other.headerStyle != null
           ? headerStyle?.merge(other.headerStyle) ?? other.headerStyle
           : headerStyle,
-      footerRowCount: other.footerRowCount > 0
-          ? other.footerRowCount
-          : footerRowCount,
+      footerRowCount:
+          other.footerRowCount > 0 ? other.footerRowCount : footerRowCount,
       footerStyle: other.footerStyle != null
           ? footerStyle?.merge(other.footerStyle) ?? other.footerStyle
           : footerStyle,
@@ -482,15 +484,17 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       rowHeights: other.rowHeights ?? rowHeights,
       selectionHighlightColor:
           other.selectionHighlightColor ?? selectionHighlightColor,
-      // Text props — other overrides
+      // Text props — headerStyle (if header) > other > this
       next: other.next ?? next,
       spacing: other.spacing ?? spacing,
       indent: other.indent ?? indent,
       keep: other.keep ?? keep,
       alignment: other.alignment != alignment ? other.alignment : alignment,
-      blockBackgroundColor:
-          other.blockBackgroundColor ?? blockBackgroundColor,
-      bold: other.bold || bold,
+      blockBackgroundColor: isHeader
+          ? (hs?.backgroundColor ?? other.blockBackgroundColor) ??
+              blockBackgroundColor
+          : other.blockBackgroundColor ?? blockBackgroundColor,
+      bold: isHeader ? (hs?.bold ?? other.bold) || bold : other.bold || bold,
       italic: other.italic || italic,
       underline: other.underline || underline,
       overline: other.overline || overline,
@@ -500,10 +504,17 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       decorationStyle: other.decorationStyle ?? decorationStyle,
       decorationColor: other.decorationColor ?? decorationColor,
       fontFamily: other.fontFamily ?? fontFamily,
-      fontSize: other.fontSize != 12.0 ? other.fontSize : fontSize,
-      textColor: other.textColor ?? textColor,
-      textBackgroundColor:
-          other.textBackgroundColor ?? textBackgroundColor,
+      fontSize: isHeader
+          ? (hs?.fontSize ?? other.fontSize) != 12.0
+              ? (hs?.fontSize ?? other.fontSize)
+              : fontSize
+          : other.fontSize != 12.0
+              ? other.fontSize
+              : fontSize,
+      textColor: isHeader
+          ? (hs?.textColor ?? other.textColor) ?? textColor
+          : other.textColor ?? textColor,
+      textBackgroundColor: other.textBackgroundColor ?? textBackgroundColor,
       letterSpacing: other.letterSpacing ?? letterSpacing,
       fontVariations: other.fontVariations ?? fontVariations,
       fontBackground: other.fontBackground ?? fontBackground,

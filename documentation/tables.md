@@ -91,7 +91,6 @@ const myTableStyle = NovidentTableStyleDefinition.nextSame(
   headerRowCount: 1,
   headerStyle: NovidentTableRowStyle(
     bold: true,
-    alignment: TextAlign.center,
     backgroundColor: Color(0xFF1976D2),
     textColor: Colors.white,
   ),
@@ -189,7 +188,6 @@ table style, then the global default.
 | `bold` | `bool` | `false` | Bold text |
 | `fontSize` | `double?` | `null` | Font size override |
 | `textColor` | `Color?` | `null` | Text colour |
-| `alignment` | `TextAlign?` | `null` | Text alignment |
 | `height` | `double?` | `null` | Explicit row height |
 | `padding` | `EdgeInsets?` | `null` | Padding override |
 | `topBorderColor` | `Color?` | `null` | Colour of the border above this row |

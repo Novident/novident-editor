@@ -163,8 +163,13 @@ class _NovidentRichTextState extends State<NovidentRichText>
   /// Result is cached until the node identity or `styleRef` changes.
   NovidentStyleDefinition? get resolvedStyle {
     final styleRef = widget.node.attributes['styleRef'] as String?;
-    final tableNode =
-        widget.node.findParent((n) => n.type == TableBlockKeys.type);
+    late final Node? cellParentNode;
+    final tableNode = widget.node.findParent((Node n) {
+      if (n.type == TableCellBlockKeys.type) {
+        cellParentNode = n;
+      }
+      return n.type == TableBlockKeys.type;
+    });
     final tableStyleRef = tableNode?.attributes['styleRef'] as String?;
 
     if (widget.node.id == _nodeId &&
@@ -180,17 +185,28 @@ class _NovidentRichTextState extends State<NovidentRichText>
     _tableStyleRef = tableStyleRef;
     _styleInvalidated = true;
 
-    final own = NovidentEditorStyles.maybeOf(context)?.resolveStyle(widget.node);
+    final own =
+        NovidentEditorStyles.maybeOf(context)?.resolveStyle(widget.node);
 
     if (tableNode != null) {
       final tableStyle =
           NovidentEditorStyles.maybeOf(context)?.resolveStyle(tableNode);
       if (tableStyle is NovidentTableStyleDefinition) {
+        // Detect if this cell is part of the header row range.
+        final cellRow =
+            cellParentNode?.attributes[TableCellBlockKeys.rowPosition]
+                as int?;
+        final bool isHeader = cellParentNode != null &&
+            cellRow != null &&
+            tableStyle.headerRowCount > 0 &&
+            cellRow < tableStyle.headerRowCount;
         if (own is NovidentTableStyleDefinition) {
-          _cachedResolvedStyle = tableStyle.mergeTable(own);
+          _cachedResolvedStyle = tableStyle.mergeTable(own, isHeader: isHeader);
         } else {
-          _cachedResolvedStyle =
-              tableStyle.merge(own ?? tableStyle) as NovidentTableStyleDefinition?;
+          _cachedResolvedStyle = tableStyle.merge(
+            own ?? tableStyle,
+            isHeader: isHeader,
+          ) as NovidentTableStyleDefinition?;
         }
         return _cachedResolvedStyle;
       }
@@ -243,8 +259,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     );
   }
 
-  /// Effective text alignment: explicit [NovidentRichText.textAlign] >
-  /// [NovidentStyleDefinition.alignment] from resolved style > start.
+  /// Text alignment resolved by the block component builder.
   TextAlign get _effectiveTextAlign =>
       widget.textAlign ?? resolvedStyle?.alignment ?? TextAlign.start;
 

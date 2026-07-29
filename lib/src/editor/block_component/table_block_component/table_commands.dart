@@ -124,7 +124,8 @@ CommandShortcutEventHandler _leftInTableCellHandler = (editorState) {
     final table = inTableNodes.first.parent?.parent;
     if (table != null) {
       final previous = table.previousNodeWhere(
-          (n) => n.selectable != null && n.delta != null);
+        (n) => n.selectable != null && n.delta != null,
+      );
       if (previous != null && previous.delta != null) {
         editorState.selectionService.updateSelection(
           Selection.single(
@@ -191,8 +192,8 @@ CommandShortcutEventHandler _upInTableCellHandler = (editorState) {
     // At the top of the table — move to the end of the block above.
     final table = inTableNodes.first.parent?.parent;
     if (table != null) {
-      final above =
-          table.previousNodeWhere((n) => n.selectable != null && n.delta != null);
+      final above = table
+          .previousNodeWhere((n) => n.selectable != null && n.delta != null);
       if (above != null && above.delta != null) {
         editorState.selectionService.updateSelection(
           Selection.single(

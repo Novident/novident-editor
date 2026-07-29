@@ -481,7 +481,7 @@ void _clearRow(
   editorState.apply(transaction, withUpdateSelection: false);
 }
 
-dynamic newCellNode(
+Node newCellNode(
   Node tableNode,
   Node cell,
   NovidentTableStyleDefinition style,

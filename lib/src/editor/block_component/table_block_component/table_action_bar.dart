@@ -44,7 +44,7 @@ class _TableActionBarState extends State<TableActionBar> {
     final tablePath = widget.tableNode.node.path;
     final inTable = sel != null &&
         tablePath.isNotEmpty &&
-        sel.start.path.contains(tablePath.first);
+        sel.start.path.first == tablePath.first;
     final wasInTable = _cachedCellNode != null;
     if (!inTable && !wasInTable) return;
     _cachedSelectionPath = null;
@@ -77,7 +77,12 @@ class _TableActionBarState extends State<TableActionBar> {
 
     Node? cellNode;
     for (var i = path.length - 1; i >= 0; i--) {
-      final node = widget.editorState.getNodeAtPath(path.sublist(0, i + 1));
+      final node = widget.editorState.getNodeAtPath(
+        path.sublist(
+          0,
+          i + 1,
+        ),
+      );
       if (node?.type == TableCellBlockKeys.type) {
         cellNode = node;
         break;
@@ -113,103 +118,100 @@ class _TableActionBarState extends State<TableActionBar> {
     final colAtEnd = col >= widget.tableNode.colsLen;
     final rowAtEnd = row >= widget.tableNode.rowsLen;
 
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 150),
-      child: SizedBox(
-        height: isFocused ? 32 : 0,
-        child: isFocused
-            ? SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _actionButton(
-                      context,
-                      icon: Icons.add,
-                      tooltip: 'Add column before',
-                      onTap: () => TableActions.add(
-                        widget.tableNode.node,
-                        colAtEnd ? widget.tableNode.colsLen : col,
-                        widget.editorState,
-                        TableDirection.col,
-                      ),
+    return SizedBox(
+      height: isFocused ? 32 : 0,
+      child: isFocused
+          ? SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _actionButton(
+                    context,
+                    icon: Icons.add,
+                    tooltip: 'Add column before',
+                    onTap: () => TableActions.add(
+                      widget.tableNode.node,
+                      colAtEnd ? widget.tableNode.colsLen : col,
+                      widget.editorState,
+                      TableDirection.col,
                     ),
-                    _actionButton(
-                      context,
-                      icon: Icons.add,
-                      tooltip: 'Add row above',
-                      onTap: () => TableActions.add(
-                        widget.tableNode.node,
-                        rowAtEnd ? widget.tableNode.rowsLen : row,
-                        widget.editorState,
-                        TableDirection.row,
-                      ),
+                  ),
+                  _actionButton(
+                    context,
+                    icon: Icons.table_rows,
+                    tooltip: 'Add row above',
+                    onTap: () => TableActions.add(
+                      widget.tableNode.node,
+                      rowAtEnd ? widget.tableNode.rowsLen : row,
+                      widget.editorState,
+                      TableDirection.row,
                     ),
-                    _actionButton(
-                      context,
-                      icon: Icons.delete,
-                      tooltip: 'Delete column',
-                      enabled: !colAtEnd && widget.tableNode.colsLen > 1,
-                      onTap: () => TableActions.delete(
-                        widget.tableNode.node,
-                        col,
-                        widget.editorState,
-                        TableDirection.col,
-                      ),
+                  ),
+                  _actionButton(
+                    context,
+                    icon: Icons.delete,
+                    tooltip: 'Delete column',
+                    enabled: !colAtEnd && widget.tableNode.colsLen > 1,
+                    onTap: () => TableActions.delete(
+                      widget.tableNode.node,
+                      col,
+                      widget.editorState,
+                      TableDirection.col,
                     ),
-                    _actionButton(
-                      context,
-                      icon: Icons.delete,
-                      tooltip: 'Delete row',
-                      enabled: !rowAtEnd && widget.tableNode.rowsLen > 1,
-                      onTap: () => TableActions.delete(
-                        widget.tableNode.node,
-                        row,
-                        widget.editorState,
-                        TableDirection.row,
-                      ),
+                  ),
+                  _actionButton(
+                    context,
+                    icon: Icons.delete,
+                    tooltip: 'Delete row',
+                    enabled: !rowAtEnd && widget.tableNode.rowsLen > 1,
+                    onTap: () => TableActions.delete(
+                      widget.tableNode.node,
+                      row,
+                      widget.editorState,
+                      TableDirection.row,
                     ),
-                    _actionButton(
+                  ),
+                  _actionButton(
+                    context,
+                    icon: Icons.format_color_fill,
+                    tooltip: 'Column color',
+                    enabled: !colAtEnd,
+                    onTap: () => _showColorMenu(
                       context,
-                      icon: Icons.format_color_fill,
-                      tooltip: 'Column color',
-                      enabled: !colAtEnd,
-                      onTap: () => _showColorMenu(
-                        context,
-                        col: col,
-                        row: row,
-                        dir: TableDirection.col,
-                      ),
+                      col: col,
+                      row: row,
+                      dir: TableDirection.col,
                     ),
-                    _actionButton(
+                  ),
+                  _actionButton(
+                    context,
+                    icon: Icons.format_color_fill,
+                    tooltip: 'Row color',
+                    enabled: !rowAtEnd,
+                    onTap: () => _showColorMenu(
                       context,
-                      icon: Icons.format_color_fill,
-                      tooltip: 'Row color',
-                      enabled: !rowAtEnd,
-                      onTap: () => _showColorMenu(
-                        context,
-                        col: col,
-                        row: row,
-                        dir: TableDirection.row,
-                      ),
+                      col: col,
+                      row: row,
+                      dir: TableDirection.row,
                     ),
-                    _actionButton(
+                  ),
+                  _actionButton(
+                    context,
+                    icon: Icons.border_all,
+                    tooltip: 'Border color',
+                    onTap: () => _showColorMenu(
                       context,
-                      icon: Icons.border_all,
-                      tooltip: 'Border color',
-                      onTap: () => _showColorMenu(
-                        context,
-                        col: col,
-                        row: row,
-                        dir: TableDirection.col,
-                        isBorder: true,
-                      ),
+                      col: col,
+                      row: row,
+                      dir: TableDirection.col,
+                      isBorder: true,
                     ),
-                  ],
-                ),
-              )
-            : const SizedBox.shrink(),
-      ),
+                  ),
+                ],
+              ),
+            )
+          : const SizedBox.shrink(),
     );
   }
 

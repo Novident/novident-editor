@@ -137,7 +137,7 @@ class _TableActionBarState extends State<TableActionBar> {
                 children: [
                   _actionButton(
                     context,
-                    icon: Icons.add,
+                    icon: Icons.view_column,
                     tooltip: 'Add column before',
                     onTap: () => TableActions.add(
                       widget.tableNode.node,
@@ -161,7 +161,7 @@ class _TableActionBarState extends State<TableActionBar> {
                   ),
                   _actionButton(
                     context,
-                    icon: Icons.delete,
+                    icon: Icons.delete_outline,
                     tooltip: 'Delete column',
                     enabled: !colAtEnd && widget.tableNode.colsLen > 1,
                     onTap: () => TableActions.delete(
@@ -173,7 +173,7 @@ class _TableActionBarState extends State<TableActionBar> {
                   ),
                   _actionButton(
                     context,
-                    icon: Icons.delete,
+                    icon: Icons.delete_forever,
                     tooltip: 'Delete row',
                     enabled: !rowAtEnd && widget.tableNode.rowsLen > 1,
                     onTap: () => TableActions.delete(
@@ -185,7 +185,7 @@ class _TableActionBarState extends State<TableActionBar> {
                   ),
                   _actionButton(
                     context,
-                    icon: Icons.format_color_fill,
+                    icon: Icons.colorize,
                     tooltip: 'Column color',
                     enabled: !colAtEnd,
                     onTap: () => _showColorMenu(
@@ -197,7 +197,7 @@ class _TableActionBarState extends State<TableActionBar> {
                   ),
                   _actionButton(
                     context,
-                    icon: Icons.format_color_fill,
+                    icon: Icons.format_paint,
                     tooltip: 'Row color',
                     enabled: !rowAtEnd,
                     onTap: () => _showColorMenu(
@@ -209,7 +209,7 @@ class _TableActionBarState extends State<TableActionBar> {
                   ),
                   _actionButton(
                     context,
-                    icon: Icons.border_all,
+                    icon: Icons.border_color,
                     tooltip: 'Border color',
                     onTap: () => _showColorMenu(
                       context,

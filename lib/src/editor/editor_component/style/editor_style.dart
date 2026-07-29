@@ -29,6 +29,7 @@ class EditorStyle {
     this.mobileDragHandleHeightExtend,
     this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
     this.firstLineIndent,
+    this.showTableActionBar = true,
   });
 
   // The padding of the editor.
@@ -111,6 +112,12 @@ class EditorStyle {
   /// and does not define its own [NovidentStyleIndent.firstLineIndent].
   final double? firstLineIndent;
 
+  /// Whether to show the [TableActionBar] above table blocks.
+  ///
+  /// When `false`, the floating action bar (add column/row, delete, colors)
+  /// is hidden for all tables. Defaults to `true`.
+  final bool showTableActionBar;
+
   const EditorStyle.desktop({
     EdgeInsets? padding,
     Color? cursorColor,
@@ -123,6 +130,7 @@ class EditorStyle {
     this.textScaleFactor = 1.0,
     this.maxWidth,
     this.firstLineIndent,
+    this.showTableActionBar = true,
   })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 100),
         cursorColor = cursorColor ?? const Color(0xFF00BCF0),
         selectionColor =
@@ -166,6 +174,7 @@ class EditorStyle {
     this.mobileDragHandleHeightExtend,
     this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
     this.firstLineIndent,
+    this.showTableActionBar = true,
   })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 20),
         cursorColor = cursorColor ?? const Color(0xFF00BCF0),
         dragHandleColor = dragHandleColor ?? const Color(0xFF00BCF0),
@@ -200,6 +209,7 @@ class EditorStyle {
     double? mobileDragHandleHeightExtend,
     Duration? autoDismissCollapsedHandleDuration,
     double? firstLineIndent,
+    bool? showTableActionBar,
   }) {
     return EditorStyle(
       padding: padding ?? this.padding,
@@ -233,6 +243,7 @@ class EditorStyle {
       autoDismissCollapsedHandleDuration: autoDismissCollapsedHandleDuration ??
           this.autoDismissCollapsedHandleDuration,
       firstLineIndent: firstLineIndent ?? this.firstLineIndent,
+      showTableActionBar: showTableActionBar ?? this.showTableActionBar,
     );
   }
 }

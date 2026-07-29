@@ -25,15 +25,17 @@ class TableView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showBar = editorState.editorStyle.showTableActionBar;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TableActionBar(
-          tableNode: tableNode,
-          editorState: editorState,
-          actionMenuItems: actionMenuItems,
-          menuBuilder: menuBuilder,
-        ),
+        if (showBar)
+          TableActionBar(
+            tableNode: tableNode,
+            editorState: editorState,
+            actionMenuItems: actionMenuItems,
+            menuBuilder: menuBuilder,
+          ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _buildColumns(context),

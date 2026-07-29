@@ -98,6 +98,80 @@ extension PositionExtension on Position {
       return null;
     }
 
+    /// O(1) cell lookup using column-major index: col * numRows + row.
+    /// Falls back to linear scan if the index is corrupted.
+    Node? _cellAt(Node table, int col, int row, int numRows) {
+      final index = col * numRows + row;
+      if (index >= 0 && index < table.children.length) {
+        final cell = table.children[index];
+        if (cell.attributes[TableCellBlockKeys.colPosition] == col &&
+            cell.attributes[TableCellBlockKeys.rowPosition] == row) {
+          return cell;
+        }
+      }
+      // Fallback: linear scan (should rarely be needed)
+      return table.children.firstWhereOrNull(
+        (c) =>
+            c.attributes[TableCellBlockKeys.colPosition] == col &&
+            c.attributes[TableCellBlockKeys.rowPosition] == row,
+      );
+    }
+
+    /// Returns the number of rows in a table.
+    int _numRows(Node table) {
+      final lastCell = table.children.last;
+      return (lastCell.attributes[TableCellBlockKeys.rowPosition] as int) + 1;
+    }
+
+    /// Navigate to the cell at (sameCol, nextRow). Returns null if at the
+    /// table's vertical boundary (no adjacent row in that direction).
+    Position? _navigateToCell(Node cell, Node table, bool upwards) {
+      final col =
+          cell.attributes[TableCellBlockKeys.colPosition] as int?;
+      final row =
+          cell.attributes[TableCellBlockKeys.rowPosition] as int?;
+      if (col == null || row == null) return null;
+      final nRows = _numRows(table);
+      final nextRow = upwards ? row - 1 : row + 1;
+      if (nextRow < 0 || nextRow >= nRows) return null;
+      final nextCell = _cellAt(table, col, nextRow, nRows);
+      if (nextCell == null ||
+          nextCell.children.isEmpty ||
+          nextCell.children.first.delta == null) {
+        return null;
+      }
+      final child = nextCell.children.first;
+      return Position(
+        path: child.path,
+        offset: upwards ? child.delta!.length : 0,
+      );
+    }
+
+    /// Navigate out of the table to the adjacent block above or below.
+    /// [atStart] controls whether to enter the destination block at its
+    /// start ([atStart]==true) or end ([atStart]==false).
+    Position? _navigateOutOfTable(Node table, bool upwards, bool atStart) {
+      Node? outNode;
+      if (upwards) {
+        final prev = table.previous;
+        if (prev == null) return null;
+        outNode = prev.lastChildWhere((n) => n.selectable != null);
+        outNode ??= prev.selectable != null ? prev : null;
+      } else {
+        final next = table.next;
+        if (next == null) return null;
+        outNode = _firstMatch(next, (n) => n.selectable != null);
+      }
+      if (outNode == null) return null;
+      final entry = textEntry(outNode, atStart);
+      if (entry != null) return entry;
+      final sel = outNode.selectable!;
+      return Position(
+        path: outNode.path,
+        offset: atStart ? sel.start().offset : sel.end().offset,
+      );
+    }
+
     final node = editorState.document.nodeAtPath(path);
     final nodeRenderBox = node?.renderBox;
     final nodeSelectable = node?.selectable;
@@ -176,102 +250,50 @@ extension PositionExtension on Position {
 
       if (newPosition != null && newPosition != this) {
         final currentCell = node.parent;
-        final hitNode = editorState.document.nodeAtPath(newPosition.path);
+
+        // Fast path: same cell — no tree lookup needed.
+        //   For paragraphs inside a cell, newPosition.path is [tableIdx, cellIdx, 0]
+        //   and node.parent.path is [tableIdx, cellIdx].
+        if (currentCell != null &&
+            currentCell.type == TableCellBlockKeys.type &&
+            currentCell.path.equals(newPosition.path.parent)) {
+          return newPosition;
+        }
+
+        // Not in a table cell — no table-specific guards needed.
+        if (currentCell?.type != TableCellBlockKeys.type) {
+          final hitNode =
+              editorState.document.nodeAtPath(newPosition.path);
+          if (hitNode != null) {
+            final entry = textEntry(hitNode, !upwards);
+            if (entry != null) return entry;
+          }
+          return newPosition;
+        }
+
+        // Inside a table cell, different cell — need full lookup.
+        final hitNode =
+            editorState.document.nodeAtPath(newPosition.path);
 
         // Route through proper vertical navigation when both nodes
         // are inside table cells — the pixel search may wrap columns.
-        if (currentCell?.type == TableCellBlockKeys.type &&
-            hitNode?.parent?.type == TableCellBlockKeys.type) {
+        if (hitNode?.parent?.type == TableCellBlockKeys.type) {
           final table = currentCell!.parent;
           if (table != null) {
-            final col =
-                currentCell.attributes[TableCellBlockKeys.colPosition] as int?;
-            final row =
-                currentCell.attributes[TableCellBlockKeys.rowPosition] as int?;
-            if (col != null && row != null) {
-              // Force same column, adjacent row — not whatever the
-              // pixel search wrapped to.
-              final nextRow = upwards ? row - 1 : row + 1;
-              final nextCell = table.children.firstWhereOrNull(
-                (c) =>
-                    c.attributes[TableCellBlockKeys.colPosition] == col &&
-                    c.attributes[TableCellBlockKeys.rowPosition] == nextRow,
-              );
-              if (nextCell != null &&
-                  nextCell.children.isNotEmpty &&
-                  nextCell.children.first.delta != null) {
-                final child = nextCell.children.first;
-                return Position(
-                  path: child.path,
-                  offset: upwards ? child.delta!.length : 0,
-                );
-              }
-            }
+            final cellPos = _navigateToCell(currentCell, table, upwards);
+            if (cellPos != null) return cellPos;
           }
         }
         // If we're inside a table cell and the pixel search hit the table
-        // itself instead of another cell, navigate out of the table.
-        // But first, check if there's an adjacent row — the hit may just
-        // be between cells in a tightly-packed layout.
-        if (currentCell?.type == TableCellBlockKeys.type &&
-            hitNode?.type == TableBlockKeys.type) {
+        // itself instead of another cell, navigate within or out.
+        if (hitNode?.type == TableBlockKeys.type) {
           final tableNode = currentCell!.parent!;
-          final col =
-              currentCell.attributes[TableCellBlockKeys.colPosition] as int?;
-          final row =
-              currentCell.attributes[TableCellBlockKeys.rowPosition] as int?;
-          if (col != null && row != null) {
-            final lastCell = tableNode.children.last;
-            final numRows =
-                (lastCell.attributes[TableCellBlockKeys.rowPosition] as int) +
-                    1;
-            final nextRow = upwards ? row - 1 : row + 1;
-            if (nextRow >= 0 && nextRow < numRows) {
-              // Not at the edge — navigate to the adjacent row cell.
-              final nextCell = tableNode.children.firstWhereOrNull(
-                (c) =>
-                    c.attributes[TableCellBlockKeys.colPosition] == col &&
-                    c.attributes[TableCellBlockKeys.rowPosition] == nextRow,
-              );
-              if (nextCell != null &&
-                  nextCell.children.isNotEmpty &&
-                  nextCell.children.first.delta != null) {
-                final child = nextCell.children.first;
-                return Position(
-                  path: child.path,
-                  offset: upwards ? child.delta!.length : 0,
-                );
-              }
-            }
-          }
+          // Try adjacent row first — we may just be between cells.
+          final cellPos = _navigateToCell(currentCell, tableNode, upwards);
+          if (cellPos != null) return cellPos;
           // At the edge — navigate out.
-          Node? outNode;
-          if (upwards) {
-            final prev = tableNode.previous;
-            if (prev != null) {
-              outNode = prev.lastChildWhere(
-                (n) => n.selectable != null,
-              );
-              outNode ??= prev.selectable != null ? prev : null;
-            }
-          } else {
-            // Use table.next (sibling) to avoid searching table descendants.
-            final next = tableNode.next;
-            if (next != null) {
-              outNode = _firstMatch(next,
-                (n) => n.selectable != null,
-              );
-            }
-          }
-          if (outNode != null) {
-            final entry = textEntry(outNode, !upwards);
-            if (entry != null) return entry;
-            final sel = outNode.selectable!;
-            return Position(
-              path: outNode.path,
-              offset: upwards ? sel.end().offset : sel.start().offset,
-            );
-          }
+          final outPos = _navigateOutOfTable(tableNode, upwards, !upwards);
+          if (outPos != null) return outPos;
         }
         // Navigate into non-text blocks (tables) instead of selecting
         // the block itself at offset 0/1 (which has no visible cursor).
@@ -335,94 +357,28 @@ extension PositionExtension on Position {
           // route through proper vertical navigation (same column,
           // adjacent row) instead of accepting the pixel position.
           final srcCell = node.parent;
-          final dstCell = destNode.parent;
-          if (srcCell?.type == TableCellBlockKeys.type &&
-              dstCell?.type == TableCellBlockKeys.type &&
-              !identical(srcCell, dstCell)) {
-            final srcTable = srcCell!.parent;
+          if (srcCell != null &&
+              srcCell.type == TableCellBlockKeys.type &&
+              destNode.parent?.type == TableCellBlockKeys.type &&
+              !identical(srcCell, destNode.parent)) {
+            final srcTable = srcCell.parent;
             if (srcTable != null) {
-              final srcCol = srcCell.attributes[TableCellBlockKeys.colPosition] as int?;
-              final srcRow = srcCell.attributes[TableCellBlockKeys.rowPosition] as int?;
-              if (srcCol != null && srcRow != null) {
-                final nextRow = upwards ? srcRow - 1 : srcRow + 1;
-                final nextCell = srcTable.children.firstWhereOrNull(
-                  (c) =>
-                      c.attributes[TableCellBlockKeys.colPosition] == srcCol &&
-                      c.attributes[TableCellBlockKeys.rowPosition] == nextRow,
-                );
-                if (nextCell != null &&
-                    nextCell.children.isNotEmpty &&
-                    nextCell.children.first.delta != null) {
-                  final child = nextCell.children.first;
-                  return Position(
-                    path: child.path,
-                    offset: upwards ? child.delta!.length : 0,
-                  );
-                }
-              }
+              final cellPos = _navigateToCell(srcCell, srcTable, upwards);
+              if (cellPos != null) return cellPos;
             }
           }
           // If we're inside a table cell and the skip found the table
-          // itself (not another cell), navigate out of the table.
-          if (srcCell?.type == TableCellBlockKeys.type &&
+          // itself (not another cell), navigate within or out.
+          if (srcCell != null &&
+              srcCell.type == TableCellBlockKeys.type &&
               destNode.type == TableBlockKeys.type) {
-            final tableNode = srcCell!.parent!;
-            final col =
-                srcCell.attributes[TableCellBlockKeys.colPosition] as int?;
-            final row =
-                srcCell.attributes[TableCellBlockKeys.rowPosition] as int?;
-            if (col != null && row != null) {
-              final lastCell = tableNode.children.last;
-              final numRows =
-                  (lastCell.attributes[TableCellBlockKeys.rowPosition] as int) +
-                      1;
-              final nextRow = upwards ? row - 1 : row + 1;
-              if (nextRow >= 0 && nextRow < numRows) {
-                // Not at the edge — navigate to the adjacent row cell.
-                final nextCell = tableNode.children.firstWhereOrNull(
-                  (c) =>
-                      c.attributes[TableCellBlockKeys.colPosition] == col &&
-                      c.attributes[TableCellBlockKeys.rowPosition] == nextRow,
-                );
-                if (nextCell != null &&
-                    nextCell.children.isNotEmpty &&
-                    nextCell.children.first.delta != null) {
-                  final child = nextCell.children.first;
-                  return Position(
-                    path: child.path,
-                    offset: upwards ? child.delta!.length : 0,
-                  );
-                }
-              }
-            }
+            final tableNode = srcCell.parent!;
+            // Try adjacent row first.
+            final cellPos = _navigateToCell(srcCell, tableNode, upwards);
+            if (cellPos != null) return cellPos;
             // At the edge — navigate out.
-            Node? outNode;
-            if (upwards) {
-              final prev = tableNode.previous;
-              if (prev != null) {
-                outNode = prev.lastChildWhere(
-                  (n) => n.selectable != null,
-                );
-                outNode ??= prev.selectable != null ? prev : null;
-              }
-            } else {
-              // Use table.next (sibling) to avoid searching table descendants.
-              final next = tableNode.next;
-              if (next != null) {
-                outNode = _firstMatch(next,
-                  (n) => n.selectable != null,
-                );
-              }
-            }
-            if (outNode != null) {
-              final entry = textEntry(outNode, upwards);
-              if (entry != null) return entry;
-              final sel = outNode.selectable!;
-              return Position(
-                path: outNode.path,
-                offset: upwards ? sel.end().offset : sel.start().offset,
-              );
-            }
+            final outPos = _navigateOutOfTable(tableNode, upwards, !upwards);
+            if (outPos != null) return outPos;
           }
 
           final entry = textEntry(destNode, upwards);
@@ -468,81 +424,16 @@ extension PositionExtension on Position {
 
     // Check if we're inside a table cell — navigate to adjacent cell.
     final cellParent = node.parent;
-    if (cellParent?.type == TableCellBlockKeys.type) {
-      final table = cellParent!.parent;
-      if (table?.type == TableBlockKeys.type) {
-        final col =
-            cellParent.attributes[TableCellBlockKeys.colPosition] as int?;
-        final row =
-            cellParent.attributes[TableCellBlockKeys.rowPosition] as int?;
-        if (col != null && row != null && table != null) {
-          final lastCell = table.children.last;
-          final numRows =
-              (lastCell.attributes[TableCellBlockKeys.rowPosition] as int) + 1;
-          final nextRow = upwards ? row - 1 : row + 1;
-          if (nextRow >= 0 && nextRow < numRows) {
-            final nextCell = table.children.firstWhereOrNull(
-              (c) =>
-                  c.attributes[TableCellBlockKeys.colPosition] == col &&
-                  c.attributes[TableCellBlockKeys.rowPosition] == nextRow,
-            );
-            if (nextCell != null &&
-                nextCell.children.isNotEmpty &&
-                nextCell.children.first.delta != null) {
-              final child = nextCell.children.first;
-              return Position(
-                path: child.path,
-                offset: upwards ? child.delta!.length : 0,
-              );
-            }
-          } else {
-            // At table edge — navigate out to the block above/below.
-            // Search from the table's immediate neighbour, not the table
-            // itself, to avoid matching descendants (cells, paragraphs).
-            Node? outside;
-            if (upwards) {
-              final prev = table.previous;
-              if (prev != null) {
-                outside = prev.lastChildWhere(
-                  (n) => n.selectable != null && n.delta != null,
-                );
-                outside ??= prev.selectable != null && prev.delta != null
-                    ? prev
-                    : null;
-              }
-            } else {
-              outside = table.nextNodeWhere(
-                (n) => n.selectable != null && n.delta != null,
-              );
-              // nextNodeWhere on the table searches descendants first!
-              // If it found a paragraph inside a cell, reject it.
-              if (outside != null) {
-                var p = outside.parent;
-                while (p != null) {
-                  if (p == table) {
-                    // found a descendant of the table — skip to next sibling
-                    final next = table.next;
-                    if (next != null) {
-                      outside = _firstMatch(next,
-                        (n) => n.selectable != null && n.delta != null,
-                      );
-                    } else {
-                      outside = null;
-                    }
-                    break;
-                  }
-                  p = p.parent;
-                }
-              }
-            }
-            if (outside != null && outside.delta != null) {
-              return Position(
-                path: outside.path,
-                offset: upwards ? outside.delta!.length : 0,
-              );
-            }
-          }
-        }
+    if (cellParent != null && cellParent.type == TableCellBlockKeys.type) {
+      final table = cellParent.parent;
+      if (table != null && table.type == TableBlockKeys.type) {
+        // Try adjacent row first.
+        final cellPos = _navigateToCell(cellParent, table, upwards);
+        if (cellPos != null) return cellPos;
+        // At the edge — navigate out.
+        // downwards = true when going down (entering next block at start).
+        final outPos = _navigateOutOfTable(table, upwards, !upwards);
+        if (outPos != null) return outPos;
       }
     }
 

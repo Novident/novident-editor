@@ -41,6 +41,10 @@ class _TableColBorderState extends State<TableColBorder> {
 
   Offset initialOffset = const Offset(0, 0);
 
+  NovidentTableStyleDefinition get tableStyle {
+    return widget.tableStyleDef ?? kDefaultTableStyle;
+  }
+
   @override
   Widget build(BuildContext context) {
     return widget.resizable
@@ -64,16 +68,16 @@ class _TableColBorderState extends State<TableColBorder> {
           final nextCol = col + 1;
           widget.tableNode.setColWeight(
             col,
-            widget.tableNode.getColWeight(col),
-            style: widget.tableStyleDef,
+            widget.tableNode.getColWeight(col, tableStyle),
+            style: tableStyle,
             transaction: transaction,
             force: true,
           );
           if (nextCol < widget.tableNode.colsLen) {
             widget.tableNode.setColWeight(
               nextCol,
-              widget.tableNode.getColWeight(nextCol),
-              style: widget.tableStyleDef,
+              widget.tableNode.getColWeight(nextCol, tableStyle),
+              style: tableStyle,
               transaction: transaction,
               force: true,
             );
@@ -90,19 +94,19 @@ class _TableColBorderState extends State<TableColBorder> {
           // Convert pixel delta to weight delta using the actual
           // rendered column width for 1:1 pixel-to-visual mapping.
           final colWidth = widget.currentColWidth ?? TableDefaults.colWidth;
-          final colWeight = widget.tableNode.getColWeight(col);
+          final colWeight = widget.tableNode.getColWeight(col, tableStyle);
           final weightDelta = colWidth > 0
               ? details.delta.dx * colWeight / colWidth
               : details.delta.dx / TableDefaults.colWidth;
 
           // Calculate new weights: left grows, right shrinks.
-          final leftWeight = widget.tableNode.getColWeight(col) + weightDelta;
+          final leftWeight =
+              widget.tableNode.getColWeight(col, tableStyle) + weightDelta;
           final rightWeight =
-              widget.tableNode.getColWeight(nextCol) - weightDelta;
+              widget.tableNode.getColWeight(nextCol, tableStyle) - weightDelta;
 
           // Clamp: neither column can go below minimum.
-          final minWeight =
-              widget.tableNode.config.colMinimumWidth / TableDefaults.colWidth;
+          final minWeight = tableStyle.colMinimumWidth / TableDefaults.colWidth;
           if (leftWeight < minWeight || rightWeight < minWeight) return;
 
           widget.tableNode.setColWeight(
@@ -118,7 +122,7 @@ class _TableColBorderState extends State<TableColBorder> {
         },
         child: Container(
           key: _borderKey,
-          width: widget.tableNode.config.borderWidth,
+          width: tableStyle.borderWidth,
           height: widget.colsHeight,
           color: _borderHovering || _borderDragging
               ? widget.borderHoverColor
@@ -130,7 +134,7 @@ class _TableColBorderState extends State<TableColBorder> {
 
   Container buildFixedBorder(BuildContext context) {
     return Container(
-      width: widget.tableNode.config.borderWidth,
+      width: tableStyle.borderWidth,
       height: widget.colsHeight,
       color: widget.borderColor,
     );

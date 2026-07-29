@@ -1,72 +1,31 @@
+import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
-class TableConfig {
-  TableConfig({
-    double? colDefaultWeight,
-    double? colDefaultWidth,
-    double? rowDefaultHeight,
-    double? colMinimumWidth,
-    double? borderWidth,
-  }) {
-    this.colDefaultWeight = colDefaultWeight ?? TableDefaults.colDefaultWeight;
-    this.colDefaultWidth = colDefaultWidth ?? TableDefaults.colWidth;
-    this.rowDefaultHeight = rowDefaultHeight ?? TableDefaults.rowHeight;
-    this.colMinimumWidth = colMinimumWidth ?? TableDefaults.colMinimumWidth;
-    this.borderWidth = borderWidth ?? TableDefaults.borderWidth;
-  }
+class TableDefaults {
+  const TableDefaults._();
 
-  static double parseAttributeToDouble(
-    String key,
-    double defaultVal,
-    Map<String, dynamic> json,
-  ) =>
-      json.containsKey(key)
-          ? double.tryParse(json[key].toString())!
-          : defaultVal;
+  static double colDefaultWeight = kDefaultTableStyle.colDefaultWeight;
 
-  static TableConfig fromJson(Map<String, dynamic> json) {
-    return TableConfig(
-      colDefaultWeight: parseAttributeToDouble(
-        TableBlockKeys.colDefaultWeight,
-        TableDefaults.colDefaultWeight,
-        json,
-      ),
-      colDefaultWidth: parseAttributeToDouble(
-        TableBlockKeys.colDefaultWidth,
-        TableDefaults.colWidth,
-        json,
-      ),
-      rowDefaultHeight: parseAttributeToDouble(
-        TableBlockKeys.rowDefaultHeight,
-        TableDefaults.rowHeight,
-        json,
-      ),
-      colMinimumWidth: parseAttributeToDouble(
-        TableBlockKeys.colMinimumWidth,
-        TableDefaults.colMinimumWidth,
-        json,
-      ),
-      borderWidth: parseAttributeToDouble(
-        TableBlockKeys.borderWidth,
-        TableDefaults.borderWidth,
-        json,
-      ),
-    );
-  }
+  @Deprecated('Use colDefaultWeight instead')
+  static double colWidth = 160.0;
 
-  Map<String, Object> toJson() {
-    return {
-      TableBlockKeys.colDefaultWeight: colDefaultWeight,
-      TableBlockKeys.colDefaultWidth: colDefaultWidth,
-      TableBlockKeys.rowDefaultHeight: rowDefaultHeight,
-      TableBlockKeys.colMinimumWidth: colMinimumWidth,
-      TableBlockKeys.borderWidth: borderWidth,
-    };
-  }
+  static double rowHeight = kDefaultTableStyle.rowDefaultHeight;
 
-  late final double colDefaultWeight,
-      colDefaultWidth,
-      rowDefaultHeight,
-      colMinimumWidth,
-      borderWidth;
+  static double colMinimumWidth = kDefaultTableStyle.colMinimumWidth;
+
+  static double borderWidth = kDefaultTableStyle.borderWidth;
+
+  /// See [TableStyle.cellVerticalPadding].
+  static double cellVerticalPadding = kDefaultTableStyle.cellVerticalPadding;
+
+  static final Color borderColor =
+      kDefaultTableStyle.borderColor ?? Colors.grey;
+
+  static final Color borderHoverColor =
+      kDefaultTableStyle.borderColor ?? Colors.blue;
+
+  static const Widget addIcon = Icon(Icons.add, size: 20);
+
+  static const Widget handlerIcon = Icon(Icons.drag_indicator);
 }
+

@@ -53,7 +53,7 @@ class _TableColState extends State<TableCol> {
             }) ??
             style.borderColor;
 
-    final colsHeight = widget.tableNode.colsHeight;
+    final double colsHeight = widget.tableNode.colsHeight(style);
 
     List<Widget> children = [];
     if (widget.colIdx == 0 && !noBorder && borderColor != null) {
@@ -105,15 +105,15 @@ class _TableColState extends State<TableCol> {
   }
 
   List<Widget> _buildCells(BuildContext context, Color? borderColor) {
-    final style = widget.tableStyleDef;
-    final noBorder = style?.noBorder ?? false;
+    final style = widget.tableStyleDef ?? kDefaultTableStyle;
+    final noBorder = style.noBorder;
     final rowsLen = widget.tableNode.rowsLen;
     final List<Widget> cells = [];
 
     final cellBorder = noBorder || borderColor == null
         ? const SizedBox.shrink()
         : Container(
-            height: widget.tableNode.config.borderWidth,
+            height: style.borderWidth,
             color: borderColor,
           );
 
@@ -191,3 +191,4 @@ class _TableColState extends State<TableCol> {
     });
   }
 }
+

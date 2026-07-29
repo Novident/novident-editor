@@ -43,34 +43,6 @@ class TableBlockKeys {
   static const String borderColor = 'borderColor';
 }
 
-class TableDefaults {
-  const TableDefaults._();
-
-  static double colDefaultWeight = kDefaultTableStyle.colDefaultWeight;
-
-  @Deprecated('Use colDefaultWeight instead')
-  static double colWidth = 160.0;
-
-  static double rowHeight = kDefaultTableStyle.rowDefaultHeight;
-
-  static double colMinimumWidth = kDefaultTableStyle.colMinimumWidth;
-
-  static double borderWidth = kDefaultTableStyle.borderWidth;
-
-  /// See [TableStyle.cellVerticalPadding].
-  static double cellVerticalPadding = kDefaultTableStyle.cellVerticalPadding;
-
-  static final Color borderColor =
-      kDefaultTableStyle.borderColor ?? Colors.grey;
-
-  static final Color borderHoverColor =
-      kDefaultTableStyle.borderColor ?? Colors.blue;
-
-  static const Widget addIcon = Icon(Icons.add, size: 20);
-
-  static const Widget handlerIcon = Icon(Icons.drag_indicator);
-}
-
 enum TableDirection { row, col }
 
 typedef TableBlockComponentMenuBuilder = Widget Function(
@@ -240,6 +212,10 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
   late final editorState = Provider.of<EditorState>(context, listen: false);
   final _scrollController = ScrollController();
 
+  NovidentTableStyleDefinition get tableStyle {
+    return widget.tableStyleDef ?? kDefaultTableStyle;
+  }
+
   double _cachedAvailableWidth = -1;
   int _cachedWeightHash = -1;
   List<double>? _cachedWidths;
@@ -247,7 +223,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
   int _weightHash(TableNode t) {
     var h = t.colsLen;
     for (var i = 0; i < t.colsLen; i++) {
-      h = h * 31 + (t.getColWeight(i) * 1000).round();
+      h = h * 31 + (t.getColWeight(i, tableStyle) * 1000).round();
     }
     return h;
   }
@@ -268,8 +244,11 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
     _cachedAvailableWidth = availableWidth;
     _cachedWeightHash = hash;
     _cachedNoBorder = noBorder;
-    _cachedWidths =
-        tableNode.distributeColumnWidths(availableWidth, noBorder: noBorder);
+    _cachedWidths = tableNode.distributeColumnWidths(
+      availableWidth,
+      noBorder: noBorder,
+      style: tableStyle,
+    );
     return _cachedWidths!;
   }
 
@@ -277,27 +256,24 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
 
   @override
   Widget build(BuildContext context) {
-    final NovidentTableStyleDefinition style =
-        widget.tableStyleDef ?? kDefaultTableStyle;
-    final noBorder = style.noBorder;
-    final borderPx = noBorder ? 0.0 : widget.tableNode.config.borderWidth;
+    final noBorder = tableStyle.noBorder;
+    final borderPx = noBorder ? 0.0 : tableStyle.borderWidth;
 
     final enableHorizontalScroll = context.select((Node n) {
           final value = n.attributes[TableBlockKeys.enableHorizontalScroll];
           return value is bool ? value : null;
         }) ??
-        style.enableHorizontalScroll;
+        tableStyle.enableHorizontalScroll;
 
     Widget tableArea = LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
         final tableNode = widget.tableNode;
-        final tablePadding = style.tablePadding;
+        final tablePadding = tableStyle.tablePadding;
 
         // Minimum total width: all columns at colMinimumWidth + borders.
-        final minWidth =
-            (tableNode.config.colMinimumWidth * tableNode.colsLen) +
-                borderPx * (tableNode.colsLen + 1);
+        final minWidth = (tableStyle.colMinimumWidth * tableNode.colsLen) +
+            borderPx * (tableNode.colsLen + 1);
 
         if (enableHorizontalScroll && availableWidth < minWidth) {
           // Content overflows — render at minimum intrinsic widths.
@@ -319,7 +295,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
                   editorState: editorState,
                   menuBuilder: widget.menuBuilder,
                   actionMenuItems: widget.actionMenuItems,
-                  tableStyleDef: style,
+                  tableStyleDef: tableStyle,
                   columnWidths: scrollWidths,
                 ),
               ),
@@ -340,7 +316,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
               editorState: editorState,
               menuBuilder: widget.menuBuilder,
               actionMenuItems: widget.actionMenuItems,
-              tableStyleDef: style,
+              tableStyleDef: tableStyle,
               columnWidths: fittedWidths,
             ),
           );

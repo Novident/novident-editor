@@ -118,7 +118,7 @@ const kHeadingDefaultStyles = <NovidentStyleDefinition>[
 ///
 /// Provides sensible defaults for borders, column weights, row heights,
 /// and enables the header row with a subtle background.
-final kDefaultTableStyle = NovidentTableStyleDefinition.nextSame(
+final kDefaultTableStyle = NovidentTableStyleDefinition(
   id: '__novident_table__',
   name: 'Default Table',
   basedOn: kDefaultBaseStyle.id,

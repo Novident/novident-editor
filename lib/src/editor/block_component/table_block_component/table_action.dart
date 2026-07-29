@@ -9,11 +9,12 @@ class TableActions {
     int position,
     EditorState editorState,
     TableDirection dir,
+    NovidentTableStyleDefinition style,
   ) {
     if (dir == TableDirection.col) {
-      _addCol(node, position, editorState);
+      _addCol(node, position, editorState, style);
     } else {
-      _addRow(node, position, editorState);
+      _addRow(node, position, editorState, style);
     }
   }
 
@@ -136,7 +137,12 @@ class TableActions {
   }
 }
 
-void _addCol(Node tableNode, int position, EditorState editorState) {
+void _addCol(
+  Node tableNode,
+  int position,
+  EditorState editorState,
+  NovidentTableStyleDefinition style,
+) {
   assert(position >= 0);
 
   final transaction = editorState.transaction;
@@ -173,7 +179,13 @@ void _addCol(Node tableNode, int position, EditorState editorState) {
       });
     }
 
-    cellNodes.add(newCellNode(tableNode, node));
+    cellNodes.add(
+      newCellNode(
+        tableNode,
+        node,
+        style,
+      ),
+    );
   }
 
   late Path insertPath;
@@ -190,7 +202,12 @@ void _addCol(Node tableNode, int position, EditorState editorState) {
   editorState.apply(transaction, withUpdateSelection: false);
 }
 
-void _addRow(Node tableNode, int position, EditorState editorState) async {
+void _addRow(
+  Node tableNode,
+  int position,
+  EditorState editorState,
+  NovidentTableStyleDefinition style,
+) async {
   assert(position >= 0);
 
   final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen];
@@ -464,16 +481,18 @@ void _clearRow(
   editorState.apply(transaction, withUpdateSelection: false);
 }
 
-dynamic newCellNode(Node tableNode, n) {
-  final row = n.attributes[TableCellBlockKeys.rowPosition] as int;
-  final col = n.attributes[TableCellBlockKeys.colPosition] as int;
+dynamic newCellNode(
+  Node tableNode,
+  Node cell,
+  NovidentTableStyleDefinition style,
+) {
+  final row = cell.attributes[TableCellBlockKeys.rowPosition] as int;
+  final col = cell.attributes[TableCellBlockKeys.colPosition] as int;
   final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen];
   final int colsLen = tableNode.attributes[TableBlockKeys.colsLen];
 
-  if (!n.attributes.containsKey(TableCellBlockKeys.height)) {
-    double nodeHeight = double.tryParse(
-      tableNode.attributes[TableBlockKeys.rowDefaultHeight].toString(),
-    )!;
+  if (!cell.attributes.containsKey(TableCellBlockKeys.height)) {
+    double nodeHeight = style.rowDefaultHeight;
     if (row < rowsLen) {
       nodeHeight = double.tryParse(
             getCellNode(tableNode, 0, row)!
@@ -482,25 +501,27 @@ dynamic newCellNode(Node tableNode, n) {
           ) ??
           nodeHeight;
     }
-    n.updateAttributes({TableCellBlockKeys.height: nodeHeight});
+    cell.updateAttributes({
+      TableCellBlockKeys.height: nodeHeight,
+    });
   }
 
-  if (!n.attributes.containsKey(TableCellBlockKeys.width)) {
-    double nodeWidth = double.tryParse(
-      tableNode.attributes[TableBlockKeys.colDefaultWidth].toString(),
-    )!;
+  if (!cell.attributes.containsKey(TableCellBlockKeys.colWeight)) {
+    double nodeWeight = style.colDefaultWeight;
     if (col < colsLen) {
-      nodeWidth = double.tryParse(
+      nodeWeight = double.tryParse(
             getCellNode(tableNode, col, 0)!
-                .attributes[TableCellBlockKeys.width]
+                .attributes[TableCellBlockKeys.colWeight]
                 .toString(),
           ) ??
-          nodeWidth;
+          nodeWeight;
     }
-    n.updateAttributes({TableCellBlockKeys.width: nodeWidth});
+    cell.updateAttributes({
+      TableCellBlockKeys.colWeight: nodeWeight,
+    });
   }
 
-  return n;
+  return cell;
 }
 
 void _updateCellPositions(

@@ -100,11 +100,17 @@ final TableActionMenuItem tableActionAddBeforeItem = TableActionMenuItem(
   iconBuilder: (dir) =>
       dir == TableDirection.col ? Icons.first_page : Icons.vertical_align_top,
   onPressed: (menuContext) {
+    final styles = NovidentEditorStyles.maybeOf(menuContext.buildContext);
+    final resolved = styles?.resolveStyle(menuContext.node);
+    final tableStyleDef = resolved is NovidentTableStyleDefinition
+        ? resolved
+        : kDefaultTableStyle;
     TableActions.add(
       menuContext.node,
       menuContext.position,
       menuContext.editorState,
       menuContext.dir,
+      tableStyleDef,
     );
     menuContext.dismiss();
   },
@@ -115,15 +121,20 @@ final TableActionMenuItem tableActionAddAfterItem = TableActionMenuItem(
   nameBuilder: (dir) => dir == TableDirection.col
       ? NovidentEditorL10n.current.colAddAfter
       : NovidentEditorL10n.current.rowAddAfter,
-  iconBuilder: (dir) => dir == TableDirection.col
-      ? Icons.last_page
-      : Icons.vertical_align_bottom,
+  iconBuilder: (dir) =>
+      dir == TableDirection.col ? Icons.last_page : Icons.vertical_align_bottom,
   onPressed: (menuContext) {
+    final styles = NovidentEditorStyles.maybeOf(menuContext.buildContext);
+    final resolved = styles?.resolveStyle(menuContext.node);
+    final tableStyleDef = resolved is NovidentTableStyleDefinition
+        ? resolved
+        : kDefaultTableStyle;
     TableActions.add(
       menuContext.node,
       menuContext.position + 1,
       menuContext.editorState,
       menuContext.dir,
+      tableStyleDef,
     );
     menuContext.dismiss();
   },

@@ -110,6 +110,15 @@ class _TableActionBarState extends State<TableActionBar> {
     return (widget.tableNode.colsLen, widget.tableNode.rowsLen);
   }
 
+  //TODO: @CatHood0 We can make a cache for this
+  NovidentTableStyleDefinition get tableStyle {
+    final styles = NovidentEditorStyles.maybeOf(context);
+    final resolved = styles?.resolveStyle(widget.tableNode.node);
+    return resolved is NovidentTableStyleDefinition
+        ? resolved
+        : kDefaultTableStyle;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isFocused = _isFocused;
@@ -135,6 +144,7 @@ class _TableActionBarState extends State<TableActionBar> {
                       colAtEnd ? widget.tableNode.colsLen : col,
                       widget.editorState,
                       TableDirection.col,
+                      tableStyle,
                     ),
                   ),
                   _actionButton(
@@ -146,6 +156,7 @@ class _TableActionBarState extends State<TableActionBar> {
                       rowAtEnd ? widget.tableNode.rowsLen : row,
                       widget.editorState,
                       TableDirection.row,
+                      tableStyle,
                     ),
                   ),
                   _actionButton(

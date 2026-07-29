@@ -3,14 +3,13 @@ import 'dart:math';
 import 'package:novident_editor/novident_editor.dart';
 
 class TableNode {
-  final TableConfig _config;
-
   final Node node;
   final List<List<Node>> _cells = [];
 
   TableNode({
     required this.node,
-  }) : _config = TableConfig.fromJson(node.attributes) {
+    NovidentTableStyleDefinition? style,
+  }) {
     if (node.type != TableBlockKeys.type) {
       NovidentEditorLog.editor.debug('TableNode: node is not a table');
       return;
@@ -64,7 +63,13 @@ class TableNode {
           return;
         }
 
-        _cells[i].add(newCellNode(node, cell));
+        _cells[i].add(
+          newCellNode(
+            node,
+            cell,
+            style ?? kDefaultTableStyle,
+          ),
+        );
       }
     }
   }
@@ -94,7 +99,6 @@ class TableNode {
   /// ```
   static TableNode fromList(
     List<List<String>> cols, {
-    TableConfig? config,
     String? styleRef,
   }) {
     assert(cols.isNotEmpty, 'cols must not be empty');
@@ -104,18 +108,11 @@ class TableNode {
       'all columns must have the same number of rows',
     );
 
-    config = config ?? TableConfig();
-
-    final tableAttrs = <String, Object>{
-      TableBlockKeys.colsLen: cols.length,
-      TableBlockKeys.rowsLen: cols[0].length,
-      ...config.toJson(),
-    };
-
     final node = Node(
       type: TableBlockKeys.type,
       attributes: {
-        ...tableAttrs,
+        TableBlockKeys.colsLen: cols.length,
+        TableBlockKeys.rowsLen: cols[0].length,
         blockComponentStyleRef: styleRef,
       },
     );
@@ -161,7 +158,6 @@ class TableNode {
   /// ```
   static TableNode fromNodes(
     List<List<Node>> cols, {
-    TableConfig? config,
     String? styleRef,
   }) {
     assert(cols.isNotEmpty, 'cols must not be empty');
@@ -171,18 +167,11 @@ class TableNode {
       'all columns must have the same number of rows',
     );
 
-    config = config ?? TableConfig();
-
-    final tableAttrs = <String, Object>{
-      TableBlockKeys.colsLen: cols.length,
-      TableBlockKeys.rowsLen: cols[0].length,
-      ...config.toJson(),
-    };
-
     final node = Node(
       type: TableBlockKeys.type,
       attributes: {
-        ...tableAttrs,
+        TableBlockKeys.colsLen: cols.length,
+        TableBlockKeys.rowsLen: cols[0].length,
         blockComponentStyleRef: styleRef,
       },
     );
@@ -223,8 +212,6 @@ class TableNode {
 
   Node getCell(int col, row) => _cells[col][row];
 
-  TableConfig get config => _config;
-
   int get colsLen => _cells.length;
 
   int get rowsLen => _cells.isNotEmpty ? _cells[0].length : 0;
@@ -234,7 +221,7 @@ class TableNode {
   /// The height is read from every column of the row (the maximum wins), so
   /// a stale attribute in a single column can no longer shrink the vertical
   /// borders of the whole table.
-  double getRowHeight(int row) {
+  double getRowHeight(int row, NovidentTableStyleDefinition style) {
     double? height;
     for (final col in _cells) {
       final colHeight = double.tryParse(
@@ -244,22 +231,28 @@ class TableNode {
         height = height == null ? colHeight : max(height, colHeight);
       }
     }
-    return height ?? _config.rowDefaultHeight;
+    return height ?? style.rowDefaultHeight;
   }
 
-  double get colsHeight =>
+  double colsHeight(NovidentTableStyleDefinition style) =>
       List.generate(rowsLen, (idx) => idx).fold<double>(
         0,
-        (prev, cur) => prev + getRowHeight(cur) + _config.borderWidth,
+        (prev, cur) =>
+            prev +
+            getRowHeight(
+              cur,
+              style,
+            ) +
+            style.borderWidth,
       ) +
-      _config.borderWidth;
+      style.borderWidth;
 
   /// Returns the relative weight of column [col].
   ///
   /// Reads [TableCellBlockKeys.colWeight] from the first cell of the column.
   /// Falls back to [TableConfig.colDefaultWeight] (default 1.0) when the
   /// attribute is absent.
-  double getColWeight(int col) {
+  double getColWeight(int col, NovidentTableStyleDefinition style) {
     final weight = double.tryParse(
       _cells[col][0].attributes[TableCellBlockKeys.colWeight].toString(),
     );
@@ -272,13 +265,19 @@ class TableNode {
     );
     if (width != null) return width / TableDefaults.colWidth;
 
-    return _config.colDefaultWeight;
+    return style.colDefaultWeight;
   }
 
   /// Returns the sum of all column weights for proportional distribution.
-  double get totalWeight => List.generate(colsLen, (i) => i).fold<double>(
+  double totalWeight(NovidentTableStyleDefinition style) =>
+      List.generate(colsLen, (i) => i).fold<double>(
         0,
-        (prev, i) => prev + getColWeight(i),
+        (prev, i) =>
+            prev +
+            getColWeight(
+              i,
+              style,
+            ),
       );
 
   /// Distributes [availableWidth] (pixels available for content) across
@@ -287,15 +286,16 @@ class TableNode {
   /// Each column receives at least [TableConfig.colMinimumWidth] pixels.
   List<double> distributeColumnWidths(
     double availableWidth, {
+    required NovidentTableStyleDefinition style,
     bool noBorder = false,
   }) {
-    final totalBorders = noBorder ? 0.0 : _config.borderWidth * (colsLen + 1);
+    final totalBorders = noBorder ? 0.0 : style.borderWidth * (colsLen + 1);
     final usableWidth =
         (availableWidth - totalBorders).clamp(0, double.infinity);
 
     final weights = List.generate(
       colsLen,
-      getColWeight,
+      (col) => getColWeight(col, style),
     );
     final sumWeights = weights.fold<double>(
       0,
@@ -307,7 +307,10 @@ class TableNode {
     );
 
     if (sumWeights == 0) {
-      return List.filled(colsLen, _config.colMinimumWidth);
+      return List.filled(
+        colsLen,
+        style.colMinimumWidth,
+      );
     }
 
     // First pass: pure proportional — no clamping yet.
@@ -323,8 +326,8 @@ class TableNode {
     for (var iter = 0; iter < 10; iter++) {
       // Clamp any column that is still below minimum.
       for (var i = 0; i < colsLen; i++) {
-        if (widths[i] < _config.colMinimumWidth) {
-          widths[i] = _config.colMinimumWidth;
+        if (widths[i] < style.colMinimumWidth) {
+          widths[i] = style.colMinimumWidth;
         }
       }
 
@@ -341,7 +344,7 @@ class TableNode {
         final shrinkable = <int>[];
         double shrinkableTotal = 0;
         for (var i = 0; i < colsLen; i++) {
-          if (widths[i] > _config.colMinimumWidth) {
+          if (widths[i] > style.colMinimumWidth) {
             shrinkable.add(i);
             shrinkableTotal += widths[i];
           }
@@ -349,14 +352,14 @@ class TableNode {
         if (shrinkable.isEmpty) break; // all at min, can't shrink more
         for (final i in shrinkable) {
           widths[i] = (widths[i] - (widths[i] / shrinkableTotal) * diff)
-              .clamp(_config.colMinimumWidth, double.infinity);
+              .clamp(style.colMinimumWidth, double.infinity);
         }
       } else {
         // Extra space — grow columns above minimum.
         final growable = <int>[];
         double growableTotal = 0;
         for (var i = 0; i < colsLen; i++) {
-          if (widths[i] > _config.colMinimumWidth) {
+          if (widths[i] > style.colMinimumWidth) {
             growable.add(i);
             growableTotal += weights[i];
           }
@@ -378,16 +381,27 @@ class TableNode {
   ///
   /// Returns the weight scaled by [TableDefaults.colWidth] for backward
   /// compatibility with code that expects a pixel value.
-  double getColWidth(int col) => getColWeight(col) * TableDefaults.colWidth;
+  double getColWidth(int col, NovidentTableStyleDefinition style) =>
+      getColWeight(
+        col,
+        style,
+      ) *
+      TableDefaults.colWidth;
 
   /// Total intrinsic width in legacy pixel units. Prefer [totalWeight] for
   /// layout decisions.
-  double get tableWidth =>
+  double tableWidth(NovidentTableStyleDefinition style) =>
       List.generate(colsLen, (idx) => idx).fold<double>(
         0,
-        (prev, cur) => prev + getColWidth(cur) + _config.borderWidth,
+        (prev, cur) =>
+            prev +
+            getColWidth(
+              cur,
+              style,
+            ) +
+            style.borderWidth,
       ) +
-      _config.borderWidth;
+      style.borderWidth;
 
   /// Sets the weight of column [col] and updates all cells in that column.
   ///
@@ -402,7 +416,7 @@ class TableNode {
     bool force = false,
   }) {
     final clamped = weight < 0.1 ? 0.1 : weight;
-    if (getColWeight(col) != clamped || force) {
+    if (getColWeight(col, style ?? kDefaultTableStyle) != clamped || force) {
       for (var i = 0; i < rowsLen; i++) {
         if (transaction != null) {
           transaction.updateNode(

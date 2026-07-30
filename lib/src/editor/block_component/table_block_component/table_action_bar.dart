@@ -34,6 +34,16 @@ class _TableActionBarState extends State<TableActionBar> {
     widget.editorState.editableNotifier.addListener(_onEditableChange);
   }
 
+  @override
+  void didUpdateWidget(covariant TableActionBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    oldWidget.editorState.editableNotifier.removeListener(_onEditableChange);
+    oldWidget.editorState.selectionNotifier.removeListener(_onSelectionChange);
+    widget.editorState.selectionNotifier.addListener(_onSelectionChange);
+    widget.editorState.editableNotifier.addListener(_onEditableChange);
+    super.dispose();
+  }
+
   void _onEditableChange() {
     if (!mounted) return;
     setState(() {});

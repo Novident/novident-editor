@@ -25,26 +25,30 @@ class _TableActionBarState extends State<TableActionBar> {
   Node? _cachedCellNode;
   int? _cachedCol;
   int? _cachedRow;
+  bool _menuOpen = false;
 
   @override
   void initState() {
     super.initState();
     widget.editorState.selectionNotifier.addListener(_onSelectionChange);
+    widget.editorState.editableNotifier.addListener(_onEditableChange);
+  }
+
+  void _onEditableChange() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   @override
   void dispose() {
+    widget.editorState.editableNotifier.removeListener(_onEditableChange);
     widget.editorState.selectionNotifier.removeListener(_onSelectionChange);
     super.dispose();
   }
 
   void _onSelectionChange() {
     if (!mounted) return;
-    final sel = widget.editorState.selection;
-    final tablePath = widget.tableNode.node.path;
-    final inTable = sel != null &&
-        tablePath.isNotEmpty &&
-        sel.start.path.first == tablePath.first;
+    final inTable = _isSelectionInTable;
     final wasInTable = _cachedCellNode != null;
     if (!inTable && !wasInTable) return;
     _cachedSelectionPath = null;
@@ -52,12 +56,18 @@ class _TableActionBarState extends State<TableActionBar> {
     setState(() {});
   }
 
-  bool get _isFocused {
+  bool get _isVisible {
+    if (!widget.editorState.editorStyle.showTableActionBar) return false;
+    if (!widget.editorState.editable) return false;
+    return true;
+  }
+
+  bool get _isSelectionInTable {
     final sel = widget.editorState.selection;
     final tablePath = widget.tableNode.node.path;
     return sel != null &&
         tablePath.isNotEmpty &&
-        sel.start.path.contains(tablePath.first);
+        sel.start.path.first == tablePath.first;
   }
 
   int get effectiveCol => _resolvePosition().$1;
@@ -119,9 +129,14 @@ class _TableActionBarState extends State<TableActionBar> {
         : kDefaultTableStyle;
   }
 
+  void _withSelectionPreserved(VoidCallback action) {
+    action();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isFocused = _isFocused;
+    final isFocused = _isVisible || _menuOpen;
+    final isInTable = _isSelectionInTable;
     final col = effectiveCol;
     final row = effectiveRow;
     final colAtEnd = col >= widget.tableNode.colsLen;
@@ -129,8 +144,8 @@ class _TableActionBarState extends State<TableActionBar> {
 
     return SizedBox(
       height: isFocused ? 32 : 0,
-        child: isFocused
-            ? SingleChildScrollView(
+      child: isFocused
+          ? SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -139,55 +154,61 @@ class _TableActionBarState extends State<TableActionBar> {
                     context,
                     icon: Icons.view_column,
                     tooltip: 'Add column before',
-                    onTap: () => TableActions.add(
-                      widget.tableNode.node,
-                      colAtEnd ? widget.tableNode.colsLen : col,
-                      widget.editorState,
-                      TableDirection.col,
-                      tableStyle,
-                    ),
+                    onTap: () => _withSelectionPreserved(() => TableActions.add(
+                          widget.tableNode.node,
+                          colAtEnd ? widget.tableNode.colsLen : col,
+                          widget.editorState,
+                          TableDirection.col,
+                          tableStyle,
+                        )),
+                    enabled: isInTable,
                   ),
                   _actionButton(
                     context,
                     icon: Icons.table_rows,
                     tooltip: 'Add row above',
-                    onTap: () => TableActions.add(
-                      widget.tableNode.node,
-                      rowAtEnd ? widget.tableNode.rowsLen : row,
-                      widget.editorState,
-                      TableDirection.row,
-                      tableStyle,
-                    ),
+                    onTap: () => _withSelectionPreserved(() => TableActions.add(
+                          widget.tableNode.node,
+                          rowAtEnd ? widget.tableNode.rowsLen : row,
+                          widget.editorState,
+                          TableDirection.row,
+                          tableStyle,
+                        )),
+                    enabled: isInTable,
                   ),
                   _actionButton(
                     context,
                     icon: Icons.delete_outline,
                     tooltip: 'Delete column',
-                    enabled: !colAtEnd && widget.tableNode.colsLen > 1,
-                    onTap: () => TableActions.delete(
-                      widget.tableNode.node,
-                      col,
-                      widget.editorState,
-                      TableDirection.col,
-                    ),
+                    enabled:
+                        isInTable && !colAtEnd && widget.tableNode.colsLen > 1,
+                    onTap: () =>
+                        _withSelectionPreserved(() => TableActions.delete(
+                              widget.tableNode.node,
+                              col,
+                              widget.editorState,
+                              TableDirection.col,
+                            )),
                   ),
                   _actionButton(
                     context,
                     icon: Icons.delete_forever,
                     tooltip: 'Delete row',
-                    enabled: !rowAtEnd && widget.tableNode.rowsLen > 1,
-                    onTap: () => TableActions.delete(
-                      widget.tableNode.node,
-                      row,
-                      widget.editorState,
-                      TableDirection.row,
-                    ),
+                    enabled:
+                        isInTable && !rowAtEnd && widget.tableNode.rowsLen > 1,
+                    onTap: () =>
+                        _withSelectionPreserved(() => TableActions.delete(
+                              widget.tableNode.node,
+                              row,
+                              widget.editorState,
+                              TableDirection.row,
+                            )),
                   ),
                   _actionButton(
                     context,
                     icon: Icons.colorize,
                     tooltip: 'Column color',
-                    enabled: !colAtEnd,
+                    enabled: isInTable && !colAtEnd,
                     onTap: () => _showColorDropdown(
                       context,
                       col: col,
@@ -199,7 +220,7 @@ class _TableActionBarState extends State<TableActionBar> {
                     context,
                     icon: Icons.format_paint,
                     tooltip: 'Row color',
-                    enabled: !rowAtEnd,
+                    enabled: isInTable && !rowAtEnd,
                     onTap: () => _showColorDropdown(
                       context,
                       col: col,
@@ -218,6 +239,7 @@ class _TableActionBarState extends State<TableActionBar> {
                       dir: TableDirection.col,
                       isBorder: true,
                     ),
+                    enabled: isInTable,
                   ),
                 ],
               ),
@@ -279,6 +301,7 @@ class _TableActionBarState extends State<TableActionBar> {
     final Offset buttonOffset = button.localToGlobal(Offset.zero);
     final Size buttonSize = button.size;
 
+    setState(() => _menuOpen = true);
     showMenu<String>(
       context: context,
       position: RelativeRect.fromLTRB(
@@ -324,6 +347,10 @@ class _TableActionBarState extends State<TableActionBar> {
           ),
         ),
       ],
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() => _menuOpen = false);
+      }
+    });
   }
 }

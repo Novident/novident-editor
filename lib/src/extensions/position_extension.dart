@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:collection/collection.dart';
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
@@ -87,54 +86,18 @@ extension PositionExtension on Position {
        return null;
     }
 
-    /// Depth-first search starting from [node] (inclusive), matching the first
-    /// descendant (or the node itself) that satisfies [test].
-    Node? firstMatch(Node node, bool Function(Node) test) {
-      if (test(node)) return node;
-      for (final child in node.children) {
-        final found = firstMatch(child, test);
-        if (found != null) return found;
-      }
-      return null;
-    }
 
-    /// O(1) cell lookup using column-major index: col * numRows + row.
-    /// Falls back to linear scan if the index is corrupted.
-    Node? cellAt(Node table, int col, int row, int numRows) {
-      final index = col * numRows + row;
-      if (index >= 0 && index < table.children.length) {
-        final cell = table.children[index];
-        if (cell.attributes[TableCellBlockKeys.colPosition] == col &&
-            cell.attributes[TableCellBlockKeys.rowPosition] == row) {
-          return cell;
-        }
-      }
-      // Fallback: linear scan (should rarely be needed)
-      return table.children.firstWhereOrNull(
-        (c) =>
-            c.attributes[TableCellBlockKeys.colPosition] == col &&
-            c.attributes[TableCellBlockKeys.rowPosition] == row,
-      );
-    }
 
-    /// Returns the number of rows in a table.
-    int numRows(Node table) {
-      final lastCell = table.children.last;
-      return (lastCell.attributes[TableCellBlockKeys.rowPosition] as int) + 1;
-    }
-
-    /// Navigate to the cell at (sameCol, nextRow). Returns null if at the
-    /// table's vertical boundary (no adjacent row in that direction).
+    /// Navigate to the cell at (sameCol, nextRow). Delegates to
+    /// [TableCellNavigation.adjacentCellColumnMajor].
     Position? navigateToCell(Node cell, Node table, bool upwards) {
+      final t = TableNode(node: table);
       final col =
           cell.attributes[TableCellBlockKeys.colPosition] as int?;
       final row =
           cell.attributes[TableCellBlockKeys.rowPosition] as int?;
       if (col == null || row == null) return null;
-      final nRows = numRows(table);
-      final nextRow = upwards ? row - 1 : row + 1;
-      if (nextRow < 0 || nextRow >= nRows) return null;
-      final nextCell = cellAt(table, col, nextRow, nRows);
+      final nextCell = t.adjacentCellColumnMajor(col, row, upwards);
       if (nextCell == null ||
           nextCell.children.isEmpty ||
           nextCell.children.first.delta == null) {
@@ -147,21 +110,11 @@ extension PositionExtension on Position {
       );
     }
 
-    /// Navigate out of the table to the adjacent block above or below.
-    /// [atStart] controls whether to enter the destination block at its
-    /// start ([atStart]==true) or end ([atStart]==false).
+    /// Navigate out of the table to the adjacent block. Delegates to
+    /// [TableExitNavigation.nodeOutside].
     Position? navigateOutOfTable(Node table, bool upwards, bool atStart) {
-      Node? outNode;
-      if (upwards) {
-        final prev = table.previous;
-        if (prev == null) return null;
-        outNode = prev.lastChildWhere((n) => n.selectable != null);
-        outNode ??= prev.selectable != null ? prev : null;
-      } else {
-        final next = table.next;
-        if (next == null) return null;
-        outNode = firstMatch(next, (n) => n.selectable != null);
-      }
+      final t = TableNode(node: table);
+      final outNode = t.nodeOutside(upwards);
       if (outNode == null) return null;
       final entry = textEntry(outNode, atStart);
       if (entry != null) return entry;

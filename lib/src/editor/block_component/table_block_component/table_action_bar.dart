@@ -129,8 +129,8 @@ class _TableActionBarState extends State<TableActionBar> {
 
     return SizedBox(
       height: isFocused ? 32 : 0,
-      child: isFocused
-          ? SingleChildScrollView(
+        child: isFocused
+            ? SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -188,7 +188,7 @@ class _TableActionBarState extends State<TableActionBar> {
                     icon: Icons.colorize,
                     tooltip: 'Column color',
                     enabled: !colAtEnd,
-                    onTap: () => _showColorMenu(
+                    onTap: () => _showColorDropdown(
                       context,
                       col: col,
                       row: row,
@@ -200,7 +200,7 @@ class _TableActionBarState extends State<TableActionBar> {
                     icon: Icons.format_paint,
                     tooltip: 'Row color',
                     enabled: !rowAtEnd,
-                    onTap: () => _showColorMenu(
+                    onTap: () => _showColorDropdown(
                       context,
                       col: col,
                       row: row,
@@ -211,7 +211,7 @@ class _TableActionBarState extends State<TableActionBar> {
                     context,
                     icon: Icons.border_color,
                     tooltip: 'Border color',
-                    onTap: () => _showColorMenu(
+                    onTap: () => _showColorDropdown(
                       context,
                       col: col,
                       row: row,
@@ -255,7 +255,7 @@ class _TableActionBarState extends State<TableActionBar> {
     );
   }
 
-  void _showColorMenu(
+  void _showColorDropdown(
     BuildContext context, {
     required int col,
     required int row,
@@ -275,46 +275,55 @@ class _TableActionBarState extends State<TableActionBar> {
             ? TableCellBlockKeys.colBackgroundColor
             : TableCellBlockKeys.rowBackgroundColor;
 
-    OverlayEntry? overlay;
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final Offset buttonOffset = button.localToGlobal(Offset.zero);
+    final Size buttonSize = button.size;
 
-    void dismiss() {
-      overlay?.remove();
-      overlay = null;
-    }
-
-    overlay = FullScreenOverlayEntry(
-      builder: (ctx) => ColorPicker(
-        title: isBorder
-            ? 'Border color'
-            : dir == TableDirection.col
-                ? 'Column color'
-                : 'Row color',
-        selectedColorHex: isBorder
-            ? node.attributes[TableBlockKeys.borderColor]
-            : cell?.attributes[key],
-        colorOptions: generateHighlightColorOptions(),
-        onSubmittedColorHex: (color, _) {
-          if (isBorder) {
-            TableActions.setBorderColor(
-              node,
-              widget.editorState,
-              color: color,
-            );
-          } else {
-            TableActions.setBgColor(
-              node,
-              position,
-              widget.editorState,
-              color,
-              dir,
-            );
-          }
-          dismiss();
-        },
-        resetText: 'Clear',
-        resetIconName: 'clear',
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        buttonOffset.dx,
+        buttonOffset.dy + buttonSize.height,
+        buttonOffset.dx + buttonSize.width,
+        buttonOffset.dy + buttonSize.height,
       ),
-    ).build();
-    Overlay.of(context, rootOverlay: true).insert(overlay!);
+      items: [
+        PopupMenuItem<String>(
+          enabled: false,
+          padding: EdgeInsets.zero,
+          child: ColorPicker(
+            title: isBorder
+                ? 'Border color'
+                : dir == TableDirection.col
+                    ? 'Column color'
+                    : 'Row color',
+            selectedColorHex: isBorder
+                ? node.attributes[TableBlockKeys.borderColor]
+                : cell?.attributes[key],
+            colorOptions: generateHighlightColorOptions(),
+            onSubmittedColorHex: (color, _) {
+              if (isBorder) {
+                TableActions.setBorderColor(
+                  node,
+                  widget.editorState,
+                  color: color,
+                );
+              } else {
+                TableActions.setBgColor(
+                  node,
+                  position,
+                  widget.editorState,
+                  color,
+                  dir,
+                );
+              }
+              Navigator.of(context).pop();
+            },
+            resetText: 'Clear',
+            resetIconName: 'clear',
+          ),
+        ),
+      ],
+    );
   }
 }

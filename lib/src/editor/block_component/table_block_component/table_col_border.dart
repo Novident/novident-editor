@@ -10,6 +10,7 @@ class TableColBorder extends StatefulWidget {
     required this.resizable,
     required this.borderColor,
     required this.colsHeight,
+    required this.borderWidth,
     this.tableStyleDef,
     this.borderHoverColor,
     this.currentColWidth,
@@ -24,6 +25,9 @@ class TableColBorder extends StatefulWidget {
   final Color borderColor;
   final Color? borderHoverColor;
   final double colsHeight;
+
+  /// Resolved border width (node override > style default).
+  final double borderWidth;
 
   /// The current rendered width in pixels of the column this border
   /// belongs to. Used to convert mouse drag pixels to proportional
@@ -122,7 +126,7 @@ class _TableColBorderState extends State<TableColBorder> {
         },
         child: Container(
           key: _borderKey,
-          width: tableStyle.borderWidth,
+          width: widget.borderWidth,
           height: widget.colsHeight,
           color: _borderHovering || _borderDragging
               ? widget.borderHoverColor
@@ -134,7 +138,7 @@ class _TableColBorderState extends State<TableColBorder> {
 
   Container buildFixedBorder(BuildContext context) {
     return Container(
-      width: tableStyle.borderWidth,
+      width: widget.borderWidth,
       height: widget.colsHeight,
       color: widget.borderColor,
     );

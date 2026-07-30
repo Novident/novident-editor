@@ -264,8 +264,13 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
 
   @override
   Widget build(BuildContext context) {
-    final noBorder = tableStyle.noBorder;
-    final borderPx = noBorder ? 0.0 : tableStyle.borderWidth;
+    final style = tableStyle;
+    final noBorder = style.noBorder;
+    // Per-table override: node attribute > style default.
+    final borderPx = noBorder
+        ? 0.0
+        : (widget.node.attributes[TableBlockKeys.borderWidth] as double?) ??
+            style.borderWidth;
 
     final enableHorizontalScroll = context.select((Node n) {
           final value = n.attributes[TableBlockKeys.enableHorizontalScroll];

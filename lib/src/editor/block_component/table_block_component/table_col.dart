@@ -55,6 +55,12 @@ class _TableColState extends State<TableCol> {
 
     final double colsHeight = widget.tableNode.colsHeight(style);
 
+    final borderWidth = noBorder
+        ? 0.0
+        : (widget.tableNode.node.attributes[TableBlockKeys.borderWidth]
+                as double?) ??
+            style.borderWidth;
+
     List<Widget> children = [];
     if (widget.colIdx == 0 && !noBorder && borderColor != null) {
       children.add(
@@ -65,6 +71,7 @@ class _TableColState extends State<TableCol> {
           colIdx: widget.colIdx,
           borderColor: borderColor,
           colsHeight: colsHeight,
+          borderWidth: borderWidth,
           tableStyleDef: style,
           borderHoverColor:
               widget.tableStyleDef?.borderHoverColor ?? Colors.transparent,
@@ -87,6 +94,7 @@ class _TableColState extends State<TableCol> {
           colIdx: widget.colIdx,
           currentColWidth: widget.colWidth,
           colsHeight: colsHeight,
+          borderWidth: borderWidth,
           tableStyleDef: style,
           borderColor: borderColor,
           borderHoverColor: widget.tableStyleDef?.borderHoverColor,
@@ -110,10 +118,16 @@ class _TableColState extends State<TableCol> {
     final rowsLen = widget.tableNode.rowsLen;
     final List<Widget> cells = [];
 
+    final borderWidth = noBorder
+        ? 0.0
+        : (widget.tableNode.node.attributes[TableBlockKeys.borderWidth]
+                as double?) ??
+            style.borderWidth;
+
     final cellBorder = noBorder || borderColor == null
         ? const SizedBox.shrink()
         : Container(
-            height: style.borderWidth,
+            height: borderWidth,
             color: borderColor,
           );
 

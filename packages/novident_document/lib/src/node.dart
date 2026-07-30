@@ -43,7 +43,7 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
               (e) => e..unlink(),
             ),
           ), // unlink the given children to avoid the error of "node has
-              // already a parent"
+        // already a parent"
         _attributes = attributes,
         id = id ?? nanoid(6) {
     for (final child in children) {
@@ -124,7 +124,15 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
 
   /// The attributes of the node.
   Attributes _attributes;
-  Attributes get attributes => {..._attributes};
+
+  /// Method not recommended for mutating attributes directly.
+  ///
+  /// Its use should be strictly limited to internal contexts where:
+  /// - Safe access via [attributes] generates an excessive number of copies.
+  /// - Performance is critical.
+  ///
+  /// Any mutation should be do it using [updateAttributes] method
+  Attributes get attributes => _attributes;
 
   /// The path of the node.
   Path get path => _computePath();
@@ -383,7 +391,12 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
     if (parent == null) {
       return previous;
     }
-    return parent._computePath([_indexInParent(), ...previous]);
+    return parent._computePath(
+      [
+        _indexInParent(),
+        ...previous,
+      ],
+    );
   }
 
   /// check the integrity of the document (for DEBUG only)
@@ -417,7 +430,10 @@ extension NodeEquality on Iterable<Node> {
       return false;
     }
     for (var i = 0; i < length; i++) {
-      if (!_nodeEquals(elementAt(i), other.elementAt(i))) {
+      if (!_nodeEquals(
+        elementAt(i),
+        other.elementAt(i),
+      )) {
         return false;
       }
     }

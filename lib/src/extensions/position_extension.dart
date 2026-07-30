@@ -3,6 +3,35 @@ import 'dart:math' as math;
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
+Position? _horizontalCellNavigate(
+  EditorState editorState,
+  Node cell, {
+  required bool forwards,
+  required bool atStart,
+}) {
+  final table = cell.parent;
+  if (table?.type != TableBlockKeys.type) return null;
+  final t = TableNode(node: table!);
+  final col = cell.attributes[TableCellBlockKeys.colPosition] as int?;
+  final row = cell.attributes[TableCellBlockKeys.rowPosition] as int?;
+  if (col == null || row == null) return null;
+  final nextCell = t.adjacentCellRowMajor(col, row, forward: forwards);
+  if (nextCell != null &&
+      nextCell.children.isNotEmpty &&
+      nextCell.children.first.delta != null) {
+    final child = nextCell.children.first;
+    return Position(
+      path: child.path,
+      offset: atStart ? 0 : child.delta!.length,
+    );
+  }
+  final outNode = t.nodeOutside(forwards);
+  if (outNode == null) return null;
+  final sel = outNode.selectable;
+  if (sel == null) return null;
+  return atStart ? sel.start() : sel.end();
+}
+
 enum SelectionRange {
   character,
   word,
@@ -15,19 +44,29 @@ extension PositionExtension on Position {
     SelectionRange selectionRange = SelectionRange.character,
   }) {
     final node = editorState.document.nodeAtPath(path);
-    if (node == null) {
-      return null;
-    }
+    if (node == null) return null;
+
+    final cellParent = node.parent;
+    final insideCell =
+        cellParent?.type == TableCellBlockKeys.type ? cellParent : null;
 
     if (forward && offset == 0) {
-      final previousEnd = node.previous?.selectable?.end();
-      if (previousEnd != null) {
-        return previousEnd;
+      if (insideCell != null) {
+        return _horizontalCellNavigate(
+          editorState, insideCell, forwards: false, atStart: false,
+        );
       }
+      final previousEnd = node.previous?.selectable?.end();
+      if (previousEnd != null) return previousEnd;
       return null;
     } else if (!forward) {
       final end = node.selectable?.end();
       if (end != null && offset >= end.offset) {
+        if (insideCell != null) {
+          return _horizontalCellNavigate(
+            editorState, insideCell, forwards: true, atStart: true,
+          );
+        }
         return node.next?.selectable?.start();
       }
     }
@@ -36,31 +75,38 @@ extension PositionExtension on Position {
       case SelectionRange.character:
         final delta = node.delta;
         if (delta != null) {
-          return Position(
-            path: path,
-            offset: forward
-                ? delta.prevRunePosition(offset)
-                : delta.nextRunePosition(offset),
-          );
+          final newOffset =
+              forward ? delta.prevRunePosition(offset) : delta.nextRunePosition(offset);
+          if (newOffset == offset && insideCell != null) {
+            return _horizontalCellNavigate(
+              editorState, insideCell,
+              forwards: forward,
+              atStart: forward,
+            );
+          }
+          return Position(path: path, offset: newOffset);
         }
-
         return Position(path: path, offset: offset);
       case SelectionRange.word:
         final delta = node.delta;
         if (delta != null) {
           final result = forward
               ? node.selectable?.getWordBoundaryInPosition(
-                  Position(
-                    path: path,
-                    offset: delta.prevRunePosition(offset),
-                  ),
+                  Position(path: path, offset: delta.prevRunePosition(offset)),
                 )
               : node.selectable?.getWordBoundaryInPosition(this);
           if (result != null) {
-            return forward ? result.start : result.end;
+            final target = forward ? result.start : result.end;
+            if (insideCell != null && target.offset == offset) {
+              return _horizontalCellNavigate(
+                editorState, insideCell,
+                forwards: forward,
+                atStart: forward,
+              );
+            }
+            return target;
           }
         }
-
         return Position(path: path, offset: offset);
     }
   }

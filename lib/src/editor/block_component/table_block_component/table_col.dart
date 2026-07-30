@@ -38,6 +38,40 @@ class TableCol extends StatefulWidget {
 class _TableColState extends State<TableCol> {
   Map<String, VoidCallback> listeners = <String, VoidCallback>{};
 
+  final Set<int> _pendingRowUpdates = {};
+  bool _updateScheduled = false;
+
+  void _scheduleRowUpdate(int row) {
+    _pendingRowUpdates.add(row);
+    if (_updateScheduled) return;
+    _updateScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateScheduled = false;
+      if (!mounted) return;
+      final rows = Set<int>.from(_pendingRowUpdates);
+      _pendingRowUpdates.clear();
+      for (final r in rows) {
+        if (r >= widget.tableNode.rowsLen) continue;
+        _applyRowHeightSync(r);
+      }
+      setState(() {});
+    });
+  }
+
+  void _applyRowHeightSync(int row) {
+    final transaction = widget.editorState.transaction;
+    widget.tableNode.updateRowHeight(
+      row,
+      style: widget.tableStyleDef ?? kDefaultTableStyle,
+      editorState: widget.editorState,
+      transaction: transaction,
+    );
+    if (transaction.operations.isNotEmpty) {
+      transaction.afterSelection = transaction.beforeSelection;
+      widget.editorState.apply(transaction);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // per-table override of the style border color; see
@@ -134,7 +168,7 @@ class _TableColState extends State<TableCol> {
     for (var r = 0; r < rowsLen; r++) {
       final node = widget.tableNode.getCell(widget.colIdx, r);
       final cellColor = _cellBackgroundColor(r, style);
-      updateRowHeightCallback(r);
+      _scheduleRowUpdate(r);
       addListener(node, r);
       addListener(node.children.first, r);
 
@@ -182,27 +216,8 @@ class _TableColState extends State<TableCol> {
       return;
     }
 
-    listeners[node.id] = () => updateRowHeightCallback(row);
+    listeners[node.id] = () => _scheduleRowUpdate(row);
     node.addListener(listeners[node.id]!);
-  }
-
-  void updateRowHeightCallback(int row) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (row >= widget.tableNode.rowsLen) return;
-
-      final transaction = widget.editorState.transaction;
-      widget.tableNode.updateRowHeight(
-        row,
-        style: widget.tableStyleDef ?? kDefaultTableStyle,
-        editorState: widget.editorState,
-        transaction: transaction,
-      );
-      if (transaction.operations.isNotEmpty) {
-        transaction.afterSelection = transaction.beforeSelection;
-        widget.editorState.apply(transaction);
-      }
-      if (mounted) setState(() {});
-    });
   }
 }
 

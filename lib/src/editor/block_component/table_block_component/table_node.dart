@@ -217,36 +217,68 @@ class TableNode {
 
   int get rowsLen => _cells.isNotEmpty ? _cells[0].length : 0;
 
+  // -- height cache -------------------------------------------------------
+
+  int _heightVersion = 0;
+  final List<double> _cachedRowHeights = [];
+  int _cachedRowHeightsVersion = -1;
+  NovidentTableStyleDefinition? _cachedRowHeightsStyle;
+
+  double? _cachedColsHeight;
+  int _cachedColsHeightVersion = -1;
+  NovidentTableStyleDefinition? _cachedColsHeightStyle;
+
+  void _invalidateHeightCache() {
+    _heightVersion++;
+  }
+
   /// Returns the height of [row].
   ///
   /// The height is read from every column of the row (the maximum wins), so
   /// a stale attribute in a single column can no longer shrink the vertical
-  /// borders of the whole table.
+  /// borders of the whole table. Results are cached until the next height
+  /// synchronization via [updateRowHeight].
   double getRowHeight(int row, NovidentTableStyleDefinition style) {
-    double? height;
-    for (final col in _cells) {
-      final colHeight = double.tryParse(
-        col[row].attributes[TableCellBlockKeys.height].toString(),
-      );
-      if (colHeight != null) {
-        height = height == null ? colHeight : max(height, colHeight);
-      }
+    if (_cachedRowHeightsVersion == _heightVersion &&
+        identical(_cachedRowHeightsStyle, style) &&
+        row < _cachedRowHeights.length) {
+      return _cachedRowHeights[row];
     }
-    return height ?? style.rowDefaultHeight;
+
+    _cachedRowHeights.clear();
+    for (var r = 0; r < rowsLen; r++) {
+      double? h;
+      for (final col in _cells) {
+        final colHeight = double.tryParse(
+          col[r].attributes[TableCellBlockKeys.height].toString(),
+        );
+        if (colHeight != null) {
+          h = h == null ? colHeight : max(h, colHeight);
+        }
+      }
+      _cachedRowHeights.add(h ?? style.rowDefaultHeight);
+    }
+    _cachedRowHeightsVersion = _heightVersion;
+    _cachedRowHeightsStyle = style;
+    return _cachedRowHeights[row];
   }
 
-  double colsHeight(NovidentTableStyleDefinition style) =>
-      List.generate(rowsLen, (idx) => idx).fold<double>(
-        0,
-        (prev, cur) =>
-            prev +
-            getRowHeight(
-              cur,
-              style,
-            ) +
-            style.borderWidth,
-      ) +
-      style.borderWidth;
+  double colsHeight(NovidentTableStyleDefinition style) {
+    if (_cachedColsHeight != null &&
+        _cachedColsHeightVersion == _heightVersion &&
+        identical(_cachedColsHeightStyle, style)) {
+      return _cachedColsHeight!;
+    }
+
+    double total = style.borderWidth;
+    for (var r = 0; r < rowsLen; r++) {
+      total += getRowHeight(r, style) + style.borderWidth;
+    }
+    _cachedColsHeight = total;
+    _cachedColsHeightVersion = _heightVersion;
+    _cachedColsHeightStyle = style;
+    return total;
+  }
 
   /// Returns the relative weight of column [col].
   ///
@@ -503,6 +535,7 @@ class TableNode {
           );
         }
       }
+      _invalidateHeightCache();
     }
   }
 }

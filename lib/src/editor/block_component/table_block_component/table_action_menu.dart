@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/util.dart';
 import 'package:novident_editor/src/editor/toolbar/desktop/items/utils/overlay_util.dart';
 import 'package:flutter/material.dart';
 
@@ -180,9 +179,10 @@ final TableActionMenuItem tableActionBackgroundColorItem = TableActionMenuItem(
   iconBuilder: (_) => Icons.format_color_fill,
   onPressed: (menuContext) {
     final dir = menuContext.dir;
+    final table = TableNode(node: menuContext.node);
     final cell = dir == TableDirection.col
-        ? getCellNode(menuContext.node, menuContext.position, 0)
-        : getCellNode(menuContext.node, 0, menuContext.position);
+        ? table.getCell(menuContext.position, 0)
+        : table.getCell(0, menuContext.position);
     final key = dir == TableDirection.col
         ? TableCellBlockKeys.colBackgroundColor
         : TableCellBlockKeys.rowBackgroundColor;

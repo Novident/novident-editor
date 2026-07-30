@@ -13,9 +13,10 @@ class TableNodeParser extends NodeParser {
         colsLen = node.attributes['colsLen'];
     String result = '';
 
+    final table = TableNode(node: node);
     for (var i = 0; i < rowsLen; i++) {
       for (var j = 0; j < colsLen; j++) {
-        final Node cell = getCellNode(node, j, i)!;
+        final Node cell = table.getCell(j, i);
         String cellStr = '|${documentToMarkdown(Document(root: cell))}';
         // markdown doesn't have literally empty table cell
         cellStr = cellStr == '|' ? '| ' : cellStr;

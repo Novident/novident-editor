@@ -1,12 +1,12 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:collection/collection.dart';
 
+@Deprecated('Use TableNode.getCell(col, row) instead — it is O(1) indexed lookup')
 Node? getCellNode(Node tableNode, int col, int row) {
-  return tableNode.children.firstWhereOrNull(
-    (n) =>
-        n.attributes[TableCellBlockKeys.colPosition] == col &&
-        n.attributes[TableCellBlockKeys.rowPosition] == row,
-  );
+  final table = TableNode(node: tableNode);
+  if (col < 0 || col >= table.colsLen || row < 0 || row >= table.rowsLen) {
+    return null;
+  }
+  return table.getCell(col, row);
 }
 
 extension TableCellNodeDynamicExtension on dynamic {

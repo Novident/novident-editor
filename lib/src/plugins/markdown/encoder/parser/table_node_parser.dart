@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/util.dart';
 
 class TableNodeParser extends NodeParser {
   const TableNodeParser();

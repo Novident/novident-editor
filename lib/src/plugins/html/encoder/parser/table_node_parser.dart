@@ -2,8 +2,6 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:collection/collection.dart';
 import 'package:html/dom.dart' as dom;
 
-import '../../../../editor/block_component/table_block_component/util.dart';
-
 class HtmlTableNodeParser extends HTMLNodeParser {
   const HtmlTableNodeParser();
 

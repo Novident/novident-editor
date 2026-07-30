@@ -116,15 +116,17 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     required super.id,
     required super.name,
     super.basedOn,
+    this.border,
+    this.cellBorder,
     this.colDefaultWeight = 1.0,
     this.rowDefaultHeight = 40.0,
     this.colMinimumWidth = 40.0,
-    this.borderWidth = 2.0,
+    @Deprecated('Use border instead') this.borderWidth = 2.0,
     this.borderColor,
     this.borderHoverColor,
     this.innerBorderColor,
     this.outerBorderColor,
-    this.borderLineStyle = BorderStyle.solid,
+    @Deprecated('Use border instead') this.borderLineStyle = BorderStyle.solid,
     this.borderRadius,
     this.noBorder = false,
     this.cellPadding,
@@ -178,6 +180,17 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   final double colDefaultWeight;
   final double rowDefaultHeight;
   final double colMinimumWidth;
+
+  /// Table-level outer border. When set, takes precedence over the
+  /// deprecated [borderWidth], [borderColor], and [borderLineStyle].
+  final Border? border;
+
+  /// Cell-level inner border applied to each cell. Falls back to
+  /// [effectiveBorder] when `null`, allowing independent control of
+  /// table perimeter vs internal cell dividers.
+  final Border? cellBorder;
+
+  @Deprecated('Use border instead')
   final double borderWidth;
   final Color? borderColor;
   final Color? borderHoverColor;
@@ -190,7 +203,7 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   /// When `null`, [borderColor] is used for all borders.
   final Color? outerBorderColor;
 
-  /// Border line style (solid, dashed, dotted, etc.). Defaults to solid.
+  @Deprecated('Use border instead')
   final BorderStyle borderLineStyle;
 
   /// Corner radius for the table's outer border.
@@ -199,6 +212,24 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
   /// When `true`, no borders are drawn anywhere on the table —
   /// [borderWidth], [borderColor], [borderStyle], etc. are all ignored.
   final bool noBorder;
+
+  /// Resolved border: returns [border] when set, otherwise synthesizes a
+  /// [Border] from the deprecated [borderWidth], [borderColor], and
+  /// [borderLineStyle].
+  Border get effectiveBorder {
+    if (border != null) return border!;
+    return Border.all(
+      width: borderWidth,
+      color: borderColor ?? Colors.black,
+      style: borderLineStyle,
+    );
+  }
+
+  /// Resolved cell border: returns [cellBorder] when set, otherwise
+  /// falls back to [effectiveBorder].
+  Border get effectiveCellBorder {
+    return cellBorder ?? effectiveBorder;
+  }
 
   /// Padding inside every cell. Overrides the builder-level cell padding.
   final EdgeInsets? cellPadding;
@@ -256,15 +287,17 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     required super.id,
     required super.name,
     super.basedOn,
+    this.border,
+    this.cellBorder,
     this.colDefaultWeight = 1.0,
     this.rowDefaultHeight = 40.0,
     this.colMinimumWidth = 40.0,
-    this.borderWidth = 2.0,
+    @Deprecated('Use border instead') this.borderWidth = 2.0,
     this.borderColor,
     this.borderHoverColor,
     this.innerBorderColor,
     this.outerBorderColor,
-    this.borderLineStyle = BorderStyle.solid,
+    @Deprecated('Use border instead') this.borderLineStyle = BorderStyle.solid,
     this.borderRadius,
     this.noBorder = false,
     this.cellPadding,
@@ -345,6 +378,8 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       name: name,
       basedOn: basedOn,
       // Table props — keep ours
+      border: border,
+      cellBorder: cellBorder,
       colDefaultWeight: colDefaultWeight,
       rowDefaultHeight: rowDefaultHeight,
       colMinimumWidth: colMinimumWidth,
@@ -428,6 +463,8 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
       name: other.name,
       basedOn: other.basedOn ?? basedOn,
       // Table props — other overrides
+      border: other.border ?? border,
+      cellBorder: other.cellBorder ?? cellBorder,
       colDefaultWeight: other.colDefaultWeight != 1.0
           ? other.colDefaultWeight
           : colDefaultWeight,

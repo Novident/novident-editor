@@ -245,6 +245,8 @@ CommandShortcutEventHandler _moveCursorBeginSelectCommandHandler =
   return KeyEventResult.handled;
 };
 
+//TODO: @Cathood0 we should find a way to avoid making an 
+// unnecessary node search 
 bool isRTL(EditorState editorState) {
   if (editorState.selection != null) {
     final node = editorState.getNodeAtPath(editorState.selection!.end.path);

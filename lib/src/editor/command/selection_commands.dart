@@ -207,6 +207,75 @@ extension SelectionTransform on EditorState {
     moveCursor(SelectionMoveDirection.backward, range);
   }
 
+  void _navigateToAdjacentBlock(
+    Node node, {
+    required bool upwards,
+    required Position? Function(Node, bool) textPosAt,
+  }) {
+    final cellParent = node.parent;
+    if (cellParent?.type == TableCellBlockKeys.type) {
+      final table = cellParent!.parent;
+      if (table?.type == TableBlockKeys.type) {
+        final t = TableNode(node: table!);
+        final col =
+            cellParent.attributes[TableCellBlockKeys.colPosition] as int?;
+        final row =
+            cellParent.attributes[TableCellBlockKeys.rowPosition] as int?;
+        if (col != null && row != null) {
+          final nextCell =
+              t.adjacentCellRowMajor(col, row, forward: !upwards);
+          if (nextCell != null &&
+              nextCell.children.isNotEmpty &&
+              nextCell.children.first.delta != null) {
+            final child = nextCell.children.first;
+            updateSelectionWithReason(
+              Selection.collapsed(Position(
+                path: child.path,
+                offset: upwards ? child.delta!.length : 0,
+              )),
+              reason: SelectionUpdateReason.uiEvent,
+            );
+            return;
+          }
+          final outNode = t.nodeOutside(upwards);
+          if (outNode != null) {
+            final target = textPosAt(outNode, !upwards) ??
+                (upwards
+                    ? outNode.selectable?.end()
+                    : outNode.selectable?.start());
+            if (target != null) {
+              updateSelectionWithReason(
+                Selection.collapsed(target),
+                reason: SelectionUpdateReason.uiEvent,
+              );
+            }
+          }
+          return;
+        }
+      }
+    }
+
+    // Not inside a table cell — use the original tree-walk logic.
+    final candidate = upwards
+        ? node.previousNodeWhere(
+            (element) => element.selectable != null,
+          )
+        : node.nextNodeWhere(
+            (element) => element.selectable != null,
+          );
+    if (candidate != null) {
+      final target = upwards
+          ? (textPosAt(candidate, false) ?? candidate.selectable?.end())
+          : (textPosAt(candidate, true) ?? candidate.selectable?.start());
+      if (target != null) {
+        updateSelectionWithReason(
+          Selection.collapsed(target),
+          reason: SelectionUpdateReason.uiEvent,
+        );
+      }
+    }
+  }
+
   void moveCursor(
     SelectionMoveDirection direction, [
     SelectionMoveRange range = SelectionMoveRange.character,
@@ -258,40 +327,22 @@ extension SelectionTransform on EditorState {
       if (direction == SelectionMoveDirection.forward &&
           start != null &&
           start.offset >= offset) {
-        final candidate = node.previousNodeWhere(
-          (element) => element.selectable != null,
+        _navigateToAdjacentBlock(
+          node,
+          upwards: true,
+          textPosAt: textPosAt,
         );
-        if (candidate != null) {
-          final target =
-              textPosAt(candidate, false) ??
-              candidate.selectable?.end();
-          if (target != null) {
-            updateSelectionWithReason(
-              Selection.collapsed(target),
-              reason: SelectionUpdateReason.uiEvent,
-            );
-          }
-        }
         return;
       }
       // Cursor at the end — move to the start of the next node.
       else if (direction == SelectionMoveDirection.backward &&
           end != null &&
           end.offset <= offset) {
-        final candidate = node.nextNodeWhere(
-          (element) => element.selectable != null,
+        _navigateToAdjacentBlock(
+          node,
+          upwards: false,
+          textPosAt: textPosAt,
         );
-        if (candidate != null) {
-          final target =
-              textPosAt(candidate, true) ??
-              candidate.selectable?.start();
-          if (target != null) {
-            updateSelectionWithReason(
-              Selection.collapsed(target),
-              reason: SelectionUpdateReason.uiEvent,
-            );
-          }
-        }
         return;
       }
     }

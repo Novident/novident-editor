@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:novident_editor/novident_editor.dart';
 
 class TableNode {
@@ -504,4 +505,69 @@ class TableNode {
       }
     }
   }
+}
+
+extension TableCellNavigation on TableNode {
+  int get numRows {
+    final lastCell = node.children.last;
+    return (lastCell.attributes[TableCellBlockKeys.rowPosition] as int) + 1;
+  }
+
+  int get numCols => colsLen;
+
+  Node? cellAt(int col, int row) {
+    final r = numRows;
+    final index = col * r + row;
+    if (index >= 0 && index < node.children.length) {
+      final cell = node.children[index];
+      if (cell.attributes[TableCellBlockKeys.colPosition] == col &&
+          cell.attributes[TableCellBlockKeys.rowPosition] == row) {
+        return cell;
+      }
+    }
+    return node.children.firstWhereOrNull(
+      (c) =>
+          c.attributes[TableCellBlockKeys.colPosition] == col &&
+          c.attributes[TableCellBlockKeys.rowPosition] == row,
+    );
+  }
+
+  Node? adjacentCellColumnMajor(int col, int row, bool upwards) {
+    final nextRow = upwards ? row - 1 : row + 1;
+    if (nextRow < 0 || nextRow >= numRows) return null;
+    return cellAt(col, nextRow);
+  }
+
+  Node? adjacentCellRowMajor(int col, int row, {required bool forward}) {
+    final flatIdx = row * numCols + col;
+    final nextIdx = forward ? flatIdx + 1 : flatIdx - 1;
+    if (nextIdx < 0 || nextIdx >= numCols * numRows) return null;
+    final nextRow = nextIdx ~/ numCols;
+    final nextCol = nextIdx % numCols;
+    return cellAt(nextCol, nextRow);
+  }
+}
+
+extension TableExitNavigation on TableNode {
+  Node? nodeOutside(bool upwards) {
+    if (upwards) {
+      final prev = node.previous;
+      if (prev == null) return null;
+      var out = prev.lastChildWhere((n) => n.selectable != null);
+      out ??= prev.selectable != null ? prev : null;
+      return out;
+    }
+    final next = node.next;
+    if (next == null) return null;
+    return _firstMatch(next, (n) => n.selectable != null);
+  }
+}
+
+Node? _firstMatch(Node node, bool Function(Node) test) {
+  if (test(node)) return node;
+  for (final child in node.children) {
+    final found = _firstMatch(child, test);
+    if (found != null) return found;
+  }
+  return null;
 }

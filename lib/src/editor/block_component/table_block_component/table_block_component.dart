@@ -59,6 +59,7 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
     super.configuration,
     this.menuBuilder,
     this.actionMenuItems,
+    this.tableStyleDef,
   });
 
   final TableBlockComponentMenuBuilder? menuBuilder;
@@ -71,6 +72,13 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
   /// so the row handlers stay in sync.
   final List<TableActionMenuItem>? actionMenuItems;
 
+  /// An explicit [NovidentTableStyleDefinition] to use as fallback when
+  /// [NovidentEditorStyles.resolveStyle] returns a non-table style or null.
+  ///
+  /// When omitted, [kDefaultTableStyle] is used. This is useful in tests
+  /// that need to inject a style without a full [NovidentEditorStyles] setup.
+  final NovidentTableStyleDefinition? tableStyleDef;
+
   @override
   BlockComponentWidget build(BlockComponentContext blockComponentContext) {
     final node = blockComponentContext.node;
@@ -79,9 +87,9 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
     // Resolve the effective style for this table node.
     final styles = NovidentEditorStyles.maybeOf(context);
     final resolved = styles?.resolveStyle(node);
-    final tableStyleDef = resolved is NovidentTableStyleDefinition
+    final effective = resolved is NovidentTableStyleDefinition
         ? resolved
-        : kDefaultTableStyle;
+        : (tableStyleDef ?? kDefaultTableStyle);
 
     return TableBlockComponentWidget(
       key: node.key,
@@ -90,7 +98,7 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
       configuration: configuration,
       menuBuilder: menuBuilder,
       actionMenuItems: actionMenuItems,
-      tableStyleDef: tableStyleDef,
+      tableStyleDef: effective,
       showActions: showActions(node),
       actionBuilder: (context, state) => actionBuilder(
         blockComponentContext,

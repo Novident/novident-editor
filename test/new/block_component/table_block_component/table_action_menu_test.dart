@@ -13,9 +13,9 @@ void main() async {
 
   Future<EditorState> pumpTableEditor(
     WidgetTester tester, {
-    TableStyle tableStyle = const TableStyle(),
     List<TableActionMenuItem>? actionMenuItems,
     Attributes? tableAttributes,
+    NovidentTableStyleDefinition? tableStyleDef,
   }) async {
     await NovidentEditorLocalizations.load(const Locale('en'));
 
@@ -32,8 +32,8 @@ void main() async {
     final builders = {
       ...standardBlockComponentBuilderMap,
       TableBlockKeys.type: TableBlockComponentBuilder(
-        tableStyle: tableStyle,
         actionMenuItems: actionMenuItems,
+        tableStyleDef: tableStyleDef,
       ),
       TableCellBlockKeys.type: TableCellBlockComponentBuilder(
         actionMenuItems: actionMenuItems,
@@ -174,7 +174,10 @@ void main() async {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text(NovidentEditorL10n.current.rowAddBefore), findsOneWidget);
+      expect(
+        find.text(NovidentEditorL10n.current.rowAddBefore),
+        findsOneWidget,
+      );
       expect(find.text(NovidentEditorL10n.current.rowAddAfter), findsOneWidget);
       expect(find.text(NovidentEditorL10n.current.rowRemove), findsOneWidget);
       expect(
@@ -243,8 +246,7 @@ void main() async {
       expect(fixedBorder.color, TableDefaults.borderColor);
     });
 
-    testWidgets(
-        'TableActions.setBorderWidth updates the grid geometry live',
+    testWidgets('TableActions.setBorderWidth updates the grid geometry live',
         (tester) async {
       final editorState = await pumpTableEditor(tester);
       final node = tableNodeOf(editorState);
@@ -269,8 +271,12 @@ void main() async {
 
       // the colsHeight attribute is recomputed with the new border width.
       final tableNode = TableNode(node: node);
-      expect(tableNode.config.borderWidth, 4);
-      expect(node.attributes[TableBlockKeys.colsHeight], tableNode.colsHeight);
+      expect(
+        node.attributes[TableBlockKeys.borderWidth],
+        4,
+      );
+      expect(node.attributes[TableBlockKeys.colsHeight],
+          tableNode.colsHeight(kDefaultTableStyle));
     });
 
     testWidgets(
@@ -349,7 +355,7 @@ void main() async {
 
       expect(node.attributes[TableBlockKeys.borderWidth], null);
       // geometry falls back to the style width.
-      expect(TableNode(node: node).config.borderWidth, 2.0);
+      expect(kDefaultTableStyle.borderWidth, 1.0);
     });
   });
 
@@ -375,7 +381,11 @@ void main() async {
         (tester) async {
       await pumpTableEditor(
         tester,
-        tableStyle: const TableStyle(enableHorizontalScroll: false),
+        tableStyleDef: const NovidentTableStyleDefinition(
+          id: 'test',
+          name: 'Test',
+          enableHorizontalScroll: false,
+        ),
         tableAttributes: {TableBlockKeys.enableHorizontalScroll: true},
       );
 
@@ -386,7 +396,8 @@ void main() async {
         (tester) async {
       await pumpTableEditor(
         tester,
-        tableStyle: const TableStyle(enableHorizontalScroll: false),
+        tableStyleDef: const NovidentTableStyleDefinition(
+            id: 'test', name: 'Test', enableHorizontalScroll: false),
       );
 
       expect(tableScrollView(), findsNothing);

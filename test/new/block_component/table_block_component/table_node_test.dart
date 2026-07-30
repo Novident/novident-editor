@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:novident_editor/novident_editor.dart';
 
-import 'package:novident_editor/src/editor/block_component/table_block_component/table_config.dart';
-
 void main() {
   group('table_node.dart', () {
     test('fromJson', () {
@@ -95,15 +93,29 @@ void main() {
         ],
       });
 
-      expect(tableNode.config.colMinimumWidth, 30);
-      expect(tableNode.config.colDefaultWidth, 60);
-      expect(tableNode.config.rowDefaultHeight, 50);
+      final style = kDefaultTableStyle;
 
-      expect(tableNode.getColWidth(0), 35);
-      expect(tableNode.getColWidth(1), tableNode.config.colDefaultWidth);
+      expect(
+        tableNode.node.attributes[TableBlockKeys.colMinimumWidth],
+        30,
+      );
+      expect(
+        tableNode.node.attributes[TableBlockKeys.colDefaultWidth],
+        60,
+      );
+      expect(
+        tableNode.node.attributes[TableBlockKeys.rowDefaultHeight],
+        50,
+      );
 
-      expect(tableNode.getRowHeight(0), tableNode.config.rowDefaultHeight);
-      expect(tableNode.getRowHeight(1), tableNode.config.rowDefaultHeight);
+      expect(tableNode.getColWidth(0, style), 35);
+      expect(
+        tableNode.getColWidth(1, style),
+        style.colDefaultWeight * TableDefaults.colWidth,
+      );
+
+      expect(tableNode.getRowHeight(0, style), style.rowDefaultHeight);
+      expect(tableNode.getRowHeight(1, style), style.rowDefaultHeight);
 
       expect(
         tableNode.getCell(0, 0).children.first.toJson(),
@@ -224,21 +236,27 @@ void main() {
         ['1', '2'],
         ['3', '4'],
       ]);
-      final config = TableConfig();
+      final style = kDefaultTableStyle;
 
-      expect(tableNode.config.colMinimumWidth, config.colMinimumWidth);
-      expect(tableNode.config.colDefaultWidth, config.colDefaultWidth);
-      expect(tableNode.config.rowDefaultHeight, config.rowDefaultHeight);
+      expect(style.colMinimumWidth, kDefaultTableStyle.colMinimumWidth);
+      expect(style.colDefaultWeight, kDefaultTableStyle.colDefaultWeight);
+      expect(style.rowDefaultHeight, kDefaultTableStyle.rowDefaultHeight);
       expect(
         tableNode.node.attributes[TableBlockKeys.colMinimumWidth],
-        config.colMinimumWidth,
+        isNull,
       );
 
-      expect(tableNode.getColWidth(0), config.colDefaultWidth);
-      expect(tableNode.getColWidth(1), config.colDefaultWidth);
+      expect(
+        tableNode.getColWidth(0, style),
+        style.colDefaultWeight * TableDefaults.colWidth,
+      );
+      expect(
+        tableNode.getColWidth(1, style),
+        style.colDefaultWeight * TableDefaults.colWidth,
+      );
 
-      expect(tableNode.getRowHeight(0), config.rowDefaultHeight);
-      expect(tableNode.getRowHeight(1), config.rowDefaultHeight);
+      expect(tableNode.getRowHeight(0, style), style.rowDefaultHeight);
+      expect(tableNode.getRowHeight(1, style), style.rowDefaultHeight);
 
       expect(
         tableNode.getCell(0, 0).children.first.toJson(),
@@ -279,9 +297,11 @@ void main() {
     });
 
     test('default constructor (from list of list of strings)', () {
-      final config = TableConfig(
+      final style = NovidentTableStyleDefinition(
+        id: '_test_custom',
+        name: 'Custom',
         colMinimumWidth: 10,
-        colDefaultWidth: 20,
+        colDefaultWeight: 20.0,
         rowDefaultHeight: 30,
       );
       final tableNode = TableNode.fromList(
@@ -289,16 +309,19 @@ void main() {
           ['1', '2'],
           ['3', '4'],
         ],
-        config: config,
+        styleRef: style.id,
       );
 
-      expect(tableNode.config.colMinimumWidth, config.colMinimumWidth);
-      expect(tableNode.config.colDefaultWidth, config.colDefaultWidth);
-      expect(tableNode.config.rowDefaultHeight, config.rowDefaultHeight);
+      expect(tableNode.node.attributes[TableBlockKeys.colMinimumWidth], isNull);
+      expect(tableNode.node.attributes[TableBlockKeys.colDefaultWidth], isNull);
+      expect(tableNode.node.attributes[TableBlockKeys.rowDefaultHeight], isNull);
 
-      expect(tableNode.getColWidth(0), config.colDefaultWidth);
+      expect(
+        tableNode.getColWidth(0, style),
+        style.colDefaultWeight * TableDefaults.colWidth,
+      );
 
-      expect(tableNode.getRowHeight(1), config.rowDefaultHeight);
+      expect(tableNode.getRowHeight(1, style), style.rowDefaultHeight);
 
       expect(
         tableNode.getCell(1, 0).children.first.toJson(),
@@ -415,8 +438,10 @@ void main() {
       });
 
       test('creates a table with custom config', () {
-        final config = TableConfig(
-          colDefaultWidth: 200,
+        final style = NovidentTableStyleDefinition(
+          id: '_test_custom_nodes',
+          name: 'Custom Nodes',
+          colDefaultWeight: 200.0,
           rowDefaultHeight: 60,
           colMinimumWidth: 80,
         );
@@ -424,14 +449,14 @@ void main() {
           [
             [paragraphNode(text: 'Wide'), paragraphNode(text: 'Col')],
           ],
-          config: config,
+          styleRef: style.id,
         );
 
-        expect(tableNode.config.colDefaultWidth, 200);
-        expect(tableNode.config.rowDefaultHeight, 60);
-        expect(tableNode.config.colMinimumWidth, 80);
-        expect(tableNode.getColWidth(0), 200);
-        expect(tableNode.getRowHeight(0), 60);
+        expect(
+          tableNode.getColWidth(0, style),
+          style.colDefaultWeight * TableDefaults.colWidth,
+        );
+        expect(tableNode.getRowHeight(0, style), style.rowDefaultHeight);
       });
 
       test('throws assertion error when rows have mismatched lengths', () {
@@ -556,11 +581,11 @@ void main() {
         ['1', '2'],
         ['3', '4'],
       ]);
+      final style = kDefaultTableStyle;
 
       expect(
-        tableNode.colsHeight,
-        tableNode.config.rowDefaultHeight * 2 +
-            tableNode.config.borderWidth * 3,
+        tableNode.colsHeight(style),
+        style.rowDefaultHeight * 2 + style.borderWidth * 3,
       );
     });
   });

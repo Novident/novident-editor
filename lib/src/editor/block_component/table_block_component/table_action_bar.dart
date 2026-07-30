@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/util.dart';
 import 'package:flutter/material.dart';
 
 class TableActionBar extends StatefulWidget {
@@ -32,16 +31,6 @@ class _TableActionBarState extends State<TableActionBar> {
     super.initState();
     widget.editorState.selectionNotifier.addListener(_onSelectionChange);
     widget.editorState.editableNotifier.addListener(_onEditableChange);
-  }
-
-  @override
-  void didUpdateWidget(covariant TableActionBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    oldWidget.editorState.editableNotifier.removeListener(_onEditableChange);
-    oldWidget.editorState.selectionNotifier.removeListener(_onSelectionChange);
-    widget.editorState.selectionNotifier.addListener(_onSelectionChange);
-    widget.editorState.editableNotifier.addListener(_onEditableChange);
-    super.dispose();
   }
 
   void _onEditableChange() {
@@ -297,9 +286,9 @@ class _TableActionBarState extends State<TableActionBar> {
     final node = widget.tableNode.node;
     final position = isBorder ? 0 : (dir == TableDirection.col ? col : row);
     final cell = !isBorder && dir == TableDirection.col
-        ? getCellNode(node, col, 0)
+        ? widget.tableNode.getCell(col, 0)
         : !isBorder && dir == TableDirection.row
-            ? getCellNode(node, 0, row)
+            ? widget.tableNode.getCell(0, row)
             : null;
     final key = isBorder
         ? null

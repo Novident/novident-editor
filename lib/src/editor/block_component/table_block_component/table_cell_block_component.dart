@@ -258,25 +258,38 @@ class _TableCeBlockWidgetState extends State<TableCelBlockWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final style = widget.tableStyleDef ?? kDefaultTableStyle;
+
+    final cellBorder = borderFromMap(
+          widget.node.attributes[TableCellBlockKeys.cellBorder]
+              as Map<String, dynamic>?,
+        ) ??
+        style.effectiveCellBorder;
+
+    final cellPadding = _resolveCellPadding(widget.node, widget.padding, style);
+
     return Container(
       constraints: BoxConstraints(
         minHeight: context.select((Node n) => n.cellHeight),
       ),
-      color: context.select(
-        (Node n) =>
-            widget.colorBuilder?.call(context, n) ??
-            (n.attributes[TableCellBlockKeys.colBackgroundColor]
-                    as String?)
-                ?.tryToColor() ??
-            (n.attributes[TableCellBlockKeys.rowBackgroundColor]
-                    as String?)
-                ?.tryToColor(),
+      decoration: BoxDecoration(
+        border: cellBorder,
+        color: context.select(
+          (Node n) =>
+              widget.colorBuilder?.call(context, n) ??
+              (n.attributes[TableCellBlockKeys.colBackgroundColor]
+                      as String?)
+                  ?.tryToColor() ??
+              (n.attributes[TableCellBlockKeys.rowBackgroundColor]
+                      as String?)
+                  ?.tryToColor(),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: widget.padding,
+            padding: cellPadding,
             child: editorState.renderer.build(
               context,
               widget.node.children.first,
@@ -285,5 +298,23 @@ class _TableCeBlockWidgetState extends State<TableCelBlockWidget> {
         ],
       ),
     );
+  }
+
+  EdgeInsets _resolveCellPadding(
+    Node node,
+    EdgeInsets builderPadding,
+    NovidentTableStyleDefinition style,
+  ) {
+    final map =
+        node.attributes[TableCellBlockKeys.cellPadding] as Map<String, dynamic>?;
+    if (map != null) {
+      return EdgeInsets.fromLTRB(
+        (map['left'] as num?)?.toDouble() ?? 0,
+        (map['top'] as num?)?.toDouble() ?? 0,
+        (map['right'] as num?)?.toDouble() ?? 0,
+        (map['bottom'] as num?)?.toDouble() ?? 0,
+      );
+    }
+    return style.cellPadding ?? builderPadding;
   }
 }

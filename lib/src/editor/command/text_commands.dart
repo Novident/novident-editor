@@ -141,6 +141,7 @@ extension TextTransforms on EditorState {
   /// format the delta at the given selection.
   ///
   /// If the [Selection] is not passed in, use the current selection.
+  //TODO: @Cathood0 some of these methods does not take in account vim mode
   Future<void> formatDelta(
     Selection? selection,
     Attributes attributes, {

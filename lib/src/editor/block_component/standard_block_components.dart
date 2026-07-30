@@ -58,10 +58,12 @@ final Map<String, BlockComponentBuilder> standardBlockComponentBuilderMap = {
 
 final List<CharacterShortcutEvent> standardCharacterShortcutEvents = [
   // '\n'
-  insertNewLineAfterBulletedList,
-  insertNewLineAfterTodoList,
-  insertNewLineAfterNumberedList,
-  insertNewLineAfterHeading,
+  // should be overrided by using [keep] or [next] properties
+  // from [NovidentStyleDefinition]
+  // insertNewLineAfterBulletedList,
+  // insertNewLineAfterTodoList,
+  // insertNewLineAfterNumberedList,
+  // insertNewLineAfterHeading,
   insertNewLine,
 
   // bulleted list

@@ -1,5 +1,6 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/util.dart';
+import 'package:novident_editor/src/editor/block_component/table_block_component/table_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -109,6 +110,8 @@ class TableCellBlockComponentBuilder extends BlockComponentBuilder {
   @override
   BlockComponentWidget build(BlockComponentContext blockComponentContext) {
     final node = blockComponentContext.node;
+    final context = blockComponentContext.buildContext;
+    final tableStyle = NovidentTableStyleScope.of(context) ?? kDefaultTableStyle;
     return TableCelBlockWidget(
       key: node.key,
       node: node,
@@ -117,6 +120,7 @@ class TableCellBlockComponentBuilder extends BlockComponentBuilder {
       colorBuilder: colorBuilder,
       padding: padding,
       actionMenuItems: actionMenuItems,
+      tableStyleDef: tableStyle,
       showActions: showActions(node),
       actionBuilder: (context, state) => actionBuilder(
         blockComponentContext,
@@ -144,6 +148,7 @@ class TableCelBlockWidget extends BlockComponentStatefulWidget {
     this.colorBuilder,
     this.padding = const EdgeInsets.symmetric(horizontal: 4),
     this.actionMenuItems,
+    this.tableStyleDef,
     super.showActions,
     super.actionBuilder,
     super.actionTrailingBuilder,
@@ -153,11 +158,11 @@ class TableCelBlockWidget extends BlockComponentStatefulWidget {
   final TableBlockComponentMenuBuilder? menuBuilder;
   final TableBlockCellComponentColorBuilder? colorBuilder;
 
-  /// The padding around the content of the cell.
   final EdgeInsets padding;
 
-  /// The entries of the default context menu of the row handler.
   final List<TableActionMenuItem>? actionMenuItems;
+
+  final NovidentTableStyleDefinition? tableStyleDef;
 
   @override
   State<TableCelBlockWidget> createState() => _TableCeBlockWidgetState();

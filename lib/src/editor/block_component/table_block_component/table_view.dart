@@ -3,6 +3,25 @@ import 'package:novident_editor/src/editor/block_component/table_block_component
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_col.dart';
 import 'package:flutter/material.dart';
 
+class NovidentTableStyleScope extends InheritedWidget {
+  const NovidentTableStyleScope({
+    required this.style,
+    required super.child,
+  });
+
+  final NovidentTableStyleDefinition style;
+
+  static NovidentTableStyleDefinition? of(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<NovidentTableStyleScope>()
+        ?.style;
+  }
+
+  @override
+  bool updateShouldNotify(NovidentTableStyleScope oldWidget) =>
+      !identical(style, oldWidget.style);
+}
+
 class TableView extends StatelessWidget {
   const TableView({
     super.key,
@@ -26,6 +45,7 @@ class TableView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final showBar = editorState.editorStyle.showTableActionBar;
+    final style = tableStyleDef ?? kDefaultTableStyle;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -36,9 +56,12 @@ class TableView extends StatelessWidget {
             actionMenuItems: actionMenuItems,
             menuBuilder: menuBuilder,
           ),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: _buildColumns(context),
+        NovidentTableStyleScope(
+          style: style,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: _buildColumns(context),
+          ),
         ),
       ],
     );

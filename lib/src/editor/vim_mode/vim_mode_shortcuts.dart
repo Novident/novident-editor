@@ -79,14 +79,20 @@ Map<VimCommand, CommandShortcutEvent> buildVimModeCommandShortcutEvents(
     VimCommand.openLineBelow: event(
       VimCommand.openLineBelow,
       controller: controller,
-      onNormal: (editorState, controller) =>
-          _openLine(editorState, controller, below: true),
+      onNormal: (editorState, controller) => _openLine(
+        editorState,
+        controller,
+        below: true,
+      ),
     ),
     VimCommand.openLineAbove: event(
       VimCommand.openLineAbove,
       controller: controller,
-      onNormal: (editorState, controller) =>
-          _openLine(editorState, controller, below: false),
+      onNormal: (editorState, controller) => _openLine(
+        editorState,
+        controller,
+        below: false,
+      ),
     ),
     VimCommand.enterVisualMode: event(
       VimCommand.enterVisualMode,

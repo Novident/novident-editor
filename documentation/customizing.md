@@ -115,6 +115,11 @@ At this point, the editor looks like ...
 
 Next, we will customize the `EditorStyle` and the block style with `BlockComponentConfiguration`.
 
+> [!WARNING]
+> Most of these elements could be removed in future releases. 
+>
+> At this point, we recommend use `NovidentStyleDefinition`, to customize block design, and character configs.
+
 ```dart
 EditorStyle customizeEditorStyle() {
   return EditorStyle(

@@ -2,8 +2,6 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:collection/collection.dart';
 import 'package:html/dom.dart' as dom;
 
-import '../../../../editor/block_component/table_block_component/util.dart';
-
 class HtmlTableNodeParser extends HTMLNodeParser {
   const HtmlTableNodeParser();
 
@@ -31,10 +29,11 @@ class HtmlTableNodeParser extends HTMLNodeParser {
         colsLen = node.attributes[TableBlockKeys.colsLen];
     final List<dom.Node> domNodes = [];
 
+    final table = TableNode(node: node);
     for (var i = 0; i < rowsLen; i++) {
       final List<dom.Node> nodes = [];
       for (var j = 0; j < colsLen; j++) {
-        final Node cell = getCellNode(node, j, i)!;
+        final Node cell = table.getCell(j, i);
 
         for (final childnode in cell.children) {
           HTMLNodeParser? parser = encodeParsers.firstWhereOrNull(

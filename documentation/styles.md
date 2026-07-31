@@ -89,6 +89,7 @@ final editor = NovidentEditor(
     defaultStylesByType: {
       'paragraph': myStyles.styles['body']!,
       'heading': myStyles.styles['heading-1']!,
+      'table': {/* my table style */}, 
     },
   ),
 );

@@ -59,6 +59,7 @@ class MyEditor extends StatelessWidget {
       commandShortcutEvents: <CommandShortcutEvent>[
         // vim shortcuts must come first so they take precedence.
         ...session.vimController.commandShortcutEvents,
+        ...tableCommands,
         ...standardCommandShortcutEvents,
       ],
       characterShortcutEvents: standardCharacterShortcutEvents,

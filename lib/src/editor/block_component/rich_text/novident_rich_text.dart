@@ -118,6 +118,17 @@ class _NovidentRichTextState extends State<NovidentRichText>
   final textKey = GlobalKey();
   final placeholderTextKey = GlobalKey();
 
+  /// Cached state for style resolution. Invalidated when the node's
+  /// identity or its `styleRef` / parent table changes.
+  String? _nodeId;
+  String? _styleRef;
+  String? _tableNodeId;
+  String? _tableStyleRef;
+  NovidentStyleDefinition? _cachedResolvedStyle;
+  TextStyle? _cachedBaseTextStyle;
+  bool? _cachedInsideTable;
+  bool _styleInvalidated = true;
+
   RenderParagraph? get _renderParagraph =>
       textKey.currentContext?.findRenderObject() as RenderParagraph?;
 
@@ -142,11 +153,68 @@ class _NovidentRichTextState extends State<NovidentRichText>
       widget.textSpanOverlayBuilder ??
       widget.editorState.editorStyle.textSpanOverlayBuilder;
 
-  NovidentStyleDefinition? get resolvedStyle =>
-      NovidentEditorStyles.maybeOf(context)?.resolveStyle(
-        widget.node,
-      ) ??
-      defaultStyle;
+  /// Resolves the effective style for this node.
+  ///
+  /// When inside a table cell, inherits text formatting properties
+  /// (font size, bold, color, alignment, etc.) from the resolved
+  /// [NovidentTableStyleDefinition] of the parent table as a fallback.
+  /// The cell's own `styleRef` / node type default still takes priority.
+  ///
+  /// Result is cached until the node identity or `styleRef` changes.
+  NovidentStyleDefinition? get resolvedStyle {
+    final styleRef = widget.node.attributes['styleRef'] as String?;
+    late final Node? cellParentNode;
+    final tableNode = widget.node.findParent((Node n) {
+      if (n.type == TableCellBlockKeys.type) {
+        cellParentNode = n;
+      }
+      return n.type == TableBlockKeys.type;
+    });
+    final tableStyleRef = tableNode?.attributes['styleRef'] as String?;
+
+    if (widget.node.id == _nodeId &&
+        styleRef == _styleRef &&
+        tableNode?.id == _tableNodeId &&
+        tableStyleRef == _tableStyleRef) {
+      return _cachedResolvedStyle;
+    }
+
+    _nodeId = widget.node.id;
+    _styleRef = styleRef;
+    _tableNodeId = tableNode?.id;
+    _tableStyleRef = tableStyleRef;
+    _styleInvalidated = true;
+
+    final own =
+        NovidentEditorStyles.maybeOf(context)?.resolveStyle(widget.node);
+
+    if (tableNode != null) {
+      final tableStyle =
+          NovidentEditorStyles.maybeOf(context)?.resolveStyle(tableNode);
+      if (tableStyle is NovidentTableStyleDefinition) {
+        // Detect if this cell is part of the header row range.
+        final cellRow =
+            cellParentNode?.attributes[TableCellBlockKeys.rowPosition]
+                as int?;
+        final bool isHeader = cellParentNode != null &&
+            cellRow != null &&
+            tableStyle.headerRowCount > 0 &&
+            cellRow < tableStyle.headerRowCount;
+        if (own is NovidentTableStyleDefinition) {
+          _cachedResolvedStyle = tableStyle.mergeTable(own, isHeader: isHeader);
+        } else {
+          _cachedResolvedStyle = tableStyle.merge(
+            own ?? tableStyle,
+            isHeader: isHeader,
+          ) as NovidentTableStyleDefinition?;
+        }
+        return _cachedResolvedStyle;
+      }
+    }
+
+    _cachedResolvedStyle = own ?? defaultStyle;
+    return _cachedResolvedStyle;
+  }
 
   NovidentStyleDefinition? get defaultStyle =>
       NovidentEditorStyles.maybeOf(context)?.config.defaultStyle;
@@ -191,8 +259,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     );
   }
 
-  /// Effective text alignment: explicit [NovidentRichText.textAlign] >
-  /// [NovidentStyleDefinition.alignment] from resolved style > start.
+  /// Text alignment resolved by the block component builder.
   TextAlign get _effectiveTextAlign =>
       widget.textAlign ?? resolvedStyle?.alignment ?? TextAlign.start;
 
@@ -204,15 +271,23 @@ class _NovidentRichTextState extends State<NovidentRichText>
   /// - [NovidentRichText.useFirstLineIndent] is false,
   /// - no valid indent width is resolved, or
   /// - the node is inside a table cell.
+  /// Whether this node lives inside a table cell. Cached by node id.
+  bool get _isInsideTable {
+    if (_cachedInsideTable == null || widget.node.id != _nodeId) {
+      _cachedInsideTable =
+          widget.node.findParent((n) => n.type == TableBlockKeys.type) != null;
+      _nodeId = widget.node.id;
+    }
+    return _cachedInsideTable!;
+  }
+
   int get _widgetSpanCount {
     if (!widget.useFirstLineIndent ||
         _firstLineIndentWidth == null ||
         _firstLineIndentWidth! <= 0) {
       return 0;
     }
-    if (widget.node.findParent((e) => e.type == TableBlockKeys.type) != null) {
-      return 0;
-    }
+    if (_isInsideTable) return 0;
     return 1;
   }
 
@@ -434,9 +509,19 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return TextSpan(children: children);
   }
 
-  TextStyle baseTextStyle() {
+  /// Resolved base [TextStyle] from the effective style.
+  /// Cached until the resolved style or text configuration changes.
+  TextStyle get _baseTextStyle {
+    if (!_styleInvalidated && _cachedBaseTextStyle != null) {
+      return _cachedBaseTextStyle!;
+    }
+    _styleInvalidated = false;
+    _cachedBaseTextStyle = _buildBaseTextStyle();
+    return _cachedBaseTextStyle!;
+  }
+
+  TextStyle _buildBaseTextStyle() {
     final resolved = resolvedStyle;
-    // Start from the global text configuration with resolved line height.
     TextStyle style = textStyleConfiguration.text.copyWith(
       height:
           resolved?.spacing?.lineHeight ?? textStyleConfiguration.lineHeight,
@@ -463,7 +548,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       foreground: resolved.fontForeground,
       background: resolved.fontBackground,
       fontFeatures: resolved.fontFeatures,
-      decorationColor: resolved.decorationColor, 
+      decorationColor: resolved.decorationColor,
     );
     return style.merge(resolvedTextStyle);
   }
@@ -480,7 +565,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     }
 
     for (final textInsert in textInserts) {
-      TextStyle textStyle = baseTextStyle();
+      TextStyle textStyle = _baseTextStyle;
       final Attributes? attributes = textInsert.attributes;
       if (attributes != null) {
         if (attributes.bold == true) {

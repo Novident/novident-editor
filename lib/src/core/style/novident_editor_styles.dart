@@ -13,7 +13,12 @@ class NovidentEditorStyles extends InheritedWidget {
   NovidentStyleDefinition resolveStyle(Node node) {
     final styleRef = node.attributes[blockComponentStyleRef] as String?;
     if (styleRef != null && styleRef.isNotEmpty) {
-      final resolved = config.registry.resolve(styleRef);
+      final resolved = config.registry.resolve(
+        styleRef,
+        baseStyle: config.defaultStyle,
+        forType: node.type,
+        byTypes: config.defaultStylesByType,
+      );
       if (resolved != null) return resolved;
     }
 
@@ -23,6 +28,11 @@ class NovidentEditorStyles extends InheritedWidget {
     assert(
       config.defaultStyle.fontFamily != null,
       'NovidentStylesConfig.defaultStyle must have a non-null fontFamily.',
+    );
+    assert(
+      config.defaultStyle.fontSize > 0,
+      'NovidentStylesConfig.defaultStyle must have a '
+      'fontSize major than zero. Found "${config.defaultStyle.fontSize}"',
     );
     return config.defaultStyle;
   }

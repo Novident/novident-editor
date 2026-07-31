@@ -196,6 +196,7 @@ void main() async {
         2,
         editor.editorState,
         TableDirection.col,
+        kDefaultTableStyle,
       );
       await tester.pumpAndSettle(const Duration(milliseconds: 100));
       tableNode = TableNode(node: tableNode.node);
@@ -208,7 +209,7 @@ void main() async {
           "data": {"delta": []},
         },
       );
-      expect(tableNode.getColWidth(2), tableNode.config.colDefaultWidth);
+      expect(tableNode.getColWidth(2, kDefaultTableStyle), kDefaultTableStyle.colDefaultWeight);
       await editor.dispose();
     });
 
@@ -227,6 +228,7 @@ void main() async {
         2,
         editor.editorState,
         TableDirection.row,
+        kDefaultTableStyle,
       );
       await tester.pumpAndSettle(const Duration(milliseconds: 100));
       tableNode = TableNode(node: tableNode.node);
@@ -241,7 +243,7 @@ void main() async {
       );
 
       var cell12 = getCellNode(tableNode.node, 1, 2)!;
-      expect(tableNode.getRowHeight(2), cell12.children.first.rect.height + 8);
+      expect(tableNode.getRowHeight(2, kDefaultTableStyle), cell12.children.first.rect.height + 8);
       await editor.dispose();
     });
 
@@ -301,6 +303,7 @@ void main() async {
         2,
         editor.editorState,
         TableDirection.col,
+        kDefaultTableStyle,
       );
       await tester.pumpAndSettle(const Duration(milliseconds: 100));
       tableNode = TableNode(node: tableNode.node);
@@ -340,6 +343,7 @@ void main() async {
         2,
         editor.editorState,
         TableDirection.row,
+        kDefaultTableStyle,
       );
       await tester.pumpAndSettle(const Duration(milliseconds: 1000));
       tableNode = TableNode(node: tableNode.node);

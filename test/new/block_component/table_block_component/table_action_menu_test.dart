@@ -13,9 +13,9 @@ void main() async {
 
   Future<EditorState> pumpTableEditor(
     WidgetTester tester, {
-    TableStyle tableStyle = const TableStyle(),
     List<TableActionMenuItem>? actionMenuItems,
     Attributes? tableAttributes,
+    NovidentTableStyleDefinition? tableStyleDef,
   }) async {
     await NovidentEditorLocalizations.load(const Locale('en'));
 
@@ -32,8 +32,8 @@ void main() async {
     final builders = {
       ...standardBlockComponentBuilderMap,
       TableBlockKeys.type: TableBlockComponentBuilder(
-        tableStyle: tableStyle,
         actionMenuItems: actionMenuItems,
+        tableStyleDef: tableStyleDef,
       ),
       TableCellBlockKeys.type: TableCellBlockComponentBuilder(
         actionMenuItems: actionMenuItems,
@@ -66,23 +66,29 @@ void main() async {
       editorState.document.root.children.first;
 
   group('table action menu customization', () {
-    test('defaultTableActionMenuItems exposes the 7 built-in entries', () {
-      expect(defaultTableActionMenuItems.length, 7);
+    test('defaultTableActionMenuItems exposes the 13 built-in entries', () {
+      expect(defaultTableActionMenuItems.length, 13);
       expect(
         defaultTableActionMenuItems,
         containsAllInOrder([
-          tableActionAddBeforeItem,
-          tableActionAddAfterItem,
-          tableActionRemoveItem,
-          tableActionDuplicateItem,
-          tableActionBackgroundColorItem,
-          tableActionClearItem,
+          tableActionAddColumnBeforeItem,
+          tableActionAddRowBeforeItem,
+          tableActionAddColumnAfterItem,
+          tableActionAddRowAfterItem,
+          tableActionRemoveColumnItem,
+          tableActionRemoveRowItem,
+          tableActionDuplicateColumnItem,
+          tableActionDuplicateRowItem,
+          tableActionColumnBackgroundColorItem,
+          tableActionRowBackgroundColorItem,
+          tableActionClearColumnItem,
+          tableActionClearRowItem,
           tableActionBorderPropertiesItem,
         ]),
       );
       // the list is unmodifiable — copy it to customize.
       expect(
-        () => defaultTableActionMenuItems.add(tableActionClearItem),
+        () => defaultTableActionMenuItems.add(tableActionClearColumnItem),
         throwsUnsupportedError,
       );
     });
@@ -91,8 +97,8 @@ void main() async {
         (tester) async {
       final customItems = [
         TableActionMenuItem(
-          nameBuilder: (_) => 'Custom action',
-          iconBuilder: (_) => Icons.star,
+          name: 'Custom action',
+          icon: Icons.star,
           onPressed: (_) {},
         ),
       ];
@@ -116,20 +122,18 @@ void main() async {
       TableActionMenuContext? pressedContext;
       final items = [
         TableActionMenuItem(
-          nameBuilder: (dir) => dir == TableDirection.col
-              ? 'Column custom action'
-              : 'Row custom action',
-          iconBuilder: (_) => Icons.star,
+          name: 'Column custom action',
+          icon: Icons.star,
           onPressed: (menuContext) {
             pressedContext = menuContext;
             menuContext.dismiss();
           },
         ),
         TableActionMenuItem(
-          nameBuilder: (_) => 'Hidden for columns',
-          iconBuilder: (_) => Icons.visibility_off,
+          name: 'Hidden for columns',
+          icon: Icons.visibility_off,
+          direction: TableDirection.row,
           onPressed: (_) {},
-          visible: (_, __, dir) => dir == TableDirection.row,
         ),
       ];
 
@@ -174,7 +178,10 @@ void main() async {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text(NovidentEditorL10n.current.rowAddBefore), findsOneWidget);
+      expect(
+        find.text(NovidentEditorL10n.current.rowAddBefore),
+        findsOneWidget,
+      );
       expect(find.text(NovidentEditorL10n.current.rowAddAfter), findsOneWidget);
       expect(find.text(NovidentEditorL10n.current.rowRemove), findsOneWidget);
       expect(
@@ -243,8 +250,7 @@ void main() async {
       expect(fixedBorder.color, TableDefaults.borderColor);
     });
 
-    testWidgets(
-        'TableActions.setBorderWidth updates the grid geometry live',
+    testWidgets('TableActions.setBorderWidth updates the grid geometry live',
         (tester) async {
       final editorState = await pumpTableEditor(tester);
       final node = tableNodeOf(editorState);
@@ -269,8 +275,12 @@ void main() async {
 
       // the colsHeight attribute is recomputed with the new border width.
       final tableNode = TableNode(node: node);
-      expect(tableNode.config.borderWidth, 4);
-      expect(node.attributes[TableBlockKeys.colsHeight], tableNode.colsHeight);
+      expect(
+        node.attributes[TableBlockKeys.borderWidth],
+        4,
+      );
+      expect(node.attributes[TableBlockKeys.colsHeight],
+          tableNode.colsHeight(kDefaultTableStyle));
     });
 
     testWidgets(
@@ -349,7 +359,7 @@ void main() async {
 
       expect(node.attributes[TableBlockKeys.borderWidth], null);
       // geometry falls back to the style width.
-      expect(TableNode(node: node).config.borderWidth, 2.0);
+      expect(kDefaultTableStyle.borderWidth, 1.0);
     });
   });
 
@@ -375,7 +385,11 @@ void main() async {
         (tester) async {
       await pumpTableEditor(
         tester,
-        tableStyle: const TableStyle(enableHorizontalScroll: false),
+        tableStyleDef: const NovidentTableStyleDefinition(
+          id: 'test',
+          name: 'Test',
+          enableHorizontalScroll: false,
+        ),
         tableAttributes: {TableBlockKeys.enableHorizontalScroll: true},
       );
 
@@ -386,7 +400,8 @@ void main() async {
         (tester) async {
       await pumpTableEditor(
         tester,
-        tableStyle: const TableStyle(enableHorizontalScroll: false),
+        tableStyleDef: const NovidentTableStyleDefinition(
+            id: 'test', name: 'Test', enableHorizontalScroll: false),
       );
 
       expect(tableScrollView(), findsNothing);

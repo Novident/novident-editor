@@ -32,7 +32,10 @@ void main() {
           ),
         });
 
-        final resolved = registry.resolve('body');
+        final resolved = registry.resolve(
+          'body',
+          baseStyle: registry['base']!,
+        );
         expect(resolved, isNotNull);
         expect(resolved!.fontFamily, 'Arial'); // inherited
         expect(resolved.fontSize, 12); // overridden
@@ -53,7 +56,10 @@ void main() {
           ),
         });
 
-        final resolved = registry.resolve('heading');
+        final resolved = registry.resolve(
+          'heading',
+          baseStyle: registry['base']!,
+        );
         expect(resolved, isNotNull);
         expect(resolved!.fontFamily, 'Georgia'); // explicit override
       });
@@ -85,7 +91,10 @@ void main() {
           ),
         });
 
-        final resolved = registry.resolve('leaf');
+        final resolved = registry.resolve(
+          'leaf',
+          baseStyle: registry['root']!,
+        );
         expect(resolved, isNotNull);
         expect(resolved!.fontFamily, 'Arial'); // root → middle → leaf
         // leaf constructor default fontSize (12) differs from middle (14),
@@ -111,7 +120,10 @@ void main() {
           });
 
           // Must not throw or hang.
-          final resolved = registry.resolve('a');
+          final resolved = registry.resolve(
+            'a',
+            baseStyle: registry['a']!,
+          );
           expect(resolved, isNotNull);
         },
       );

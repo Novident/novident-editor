@@ -1,12 +1,12 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:collection/collection.dart';
 
+@Deprecated('Use TableNode.getCell(col, row) instead — it is O(1) indexed lookup')
 Node? getCellNode(Node tableNode, int col, int row) {
-  return tableNode.children.firstWhereOrNull(
-    (n) =>
-        n.attributes[TableCellBlockKeys.colPosition] == col &&
-        n.attributes[TableCellBlockKeys.rowPosition] == row,
-  );
+  final table = TableNode(node: tableNode);
+  if (col < 0 || col >= table.colsLen || row < 0 || row >= table.rowsLen) {
+    return null;
+  }
+  return table.getCell(col, row);
 }
 
 extension TableCellNodeDynamicExtension on dynamic {
@@ -22,8 +22,16 @@ extension TableCellNodeDynamicExtension on dynamic {
 }
 
 extension TableCellNodeAttributesExtension on Node {
+  /// Returns this cell's contribution to its column's width for layout
+  /// calculations.
+  ///
+  /// Prefers [TableCellBlockKeys.colWeight] × [TableDefaults.colWidth] over
+  /// the legacy [TableCellBlockKeys.width] for consistent weight-based
+  /// layouts.
   double get cellWidth {
     assert(type == TableCellBlockKeys.type);
+    final weight = attributes[TableCellBlockKeys.colWeight]?.toDouble();
+    if (weight != null) return weight * TableDefaults.colWidth;
     return attributes[TableCellBlockKeys.width]?.toDouble() ??
         TableDefaults.colWidth;
   }

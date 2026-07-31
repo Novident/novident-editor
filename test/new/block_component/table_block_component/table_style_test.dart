@@ -2,7 +2,6 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_add_button.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_col.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_col_border.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/table_config.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,24 +12,21 @@ void main() async {
     TestWidgetsFlutterBinding.ensureInitialized();
   });
 
-  group('TableConfig', () {
-    test('toJson serializes borderWidth', () {
-      final config = TableConfig(
-        colDefaultWidth: 100,
+  group('NovidentTableStyleDefinition', () {
+    test('table style definition stores border and column properties', () {
+      final styleDef = NovidentTableStyleDefinition(
+        id: 'test_table',
+        name: 'Test Table',
+        colDefaultWeight: 100,
         rowDefaultHeight: 50,
         colMinimumWidth: 30,
         borderWidth: 3,
       );
 
-      final json = config.toJson();
-      expect(json[TableBlockKeys.borderWidth], 3);
-
-      // round trip keeps the border width.
-      final restored = TableConfig.fromJson(json);
-      expect(restored.borderWidth, 3);
-      expect(restored.colDefaultWidth, 100);
-      expect(restored.rowDefaultHeight, 50);
-      expect(restored.colMinimumWidth, 30);
+      expect(styleDef.borderWidth, 3);
+      expect(styleDef.colDefaultWeight, 100);
+      expect(styleDef.rowDefaultHeight, 50);
+      expect(styleDef.colMinimumWidth, 30);
     });
   });
 
@@ -49,7 +45,7 @@ void main() async {
           .getCell(1, 0)
           .updateAttributes({TableCellBlockKeys.height: 50.0});
 
-      expect(tableNode.getRowHeight(0), 50.0);
+      expect(tableNode.getRowHeight(0, kDefaultTableStyle), 50.0);
     });
 
     test(
@@ -84,7 +80,7 @@ void main() async {
         );
         expect(
           tableNode.node.attributes[TableBlockKeys.colsHeight],
-          tableNode.colsHeight,
+          tableNode.colsHeight(kDefaultTableStyle),
         );
       },
     );
@@ -93,7 +89,7 @@ void main() async {
   group('TableStyle rendering options', () {
     Future<EditorState> pumpTableEditor(
       WidgetTester tester, {
-      TableStyle tableStyle = const TableStyle(),
+      NovidentTableStyleDefinition? tableStyleDef,
       EdgeInsets? cellPadding,
     }) async {
       await NovidentEditorLocalizations.load(const Locale('en'));
@@ -108,7 +104,7 @@ void main() async {
       final builders = {
         ...standardBlockComponentBuilderMap,
         TableBlockKeys.type: TableBlockComponentBuilder(
-          tableStyle: tableStyle,
+          tableStyleDef: tableStyleDef,
         ),
         TableCellBlockKeys.type: TableCellBlockComponentBuilder(
           padding: cellPadding ?? const EdgeInsets.symmetric(horizontal: 4),
@@ -143,7 +139,11 @@ void main() async {
       const customBorderColor = Color(0xFF9C27B0);
       await pumpTableEditor(
         tester,
-        tableStyle: const TableStyle(borderColor: customBorderColor),
+        tableStyleDef: const NovidentTableStyleDefinition(
+          id: 'test_style',
+          name: 'Test Style',
+          borderColor: customBorderColor,
+        ),
       );
 
       final fixedBorderFinder = find.byWidgetPredicate(
@@ -164,7 +164,14 @@ void main() async {
 
     testWidgets('enableHorizontalScroll: true keeps the internal scroll view',
         (tester) async {
-      await pumpTableEditor(tester);
+      await pumpTableEditor(
+        tester,
+        tableStyleDef: const NovidentTableStyleDefinition(
+          id: 'test_style',
+          name: 'Test Style',
+          enableHorizontalScroll: true,
+        ),
+      );
 
       expect(
         find.descendant(
@@ -180,7 +187,11 @@ void main() async {
         (tester) async {
       await pumpTableEditor(
         tester,
-        tableStyle: const TableStyle(enableHorizontalScroll: false),
+        tableStyleDef: const NovidentTableStyleDefinition(
+          id: 'test_style',
+          name: 'Test Style',
+          enableHorizontalScroll: false,
+        ),
       );
 
       expect(
@@ -197,7 +208,9 @@ void main() async {
     testWidgets('the add row/column buttons can be hidden', (tester) async {
       await pumpTableEditor(
         tester,
-        tableStyle: const TableStyle(
+        tableStyleDef: const NovidentTableStyleDefinition(
+          id: 'test_style',
+          name: 'Test Style',
           showAddColumnButton: false,
           showAddRowButton: false,
         ),

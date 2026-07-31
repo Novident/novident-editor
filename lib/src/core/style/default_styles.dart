@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:novident_editor/src/core/style/novident_style_definition.dart';
 import 'package:novident_editor/src/core/style/novident_style_registry.dart';
+import 'package:novident_editor/src/core/style/novident_table_style_definition.dart';
 
 /// A sensible preset of styles modelled after Microsoft Word defaults.
 ///
@@ -25,12 +27,12 @@ import 'package:novident_editor/src/core/style/novident_style_registry.dart';
 final NovidentStyleRegistry kDefaultStyleRegistry =
     NovidentStyleRegistry(<String, NovidentStyleDefinition>{
   kNormalBodyStyle.id: kNormalBodyStyle,
-  _kHeadingDefaultStyles[0].id: _kHeadingDefaultStyles[0],
-  _kHeadingDefaultStyles[1].id: _kHeadingDefaultStyles[1],
-  _kHeadingDefaultStyles[2].id: _kHeadingDefaultStyles[2],
-  _kHeadingDefaultStyles[3].id: _kHeadingDefaultStyles[3],
-  _kHeadingDefaultStyles[4].id: _kHeadingDefaultStyles[4],
-  _kHeadingDefaultStyles[5].id: _kHeadingDefaultStyles[5],
+  kHeadingDefaultStyles[0].id: kHeadingDefaultStyles[0],
+  kHeadingDefaultStyles[1].id: kHeadingDefaultStyles[1],
+  kHeadingDefaultStyles[2].id: kHeadingDefaultStyles[2],
+  kHeadingDefaultStyles[3].id: kHeadingDefaultStyles[3],
+  kHeadingDefaultStyles[4].id: kHeadingDefaultStyles[4],
+  kHeadingDefaultStyles[5].id: kHeadingDefaultStyles[5],
 });
 
 // Default paragraph base style. Must be always used as part of `defaultStyle` property
@@ -55,7 +57,7 @@ final NovidentStyleDefinition kNormalBodyStyle =
 
 /// Default heading styles matching built-in heading levels from legacy
 /// `HeadingBlockComponent`.
-const _kHeadingDefaultStyles = <NovidentStyleDefinition>[
+const kHeadingDefaultStyles = <NovidentStyleDefinition>[
   NovidentStyleDefinition(
     id: 'heading-1',
     name: 'Heading 1',
@@ -111,3 +113,23 @@ const _kHeadingDefaultStyles = <NovidentStyleDefinition>[
     allowGlobalFirstLineIndent: false,
   ),
 ];
+
+/// Default table style used as the global fallback for all table blocks.
+///
+/// Provides sensible defaults for borders, column weights, row heights,
+/// and enables the header row with a subtle background.
+final kDefaultTableStyle = NovidentTableStyleDefinition(
+  id: '__novident_table__',
+  name: 'Default Table',
+  basedOn: kDefaultBaseStyle.id,
+  border: Border.all(width: 1.0, color: Colors.black),
+  borderWidth: 1.0,
+  borderColor: Colors.black,
+  borderHoverColor: Colors.black,
+  borderLineStyle: BorderStyle.solid,
+  colDefaultWeight: 1.0,
+  rowDefaultHeight: 40.0,
+  colMinimumWidth: 20.0,
+  cellVerticalPadding: 5.0,
+  enableHorizontalScroll: false,
+);

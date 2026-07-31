@@ -10,6 +10,7 @@ export 'location/selection.dart';
 export 'transform/operation.dart';
 export 'transform/transaction.dart';
 export 'style/novident_style_definition.dart';
+export 'style/novident_table_style_definition.dart';
 export 'style/novident_style_registry.dart';
 export 'style/novident_editor_styles.dart';
 export 'style/novident_styles_config.dart';

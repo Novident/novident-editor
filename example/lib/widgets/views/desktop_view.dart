@@ -8,6 +8,7 @@ import 'package:novident_split_view/novident_split_view.dart';
 
 import '../drawer/tree_view_drawer.dart';
 import '../editor/editor_pane.dart';
+import '../../common/constants/contents/readme_document.dart' show kReadmeStripedTable, kReadmePlainTable, kReadmeAccentTable;
 
 /// Workspace colors.
 const Color _kWorkspaceBackground = Color(0xFFECECEC);
@@ -290,6 +291,14 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
 
   static final _kStyles = NovidentStylesConfig(
     defaultStyle: kDefaultBaseStyle,
-    registry: kDefaultStyleRegistry,
+    registry: NovidentStyleRegistry({
+      ...kDefaultStyleRegistry.styles,
+      kReadmeStripedTable.id: kReadmeStripedTable,
+      kReadmePlainTable.id: kReadmePlainTable,
+      kReadmeAccentTable.id: kReadmeAccentTable,
+    }),
+    defaultStylesByType: <String, NovidentStyleDefinition>{
+      'table': kDefaultTableStyle,
+    },
   );
 }

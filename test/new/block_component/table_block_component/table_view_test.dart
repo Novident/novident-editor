@@ -20,8 +20,8 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      var row0beforeHeight = tableNode.getRowHeight(0);
-      var row1beforeHeight = tableNode.getRowHeight(1);
+      var row0beforeHeight = tableNode.getRowHeight(0, kDefaultTableStyle);
+      var row1beforeHeight = tableNode.getRowHeight(1, kDefaultTableStyle);
       expect(row0beforeHeight == row1beforeHeight, true);
 
       var cell10 = getCellNode(tableNode.node, 1, 0)!;
@@ -37,10 +37,10 @@ void main() async {
       tableNode.updateRowHeight(0, transaction: transaction);
       await editor.editorState.apply(transaction);
 
-      expect(tableNode.getRowHeight(0) != row0beforeHeight, false);
-      expect(tableNode.getRowHeight(0), cell10.children.first.rect.height + 8);
-      expect(tableNode.getRowHeight(1), row1beforeHeight);
-      expect(tableNode.getRowHeight(1) < tableNode.getRowHeight(0), false);
+      expect(tableNode.getRowHeight(0, kDefaultTableStyle) != row0beforeHeight, false);
+      expect(tableNode.getRowHeight(0, kDefaultTableStyle), cell10.children.first.rect.height + 8);
+      expect(tableNode.getRowHeight(1, kDefaultTableStyle), row1beforeHeight);
+      expect(tableNode.getRowHeight(1, kDefaultTableStyle) < tableNode.getRowHeight(0, kDefaultTableStyle), false);
       await editor.dispose();
     });
 
@@ -54,8 +54,8 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      var row0beforeHeight = tableNode.getRowHeight(0);
-      var row1beforeHeight = tableNode.getRowHeight(1);
+      var row0beforeHeight = tableNode.getRowHeight(0, kDefaultTableStyle);
+      var row1beforeHeight = tableNode.getRowHeight(1, kDefaultTableStyle);
       expect(row0beforeHeight == row1beforeHeight, true);
 
       var cell10 = getCellNode(tableNode.node, 1, 0)!;
@@ -71,8 +71,8 @@ void main() async {
       tableNode.updateRowHeight(0, transaction: transaction);
       await editor.editorState.apply(transaction);
 
-      expect(tableNode.getRowHeight(0) != row0beforeHeight, false);
-      expect(tableNode.getRowHeight(0), cell10.children.first.rect.height + 8);
+      expect(tableNode.getRowHeight(0, kDefaultTableStyle) != row0beforeHeight, false);
+      expect(tableNode.getRowHeight(0, kDefaultTableStyle), cell10.children.first.rect.height + 8);
 
       transaction = editor.editorState.transaction;
       tableNode.setColWidth(1, 302.5, transaction: transaction);
@@ -80,7 +80,7 @@ void main() async {
 
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
 
-      expect(tableNode.getRowHeight(0), row0beforeHeight);
+      expect(tableNode.getRowHeight(0, kDefaultTableStyle), row0beforeHeight);
       await editor.dispose();
     });
   });

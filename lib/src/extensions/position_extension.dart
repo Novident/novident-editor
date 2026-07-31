@@ -3,6 +3,35 @@ import 'dart:math' as math;
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
+Position? _horizontalCellNavigate(
+  EditorState editorState,
+  Node cell, {
+  required bool forwards,
+  required bool atStart,
+}) {
+  final table = cell.parent;
+  if (table?.type != TableBlockKeys.type) return null;
+  final t = TableNode(node: table!);
+  final col = cell.attributes[TableCellBlockKeys.colPosition] as int?;
+  final row = cell.attributes[TableCellBlockKeys.rowPosition] as int?;
+  if (col == null || row == null) return null;
+  final nextCell = t.adjacentCellRowMajor(col, row, forward: forwards);
+  if (nextCell != null &&
+      nextCell.children.isNotEmpty &&
+      nextCell.children.first.delta != null) {
+    final child = nextCell.children.first;
+    return Position(
+      path: child.path,
+      offset: atStart ? 0 : child.delta!.length,
+    );
+  }
+  final outNode = t.nodeOutside(forwards);
+  if (outNode == null) return null;
+  final sel = outNode.selectable;
+  if (sel == null) return null;
+  return atStart ? sel.start() : sel.end();
+}
+
 enum SelectionRange {
   character,
   word,
@@ -15,19 +44,29 @@ extension PositionExtension on Position {
     SelectionRange selectionRange = SelectionRange.character,
   }) {
     final node = editorState.document.nodeAtPath(path);
-    if (node == null) {
-      return null;
-    }
+    if (node == null) return null;
+
+    final cellParent = node.parent;
+    final insideCell =
+        cellParent?.type == TableCellBlockKeys.type ? cellParent : null;
 
     if (forward && offset == 0) {
-      final previousEnd = node.previous?.selectable?.end();
-      if (previousEnd != null) {
-        return previousEnd;
+      if (insideCell != null) {
+        return _horizontalCellNavigate(
+          editorState, insideCell, forwards: false, atStart: false,
+        );
       }
+      final previousEnd = node.previous?.selectable?.end();
+      if (previousEnd != null) return previousEnd;
       return null;
     } else if (!forward) {
       final end = node.selectable?.end();
       if (end != null && offset >= end.offset) {
+        if (insideCell != null) {
+          return _horizontalCellNavigate(
+            editorState, insideCell, forwards: true, atStart: true,
+          );
+        }
         return node.next?.selectable?.start();
       }
     }
@@ -36,31 +75,38 @@ extension PositionExtension on Position {
       case SelectionRange.character:
         final delta = node.delta;
         if (delta != null) {
-          return Position(
-            path: path,
-            offset: forward
-                ? delta.prevRunePosition(offset)
-                : delta.nextRunePosition(offset),
-          );
+          final newOffset =
+              forward ? delta.prevRunePosition(offset) : delta.nextRunePosition(offset);
+          if (newOffset == offset && insideCell != null) {
+            return _horizontalCellNavigate(
+              editorState, insideCell,
+              forwards: forward,
+              atStart: forward,
+            );
+          }
+          return Position(path: path, offset: newOffset);
         }
-
         return Position(path: path, offset: offset);
       case SelectionRange.word:
         final delta = node.delta;
         if (delta != null) {
           final result = forward
               ? node.selectable?.getWordBoundaryInPosition(
-                  Position(
-                    path: path,
-                    offset: delta.prevRunePosition(offset),
-                  ),
+                  Position(path: path, offset: delta.prevRunePosition(offset)),
                 )
               : node.selectable?.getWordBoundaryInPosition(this);
           if (result != null) {
-            return forward ? result.start : result.end;
+            final target = forward ? result.start : result.end;
+            if (insideCell != null && target.offset == offset) {
+              return _horizontalCellNavigate(
+                editorState, insideCell,
+                forwards: forward,
+                atStart: forward,
+              );
+            }
+            return target;
           }
         }
-
         return Position(path: path, offset: offset);
     }
   }
@@ -69,6 +115,62 @@ extension PositionExtension on Position {
     EditorState editorState, {
     bool upwards = true,
   }) {
+    /// Returns a text position inside [node] when [node] is a non-text
+    /// block (e.g. a table). Falls back to [node]'s selectable start/end
+    /// when the block has no text children.
+    Position? textEntry(Node node, bool atStart) {
+      if (node.type == TableBlockKeys.type && node.children.isNotEmpty) {
+        final cell = atStart ? node.children.first : node.children.last;
+        if (cell.children.isNotEmpty && cell.children.first.delta != null) {
+          final child = cell.children.first;
+          return Position(
+            path: child.path,
+            offset: atStart ? 0 : child.delta!.length,
+          );
+        }
+      }
+       return null;
+    }
+
+
+
+    /// Navigate to the cell at (sameCol, nextRow). Delegates to
+    /// [TableCellNavigation.adjacentCellColumnMajor].
+    Position? navigateToCell(Node cell, Node table, bool upwards) {
+      final t = TableNode(node: table);
+      final col =
+          cell.attributes[TableCellBlockKeys.colPosition] as int?;
+      final row =
+          cell.attributes[TableCellBlockKeys.rowPosition] as int?;
+      if (col == null || row == null) return null;
+      final nextCell = t.adjacentCellColumnMajor(col, row, upwards);
+      if (nextCell == null ||
+          nextCell.children.isEmpty ||
+          nextCell.children.first.delta == null) {
+        return null;
+      }
+      final child = nextCell.children.first;
+      return Position(
+        path: child.path,
+        offset: upwards ? child.delta!.length : 0,
+      );
+    }
+
+    /// Navigate out of the table to the adjacent block. Delegates to
+    /// [TableExitNavigation.nodeOutside].
+    Position? navigateOutOfTable(Node table, bool upwards, bool atStart) {
+      final t = TableNode(node: table);
+      final outNode = t.nodeOutside(upwards);
+      if (outNode == null) return null;
+      final entry = textEntry(outNode, atStart);
+      if (entry != null) return entry;
+      final sel = outNode.selectable!;
+      return Position(
+        path: outNode.path,
+        offset: atStart ? sel.start().offset : sel.end().offset,
+      );
+    }
+
     final node = editorState.document.nodeAtPath(path);
     final nodeRenderBox = node?.renderBox;
     final nodeSelectable = node?.selectable;
@@ -145,8 +247,59 @@ extension PositionExtension on Position {
       newPosition =
           editorState.service.selectionService.getPositionInOffset(newOffset);
 
-      // If a position different from the current one is found, return it.
       if (newPosition != null && newPosition != this) {
+        final currentCell = node.parent;
+
+        // Fast path: same cell — no tree lookup needed.
+        //   For paragraphs inside a cell, newPosition.path is [tableIdx, cellIdx, 0]
+        //   and node.parent.path is [tableIdx, cellIdx].
+        if (currentCell != null &&
+            currentCell.type == TableCellBlockKeys.type &&
+            currentCell.path.equals(newPosition.path.parent)) {
+          return newPosition;
+        }
+
+        // Not in a table cell — no table-specific guards needed.
+        if (currentCell?.type != TableCellBlockKeys.type) {
+          final hitNode =
+              editorState.document.nodeAtPath(newPosition.path);
+          if (hitNode != null) {
+            final entry = textEntry(hitNode, !upwards);
+            if (entry != null) return entry;
+          }
+          return newPosition;
+        }
+
+        // Inside a table cell, different cell — need full lookup.
+        final hitNode =
+            editorState.document.nodeAtPath(newPosition.path);
+
+        // Route through proper vertical navigation when both nodes
+        // are inside table cells — the pixel search may wrap columns.
+        if (hitNode?.parent?.type == TableCellBlockKeys.type) {
+          final table = currentCell!.parent;
+          if (table != null) {
+            final cellPos = navigateToCell(currentCell, table, upwards);
+            if (cellPos != null) return cellPos;
+          }
+        }
+        // If we're inside a table cell and the pixel search hit the table
+        // itself instead of another cell, navigate within or out.
+        if (hitNode?.type == TableBlockKeys.type) {
+          final tableNode = currentCell!.parent!;
+          // Try adjacent row first — we may just be between cells.
+          final cellPos = navigateToCell(currentCell, tableNode, upwards);
+          if (cellPos != null) return cellPos;
+          // At the edge — navigate out.
+          final outPos = navigateOutOfTable(tableNode, upwards, !upwards);
+          if (outPos != null) return outPos;
+        }
+        // Navigate into non-text blocks (tables) instead of selecting
+        // the block itself at offset 0/1 (which has no visible cursor).
+        if (hitNode != null) {
+          final entry = textEntry(hitNode, !upwards);
+          if (entry != null) return entry;
+        }
         return newPosition;
       }
     }
@@ -198,6 +351,38 @@ extension PositionExtension on Position {
       // range — same logic as the fallback_neighbour path below.
       if (!newPosition.path.equals(path)) {
         final destNode = editorState.document.nodeAtPath(newPosition.path);
+        if (destNode != null) {
+          // If both source and destination are inside table cells,
+          // route through proper vertical navigation (same column,
+          // adjacent row) instead of accepting the pixel position.
+          final srcCell = node.parent;
+          if (srcCell != null &&
+              srcCell.type == TableCellBlockKeys.type &&
+              destNode.parent?.type == TableCellBlockKeys.type &&
+              !identical(srcCell, destNode.parent)) {
+            final srcTable = srcCell.parent;
+            if (srcTable != null) {
+              final cellPos = navigateToCell(srcCell, srcTable, upwards);
+              if (cellPos != null) return cellPos;
+            }
+          }
+          // If we're inside a table cell and the skip found the table
+          // itself (not another cell), navigate within or out.
+          if (srcCell != null &&
+              srcCell.type == TableCellBlockKeys.type &&
+              destNode.type == TableBlockKeys.type) {
+            final tableNode = srcCell.parent!;
+            // Try adjacent row first.
+            final cellPos = navigateToCell(srcCell, tableNode, upwards);
+            if (cellPos != null) return cellPos;
+            // At the edge — navigate out.
+            final outPos = navigateOutOfTable(tableNode, upwards, !upwards);
+            if (outPos != null) return outPos;
+          }
+
+          final entry = textEntry(destNode, upwards);
+          if (entry != null) return entry;
+        }
         final destSelectable = destNode?.selectable;
         if (destSelectable != null) {
           final clampedOffset = editorSelection.end.offset.clamp(
@@ -222,6 +407,10 @@ extension PositionExtension on Position {
     }
     if (neighbourPath.isNotEmpty && !neighbourPath.equals(nodePath)) {
       final neighbour = editorState.document.nodeAtPath(neighbourPath);
+      if (neighbour != null) {
+        final entry = textEntry(neighbour, upwards);
+        if (entry != null) return entry;
+      }
       final selectable = neighbour?.selectable;
       if (selectable != null) {
         offset = offset.clamp(
@@ -229,6 +418,21 @@ extension PositionExtension on Position {
           selectable.end().offset,
         );
         return Position(path: neighbourPath, offset: offset);
+      }
+    }
+
+    // Check if we're inside a table cell — navigate to adjacent cell.
+    final cellParent = node.parent;
+    if (cellParent != null && cellParent.type == TableCellBlockKeys.type) {
+      final table = cellParent.parent;
+      if (table != null && table.type == TableBlockKeys.type) {
+        // Try adjacent row first.
+        final cellPos = navigateToCell(cellParent, table, upwards);
+        if (cellPos != null) return cellPos;
+        // At the edge — navigate out.
+        // downwards = true when going down (entering next block at start).
+        final outPos = navigateOutOfTable(table, upwards, !upwards);
+        if (outPos != null) return outPos;
       }
     }
 
@@ -243,7 +447,6 @@ extension PositionExtension on Position {
       }
     }
 
-    // The cursor is already at the top or bottom of the document.
     return this;
   }
 }

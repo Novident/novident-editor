@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/util.dart';
 
 final List<CommandShortcutEvent> tableCommands = [
   enterInTableCell,
@@ -108,17 +107,35 @@ CommandShortcutEventHandler _leftInTableCellHandler = (editorState) {
   final selection = editorState.selection;
   if (_hasSelectionAndTableCell(inTableNodes, selection) &&
       selection!.start.offset == 0) {
-    final nextNode = _getPreviousNode(inTableNodes, 1, 0);
-    if (_nodeHasTextChild(nextNode)) {
-      final target = nextNode!.childAtIndexOrNull(0)!;
+    // Try previous cell (col - 1, same row). Does not wrap to previous row.
+    final nextNode = _getNextNode(inTableNodes, -1, 0);
+    if (nextNode != null && _nodeHasTextChild(nextNode)) {
+      final target = nextNode.childAtIndexOrNull(0)!;
       editorState.selectionService.updateSelection(
         Selection.single(
           path: target.path,
           startOffset: target.delta!.length,
         ),
       );
+      return KeyEventResult.handled;
     }
-    return KeyEventResult.handled;
+    // At the left edge — move to the end of the block before the table.
+    final table = inTableNodes.first.parent?.parent;
+    if (table != null) {
+      final previous = table.previousNodeWhere(
+        (n) => n.selectable != null && n.delta != null,
+      );
+      if (previous != null && previous.delta != null) {
+        editorState.selectionService.updateSelection(
+          Selection.single(
+            path: previous.path,
+            startOffset: previous.delta!.length,
+          ),
+        );
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
   }
   return KeyEventResult.ignored;
 };
@@ -128,16 +145,30 @@ CommandShortcutEventHandler _rightInTableCellHandler = (editorState) {
   final selection = editorState.selection;
   if (_hasSelectionAndTableCell(inTableNodes, selection) &&
       selection!.start.offset == inTableNodes.first.delta!.length) {
+    // Try next cell (col + 1, same row). Does not wrap to next row.
     final nextNode = _getNextNode(inTableNodes, 1, 0);
-    if (_nodeHasTextChild(nextNode)) {
+    if (nextNode != null && _nodeHasTextChild(nextNode)) {
       editorState.selectionService.updateSelection(
         Selection.single(
-          path: nextNode!.childAtIndexOrNull(0)!.path,
+          path: nextNode.childAtIndexOrNull(0)!.path,
           startOffset: 0,
         ),
       );
+      return KeyEventResult.handled;
     }
-    return KeyEventResult.handled;
+    // At the right edge — move to the start of the block after the table.
+    final table = inTableNodes.first.parent?.parent;
+    if (table != null) {
+      final after =
+          table.nextNodeWhere((n) => n.selectable != null && n.delta != null);
+      if (after != null && after.delta != null) {
+        editorState.selectionService.updateSelection(
+          Selection.single(path: after.path, startOffset: 0),
+        );
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
   }
   return KeyEventResult.ignored;
 };
@@ -155,8 +186,24 @@ CommandShortcutEventHandler _upInTableCellHandler = (editorState) {
       editorState.selectionService.updateSelection(
         Selection.single(path: target.path, startOffset: off),
       );
+      return KeyEventResult.handled;
     }
-    return KeyEventResult.handled;
+    // At the top of the table — move to the end of the block above.
+    final table = inTableNodes.first.parent?.parent;
+    if (table != null) {
+      final above = table
+          .previousNodeWhere((n) => n.selectable != null && n.delta != null);
+      if (above != null && above.delta != null) {
+        editorState.selectionService.updateSelection(
+          Selection.single(
+            path: above.path,
+            startOffset: above.delta!.length,
+          ),
+        );
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
   }
   return KeyEventResult.ignored;
 };
@@ -174,8 +221,21 @@ CommandShortcutEventHandler _downInTableCellHandler = (editorState) {
       editorState.selectionService.updateSelection(
         Selection.single(path: target.path, startOffset: off),
       );
+      return KeyEventResult.handled;
     }
-    return KeyEventResult.handled;
+    // At the bottom of the table — move to the start of the block below.
+    final table = inTableNodes.first.parent?.parent;
+    if (table != null) {
+      final below =
+          table.nextNodeWhere((n) => n.selectable != null && n.delta != null);
+      if (below != null && below.delta != null) {
+        editorState.selectionService.updateSelection(
+          Selection.single(path: below.path, startOffset: 0),
+        );
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
   }
   return KeyEventResult.ignored;
 };
@@ -259,17 +319,16 @@ bool _hasSelectionAndTableCell(
 
 Node? _getNextNode(Iterable<Node> nodes, int colDiff, int rowDiff) {
   final cell = nodes.first.parent!;
-  final col = cell.attributes[TableCellBlockKeys.colPosition];
-  final row = cell.attributes[TableCellBlockKeys.rowPosition];
+  final col = cell.attributes[TableCellBlockKeys.colPosition] as int;
+  final row = cell.attributes[TableCellBlockKeys.rowPosition] as int;
   final table = cell.parent;
   if (table == null) {
     return null;
   }
 
-  final numCols =
-      table.children.last.attributes[TableCellBlockKeys.colPosition] + 1;
-  final numRows =
-      table.children.last.attributes[TableCellBlockKeys.rowPosition] + 1;
+  final tableNode = TableNode(node: table);
+  final numCols = tableNode.colsLen;
+  final numRows = tableNode.rowsLen;
 
   // Calculate the next column index, considering the column difference and wrapping around with modulo.
   var nextCol = (col + colDiff) % numCols;
@@ -278,23 +337,22 @@ Node? _getNextNode(Iterable<Node> nodes, int colDiff, int rowDiff) {
   var nextRow = row + rowDiff + ((col + colDiff) ~/ numCols);
 
   return isValidPosition(nextCol, nextRow, numCols, numRows)
-      ? getCellNode(table, nextCol, nextRow)
+      ? tableNode.getCell(nextCol, nextRow)
       : null;
 }
 
 Node? _getPreviousNode(Iterable<Node> nodes, int colDiff, int rowDiff) {
   final cell = nodes.first.parent!;
-  final col = cell.attributes[TableCellBlockKeys.colPosition];
-  final row = cell.attributes[TableCellBlockKeys.rowPosition];
+  final col = cell.attributes[TableCellBlockKeys.colPosition] as int;
+  final row = cell.attributes[TableCellBlockKeys.rowPosition] as int;
   final table = cell.parent;
   if (table == null) {
     return null;
   }
 
-  final numCols =
-      table.children.last.attributes[TableCellBlockKeys.colPosition] + 1;
-  final numRows =
-      table.children.last.attributes[TableCellBlockKeys.rowPosition] + 1;
+  final tableNode = TableNode(node: table);
+  final numCols = tableNode.colsLen;
+  final numRows = tableNode.rowsLen;
 
   // Calculate the previous column index, ensuring it wraps within the table boundaries using modulo.
   var prevCol = (col - colDiff + numCols) % numCols;
@@ -303,7 +361,7 @@ Node? _getPreviousNode(Iterable<Node> nodes, int colDiff, int rowDiff) {
   var prevRow = row - rowDiff - ((col - colDiff) < 0 ? 1 : 0);
 
   return isValidPosition(prevCol, prevRow, numCols, numRows)
-      ? getCellNode(table, prevCol, prevRow)
+      ? tableNode.getCell(prevCol, prevRow)
       : null;
 }
 

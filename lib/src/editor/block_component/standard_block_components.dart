@@ -52,16 +52,20 @@ final Map<String, BlockComponentBuilder> standardBlockComponentBuilderMap = {
       padding: (node) => const EdgeInsets.symmetric(vertical: 8.0),
     ),
   ),
-  TableBlockKeys.type: TableBlockComponentBuilder(),
+  TableBlockKeys.type: TableBlockComponentBuilder(
+    actionMenuItems: defaultTableActionMenuItems,
+  ),
   TableCellBlockKeys.type: TableCellBlockComponentBuilder(),
 };
 
 final List<CharacterShortcutEvent> standardCharacterShortcutEvents = [
   // '\n'
-  insertNewLineAfterBulletedList,
-  insertNewLineAfterTodoList,
-  insertNewLineAfterNumberedList,
-  insertNewLineAfterHeading,
+  // should be overrided by using [keep] or [next] properties
+  // from [NovidentStyleDefinition]
+  // insertNewLineAfterBulletedList,
+  // insertNewLineAfterTodoList,
+  // insertNewLineAfterNumberedList,
+  // insertNewLineAfterHeading,
   insertNewLine,
 
   // bulleted list

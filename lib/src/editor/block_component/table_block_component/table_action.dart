@@ -195,7 +195,7 @@ void _addCol(
   } else {
     insertPath = table.getCell(position - 1, rowsLen - 1).path.next;
   }
-  // TODO(zoli): this calls notifyListener rowsLen+1 times. isn't there a better
+  // TODO: @CatHood0 this calls notifyListener rowsLen+1 times. isn't there a better
   // way?
   transaction.insertNodes(insertPath, cellNodes);
   transaction.updateNode(tableNode, {TableBlockKeys.colsLen: colsLen + 1});

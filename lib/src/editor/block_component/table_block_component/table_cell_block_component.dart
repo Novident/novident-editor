@@ -260,11 +260,7 @@ class _TableCeBlockWidgetState extends State<TableCelBlockWidget> {
   Widget build(BuildContext context) {
     final style = widget.tableStyleDef ?? kDefaultTableStyle;
 
-    final cellBorder = borderFromMap(
-          widget.node.attributes[TableCellBlockKeys.cellBorder]
-              as Map<String, dynamic>?,
-        ) ??
-        style.effectiveCellBorder;
+    final cellBorder = _effectiveCellBorder(widget.node, style);
 
     final cellPadding = _resolveCellPadding(widget.node, widget.padding, style);
 
@@ -297,6 +293,27 @@ class _TableCeBlockWidgetState extends State<TableCelBlockWidget> {
           ),
         ],
       ),
+    );
+  }
+
+  Border _effectiveCellBorder(
+    Node node,
+    NovidentTableStyleDefinition style,
+  ) {
+    final override = borderFromMap(
+      node.attributes[TableCellBlockKeys.cellBorder]
+          as Map<String, dynamic>?,
+    );
+    final base = override ?? style.effectiveCellBorder;
+
+    final row = node.attributes[TableCellBlockKeys.rowPosition] as int? ?? 0;
+    final col = node.attributes[TableCellBlockKeys.colPosition] as int? ?? 0;
+
+    return Border(
+      top: row == 0 ? base.top : BorderSide.none,
+      bottom: base.bottom,
+      left: col == 0 ? base.left : BorderSide.none,
+      right: base.right,
     );
   }
 

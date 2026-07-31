@@ -117,7 +117,7 @@ class _TableColState extends State<TableCol> {
       SizedBox(
         width: widget.colWidth,
         child: Column(
-          children: _buildCells(context, borderColor),
+          children: _buildCells(context),
         ),
       ),
       if (!noBorder && borderColor != null)
@@ -146,24 +146,10 @@ class _TableColState extends State<TableCol> {
     );
   }
 
-  List<Widget> _buildCells(BuildContext context, Color? borderColor) {
+  List<Widget> _buildCells(BuildContext context) {
     final style = widget.tableStyleDef ?? kDefaultTableStyle;
-    final noBorder = style.noBorder;
     final rowsLen = widget.tableNode.rowsLen;
     final List<Widget> cells = [];
-
-    final borderWidth = noBorder
-        ? 0.0
-        : (widget.tableNode.node.attributes[TableBlockKeys.borderWidth]
-                as double?) ??
-            style.borderWidth;
-
-    final cellBorder = noBorder || borderColor == null
-        ? const SizedBox.shrink()
-        : Container(
-            height: borderWidth,
-            color: borderColor,
-          );
 
     for (var r = 0; r < rowsLen; r++) {
       final node = widget.tableNode.getCell(widget.colIdx, r);
@@ -172,23 +158,17 @@ class _TableColState extends State<TableCol> {
       addListener(node, r);
       addListener(node.children.first, r);
 
-      cells.addAll([
-        if (cellColor != null)
-          ColoredBox(
-            color: cellColor,
-            child: widget.editorState.renderer.build(context, node),
-          )
-        else
-          widget.editorState.renderer.build(context, node),
-        cellBorder,
-      ]);
+      cells.add(
+        cellColor != null
+            ? ColoredBox(
+                color: cellColor,
+                child: widget.editorState.renderer.build(context, node),
+              )
+            : widget.editorState.renderer.build(context, node),
+      );
     }
 
-    final topBorder = noBorder ? const SizedBox.shrink() : cellBorder;
-    return [
-      topBorder,
-      ...cells,
-    ];
+    return cells;
   }
 
   /// Returns the background color for row [r] based on the table style.

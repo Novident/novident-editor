@@ -270,7 +270,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
     final borderPx = noBorder
         ? 0.0
         : (widget.node.attributes[TableBlockKeys.borderWidth] as double?) ??
-            style.borderWidth;
+            style.verticalBorderWidth;
 
     final enableHorizontalScroll = context.select((Node n) {
           final value = n.attributes[TableBlockKeys.enableHorizontalScroll];

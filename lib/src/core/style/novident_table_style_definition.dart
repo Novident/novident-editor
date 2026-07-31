@@ -219,6 +219,12 @@ class NovidentTableStyleDefinition extends NovidentStyleDefinition {
     );
   }
 
+  /// Representative width for horizontal borders (between rows).
+  double get horizontalBorderWidth => effectiveBorder.top.width;
+
+  /// Representative width for vertical borders (between columns).
+  double get verticalBorderWidth => effectiveBorder.left.width;
+
   /// Padding inside every cell. Overrides the builder-level cell padding.
   final EdgeInsets? cellPadding;
 

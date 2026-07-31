@@ -268,9 +268,9 @@ class TableNode {
       return _cachedColsHeight!;
     }
 
-    double total = style.borderWidth;
+    double total = style.horizontalBorderWidth;
     for (var r = 0; r < rowsLen; r++) {
-      total += getRowHeight(r, style) + style.borderWidth;
+      total += getRowHeight(r, style) + style.horizontalBorderWidth;
     }
     _cachedColsHeight = total;
     _cachedColsHeightVersion = _heightVersion;
@@ -320,7 +320,8 @@ class TableNode {
     required NovidentTableStyleDefinition style,
     bool noBorder = false,
   }) {
-    final totalBorders = noBorder ? 0.0 : style.borderWidth * (colsLen + 1);
+    final totalBorders =
+        noBorder ? 0.0 : style.verticalBorderWidth * (colsLen + 1);
     final usableWidth =
         (availableWidth - totalBorders).clamp(0, double.infinity);
 
@@ -430,9 +431,9 @@ class TableNode {
               cur,
               style,
             ) +
-            style.borderWidth,
+            style.verticalBorderWidth,
       ) +
-      style.borderWidth;
+      style.verticalBorderWidth;
 
   /// Sets the weight of column [col] and updates all cells in that column.
   ///

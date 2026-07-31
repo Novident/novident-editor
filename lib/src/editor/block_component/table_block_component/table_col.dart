@@ -74,10 +74,9 @@ class _TableColState extends State<TableCol> {
 
   @override
   Widget build(BuildContext context) {
-    // per-table override of the style border color; see
-    // [TableBlockKeys.borderColor].
     final style = widget.tableStyleDef ?? kDefaultTableStyle;
     final noBorder = style.noBorder;
+    final effective = style.effectiveBorder;
 
     final borderColor = noBorder
         ? null
@@ -85,7 +84,7 @@ class _TableColState extends State<TableCol> {
               final value = n.attributes[TableBlockKeys.borderColor];
               return value is String ? value.tryToColor() : null;
             }) ??
-            style.borderColor;
+            effective.left.color;
 
     final double colsHeight = widget.tableNode.colsHeight(style);
 
@@ -93,7 +92,7 @@ class _TableColState extends State<TableCol> {
         ? 0.0
         : (widget.tableNode.node.attributes[TableBlockKeys.borderWidth]
                 as double?) ??
-            style.borderWidth;
+            style.verticalBorderWidth;
 
     List<Widget> children = [];
 
@@ -155,13 +154,13 @@ class _TableColState extends State<TableCol> {
         ? 0.0
         : (widget.tableNode.node.attributes[TableBlockKeys.borderWidth]
                 as double?) ??
-            style.borderWidth;
+            style.horizontalBorderWidth;
 
     final cellBorder = noBorder
         ? const SizedBox.shrink()
         : Container(
             height: borderWidth,
-            color: style.borderColor ?? Colors.black,
+            color: style.effectiveBorder.top.color,
           );
 
     for (var r = 0; r < rowsLen; r++) {

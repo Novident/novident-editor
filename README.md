@@ -14,18 +14,18 @@ tables and more.
 
 ## Unique Features
 
-- **vim emulation** (normal / insert / visual, remappable keybindings, pending operator `dd`)
-- **zen mode** (typewriter centering, unfocused-block dimming, color neutralization without
+- **Vim emulation** (normal / insert / visual, remappable keybindings, pending operator `dd`)
+- **Zen mode** (typewriter centering, unfocused-block dimming, color neutralization without
   touching the document)
-- **aggressive caching** throughout the document model, selection pipeline and text
+- **Aggressive caching** throughout the document model, selection pipeline and text
   rendering
-- **named paragraph styles** with `basedOn` inheritance chains, similar to Word —
+- **Named paragraph styles** with `basedOn` inheritance chains, similar to Word —
   font family, font size, bold, italic, spacing, colours and more, all resolved
   through a three-tier fallback (explicit style → type default → global default)
   and exposed through customisable toolbar dropdowns
-- **first-line indent** per style (`NovidentStyleIndent.firstLineIndent`) or
+- **First-line indent** per style (`NovidentStyleIndent.firstLineIndent`) or
   globally (`EditorStyle.firstLineIndent`) 
-- **Full control over tables** using **NovidentTableStyleDefinition** and improved perfomance for large tables.
+- **Full control over tables** using **NovidentTableStyleDefinition** and new configurations for tables.
 
 > [!NOTE]
 > Planned: 

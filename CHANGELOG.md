@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.3
+
+* feat: style system, font provider & static toolbar by @CatHood0 in https://github.com/Novident/novident-editor/pull/3
+* feat: First line indent for the editor by @CatHood0 in https://github.com/Novident/novident-editor/pull/4
+* feat: re-design table customization and creation  by @CatHood0 in https://github.com/Novident/novident-editor/pull/5
+* feat: filter when use first line indent by @CatHood0 in https://github.com/Novident/novident-editor/pull/9
+
 ## 1.0.2
 
 * Chore: moved core models to its own package by @CatHood0 in https://github.com/Novident/novident-editor/pull/1

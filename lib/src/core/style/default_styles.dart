@@ -123,7 +123,6 @@ final kDefaultTableStyle = NovidentTableStyleDefinition(
   name: 'Default Table',
   basedOn: kDefaultBaseStyle.id,
   border: Border.all(width: 1.0, color: Colors.black),
-  cellBorder: Border.all(width: 1.0, color: Colors.black),
   borderWidth: 1.0,
   borderColor: Colors.black,
   borderHoverColor: Colors.black,

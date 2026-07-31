@@ -96,6 +96,7 @@ class _TableColState extends State<TableCol> {
             style.borderWidth;
 
     List<Widget> children = [];
+
     if (widget.colIdx == 0 && !noBorder && borderColor != null) {
       children.add(
         TableColBorder(
@@ -113,33 +114,31 @@ class _TableColState extends State<TableCol> {
       );
     }
 
-    children.addAll([
-      SizedBox(
-        width: widget.colWidth,
-        child: Column(
-          children: _buildCells(context),
+    children.addAll(
+      [
+        SizedBox(
+          width: widget.colWidth,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: _buildCells(context),
+          ),
         ),
-      ),
-      if (!noBorder && borderColor != null)
-        TableColBorder(
-          resizable: true,
-          tableNode: widget.tableNode,
-          editorState: widget.editorState,
-          colIdx: widget.colIdx,
-          currentColWidth: widget.colWidth,
-          colsHeight: colsHeight,
-          borderWidth: borderWidth,
-          tableStyleDef: style,
-          borderColor: borderColor,
-          borderHoverColor: widget.tableStyleDef?.borderHoverColor,
-        ),
-    ]);
+        if (!noBorder && borderColor != null)
+          TableColBorder(
+            resizable: widget.colIdx + 1 < widget.tableNode.colsLen,
+            tableNode: widget.tableNode,
+            editorState: widget.editorState,
+            colIdx: widget.colIdx,
+            currentColWidth: widget.colWidth,
+            colsHeight: colsHeight,
+            borderWidth: borderWidth,
+            tableStyleDef: style,
+            borderColor: borderColor,
+            borderHoverColor: widget.tableStyleDef?.borderHoverColor,
+          ),
+      ],
+    );
 
-    // `start` keeps the vertical borders (whose height comes from the
-    // `colsHeight` attribute) anchored to the top of the column. With the
-    // default `center` alignment, any transient mismatch between the
-    // attribute and the real column height splits the gap between the top
-    // and bottom corners of the grid.
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: children,
@@ -148,27 +147,48 @@ class _TableColState extends State<TableCol> {
 
   List<Widget> _buildCells(BuildContext context) {
     final style = widget.tableStyleDef ?? kDefaultTableStyle;
+    final noBorder = style.noBorder;
     final rowsLen = widget.tableNode.rowsLen;
     final List<Widget> cells = [];
+
+    final borderWidth = noBorder
+        ? 0.0
+        : (widget.tableNode.node.attributes[TableBlockKeys.borderWidth]
+                as double?) ??
+            style.borderWidth;
+
+    final cellBorder = noBorder
+        ? const SizedBox.shrink()
+        : Container(
+            height: borderWidth,
+            color: style.borderColor ?? Colors.black,
+          );
 
     for (var r = 0; r < rowsLen; r++) {
       final node = widget.tableNode.getCell(widget.colIdx, r);
       final cellColor = _cellBackgroundColor(r, style);
       _scheduleRowUpdate(r);
       addListener(node, r);
+      //TODO: @Cathood0 this is part of the cell using only one child instead of all available
       addListener(node.children.first, r);
 
-      cells.add(
-        cellColor != null
-            ? ColoredBox(
-                color: cellColor,
-                child: widget.editorState.renderer.build(context, node),
-              )
-            : widget.editorState.renderer.build(context, node),
-      );
+      cells.addAll([
+        if (cellColor != null)
+          ColoredBox(
+            color: cellColor,
+            child: widget.editorState.renderer.build(context, node),
+          )
+        else
+          widget.editorState.renderer.build(context, node),
+        cellBorder,
+      ]);
     }
 
-    return cells;
+    final topBorder = noBorder ? const SizedBox.shrink() : cellBorder;
+    return [
+      topBorder,
+      ...cells,
+    ];
   }
 
   /// Returns the background color for row [r] based on the table style.
@@ -200,4 +220,3 @@ class _TableColState extends State<TableCol> {
     node.addListener(listeners[node.id]!);
   }
 }
-

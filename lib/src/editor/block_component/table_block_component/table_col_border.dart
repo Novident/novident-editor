@@ -128,15 +128,17 @@ class _TableColBorderState extends State<TableColBorder> {
           key: _borderKey,
           width: widget.borderWidth,
           height: widget.colsHeight,
-          color: _borderHovering || _borderDragging
-              ? widget.borderHoverColor
-              : widget.borderColor,
+          foregroundDecoration: BoxDecoration(
+            color: _borderHovering || _borderDragging
+                ? widget.borderHoverColor
+                : widget.borderColor,
+          ),
         ),
       ),
     );
   }
 
-  Container buildFixedBorder(BuildContext context) {
+  Widget buildFixedBorder(BuildContext context) {
     return Container(
       width: widget.borderWidth,
       height: widget.colsHeight,

@@ -217,8 +217,6 @@ class TableNode {
 
   int get rowsLen => _cells.isNotEmpty ? _cells[0].length : 0;
 
-  // -- height cache -------------------------------------------------------
-
   int _heightVersion = 0;
   final List<double> _cachedRowHeights = [];
   int _cachedRowHeightsVersion = -1;

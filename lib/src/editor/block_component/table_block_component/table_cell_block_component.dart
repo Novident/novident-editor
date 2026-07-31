@@ -33,11 +33,6 @@ class TableCellBlockKeys {
 
   static const String colBackgroundColor = 'colBackgroundColor';
 
-  /// Per-cell border override. Stored as Map with keys:
-  /// `top`, `bottom`, `left`, `right` — each a Map of
-  /// `color` (String hex), `width` (double), `style` (String).
-  static const String cellBorder = 'cellBorder';
-
   /// Per-cell padding override. Map with `top`, `bottom`,
   /// `left`, `right` double values.
   static const String cellPadding = 'cellPadding';
@@ -64,43 +59,6 @@ typedef TableBlockCellComponentColorBuilder = Color? Function(
   Node node,
 );
 
-/// Serializes a [Border] to a JSON-compatible [Map] for node storage.
-Map<String, dynamic> borderToMap(Border border) => {
-      'top': _borderSideToMap(border.top),
-      'bottom': _borderSideToMap(border.bottom),
-      'left': _borderSideToMap(border.left),
-      'right': _borderSideToMap(border.right),
-    };
-
-Map<String, dynamic> _borderSideToMap(BorderSide side) => {
-      'color': side.color.toHex(),
-      'width': side.width,
-      'style': side.style.name,
-    };
-
-/// Deserializes a [Border] from node attribute map.
-Border? borderFromMap(Map<String, dynamic>? map) {
-  if (map == null) return null;
-  return Border(
-    top: _borderSideFromMap(map['top'] as Map<String, dynamic>?),
-    bottom: _borderSideFromMap(map['bottom'] as Map<String, dynamic>?),
-    left: _borderSideFromMap(map['left'] as Map<String, dynamic>?),
-    right: _borderSideFromMap(map['right'] as Map<String, dynamic>?),
-  );
-}
-
-BorderSide _borderSideFromMap(Map<String, dynamic>? map) {
-  if (map == null) return BorderSide.none;
-  return BorderSide(
-    color: (map['color'] as String?)?.tryToColor() ?? Colors.black,
-    width: (map['width'] as num?)?.toDouble() ?? 1.0,
-    style: BorderStyle.values.firstWhere(
-      (s) => s.name == map['style'],
-      orElse: () => BorderStyle.solid,
-    ),
-  );
-}
-
 /// Creates a table-cell [Node] with full control over its attributes.
 ///
 /// The [child] is the content node rendered inside the cell (typically a
@@ -125,7 +83,6 @@ Node tableCellNode({
   double? height,
   String? rowBackgroundColor,
   String? colBackgroundColor,
-  Border? cellBorder,
   EdgeInsets? cellPadding,
   TextAlign? cellAlignment,
   CrossAxisAlignment? cellVerticalAlignment,
@@ -144,8 +101,6 @@ Node tableCellNode({
         TableCellBlockKeys.rowBackgroundColor: rowBackgroundColor,
       if (colBackgroundColor != null)
         TableCellBlockKeys.colBackgroundColor: colBackgroundColor,
-      if (cellBorder != null)
-        TableCellBlockKeys.cellBorder: borderToMap(cellBorder),
       if (cellPadding != null)
         TableCellBlockKeys.cellPadding: {
           'top': cellPadding.top,
@@ -259,27 +214,21 @@ class _TableCeBlockWidgetState extends State<TableCelBlockWidget> {
   @override
   Widget build(BuildContext context) {
     final style = widget.tableStyleDef ?? kDefaultTableStyle;
-
-    final cellBorder = _effectiveCellBorder(widget.node, style);
-
     final cellPadding = _resolveCellPadding(widget.node, widget.padding, style);
 
     return Container(
       constraints: BoxConstraints(
         minHeight: context.select((Node n) => n.cellHeight),
       ),
-      decoration: BoxDecoration(
-        border: cellBorder,
-        color: context.select(
-          (Node n) =>
-              widget.colorBuilder?.call(context, n) ??
-              (n.attributes[TableCellBlockKeys.colBackgroundColor]
-                      as String?)
-                  ?.tryToColor() ??
-              (n.attributes[TableCellBlockKeys.rowBackgroundColor]
-                      as String?)
-                  ?.tryToColor(),
-        ),
+      color: context.select(
+        (Node n) =>
+            widget.colorBuilder?.call(context, n) ??
+            (n.attributes[TableCellBlockKeys.colBackgroundColor]
+                    as String?)
+                ?.tryToColor() ??
+            (n.attributes[TableCellBlockKeys.rowBackgroundColor]
+                    as String?)
+                ?.tryToColor(),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -293,27 +242,6 @@ class _TableCeBlockWidgetState extends State<TableCelBlockWidget> {
           ),
         ],
       ),
-    );
-  }
-
-  Border _effectiveCellBorder(
-    Node node,
-    NovidentTableStyleDefinition style,
-  ) {
-    final override = borderFromMap(
-      node.attributes[TableCellBlockKeys.cellBorder]
-          as Map<String, dynamic>?,
-    );
-    final base = override ?? style.effectiveCellBorder;
-
-    final row = node.attributes[TableCellBlockKeys.rowPosition] as int? ?? 0;
-    final col = node.attributes[TableCellBlockKeys.colPosition] as int? ?? 0;
-
-    return Border(
-      top: row == 0 ? base.top : BorderSide.none,
-      bottom: base.bottom,
-      left: col == 0 ? base.left : BorderSide.none,
-      right: base.right,
     );
   }
 

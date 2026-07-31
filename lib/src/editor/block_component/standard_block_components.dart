@@ -52,7 +52,9 @@ final Map<String, BlockComponentBuilder> standardBlockComponentBuilderMap = {
       padding: (node) => const EdgeInsets.symmetric(vertical: 8.0),
     ),
   ),
-  TableBlockKeys.type: TableBlockComponentBuilder(),
+  TableBlockKeys.type: TableBlockComponentBuilder(
+    actionMenuItems: defaultTableActionMenuItems,
+  ),
   TableCellBlockKeys.type: TableCellBlockComponentBuilder(),
 };
 

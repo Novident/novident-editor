@@ -66,23 +66,29 @@ void main() async {
       editorState.document.root.children.first;
 
   group('table action menu customization', () {
-    test('defaultTableActionMenuItems exposes the 7 built-in entries', () {
-      expect(defaultTableActionMenuItems.length, 7);
+    test('defaultTableActionMenuItems exposes the 13 built-in entries', () {
+      expect(defaultTableActionMenuItems.length, 13);
       expect(
         defaultTableActionMenuItems,
         containsAllInOrder([
-          tableActionAddBeforeItem,
-          tableActionAddAfterItem,
-          tableActionRemoveItem,
-          tableActionDuplicateItem,
-          tableActionBackgroundColorItem,
-          tableActionClearItem,
+          tableActionAddColumnBeforeItem,
+          tableActionAddRowBeforeItem,
+          tableActionAddColumnAfterItem,
+          tableActionAddRowAfterItem,
+          tableActionRemoveColumnItem,
+          tableActionRemoveRowItem,
+          tableActionDuplicateColumnItem,
+          tableActionDuplicateRowItem,
+          tableActionColumnBackgroundColorItem,
+          tableActionRowBackgroundColorItem,
+          tableActionClearColumnItem,
+          tableActionClearRowItem,
           tableActionBorderPropertiesItem,
         ]),
       );
       // the list is unmodifiable — copy it to customize.
       expect(
-        () => defaultTableActionMenuItems.add(tableActionClearItem),
+        () => defaultTableActionMenuItems.add(tableActionClearColumnItem),
         throwsUnsupportedError,
       );
     });
@@ -91,8 +97,8 @@ void main() async {
         (tester) async {
       final customItems = [
         TableActionMenuItem(
-          nameBuilder: (_) => 'Custom action',
-          iconBuilder: (_) => Icons.star,
+          name: 'Custom action',
+          icon: Icons.star,
           onPressed: (_) {},
         ),
       ];
@@ -116,20 +122,18 @@ void main() async {
       TableActionMenuContext? pressedContext;
       final items = [
         TableActionMenuItem(
-          nameBuilder: (dir) => dir == TableDirection.col
-              ? 'Column custom action'
-              : 'Row custom action',
-          iconBuilder: (_) => Icons.star,
+          name: 'Column custom action',
+          icon: Icons.star,
           onPressed: (menuContext) {
             pressedContext = menuContext;
             menuContext.dismiss();
           },
         ),
         TableActionMenuItem(
-          nameBuilder: (_) => 'Hidden for columns',
-          iconBuilder: (_) => Icons.visibility_off,
+          name: 'Hidden for columns',
+          icon: Icons.visibility_off,
+          direction: TableDirection.row,
           onPressed: (_) {},
-          visible: (_, __, dir) => dir == TableDirection.row,
         ),
       ];
 

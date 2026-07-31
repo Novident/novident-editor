@@ -24,7 +24,6 @@ class _TableActionBarState extends State<TableActionBar> {
   Node? _cachedCellNode;
   int? _cachedCol;
   int? _cachedRow;
-  bool _menuOpen = false;
 
   @override
   void initState() {
@@ -128,122 +127,147 @@ class _TableActionBarState extends State<TableActionBar> {
         : kDefaultTableStyle;
   }
 
-  void _withSelectionPreserved(VoidCallback action) {
-    action();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isFocused = _isVisible || _menuOpen;
+    final items = widget.actionMenuItems;
+    final isFocused = _isVisible;
+
+    if (items == null || items.isEmpty || !isFocused) {
+      return const SizedBox.shrink();
+    }
+
+    final List<Widget> actionButtons;
+    actionButtons = _buildActionButtonsFromItems(context, items);
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: 32,
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: actionButtons,
+        ),
+      ),
+    );
+  }
+
+  /// Builds buttons from the provided [TableActionMenuItem] list.
+  ///
+  /// Each item is rendered once. Direction-aware items use their
+  /// [TableActionMenuItem.direction] to resolve the target position
+  /// and direction context. Direction-agnostic items (direction: null)
+  /// are rendered once with a neutral column context.
+  List<Widget> _buildActionButtonsFromItems(
+    BuildContext context,
+    List<TableActionMenuItem> items,
+  ) {
     final isInTable = _isSelectionInTable;
     final col = effectiveCol;
     final row = effectiveRow;
     final colAtEnd = col >= widget.tableNode.colsLen;
     final rowAtEnd = row >= widget.tableNode.rowsLen;
+    final node = widget.tableNode.node;
 
-    return SizedBox(
-      height: isFocused ? 32 : 0,
-      child: isFocused
-          ? SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _actionButton(
-                    context,
-                    icon: Icons.view_column,
-                    tooltip: 'Add column before',
-                    onTap: () => _withSelectionPreserved(() => TableActions.add(
-                          widget.tableNode.node,
-                          colAtEnd ? widget.tableNode.colsLen : col,
-                          widget.editorState,
-                          TableDirection.col,
-                          tableStyle,
-                        )),
-                    enabled: isInTable,
-                  ),
-                  _actionButton(
-                    context,
-                    icon: Icons.table_rows,
-                    tooltip: 'Add row above',
-                    onTap: () => _withSelectionPreserved(() => TableActions.add(
-                          widget.tableNode.node,
-                          rowAtEnd ? widget.tableNode.rowsLen : row,
-                          widget.editorState,
-                          TableDirection.row,
-                          tableStyle,
-                        )),
-                    enabled: isInTable,
-                  ),
-                  _actionButton(
-                    context,
-                    icon: Icons.delete_outline,
-                    tooltip: 'Delete column',
-                    enabled:
-                        isInTable && !colAtEnd && widget.tableNode.colsLen > 1,
-                    onTap: () =>
-                        _withSelectionPreserved(() => TableActions.delete(
-                              widget.tableNode.node,
-                              col,
-                              widget.editorState,
-                              TableDirection.col,
-                            )),
-                  ),
-                  _actionButton(
-                    context,
-                    icon: Icons.delete_forever,
-                    tooltip: 'Delete row',
-                    enabled:
-                        isInTable && !rowAtEnd && widget.tableNode.rowsLen > 1,
-                    onTap: () =>
-                        _withSelectionPreserved(() => TableActions.delete(
-                              widget.tableNode.node,
-                              row,
-                              widget.editorState,
-                              TableDirection.row,
-                            )),
-                  ),
-                  _actionButton(
-                    context,
-                    icon: Icons.colorize,
-                    tooltip: 'Column color',
-                    enabled: isInTable && !colAtEnd,
-                    onTap: () => _showColorDropdown(
-                      context,
-                      col: col,
-                      row: row,
-                      dir: TableDirection.col,
-                    ),
-                  ),
-                  _actionButton(
-                    context,
-                    icon: Icons.format_paint,
-                    tooltip: 'Row color',
-                    enabled: isInTable && !rowAtEnd,
-                    onTap: () => _showColorDropdown(
-                      context,
-                      col: col,
-                      row: row,
-                      dir: TableDirection.row,
-                    ),
-                  ),
-                  _actionButton(
-                    context,
-                    icon: Icons.border_color,
-                    tooltip: 'Border color',
-                    onTap: () => _showColorDropdown(
-                      context,
-                      col: col,
-                      row: row,
-                      dir: TableDirection.col,
-                      isBorder: true,
-                    ),
-                    enabled: isInTable,
-                  ),
-                ],
-              ),
-            )
-          : const SizedBox.shrink(),
+    final List<Widget> buttons = [];
+
+    for (final TableActionMenuItem item in items) {
+      final isCol = item.direction == TableDirection.col;
+      final position = isCol ? col : row;
+      final atEnd = isCol ? colAtEnd : rowAtEnd;
+      final minCount = isCol
+          ? widget.tableNode.colsLen
+          : widget.tableNode.rowsLen;
+      final direction = item.direction ?? TableDirection.col;
+
+      // Respect the item's visibility predicate
+      final isVisible = item.visible?.call(node, position) ?? true;
+      if (!isVisible) continue;
+
+      final icon = item.icon;
+      final tooltip = item.name;
+      final enabled = item.direction != null
+          ? isInTable && !atEnd && minCount > 0
+          : isInTable;
+
+      buttons.add(
+        Builder(
+          builder: (buttonContext) {
+            return item.builder?.call(
+                  buttonContext,
+                  icon: icon,
+                  tooltip: tooltip,
+                  enabled: enabled,
+                  onTap: () {
+                    _defaultOnTap(
+                      buttonContext,
+                      item,
+                      node,
+                      position,
+                      direction,
+                    );
+                  },
+                ) ??
+                _actionButton(
+                  context,
+                  icon: icon,
+                  tooltip: tooltip,
+                  enabled: enabled,
+                  onTap: () {
+                    _defaultOnTap(
+                      buttonContext,
+                      item,
+                      node,
+                      position,
+                      direction,
+                    );
+                  },
+                );
+          },
+        ),
+      );
+    }
+
+    return buttons;
+  }
+
+  void _defaultOnTap(
+    BuildContext buttonContext,
+    TableActionMenuItem item,
+    Node node,
+    int position,
+    TableDirection direction,
+  ) {
+    final renderBox = buttonContext.findRenderObject() as RenderBox;
+    final buttonOffset = renderBox.localToGlobal(Offset.zero);
+    final buttonSize = renderBox.size;
+
+    // Compute position for secondary overlays (e.g. color pickers)
+    final editorRenderBox = widget.editorState.renderBox!;
+    final editorOffset = editorRenderBox.localToGlobal(Offset.zero);
+    final editorHeight = editorRenderBox.size.height;
+    final threshold = editorOffset.dy + editorHeight - 200;
+    double? overlayTop;
+    double? overlayBottom;
+    if (buttonOffset.dy > threshold) {
+      overlayBottom = editorOffset.dy + editorHeight - buttonOffset.dy - 5;
+    } else {
+      overlayTop = buttonOffset.dy + buttonSize.height + 5;
+    }
+    final overlayLeft = buttonOffset.dx + 10;
+
+    item.onPressed(
+      TableActionMenuContext(
+        buildContext: buttonContext,
+        node: node,
+        editorState: widget.editorState,
+        position: position,
+        dir: direction,
+        dismiss: () {},
+        top: overlayTop,
+        bottom: overlayBottom,
+        left: overlayLeft,
+      ),
     );
   }
 
@@ -274,82 +298,5 @@ class _TableActionBarState extends State<TableActionBar> {
         ),
       ),
     );
-  }
-
-  void _showColorDropdown(
-    BuildContext context, {
-    required int col,
-    required int row,
-    required TableDirection dir,
-    bool isBorder = false,
-  }) {
-    final node = widget.tableNode.node;
-    final position = isBorder ? 0 : (dir == TableDirection.col ? col : row);
-    final cell = !isBorder && dir == TableDirection.col
-        ? widget.tableNode.getCell(col, 0)
-        : !isBorder && dir == TableDirection.row
-            ? widget.tableNode.getCell(0, row)
-            : null;
-    final key = isBorder
-        ? null
-        : dir == TableDirection.col
-            ? TableCellBlockKeys.colBackgroundColor
-            : TableCellBlockKeys.rowBackgroundColor;
-
-    final RenderBox button = context.findRenderObject() as RenderBox;
-    final Offset buttonOffset = button.localToGlobal(Offset.zero);
-    final Size buttonSize = button.size;
-
-    setState(() => _menuOpen = true);
-    showMenu<String>(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        buttonOffset.dx,
-        buttonOffset.dy + buttonSize.height,
-        buttonOffset.dx + buttonSize.width,
-        buttonOffset.dy + buttonSize.height,
-      ),
-      items: [
-        PopupMenuItem<String>(
-          enabled: false,
-          padding: EdgeInsets.zero,
-          child: ColorPicker(
-            title: isBorder
-                ? 'Border color'
-                : dir == TableDirection.col
-                    ? 'Column color'
-                    : 'Row color',
-            selectedColorHex: isBorder
-                ? node.attributes[TableBlockKeys.borderColor]
-                : cell?.attributes[key],
-            colorOptions: generateHighlightColorOptions(),
-            onSubmittedColorHex: (color, _) {
-              if (isBorder) {
-                TableActions.setBorderColor(
-                  node,
-                  widget.editorState,
-                  color: color,
-                );
-              } else {
-                TableActions.setBgColor(
-                  node,
-                  position,
-                  widget.editorState,
-                  color,
-                  dir,
-                );
-              }
-              Navigator.of(context).pop();
-            },
-            resetText: 'Clear',
-            resetIconName: 'clear',
-          ),
-        ),
-      ],
-    ).then((_) {
-      if (mounted) {
-        setState(() => _menuOpen = false);
-      }
-    });
   }
 }

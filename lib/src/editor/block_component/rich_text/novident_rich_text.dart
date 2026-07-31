@@ -194,8 +194,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       if (tableStyle is NovidentTableStyleDefinition) {
         // Detect if this cell is part of the header row range.
         final cellRow =
-            cellParentNode?.attributes[TableCellBlockKeys.rowPosition]
-                as int?;
+            cellParentNode?.attributes[TableCellBlockKeys.rowPosition] as int?;
         final bool isHeader = cellParentNode != null &&
             cellRow != null &&
             tableStyle.headerRowCount > 0 &&
@@ -302,7 +301,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
   double? get _firstLineIndentWidth {
     final style = resolvedStyle;
     if (style == null) return null;
-
+    if (style.indent?.shouldFilterLineIndent?.call(widget.node) ?? false) {
+      return null;
+    }
     final styleIndent = style.indent?.firstLineIndent;
     if (styleIndent != null && styleIndent > 0) {
       return styleIndent;

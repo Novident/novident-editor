@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../novident_editor.dart';
+
 /// Controls paragraph spacing: space before, after, hanging indent, and line height multiplier.
 class NovidentStyleSpacing {
   const NovidentStyleSpacing({
@@ -29,13 +31,35 @@ class NovidentStyleSpacing {
   }
 }
 
+//TODO: @Cathood0 some properties of the styles are not being used
 /// Controls paragraph indentation: left, right, and first-line indent.
 class NovidentStyleIndent {
   const NovidentStyleIndent({
     this.left,
     this.right,
     this.firstLineIndent,
+    this.shouldFilterLineIndent,
   });
+
+  const NovidentStyleIndent.defaultLineFilter({
+    this.left,
+    this.right,
+    this.firstLineIndent,
+    this.shouldFilterLineIndent = _defaultFilter,
+  });
+
+  static bool _defaultFilter(Node node) {
+    if (node.type == ParagraphBlockKeys.type) {
+      final prev = node.previous;
+      if (prev == null ||
+          prev.attributes.isHeadingStyleRef ||
+          prev.attributes.isHeadingBlock ||
+          prev.attributes.heading != null) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   final double? left;
   final double? right;
@@ -44,12 +68,18 @@ class NovidentStyleIndent {
   /// is indented by this amount via a [WidgetSpan] prepended to the text.
   final double? firstLineIndent;
 
+  /// Returns [true] if we prefer to ignore the first line indent
+  /// [false] to use it as expected
+  final bool Function(Node)? shouldFilterLineIndent;
+
   NovidentStyleIndent merge(NovidentStyleIndent? other) {
     if (other == null) return this;
     return NovidentStyleIndent(
       left: other.left ?? left,
       right: other.right ?? right,
       firstLineIndent: other.firstLineIndent ?? firstLineIndent,
+      shouldFilterLineIndent:
+          other.shouldFilterLineIndent ?? shouldFilterLineIndent,
     );
   }
 }

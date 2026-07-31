@@ -302,3 +302,13 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
     },
   );
 }
+
+const NovidentStyleDefinition kDefaultBaseStyle =
+    NovidentStyleDefinition.nextSame(
+  id: '__novident_base__',
+  name: 'Base',
+  fontSize: 12.0,
+  fontFamily: 'Roboto',
+  spacing: NovidentStyleSpacing(after: 5.0),
+  indent: NovidentStyleIndent.defaultLineFilter(),
+);

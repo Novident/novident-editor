@@ -171,6 +171,7 @@ NovidentEditor(
         name: 'Base',
         fontSize: 12, 
         fontFamily: 'Arial',
+        indent: NovidentStyleIndent.defaultLineFilter(),
       ),
       'body': NovidentStyleDefinition.nextSame(
         id: 'body', 

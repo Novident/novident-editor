@@ -1,6 +1,19 @@
 import 'package:novident_editor/novident_editor.dart';
 
 extension NodeAttributesExtensions on Attributes {
+  bool get isHeadingStyleRef {
+    return containsKey(blockComponentStyleRef) &&
+        ((this[blockComponentStyleRef] as String?)?.startsWith('heading-') ??
+            false);
+  }
+
+  bool get isHeadingBlock {
+    if (this['type'] == BuiltInAttributeKey.heading) {
+      return true;
+    }
+    return false;
+  }
+
   String? get heading {
     if (containsKey(BuiltInAttributeKey.subtype) &&
         containsKey(BuiltInAttributeKey.heading) &&

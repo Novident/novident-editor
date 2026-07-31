@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 class NovidentTableStyleScope extends InheritedWidget {
   const NovidentTableStyleScope({
+    super.key,
     required this.style,
     required super.child,
   });

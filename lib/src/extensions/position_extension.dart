@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
@@ -178,6 +176,13 @@ extension PositionExtension on Position {
       return this;
     }
 
+    // ── Fast path: intra-node using local coords (scroll-independent) ──
+    final withinNode =
+        nodeSelectable.moveVerticallyInText(this.offset, upwards);
+    if (withinNode != null) return withinNode;
+
+    // ── Fallback: pixel-based scan (tables, images, dividers, and nodes
+    //    whose RenderParagraph is unavailable) ──
     final editorSelection = editorState.selection;
     final rects = editorState.selectionRects();
     if (rects.isEmpty || editorSelection == null) {
@@ -304,120 +309,47 @@ extension PositionExtension on Position {
       }
     }
 
-    // If a new position has not been found, it means that the current node
-    // is not multiline (or the caret is in the last line of a multiline and
-    // the bottom padding is very large).
-    // In this case, we can manually skip to the previous/next node position
-    // by translating the new offset by the padding slice to skip.
-    // Note that the padding slice to skip can exceed the node's bounds.
+    // ── Pixel scan exhausted (or skipped) — use document tree ──
+    // When the pixel scan found nothing, or when moveVerticallyInText
+    // returned null (visual boundary), navigate to the adjacent node
+    // via the document tree instead of guessing with padding math.
 
-    // The skip is calculated as the sum of:
-    // - the top/bottom padding of the current node to skip to the edge of
-    //    the node content rect
-    // - the top/bottom editorStyle's padding to skip the current node's
-    //    padding
-    // - the bottom/top editorStyle's padding to skip the previous/next node's
-    //    padding
-
-    // Note that editorStyle's top and bottom padding does not change by the
-    // node, so we can shorten the calculation by using the editorStyle's
-    // vertical padding.
-    final globalVerticalPadding = editorState.editorStyle.padding.vertical;
-
-    final maxSkip = upwards
-        ? padding.top + globalVerticalPadding
-        : padding.bottom + globalVerticalPadding;
-
-    // Translate the new offset by the padding slice to skip.
-    newOffset = newOffset.translate(0, upwards ? -maxSkip : maxSkip);
-
-    // Determine node's global position.
-    final nodeHeightOffset = nodeRenderBox.localToGlobal(Offset(0, nodeHeight));
-
-    // Clamp the new offset to the node's bounds.
-    newOffset = Offset(
-      newOffset.dx,
-      math.min(newOffset.dy, nodeHeightOffset.dy),
-    );
-
-    newPosition =
-        editorState.service.selectionService.getPositionInOffset(newOffset);
-
-    if (newPosition != null && newPosition != this) {
-      // The pixel-based search correctly identified the destination node,
-      // but the character offset may be wrong when the source and target
-      // nodes have different font sizes (e.g. heading → paragraph).
-      // Use the current character offset clamped to the destination node's
-      // range — same logic as the fallback_neighbour path below.
-      if (!newPosition.path.equals(path)) {
-        final destNode = editorState.document.nodeAtPath(newPosition.path);
-        if (destNode != null) {
-          // If both source and destination are inside table cells,
-          // route through proper vertical navigation (same column,
-          // adjacent row) instead of accepting the pixel position.
-          final srcCell = node.parent;
-          if (srcCell != null &&
-              srcCell.type == TableCellBlockKeys.type &&
-              destNode.parent?.type == TableCellBlockKeys.type &&
-              !identical(srcCell, destNode.parent)) {
-            final srcTable = srcCell.parent;
-            if (srcTable != null) {
-              final cellPos = navigateToCell(srcCell, srcTable, upwards);
-              if (cellPos != null) return cellPos;
-            }
+    final adjacent = upwards ? node.previous : node.next;
+    if (adjacent != null) {
+      final adjSelectable = adjacent.selectable;
+      if (adjSelectable != null) {
+        // Try to preserve the caret's visual column (dx) across nodes
+        // using local→global→local coordinate transforms.
+        final caretLocalDx = nodeSelectable.getCaretLocalDx(this.offset);
+        if (caretLocalDx != null) {
+          final dstRenderBox = adjacent.renderBox;
+          if (dstRenderBox != null && dstRenderBox.hasSize) {
+            final srcGlobal =
+                nodeRenderBox.localToGlobal(Offset(caretLocalDx, 0));
+            final dstLocal = dstRenderBox.globalToLocal(srcGlobal);
+            final targetLocalY =
+                upwards ? dstRenderBox.size.height : 0.0;
+            final targetGlobal = dstRenderBox.localToGlobal(
+              Offset(dstLocal.dx, targetLocalY),
+            );
+            final entry = textEntry(adjacent, !upwards);
+            if (entry != null) return entry;
+            final adjPos = adjSelectable.getPositionInOffset(targetGlobal);
+            return adjPos;
           }
-          // If we're inside a table cell and the skip found the table
-          // itself (not another cell), navigate within or out.
-          if (srcCell != null &&
-              srcCell.type == TableCellBlockKeys.type &&
-              destNode.type == TableBlockKeys.type) {
-            final tableNode = srcCell.parent!;
-            // Try adjacent row first.
-            final cellPos = navigateToCell(srcCell, tableNode, upwards);
-            if (cellPos != null) return cellPos;
-            // At the edge — navigate out.
-            final outPos = navigateOutOfTable(tableNode, upwards, !upwards);
-            if (outPos != null) return outPos;
-          }
-
-          final entry = textEntry(destNode, upwards);
-          if (entry != null) return entry;
         }
-        final destSelectable = destNode?.selectable;
-        if (destSelectable != null) {
-          final clampedOffset = editorSelection.end.offset.clamp(
-            destSelectable.start().offset,
-            destSelectable.end().offset,
-          );
-          return Position(path: newPosition.path, offset: clampedOffset);
-        }
-      }
-      return newPosition;
-    }
-
-    // If a new position has not been found, it means that the current node
-    // is not visible on the screen. It seems happens only if upwards is true (?)
-    // In this case, we can manually get the previous/next node position.
-    int offset = editorSelection.end.offset;
-    final Path nodePath = editorSelection.end.path;
-    Path neighbourPath = upwards ? nodePath.previous : nodePath.next;
-    if (neighbourPath.equals(nodePath)) {
-      final last = neighbourPath.removeLast();
-      neighbourPath = upwards ? neighbourPath : (neighbourPath..add(last + 1));
-    }
-    if (neighbourPath.isNotEmpty && !neighbourPath.equals(nodePath)) {
-      final neighbour = editorState.document.nodeAtPath(neighbourPath);
-      if (neighbour != null) {
-        final entry = textEntry(neighbour, upwards);
+        // Check non-text blocks (tables).
+        final entry = textEntry(adjacent, !upwards);
         if (entry != null) return entry;
-      }
-      final selectable = neighbour?.selectable;
-      if (selectable != null) {
-        offset = offset.clamp(
-          selectable.start().offset,
-          selectable.end().offset,
-        );
-        return Position(path: neighbourPath, offset: offset);
+        // Fallback: clamp to destination node's valid range.
+        final adjStart = adjSelectable.start();
+        final adjEnd = adjSelectable.end();
+        if (adjStart.path.equals(adjacent.path) &&
+            adjEnd.path.equals(adjacent.path)) {
+          final clampedOffset =
+              this.offset.clamp(adjStart.offset, adjEnd.offset);
+          return Position(path: adjacent.path, offset: clampedOffset);
+        }
       }
     }
 
@@ -426,11 +358,8 @@ extension PositionExtension on Position {
     if (cellParent != null && cellParent.type == TableCellBlockKeys.type) {
       final table = cellParent.parent;
       if (table != null && table.type == TableBlockKeys.type) {
-        // Try adjacent row first.
         final cellPos = navigateToCell(cellParent, table, upwards);
         if (cellPos != null) return cellPos;
-        // At the edge — navigate out.
-        // downwards = true when going down (entering next block at start).
         final outPos = navigateOutOfTable(table, upwards, !upwards);
         if (outPos != null) return outPos;
       }
@@ -442,7 +371,6 @@ extension PositionExtension on Position {
         return Position(path: path, offset: 0);
       } else {
         final length = delta.length;
-        // move the cursor to the end of the node
         return Position(path: path, offset: length);
       }
     }

@@ -747,6 +747,90 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return Position(path: widget.node.path, offset: baseOffset);
   }
 
+  /// Moves the caret one visual line up or down within this text node
+  /// using the [RenderParagraph]'s local coordinate system. Because
+  /// local coordinates are unaffected by scroll position, this method
+  /// is completely scroll-independent and viewport-independent.
+  ///
+  /// Returns `null` when the caret is at the first/last visual line —
+  /// the caller should navigate to the adjacent document node.
+  @override
+  Position? moveVerticallyInText(int currentOffset, bool upwards) {
+    final rp = _renderParagraph;
+    if (rp == null || !rp.hasSize) return null;
+
+    final delta = widget.node.delta;
+    if (delta == null) return null;
+
+    final textLen = delta.length;
+    if (currentOffset < 0 || currentOffset > textLen) return null;
+
+    // 1. Get the CURRENT caret position in LOCAL coordinates.
+    //    This is scroll-independent — local coords are relative to
+    //    the RenderParagraph, not the viewport.
+    final textPosition = TextPosition(
+      offset: currentOffset + _widgetSpanCount,
+    );
+    final caretLocal = rp.getOffsetForCaret(textPosition, Rect.zero);
+
+    // 2. Estimate line height from the glyph at the current position.
+    //    Uses the strut-bounded height which accounts for font metrics.
+    final lineHeight = rp.getFullHeightForCaret(textPosition);
+    if (lineHeight <= 0) return null;
+
+    // 3. Try to move one estimated line up/down, preserving the
+    //    horizontal column (caretLocal.dx).
+    Offset targetLocal = Offset(
+      caretLocal.dx,
+      caretLocal.dy + (upwards ? -lineHeight : lineHeight),
+    );
+
+    // Clamp Y to stay within the paragraph's content area so we
+    // don't query beyond the rendered text.
+    targetLocal = Offset(
+      targetLocal.dx,
+      targetLocal.dy.clamp(0.0, rp.size.height),
+    );
+
+    final textPos = rp.getPositionForOffset(targetLocal);
+    final newOffset =
+        (textPos.offset - _widgetSpanCount).clamp(0, textLen);
+
+    // 4. If the offset changed, we successfully moved to another line.
+    if (newOffset != currentOffset) {
+      return Position(path: widget.node.path, offset: newOffset);
+    }
+
+    // 5. preferredLineHeight may have over/under-estimated for mixed
+    //    fonts. Try a half-step in the same direction before giving up.
+    final halfTarget = Offset(
+      caretLocal.dx,
+      caretLocal.dy + (upwards ? -lineHeight / 2 : lineHeight / 2),
+    ).translate(0.0, 0.0);
+    final clampedHalf = Offset(
+      halfTarget.dx,
+      halfTarget.dy.clamp(0.0, rp.size.height),
+    );
+    final halfPos = rp.getPositionForOffset(clampedHalf);
+    final halfOffset =
+        (halfPos.offset - _widgetSpanCount).clamp(0, textLen);
+
+    if (halfOffset != currentOffset) {
+      return Position(path: widget.node.path, offset: halfOffset);
+    }
+
+    // 6. Still the same offset → we're at the visual boundary.
+    return null;
+  }
+
+  @override
+  double? getCaretLocalDx(int offset) {
+    final rp = _renderParagraph;
+    if (rp == null) return null;
+    final tp = TextPosition(offset: offset + _widgetSpanCount);
+    return rp.getOffsetForCaret(tp, Rect.zero).dx;
+  }
+
   @override
   Selection? getWordEdgeInOffset(Offset offset) {
     final localOffset = _renderParagraph?.globalToLocal(offset) ?? Offset.zero;

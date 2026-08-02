@@ -94,4 +94,9 @@ mixin DefaultSelectableMixin {
   TextDirection textDirection() => forwardKey.currentState != null
       ? forward.textDirection()
       : TextDirection.ltr;
+
+  Position? moveVerticallyInText(int offset, bool upwards) =>
+      forward.moveVerticallyInText(offset, upwards);
+
+  double? getCaretLocalDx(int offset) => forward.getCaretLocalDx(offset);
 }

@@ -226,7 +226,7 @@ class EdgeDraggingAutoScroller {
       // The change will be picked up in the next scroll.
       return;
     }
-    assert(!_scrolling);
+    assert(!_scrolling, 'scrolling must be false at this point');
     _scroll();
   }
 
@@ -237,7 +237,7 @@ class EdgeDraggingAutoScroller {
     _currentDuration = null;
   }
 
-  Future<void> _scroll() async {
+  void _scroll() {
     try {
       final RenderBox scrollRenderBox =
           scrollable.context.findRenderObject()! as RenderBox;
@@ -359,15 +359,17 @@ class EdgeDraggingAutoScroller {
           return;
         }
       }
-      await scrollable.position.moveTo(
+      scrollable.position.moveTo(
         newOffset,
         duration: _currentDuration ?? _animationDuration,
         curve: Curves.linear,
         // clamp: true,
       );
       onScrollViewScrolled?.call();
+      //TODO: isnt there another way to make this better?
+      // a queue at least?
       if (_scrolling) {
-        await _scroll();
+        _scroll();
       }
     } catch (e) {
       debugPrint(e.toString());

@@ -105,4 +105,20 @@ mixin SelectableMixin<T extends StatefulWidget> on State<T> {
 
   /// If true, the children will not be sorted when selecting.
   bool get skipSortingChildrenWhenSelecting => false;
+
+  /// Moves the cursor vertically within this selectable's text content
+  /// using local coordinates (scroll-independent, viewport-independent).
+  ///
+  /// Returns a [Position] in the next/previous visual line at the same
+  /// column (same dx). Returns `null` when the cursor is at the visual
+  /// boundary of the text block — the caller should navigate to the
+  /// adjacent node in the document tree.
+  ///
+  /// Non-text selectables (images, dividers, etc.) return `null`.
+  Position? moveVerticallyInText(int offset, bool upwards) => null;
+
+  /// The pixel X position of the caret at [offset] in local
+  /// (scroll-independent) coordinates. Returns `null` when the
+  /// [RenderParagraph] is not available (node not laid out yet).
+  double? getCaretLocalDx(int offset) => null;
 }

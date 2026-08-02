@@ -363,9 +363,6 @@ class EditorState {
     _selectionUpdateReason = reason;
 
     this.selection = selection;
-    // new selection → invalidate the per-frame rect cache so the scroll
-    // service and toolbar recompute on their next read.
-    _cachedSelectionRectKey = null;
 
     return completer.future;
   }
@@ -595,28 +592,14 @@ class EditorState {
 
   /// The current selection areas's rect in editor.
   ///
-  /// The result is cached per-frame (both the scroll service and the
-  /// floating toolbar call this on the same selection update). The cache
-  /// is invalidated by [updateSelectionWithReason] when the selection
-  /// actually changes.
+  /// Computed fresh on every call. Global coordinates depend on the
+  /// current scroll offset, so caching across frames would return
+  /// stale positions during scroll animations.
   List<Rect> selectionRects() {
     final sel = selection;
-    if (sel == null) {
-      _cachedSelectionRects = null;
-      _cachedSelectionRectKey = null;
-      return [];
-    }
-    final key = (sel.start, sel.end);
-    if (_cachedSelectionRectKey == key && _cachedSelectionRects != null) {
-      return _cachedSelectionRects!;
-    }
-    _cachedSelectionRectKey = key;
-    _cachedSelectionRects = _computeSelectionRects(sel);
-    return _cachedSelectionRects!;
+    if (sel == null) return [];
+    return _computeSelectionRects(sel);
   }
-
-  List<Rect>? _cachedSelectionRects;
-  (Position, Position)? _cachedSelectionRectKey;
 
   List<Rect> _computeSelectionRects(Selection selection) {
     final nodes = getNodesInSelection(selection);

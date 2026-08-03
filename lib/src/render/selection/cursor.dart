@@ -35,6 +35,14 @@ class CursorState extends State<Cursor> {
   }
 
   @override
+  void didUpdateWidget(Cursor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.rect != oldWidget.rect) {
+      show();
+    }
+  }
+
+  @override
   void dispose() {
     timer.cancel();
     super.dispose();

@@ -21,11 +21,11 @@ void _pasteSingleLine(
   // handle link
   final Attributes attributes = _linkRegex.hasMatch(line)
       ? {
-          NovidentRichTextKeys.href: line,
+          RichTextKeys.href: line,
         }
       : _phoneRegex.hasMatch(line)
           ? {
-              NovidentRichTextKeys.href: line,
+              RichTextKeys.href: line,
             }
           : {};
 

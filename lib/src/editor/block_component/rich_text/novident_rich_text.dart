@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:novident_editor/novident_editor.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -433,14 +434,14 @@ class _NovidentRichTextState extends State<NovidentRichText>
               (e) => TextInsert(
                 e.text,
                 attributes: {
-                  NovidentRichTextKeys.transparent: true,
+                  RichTextKeys.transparent: true,
                 },
               ),
             ),
             TextInsert(
               autoCompleteText,
               attributes: {
-                NovidentRichTextKeys.autoComplete: true,
+                RichTextKeys.autoComplete: true,
               },
             ),
           ],
@@ -1038,58 +1039,58 @@ class _NovidentRichTextState extends State<NovidentRichText>
 }
 
 extension NovidentRichTextAttributes on Attributes {
-  bool get bold => this[NovidentRichTextKeys.bold] == true;
+  bool get bold => this[RichTextKeys.bold] == true;
 
-  bool get italic => this[NovidentRichTextKeys.italic] == true;
+  bool get italic => this[RichTextKeys.italic] == true;
 
-  bool get underline => this[NovidentRichTextKeys.underline] == true;
+  bool get underline => this[RichTextKeys.underline] == true;
 
-  bool get code => this[NovidentRichTextKeys.code] == true;
+  bool get code => this[RichTextKeys.code] == true;
 
   bool get strikethrough {
-    return (containsKey(NovidentRichTextKeys.strikethrough) &&
-        this[NovidentRichTextKeys.strikethrough] == true);
+    return (containsKey(RichTextKeys.strikethrough) &&
+        this[RichTextKeys.strikethrough] == true);
   }
 
   Color? get color {
-    final textColor = this[NovidentRichTextKeys.textColor] as String?;
+    final textColor = this[RichTextKeys.textColor] as String?;
     return textColor?.tryToColor();
   }
 
   Color? get backgroundColor {
     final highlightColor =
-        this[NovidentRichTextKeys.backgroundColor] as String?;
+        this[RichTextKeys.backgroundColor] as String?;
     return highlightColor?.tryToColor();
   }
 
   Color? get findBackgroundColor {
     final findBackgroundColor =
-        this[NovidentRichTextKeys.findBackgroundColor] as String?;
+        this[RichTextKeys.findBackgroundColor] as String?;
     return findBackgroundColor?.tryToColor();
   }
 
   String? get href {
-    if (this[NovidentRichTextKeys.href] is String) {
-      return this[NovidentRichTextKeys.href];
+    if (this[RichTextKeys.href] is String) {
+      return this[RichTextKeys.href];
     }
     return null;
   }
 
   String? get fontFamily {
-    if (this[NovidentRichTextKeys.fontFamily] is String) {
-      return this[NovidentRichTextKeys.fontFamily];
+    if (this[RichTextKeys.fontFamily] is String) {
+      return this[RichTextKeys.fontFamily];
     }
     return null;
   }
 
   double? get fontSize {
-    if (this[NovidentRichTextKeys.fontSize] is double) {
-      return this[NovidentRichTextKeys.fontSize];
+    if (this[RichTextKeys.fontSize] is double) {
+      return this[RichTextKeys.fontSize];
     }
     return null;
   }
 
-  bool get autoComplete => this[NovidentRichTextKeys.autoComplete] == true;
+  bool get autoComplete => this[RichTextKeys.autoComplete] == true;
 
-  bool get transparent => this[NovidentRichTextKeys.transparent] == true;
+  bool get transparent => this[RichTextKeys.transparent] == true;
 }

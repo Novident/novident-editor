@@ -27,7 +27,7 @@ final CommandShortcutEvent toggleBoldCommand = CommandShortcutEvent(
   macOSCommand: 'cmd+b',
   handler: (editorState) => _toggleAttribute(
     editorState,
-    NovidentRichTextKeys.bold,
+    RichTextKeys.bold,
   ),
 );
 
@@ -38,7 +38,7 @@ final CommandShortcutEvent toggleItalicCommand = CommandShortcutEvent(
   macOSCommand: 'cmd+i',
   handler: (editorState) => _toggleAttribute(
     editorState,
-    NovidentRichTextKeys.italic,
+    RichTextKeys.italic,
   ),
 );
 
@@ -49,7 +49,7 @@ final CommandShortcutEvent toggleUnderlineCommand = CommandShortcutEvent(
   macOSCommand: 'cmd+u',
   handler: (editorState) => _toggleAttribute(
     editorState,
-    NovidentRichTextKeys.underline,
+    RichTextKeys.underline,
   ),
 );
 
@@ -60,7 +60,7 @@ final CommandShortcutEvent toggleStrikethroughCommand = CommandShortcutEvent(
   macOSCommand: 'cmd+shift+s',
   handler: (editorState) => _toggleAttribute(
     editorState,
-    NovidentRichTextKeys.strikethrough,
+    RichTextKeys.strikethrough,
   ),
 );
 
@@ -71,7 +71,7 @@ final CommandShortcutEvent toggleCodeCommand = CommandShortcutEvent(
   macOSCommand: 'cmd+e',
   handler: (editorState) => _toggleAttribute(
     editorState,
-    NovidentRichTextKeys.code,
+    RichTextKeys.code,
   ),
 );
 

@@ -54,7 +54,7 @@ void main() {
         _insertParagraph(
           path: [0],
           text: 'Hello',
-          attributes: {NovidentRichTextKeys.fontSize: 14.0},
+          attributes: {RichTextKeys.fontSize: 14.0},
         );
 
         editorState.updateSelectionWithReason(
@@ -66,7 +66,7 @@ void main() {
         double? fromDelta;
         nodes.allSatisfyInSelection(editorState.selection!, (delta) {
           return delta.everyAttributes((attr) {
-            final raw = attr[NovidentRichTextKeys.fontSize];
+            final raw = attr[RichTextKeys.fontSize];
             if (raw != null) {
               fromDelta =
                   (raw is num) ? raw.toDouble() : double.tryParse('$raw');
@@ -91,7 +91,7 @@ void main() {
         double? fromDelta;
         nodes.allSatisfyInSelection(editorState.selection!, (delta) {
           return delta.everyAttributes((attr) {
-            final raw = attr[NovidentRichTextKeys.fontSize];
+            final raw = attr[RichTextKeys.fontSize];
             if (raw != null) {
               fromDelta =
                   (raw is num) ? raw.toDouble() : double.tryParse('$raw');
@@ -110,7 +110,7 @@ void main() {
         _insertParagraph(
           path: [0],
           text: 'AB',
-          attributes: {NovidentRichTextKeys.fontSize: 18.0},
+          attributes: {RichTextKeys.fontSize: 18.0},
         );
 
         // Place collapsed cursor at position 1 (between A and B).
@@ -130,7 +130,7 @@ void main() {
         double? fromDelta;
         nodes.allSatisfyInSelection(prevSelection, (delta) {
           return delta.everyAttributes((attr) {
-            final raw = attr[NovidentRichTextKeys.fontSize];
+            final raw = attr[RichTextKeys.fontSize];
             if (raw != null) {
               fromDelta =
                   (raw is num) ? raw.toDouble() : double.tryParse('$raw');
@@ -152,7 +152,7 @@ void main() {
         _insertParagraph(
           path: [0],
           text: 'Hello',
-          attributes: {NovidentRichTextKeys.fontFamily: 'Georgia'},
+          attributes: {RichTextKeys.fontFamily: 'Georgia'},
         );
 
         editorState.updateSelectionWithReason(
@@ -163,7 +163,7 @@ void main() {
         String? fromDelta;
         nodes.allSatisfyInSelection(editorState.selection!, (delta) {
           return delta.everyAttributes((attr) {
-            final raw = attr[NovidentRichTextKeys.fontFamily];
+            final raw = attr[RichTextKeys.fontFamily];
             if (raw is String && raw.isNotEmpty) {
               fromDelta = raw;
               return true;
@@ -186,7 +186,7 @@ void main() {
         String? fromDelta;
         nodes.allSatisfyInSelection(editorState.selection!, (delta) {
           return delta.everyAttributes((attr) {
-            final raw = attr[NovidentRichTextKeys.fontFamily];
+            final raw = attr[RichTextKeys.fontFamily];
             if (raw is String && raw.isNotEmpty) {
               fromDelta = raw;
               return true;

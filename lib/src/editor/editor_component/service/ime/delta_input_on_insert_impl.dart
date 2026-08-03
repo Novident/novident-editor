@@ -61,7 +61,7 @@ Future<void> onInsert(
     // verify the toggled keys are supported.
     assert(
       editorState.toggledStyle.keys.every(
-        (element) => NovidentRichTextKeys.supportToggled.contains(element),
+        (element) => RichTextKeys.supportToggled.contains(element),
       ),
     );
   }

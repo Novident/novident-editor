@@ -113,7 +113,7 @@ void main() {
       expect(delta, isNotNull);
       var hasSize = false;
       delta!.everyAttributes((attr) {
-        if (attr[NovidentRichTextKeys.fontSize] == 14.0) {
+        if (attr[RichTextKeys.fontSize] == 14.0) {
           hasSize = true;
           return false;
         }

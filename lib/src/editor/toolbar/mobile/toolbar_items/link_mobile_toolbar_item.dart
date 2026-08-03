@@ -12,7 +12,7 @@ final linkMobileToolbarItem = MobileToolbarItem.withMenu(
       return const SizedBox.shrink();
     }
     final String? linkText = editorState.getDeltaAttributeValueInSelection(
-      NovidentRichTextKeys.href,
+      RichTextKeys.href,
       selection,
     );
 
@@ -22,7 +22,7 @@ final linkMobileToolbarItem = MobileToolbarItem.withMenu(
       onSubmitted: (value) async {
         if (value.isNotEmpty) {
           await editorState.formatDelta(selection, {
-            NovidentRichTextKeys.href: value,
+            RichTextKeys.href: value,
           });
         }
         itemMenuService.closeItemMenu();

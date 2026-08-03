@@ -58,7 +58,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.textColor] ==
+                  element.attributes?[RichTextKeys.textColor] ==
                   Colors.red.toHex(),
             );
       }),
@@ -71,7 +71,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.textColor] == null,
+                  element.attributes?[RichTextKeys.textColor] == null,
             );
       }),
       true,
@@ -93,7 +93,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.backgroundColor] ==
+                  element.attributes?[RichTextKeys.backgroundColor] ==
                   Colors.red.withValues(alpha: 0.3).toHex(),
             );
       }),
@@ -106,7 +106,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.backgroundColor] ==
+                  element.attributes?[RichTextKeys.backgroundColor] ==
                   null,
             );
       }),

@@ -120,9 +120,9 @@ class _FontFamilyDropdownButtonState extends State<_FontFamilyDropdownButton> {
 
     widget.editorState.formatDelta(selection, {
       if (family.isNotEmpty)
-        NovidentRichTextKeys.fontFamily: family
+        RichTextKeys.fontFamily: family
       else
-        NovidentRichTextKeys.fontFamily: null,
+        RichTextKeys.fontFamily: null,
     });
   }
 
@@ -146,7 +146,7 @@ class _FontFamilyDropdownButtonState extends State<_FontFamilyDropdownButton> {
       final nodes = widget.editorState.getNodesInSelection(selection);
       nodes.allSatisfyInSelection(selection, (delta) {
         return delta.everyAttributes((attr) {
-          final raw = attr[NovidentRichTextKeys.fontFamily];
+          final raw = attr[RichTextKeys.fontFamily];
           if (raw is String && raw.isNotEmpty) {
             fromDelta = raw;
             return true;
@@ -163,7 +163,7 @@ class _FontFamilyDropdownButtonState extends State<_FontFamilyDropdownButton> {
       final nodes = widget.editorState.getNodesInSelection(prevSelection);
       nodes.allSatisfyInSelection(prevSelection, (delta) {
         return delta.everyAttributes((attr) {
-          final raw = attr[NovidentRichTextKeys.fontFamily];
+          final raw = attr[RichTextKeys.fontFamily];
           if (raw is String && raw.isNotEmpty) {
             fromDelta = raw;
             return true;

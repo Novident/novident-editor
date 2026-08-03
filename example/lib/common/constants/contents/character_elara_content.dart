@@ -4,7 +4,7 @@ Node _field(String label, String value) => bulletedListNode(
       delta: Delta()
         ..insert(
           label,
-          attributes: <String, dynamic>{NovidentRichTextKeys.bold: true},
+          attributes: <String, dynamic>{RichTextKeys.bold: true},
         )
         ..insert(value),
     );
@@ -31,7 +31,7 @@ final Document characterElaraDocument = Document(
           ..insert(
             'Short sentences under pressure. Counts things when she is '
             'afraid — stones, steps, breaths.',
-            attributes: <String, dynamic>{NovidentRichTextKeys.italic: true},
+            attributes: <String, dynamic>{RichTextKeys.italic: true},
           ),
       ),
     ],

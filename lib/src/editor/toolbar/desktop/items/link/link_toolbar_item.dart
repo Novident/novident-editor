@@ -26,7 +26,7 @@ final linkItem = ToolbarItem(
     final nodes = editorState.getNodesInSelection(selection);
     final isHref = nodes.allSatisfyInSelection(selection, (delta) {
       return delta.everyAttributes(
-        (attributes) => attributes[NovidentRichTextKeys.href] != null,
+        (attributes) => attributes[RichTextKeys.href] != null,
       );
     });
 

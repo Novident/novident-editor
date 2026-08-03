@@ -126,7 +126,7 @@ class _FontSizeDropdownButtonState extends State<_FontSizeDropdownButton> {
     if (selection == null) return;
 
     widget.editorState.formatDelta(selection, {
-      NovidentRichTextKeys.fontSize: size,
+      RichTextKeys.fontSize: size,
     });
   }
 
@@ -150,7 +150,7 @@ class _FontSizeDropdownButtonState extends State<_FontSizeDropdownButton> {
       final nodes = widget.editorState.getNodesInSelection(selection);
       nodes.allSatisfyInSelection(selection, (delta) {
         return delta.everyAttributes((attr) {
-          final raw = attr[NovidentRichTextKeys.fontSize];
+          final raw = attr[RichTextKeys.fontSize];
           if (raw != null) {
             fromDelta = (raw is num) ? raw.toDouble() : double.tryParse('$raw');
           }
@@ -166,7 +166,7 @@ class _FontSizeDropdownButtonState extends State<_FontSizeDropdownButton> {
       final nodes = widget.editorState.getNodesInSelection(prevSelection);
       nodes.allSatisfyInSelection(prevSelection, (delta) {
         return delta.everyAttributes((attr) {
-          final raw = attr[NovidentRichTextKeys.fontSize];
+          final raw = attr[RichTextKeys.fontSize];
           if (raw != null) {
             fromDelta = (raw is num) ? raw.toDouble() : double.tryParse('$raw');
           }

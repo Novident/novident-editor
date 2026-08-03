@@ -51,7 +51,7 @@ void main() async {
         expect(delta.toPlainText(), link);
         expect(
           delta.everyAttributes(
-            (element) => element[NovidentRichTextKeys.href] == link,
+            (element) => element[RichTextKeys.href] == link,
           ),
           true,
         );
@@ -83,7 +83,7 @@ void main() async {
         expect(
           delta.everyAttributes(
             (element) =>
-                element[NovidentRichTextKeys.href] == 'https://appflowy.io/',
+                element[RichTextKeys.href] == 'https://appflowy.io/',
           ),
           false,
         );

@@ -67,14 +67,14 @@ KeyEventResult _toggleHighlight(
   final nodes = editorState.getNodesInSelection(selection);
   final isHighlighted = nodes.allSatisfyInSelection(selection, (delta) {
     return delta.everyAttributes(
-      (attributes) => attributes[NovidentRichTextKeys.backgroundColor] != null,
+      (attributes) => attributes[RichTextKeys.backgroundColor] != null,
     );
   });
 
   editorState.formatDelta(
     selection,
     {
-      NovidentRichTextKeys.backgroundColor:
+      RichTextKeys.backgroundColor:
           isHighlighted ? null : style.highlightColor.toHex(),
     },
   );

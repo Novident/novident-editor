@@ -57,7 +57,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.bold] == true,
+                  element.attributes?[RichTextKeys.bold] == true,
             );
       }),
       true,
@@ -75,7 +75,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.italic] == true,
+                  element.attributes?[RichTextKeys.italic] == true,
             );
       }),
       true,
@@ -93,7 +93,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.underline] == true,
+                  element.attributes?[RichTextKeys.underline] == true,
             );
       }),
       true,
@@ -111,7 +111,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.strikethrough] ==
+                  element.attributes?[RichTextKeys.strikethrough] ==
                   true,
             );
       }),

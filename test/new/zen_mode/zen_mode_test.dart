@@ -164,12 +164,12 @@ void main() {
             ..insert('plain ')
             ..insert(
               'pink',
-              attributes: {NovidentRichTextKeys.textColor: '0xFFE91E63'},
+              attributes: {RichTextKeys.textColor: '0xFFE91E63'},
             )
             ..insert(' and ')
             ..insert(
               'marked',
-              attributes: {NovidentRichTextKeys.backgroundColor: '0xFFFFEB3B'},
+              attributes: {RichTextKeys.backgroundColor: '0xFFFFEB3B'},
             ),
         ),
         paragraphNode(
@@ -374,7 +374,7 @@ void main() {
         expect(
           delta.any(
             (t) =>
-                t.attributes?[NovidentRichTextKeys.textColor] == '0xFFE91E63',
+                t.attributes?[RichTextKeys.textColor] == '0xFFE91E63',
           ),
           true,
         );

@@ -113,7 +113,7 @@ void checkIfNotHighlighted(
   //   node.allSatisfyInSelection(selection, (delta) {
   //     return delta.whereType<TextInsert>().every(
   //           (e) =>
-  //               e.attributes?[NovidentRichTextKeys.findBackgroundColor] == null,
+  //               e.attributes?[RichTextKeys.findBackgroundColor] == null,
   //         );
   //   }),
   //   expectedResult,
@@ -129,7 +129,7 @@ void checkIfHighlightedWithProperColors(
   //   node.allSatisfyInSelection(selection, (delta) {
   //     return delta.whereType<TextInsert>().every(
   //           (e) =>
-  //               e.attributes?[NovidentRichTextKeys.findBackgroundColor] ==
+  //               e.attributes?[RichTextKeys.findBackgroundColor] ==
   //               expectedColor,
   //         );
   //   }),

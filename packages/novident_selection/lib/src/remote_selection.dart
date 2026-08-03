@@ -1,4 +1,4 @@
-import 'package:novident_editor/novident_editor.dart';
+import 'package:novident_core/novident_core.dart';
 import 'package:flutter/material.dart';
 
 class RemoteSelection {

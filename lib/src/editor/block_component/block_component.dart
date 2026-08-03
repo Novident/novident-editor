@@ -11,10 +11,7 @@ export 'base_component/insert_newline_in_type_command.dart';
 export 'base_component/markdown_format_helper.dart';
 export 'base_component/outdent_command.dart';
 // selection
-export 'base_component/selection/block_selection_area.dart';
-export 'base_component/selection/block_selection_container.dart';
-export 'base_component/selection/remote_block_selection_area.dart';
-export 'base_component/selection/remote_selection.dart';
+export 'package:novident_selection/novident_selection.dart';
 export 'base_component/text_direction_mixin.dart';
 export 'package:novident_core/src/text_style_configuration.dart';
 export 'base_component/widget/full_screen_overlay_entry.dart';

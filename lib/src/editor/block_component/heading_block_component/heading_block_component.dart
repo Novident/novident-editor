@@ -183,6 +183,7 @@ class _HeadingBlockComponentWidgetState
       key: blockComponentKey,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

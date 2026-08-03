@@ -1,0 +1,26 @@
+name: novident_selection
+version: 0.1.0
+description: >-
+  Selection rendering layer for Novident Editor — cursor, block selection,
+  remote collaboration indicators. Reusable independently.
+homepage: https://github.com/Novident/
+repository: https://github.com/Novident/novident-editor/
+issue_tracker: https://github.com/Novident/novident-editor/issues
+
+environment:
+  sdk: ">=3.4.3 <4.0.0"
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  collection: ^1.18.0
+  novident_editor_document:
+    path: ../novident_document
+  novident_core:
+    path: ../novident_core
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter

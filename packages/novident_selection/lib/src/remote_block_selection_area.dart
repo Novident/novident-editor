@@ -1,6 +1,9 @@
-import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/base_component/selection/selection_area_painter.dart';
-import 'package:novident_editor/src/render/selection/cursor.dart';
+import 'package:novident_selection/src/block_selection_type.dart';
+import 'package:novident_selection/src/remote_selection.dart';
+import 'package:novident_selection/src/selection_area_painter.dart';
+import 'package:novident_selection/src/cursor.dart';
+import 'package:novident_core/novident_core.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

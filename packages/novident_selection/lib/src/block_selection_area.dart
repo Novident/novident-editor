@@ -1,19 +1,14 @@
-import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/base_component/selection/selection_area_painter.dart';
-import 'package:novident_editor/src/editor/editor_component/service/selection/mobile_selection_service.dart';
-import 'package:novident_editor/src/render/selection/cursor.dart';
+import 'package:novident_selection/src/block_selection_type.dart';
+import 'package:novident_selection/src/selection_area_painter.dart';
+import 'package:novident_selection/src/cursor.dart';
+import 'package:novident_selection/src/block_selection_host.dart';
+import 'package:novident_core/novident_core.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 final _deepEqual = const DeepCollectionEquality().equals;
-
-enum BlockSelectionType {
-  cursor,
-  selection,
-  block,
-}
 
 /// [BlockSelectionArea] is a widget that renders the selection area or the cursor of a block.
 class BlockSelectionArea extends StatefulWidget {
@@ -22,6 +17,7 @@ class BlockSelectionArea extends StatefulWidget {
     required this.node,
     required this.delegate,
     required this.listenable,
+    required this.host,
     required this.cursorColor,
     required this.selectionColor,
     required this.blockColor,
@@ -36,6 +32,10 @@ class BlockSelectionArea extends StatefulWidget {
 
   // get the selection from the listenable
   final ValueListenable<Selection?> listenable;
+
+  /// Host providing editor-level state (selection mode, cursor customization, etc.)
+  /// When null, host-dependent features are disabled.
+  final BlockSelectionHost host;
 
   // the color of the cursor
   final Color cursorColor;
@@ -103,18 +103,14 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
           return sizedBox;
         }
 
-        final editorState = context.read<EditorState>();
-        if (editorState.selectionType == SelectionType.block) {
+        final host = widget.host;
+        if (host.isBlockSelectionMode()) {
           if (!widget.supportTypes.contains(BlockSelectionType.block) ||
               !path.inSelection(selection, isSameDepth: true) ||
               prevBlockRect == null) {
             return sizedBox;
           }
-          final builder = editorState.service.rendererService
-              .blockComponentBuilder(widget.node.type);
-          final padding = builder?.configuration.blockSelectionAreaMargin(
-            widget.node,
-          );
+          final padding = host.blockSelectionMargin(widget.node);
           return Positioned.fromRect(
             rect: prevBlockRect!,
             child: Container(
@@ -132,19 +128,18 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
               prevCursorRect == null) {
             return sizedBox;
           }
-          final editorState = context.read<EditorState>();
-          final dragMode =
-              editorState.selectionExtraInfo?[selectionDragModeKey];
+          final host = widget.host;
+          final dragMode = host.selectionDragModeValue();
           var rect = prevCursorRect!;
           var cursorStyle = widget.delegate.cursorStyle;
           var shouldBlink = widget.delegate.shouldCursorBlink &&
-              dragMode != MobileSelectionDragMode.cursor;
+              dragMode != 'cursor';
           var color = widget.cursorColor;
           // consult the optional caret customizer (e.g. vim block cursor).
-          final appearance = editorState.cursorAppearanceBuilder?.call(
-            widget.node,
-            selection,
-            selection.start,
+          final appearance = host.customizeCursor(
+            node: widget.node,
+            selection: selection,
+            position: selection.start,
           );
           if (appearance != null) {
             rect = appearance.rectBuilder?.call(rect) ?? rect;
@@ -203,11 +198,11 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
         !head.path.equals(widget.node.path)) {
       return null;
     }
-    final editorState = context.read<EditorState>();
-    final appearance = editorState.cursorAppearanceBuilder?.call(
-      widget.node,
-      rawSelection,
-      head,
+    final host = widget.host;
+    final appearance = host.customizeCursor(
+      node: widget.node,
+      selection: rawSelection,
+      position: head,
     );
     if (appearance == null || !appearance.paintOnExpandedSelection) {
       return null;
@@ -238,11 +233,11 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
         !head.path.equals(widget.node.path)) {
       return null;
     }
-    final editorState = context.read<EditorState>();
-    final appearance = editorState.cursorAppearanceBuilder?.call(
-      widget.node,
-      raw,
-      head,
+    final host = widget.host;
+    final appearance = host.customizeCursor(
+      node: widget.node,
+      selection: raw,
+      position: head,
     );
     if (appearance == null || !appearance.paintOnExpandedSelection) {
       return null;
@@ -280,7 +275,7 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
     // the current path is in the selection
     if (selection != null && path.inSelection(selection)) {
       if (widget.supportTypes.contains(BlockSelectionType.block) &&
-          context.read<EditorState>().selectionType == SelectionType.block) {
+          widget.host.isBlockSelectionMode()) {
         if (!path.inSelection(selection, isSameDepth: true)) {
           if (prevBlockRect != null) {
             setState(() {

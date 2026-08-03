@@ -21,6 +21,8 @@ dependencies:
   diff_match_patch: ^0.4.1
   novident_core:
     path: packages/novident_core
+  novident_selection:
+    path: packages/novident_selection
   novident_styles:
     path: packages/novident_styles
   novident_editor_document:

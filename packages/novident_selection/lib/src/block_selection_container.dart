@@ -1,4 +1,10 @@
-import 'package:novident_editor/novident_editor.dart';
+import 'package:novident_selection/src/block_selection_type.dart';
+import 'package:novident_selection/src/block_selection_area.dart';
+import 'package:novident_selection/src/remote_block_selection_area.dart';
+import 'package:novident_selection/src/remote_selection.dart';
+import 'package:novident_selection/src/block_selection_host.dart';
+import 'package:novident_core/novident_core.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -8,6 +14,7 @@ class BlockSelectionContainer extends StatelessWidget {
     required this.node,
     required this.delegate,
     required this.listenable,
+    required this.host,
     this.remoteSelection,
     this.cursorColor = Colors.black,
     this.selectionColor = Colors.blue,
@@ -22,6 +29,9 @@ class BlockSelectionContainer extends StatelessWidget {
 
   // get the cursor rect, selection rects or block rect from the delegate
   final SelectableMixin delegate;
+
+  /// Host providing editor-level state for selection rendering.
+  final BlockSelectionHost host;
 
   // get the selection from the listenable
   final ValueListenable<Selection?> listenable;
@@ -54,6 +64,7 @@ class BlockSelectionContainer extends StatelessWidget {
       node: node,
       delegate: delegate,
       listenable: listenable,
+      host: host,
       cursorColor: cursorColor,
       selectionColor: selectionColor,
       blockColor: blockColor,
@@ -101,6 +112,7 @@ class BlockSelectionContainer extends StatelessWidget {
         if (supportTypes.contains(BlockSelectionType.cursor))
           BlockSelectionArea(
             node: node,
+            host: host,
             delegate: delegate,
             listenable: listenable,
             cursorColor: cursorColor,

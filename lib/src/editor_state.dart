@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:novident_editor/novident_editor.dart';
+import 'package:novident_selection/novident_selection.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/auto_scroller.dart';
 import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:novident_editor/src/history/undo_manager.dart';
@@ -90,7 +91,7 @@ enum TransactionTime {
 /// all the mutations should be applied through [Transaction].
 ///
 /// Mutating the document with document's API is not recommended.
-class EditorState {
+class EditorState implements BlockSelectionHost {
   EditorState({
     required this.document,
     this.minHistoryItemDuration = const Duration(milliseconds: 50),
@@ -159,6 +160,33 @@ class EditorState {
   /// behavior (e.g. a vim-like block cursor), or null to keep the default
   /// painting.
   CursorAppearanceBuilder? cursorAppearanceBuilder;
+
+  /// @override from BlockSelectionHost
+  @override
+  bool isBlockSelectionMode() => selectionType == SelectionType.block;
+
+  /// @override from BlockSelectionHost
+  @override
+  CursorAppearance? customizeCursor({
+    required Node node,
+    required Selection? selection,
+    required Position position,
+  }) {
+    return cursorAppearanceBuilder?.call(node, selection!, position);
+  }
+
+  /// @override from BlockSelectionHost
+  @override
+  EdgeInsets? blockSelectionMargin(Node node) {
+    final builder =
+        service.rendererService.blockComponentBuilder(node.type);
+    return builder?.configuration.blockSelectionAreaMargin(node);
+  }
+
+  /// @override from BlockSelectionHost
+  @override
+  String? selectionDragModeValue() =>
+      selectionExtraInfo?[_selectionDragModeKey] as String?;
 
   /// The selection notifier of the editor.
   final PropertyValueNotifier<Selection?> selectionNotifier =

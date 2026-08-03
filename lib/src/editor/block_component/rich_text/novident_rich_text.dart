@@ -248,6 +248,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return BlockSelectionContainer(
       delegate: widget.delegate,
       listenable: widget.editorState.selectionNotifier,
+      host: widget.editorState,
       remoteSelection: widget.editorState.remoteSelections,
       node: widget.node,
       cursorColor: widget.cursorColor,

@@ -28,6 +28,7 @@ export 'src/l10n/l10n.dart';
 export 'src/plugins/plugins.dart';
 export 'src/render/selection/cursor_appearance.dart';
 export 'package:novident_core/novident_core.dart';
+export 'package:novident_selection/novident_selection.dart';
 export 'src/render/toolbar/toolbar_item.dart';
 export 'src/service/context_menu/context_menu.dart';
 export 'src/service/context_menu/built_in_context_menu_item.dart';

@@ -16,7 +16,7 @@ export 'base_component/selection/block_selection_container.dart';
 export 'base_component/selection/remote_block_selection_area.dart';
 export 'base_component/selection/remote_selection.dart';
 export 'base_component/text_direction_mixin.dart';
-export 'base_component/text_style_configuration.dart';
+export 'package:novident_core/src/text_style_configuration.dart';
 export 'base_component/widget/full_screen_overlay_entry.dart';
 export 'base_component/widget/nested_list_widget.dart';
 export 'base_component_keys.dart';

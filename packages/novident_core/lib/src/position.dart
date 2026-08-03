@@ -1,4 +1,4 @@
-import 'package:novident_editor/src/core/document/path.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 
 class Position {
   final Path path;

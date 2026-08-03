@@ -1,5 +1,5 @@
 import 'package:novident_editor_document/novident_editor_document.dart';
-import 'package:novident_editor/src/core/location/selection.dart';
+import 'package:novident_core/novident_core.dart';
 
 /// Editor-specific extension on [Path] that depends on [Selection].
 ///

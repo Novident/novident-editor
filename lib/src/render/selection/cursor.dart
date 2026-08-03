@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:novident_editor/src/render/selection/selectable.dart';
+import 'package:novident_core/novident_core.dart';
 import 'package:flutter/material.dart';
 
 class Cursor extends StatefulWidget {

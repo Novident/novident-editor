@@ -152,16 +152,13 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
             shouldBlink = appearance.shouldBlink ?? shouldBlink;
             color = appearance.color ?? color;
           }
-          final cursor = Cursor(
+          return Cursor(
             key: cursorKey,
             rect: rect,
             shouldBlink: shouldBlink,
             cursorStyle: cursorStyle,
             color: color,
           );
-          // force to show the cursor
-          cursorKey.currentState?.unwrapOrNull<CursorState>()?.show();
-          return cursor;
         } else {
           // optionally paint the caret at the moving head of the expanded
           // selection (e.g. vim visual mode), above the block content.
@@ -354,7 +351,6 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
   }
 
   void _onSelectionChanged() {
-    prevCursorRect = null;
     // a selection change may bring this block into (or out of) the
     // selection: run one measurement pass on the next frame.
     _schedulePoll();

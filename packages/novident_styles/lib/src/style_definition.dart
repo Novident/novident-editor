@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../novident_editor.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 
 /// Controls paragraph spacing: space before, after, hanging indent, and line height multiplier.
 class NovidentStyleSpacing {
@@ -49,12 +49,15 @@ class NovidentStyleIndent {
   });
 
   static bool _defaultFilter(Node node) {
-    if (node.type == ParagraphBlockKeys.type) {
+    if (node.type == 'paragraph') {
       final prev = node.previous;
-      if (prev == null ||
-          prev.attributes.isHeadingStyleRef ||
-          prev.attributes.isHeadingBlock ||
-          prev.attributes.heading != null) {
+      if (prev == null) return true;
+      final attrs = prev.attributes;
+      if ((attrs['styleRef'] as String?)?.startsWith('heading-') ?? false) {
+        return true;
+      }
+      if (attrs['type'] == 'heading') return true;
+      if (attrs['subtype'] == 'heading' && attrs['heading'] is String) {
         return true;
       }
     }

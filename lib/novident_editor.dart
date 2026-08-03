@@ -4,6 +4,7 @@ library;
 export 'package:novident_editor_document/novident_editor_document.dart';
 
 // core part, including document, node, selection, etc.
+export 'package:novident_styles/novident_styles.dart';
 export 'src/core/core.dart';
 export 'src/editor/block_component/rich_text/novident_rich_text.dart';
 export 'src/editor/block_component/rich_text/novident_rich_text_keys.dart';

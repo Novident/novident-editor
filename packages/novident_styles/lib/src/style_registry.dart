@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:novident_editor/src/infra/log.dart';
 
-import 'novident_style_definition.dart';
-import 'novident_table_style_definition.dart';
+import 'style_definition.dart';
+import 'table_style_definition.dart';
+
+/// Callback type for logging warnings within the registry.
+typedef StyleRegistryWarningCallback = void Function(String message);
 
 /// Immutable registry of [NovidentStyleDefinition] keyed by [NovidentStyleDefinition.id].
 ///
@@ -10,8 +12,13 @@ import 'novident_table_style_definition.dart';
 /// to produce a fully resolved merged style or returns the raw definition
 /// when no [basedOn] is set.
 class NovidentStyleRegistry {
-  NovidentStyleRegistry(Map<String, NovidentStyleDefinition> styles)
-      : _styles = Map.unmodifiable(styles);
+  NovidentStyleRegistry(
+    Map<String, NovidentStyleDefinition> styles, {
+    this.onWarning,
+  }) : _styles = Map.unmodifiable(styles);
+
+  /// Optional callback for logging warnings (e.g. cyclic basedOn).
+  final StyleRegistryWarningCallback? onWarning;
 
   final Map<String, NovidentStyleDefinition> _styles;
 
@@ -53,7 +60,7 @@ class NovidentStyleRegistry {
     if (basedOnId == null) return definition;
 
     if (visited.contains(basedOnId)) {
-      NovidentEditorLog.ui.warn(
+      onWarning?.call(
         'NovidentStyleRegistry: cyclic basedOn reference detected '
         'in style "${definition.id}" → "$basedOnId". Breaking chain.',
       );

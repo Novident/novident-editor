@@ -1,5 +1,6 @@
-import '../../../novident_editor.dart'
-    show NovidentStyleDefinition, NovidentStyleRegistry, kDefaultBaseStyle;
+import 'package:novident_styles/src/style_definition.dart';
+import 'package:novident_styles/src/style_registry.dart';
+import 'package:novident_styles/src/default_styles.dart' show kDefaultBaseStyle;
 
 class NovidentStylesConfig {
   const NovidentStylesConfig({

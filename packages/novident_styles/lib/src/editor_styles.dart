@@ -1,5 +1,11 @@
-import 'package:novident_editor/novident_editor.dart';
+import 'package:novident_styles/src/style_registry.dart';
+import 'package:novident_styles/src/styles_config.dart';
+import 'package:novident_styles/src/style_definition.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:flutter/widgets.dart';
+
+/// Attribute key used to reference a style by ID on a node.
+const _blockComponentStyleRef = 'styleRef';
 
 class NovidentEditorStyles extends InheritedWidget {
   const NovidentEditorStyles({
@@ -11,7 +17,7 @@ class NovidentEditorStyles extends InheritedWidget {
   final NovidentStylesConfig config;
 
   NovidentStyleDefinition resolveStyle(Node node) {
-    final styleRef = node.attributes[blockComponentStyleRef] as String?;
+    final styleRef = node.attributes[_blockComponentStyleRef] as String?;
     if (styleRef != null && styleRef.isNotEmpty) {
       final resolved = config.registry.resolve(
         styleRef,

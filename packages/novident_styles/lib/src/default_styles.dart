@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:novident_editor/src/core/style/novident_style_definition.dart';
-import 'package:novident_editor/src/core/style/novident_style_registry.dart';
-import 'package:novident_editor/src/core/style/novident_table_style_definition.dart';
+import 'style_definition.dart';
+import 'style_registry.dart';
+import 'table_style_definition.dart';
 
 /// A sensible preset of styles modelled after Microsoft Word defaults.
 ///

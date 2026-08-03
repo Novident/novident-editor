@@ -1,4 +1,6 @@
-import 'package:novident_editor/novident_editor.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
+import 'package:novident_styles/src/editor_styles.dart';
+import 'package:novident_styles/src/style_definition.dart';
 import 'package:flutter/material.dart';
 
 /// Resolved block-level layout properties from a [NovidentStyleDefinition].

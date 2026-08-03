@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'novident_style_definition.dart';
+import 'style_definition.dart';
 
 /// Style configuration for a specific row range in a table (header, footer,
 /// or any custom row set via [NovidentTableStyleDefinition.rowStyles]).

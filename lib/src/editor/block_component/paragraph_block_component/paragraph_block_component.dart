@@ -1,18 +1,6 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
-class ParagraphBlockKeys {
-  ParagraphBlockKeys._();
-
-  static const String type = 'paragraph';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node paragraphNode({
   String? text,
   Delta? delta,

@@ -3,23 +3,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class HeadingBlockKeys {
-  const HeadingBlockKeys._();
-
-  static const String type = 'heading';
-
-  /// The level data of a heading block.
-  ///
-  /// The value is a int.
-  static const String level = 'level';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node headingNode({
   required int level,
   String? text,

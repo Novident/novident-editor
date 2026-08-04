@@ -2,34 +2,6 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class ImageBlockKeys {
-  const ImageBlockKeys._();
-
-  static const String type = 'image';
-
-  /// The align data of a image block.
-  ///
-  /// The value is a String.
-  /// left, center, right
-  static const String align = 'align';
-
-  /// The image src of a image block.
-  ///
-  /// The value is a String.
-  /// It can be a url or a base64 string(web).
-  static const String url = 'url';
-
-  /// The height of a image block.
-  ///
-  /// The value is a double.
-  static const String width = 'width';
-
-  /// The width of a image block.
-  ///
-  /// The value is a double.
-  static const String height = 'height';
-}
-
 Node imageNode({
   required String url,
   String align = 'center',

@@ -3,20 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:numerus/roman/roman.dart';
 import 'package:provider/provider.dart';
 
-class NumberedListBlockKeys {
-  const NumberedListBlockKeys._();
-
-  static const String type = 'numbered_list';
-
-  static const String number = 'number';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node numberedListNode({
   Delta? delta,
   Attributes? attributes,

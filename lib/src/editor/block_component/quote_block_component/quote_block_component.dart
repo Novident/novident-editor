@@ -3,18 +3,6 @@ import 'package:novident_editor/src/editor/block_component/base_component/block_
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class QuoteBlockKeys {
-  const QuoteBlockKeys._();
-
-  static const String type = 'quote';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node quoteNode({
   Delta? delta,
   String? textDirection,

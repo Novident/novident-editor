@@ -2,12 +2,6 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class DividerBlockKeys {
-  const DividerBlockKeys._();
-
-  static const String type = 'divider';
-}
-
 // creating a new callout node
 Node dividerNode({
   String? styleRef,

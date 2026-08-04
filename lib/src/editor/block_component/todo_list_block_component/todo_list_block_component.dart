@@ -3,23 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-class TodoListBlockKeys {
-  const TodoListBlockKeys._();
-
-  static const String type = 'todo_list';
-
-  /// The checked data of a todo list block.
-  ///
-  /// The value is a boolean.
-  static const String checked = 'checked';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node todoListNode({
   required bool checked,
   String? text,

@@ -13,10 +13,9 @@ export 'base_component/outdent_command.dart';
 // selection
 export 'package:novident_selection/novident_selection.dart';
 export 'base_component/text_direction_mixin.dart';
-export 'package:novident_core/src/text_style_configuration.dart';
+export 'package:novident_core/src/types/text_style_configuration.dart';
 export 'base_component/widget/full_screen_overlay_entry.dart';
 export 'base_component/widget/nested_list_widget.dart';
-export 'base_component_keys.dart';
 // bulleted list
 export 'bulleted_list_block_component/bulleted_list_block_component.dart';
 export 'bulleted_list_block_component/bulleted_list_character_shortcut.dart';

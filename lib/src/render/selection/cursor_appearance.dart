@@ -1,7 +1,4 @@
-import 'dart:ui';
-
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_selection/novident_selection.dart';
 
 /// Builds an optional [CursorAppearance] for the caret about to be painted.
 ///

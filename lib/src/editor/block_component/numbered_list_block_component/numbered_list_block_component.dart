@@ -160,7 +160,7 @@ class _NumberedListBlockComponentWidgetState
               key: forwardKey,
               delegate: this,
               node: widget.node,
-              editorState: editorState,
+              editorConfig: editorState,
               textAlign: alignment?.toTextAlign ?? textAlign,
               placeholderText: placeholderText,
               useFirstLineIndent: false,

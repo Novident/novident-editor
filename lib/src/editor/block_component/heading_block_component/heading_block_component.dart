@@ -144,7 +144,7 @@ class _HeadingBlockComponentWidgetState
               key: forwardKey,
               delegate: this,
               node: widget.node,
-              editorState: editorState,
+              editorConfig: editorState,
               textAlign: blockStyle.alignment ??
                   alignment?.toTextAlign ??
                   textAlign,

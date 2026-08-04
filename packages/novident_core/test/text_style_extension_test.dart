@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:novident_editor/src/extensions/text_style_extension.dart';
+import 'package:novident_core/src/text_style_extension.dart';
 
 void main() {
   group('TextStyleExtensions::', () {

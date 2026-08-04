@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_selection/novident_selection.dart';
+import 'package:novident_rich_text/novident_rich_text.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/auto_scroller.dart';
 import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:novident_editor/src/history/undo_manager.dart';
@@ -91,7 +92,7 @@ enum TransactionTime {
 /// all the mutations should be applied through [Transaction].
 ///
 /// Mutating the document with document's API is not recommended.
-class EditorState implements BlockSelectionHost {
+class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   EditorState({
     required this.document,
     this.minHistoryItemDuration = const Duration(milliseconds: 50),
@@ -187,6 +188,26 @@ class EditorState implements BlockSelectionHost {
   @override
   String? selectionDragModeValue() =>
       selectionExtraInfo?[_selectionDragModeKey] as String?;
+
+  // ---- RichTextEditorConfig overrides ----
+
+  @override
+  double get textScaleFactor => editorStyle.textScaleFactor;
+
+  @override
+  double? get firstLineIndentFallback => editorStyle.firstLineIndent;
+
+  @override
+  TextSpanDecoratorForAttribute? get textSpanDecorator =>
+      editorStyle.textSpanDecorator;
+
+  @override
+  NovidentTextSpanOverlayBuilder? get textSpanOverlayBuilder =>
+      editorStyle.textSpanOverlayBuilder;
+
+  @override
+  TextStyleConfiguration get textStyleConfiguration =>
+      editorStyle.textStyleConfiguration;
 
   /// The selection notifier of the editor.
   final PropertyValueNotifier<Selection?> selectionNotifier =

@@ -23,6 +23,8 @@ dependencies:
     path: packages/novident_core
   novident_selection:
     path: packages/novident_selection
+  novident_rich_text:
+    path: packages/novident_rich_text
   novident_styles:
     path: packages/novident_styles
   novident_editor_document:

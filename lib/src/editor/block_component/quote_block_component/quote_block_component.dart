@@ -138,7 +138,7 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
                 key: forwardKey,
                 delegate: this,
                 node: widget.node,
-                editorState: editorState,
+                editorConfig: editorState,
                 textAlign:
                     alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
                 placeholderText: placeholderText,

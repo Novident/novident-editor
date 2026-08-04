@@ -1,33 +1,16 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:novident_editor/novident_editor.dart';
+import 'package:novident_rich_text/src/editor_config.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
+import 'package:novident_core/novident_core.dart';
+import 'package:novident_styles/novident_styles.dart';
+import 'package:novident_selection/novident_selection.dart';
+import 'package:novident_core/src/block_component_keys.dart';
+import 'package:novident_rich_text/src/rich_text_attributes.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-
-typedef TextSpanDecoratorForAttribute = InlineSpan Function(
-  BuildContext context,
-  Node node,
-  int index,
-  TextInsert text,
-  TextSpan before,
-  TextSpan after,
-);
-
-typedef NovidentTextSpanDecorator = TextSpan Function(TextSpan textSpan);
-typedef NovidentAutoCompleteTextProvider = String? Function(
-  BuildContext context,
-  Node node,
-  TextSpan? textSpan,
-);
-
-typedef NovidentTextSpanOverlayBuilder = List<Widget> Function(
-  BuildContext context,
-  Node node,
-  SelectableMixin delegate,
-);
 
 //TODO: rich text needs to allow more customization
 class NovidentRichText extends StatefulWidget {
@@ -49,14 +32,14 @@ class NovidentRichText extends StatefulWidget {
     this.useFirstLineIndent = true,
     required this.delegate,
     required this.node,
-    required this.editorState,
+    required this.editorConfig,
   });
 
   /// The node of the rich text.
   final Node node;
 
-  /// The editor state.
-  final EditorState editorState;
+  /// The editor configuration.
+  final RichTextEditorConfig editorConfig;
 
   /// The height of the cursor.
   ///
@@ -138,21 +121,21 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   TextSpanDecoratorForAttribute? get textSpanDecoratorForAttribute =>
       widget.textSpanDecoratorForCustomAttributes ??
-      widget.editorState.editorStyle.textSpanDecorator;
+      widget.editorConfig.textSpanDecorator;
 
   NovidentAutoCompleteTextProvider? get autoCompleteTextProvider =>
       widget.autoCompleteTextProvider ??
-      widget.editorState.autoCompleteTextProvider;
+      widget.editorConfig.autoCompleteTextProvider;
 
   bool get enableAutoComplete =>
-      widget.editorState.enableAutoComplete && autoCompleteTextProvider != null;
+      widget.editorConfig.enableAutoComplete && autoCompleteTextProvider != null;
 
   TextStyleConfiguration get textStyleConfiguration =>
-      widget.editorState.editorStyle.textStyleConfiguration;
+      widget.editorConfig.textStyleConfiguration;
 
   NovidentTextSpanOverlayBuilder? get textSpanOverlayBuilder =>
       widget.textSpanOverlayBuilder ??
-      widget.editorState.editorStyle.textSpanOverlayBuilder;
+      widget.editorConfig.textSpanOverlayBuilder;
 
   /// Resolves the effective style for this node.
   ///
@@ -247,9 +230,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
     return BlockSelectionContainer(
       delegate: widget.delegate,
-      listenable: widget.editorState.selectionNotifier,
-      host: widget.editorState,
-      remoteSelection: widget.editorState.remoteSelections,
+      listenable: widget.editorConfig.selectionNotifier,
+      host: widget.editorConfig,
+      remoteSelection: widget.editorConfig.remoteSelections,
       node: widget.node,
       cursorColor: widget.cursorColor,
       selectionColor: widget.selectionColor,
@@ -312,7 +295,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     }
 
     if (style.allowGlobalFirstLineIndent) {
-      final globalIndent = widget.editorState.editorStyle.firstLineIndent;
+      final globalIndent = widget.editorConfig.firstLineIndentFallback;
       if (globalIndent != null && globalIndent > 0) {
         return globalIndent;
       }
@@ -355,7 +338,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       text: textSpan,
       textDirection: textDirection(),
       textScaler: TextScaler.linear(
-        widget.editorState.editorStyle.textScaleFactor,
+        widget.editorConfig.textScaleFactor,
       ),
       overflow: TextOverflow.ellipsis,
     );
@@ -387,7 +370,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       text: textSpan,
       textDirection: textDirection(),
       textScaler:
-          TextScaler.linear(widget.editorState.editorStyle.textScaleFactor),
+          TextScaler.linear(widget.editorConfig.textScaleFactor),
     );
   }
 
@@ -419,7 +402,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     }
     textSpan = adjustTextSpan(textSpan);
     return ValueListenableBuilder(
-      valueListenable: widget.editorState.selectionNotifier,
+      valueListenable: widget.editorConfig.selectionNotifier,
       builder: (_, __, ___) {
         final autoCompleteText = autoCompleteTextProvider?.call(
           context,
@@ -459,7 +442,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
           text: textSpan,
           textDirection: textDirection(),
           textScaler:
-              TextScaler.linear(widget.editorState.editorStyle.textScaleFactor),
+              TextScaler.linear(widget.editorConfig.textScaleFactor),
         );
       },
     );
@@ -1039,59 +1022,3 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }
 }
 
-extension NovidentRichTextAttributes on Attributes {
-  bool get bold => this[RichTextKeys.bold] == true;
-
-  bool get italic => this[RichTextKeys.italic] == true;
-
-  bool get underline => this[RichTextKeys.underline] == true;
-
-  bool get code => this[RichTextKeys.code] == true;
-
-  bool get strikethrough {
-    return (containsKey(RichTextKeys.strikethrough) &&
-        this[RichTextKeys.strikethrough] == true);
-  }
-
-  Color? get color {
-    final textColor = this[RichTextKeys.textColor] as String?;
-    return textColor?.tryToColor();
-  }
-
-  Color? get backgroundColor {
-    final highlightColor =
-        this[RichTextKeys.backgroundColor] as String?;
-    return highlightColor?.tryToColor();
-  }
-
-  Color? get findBackgroundColor {
-    final findBackgroundColor =
-        this[RichTextKeys.findBackgroundColor] as String?;
-    return findBackgroundColor?.tryToColor();
-  }
-
-  String? get href {
-    if (this[RichTextKeys.href] is String) {
-      return this[RichTextKeys.href];
-    }
-    return null;
-  }
-
-  String? get fontFamily {
-    if (this[RichTextKeys.fontFamily] is String) {
-      return this[RichTextKeys.fontFamily];
-    }
-    return null;
-  }
-
-  double? get fontSize {
-    if (this[RichTextKeys.fontSize] is double) {
-      return this[RichTextKeys.fontSize];
-    }
-    return null;
-  }
-
-  bool get autoComplete => this[RichTextKeys.autoComplete] == true;
-
-  bool get transparent => this[RichTextKeys.transparent] == true;
-}

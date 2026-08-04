@@ -6,9 +6,7 @@ export 'package:novident_editor_document/novident_editor_document.dart';
 // core part, including document, node, selection, etc.
 export 'package:novident_styles/novident_styles.dart';
 export 'src/core/core.dart';
-export 'src/editor/block_component/rich_text/novident_rich_text.dart';
-export 'src/editor/block_component/rich_text/novident_rich_text_keys.dart';
-export 'src/editor/block_component/rich_text/default_selectable_mixin.dart';
+export 'package:novident_rich_text/novident_rich_text.dart';
 export 'src/editor/block_component/table_block_component/table.dart';
 // editor part, including editor component, block component, etc.
 export 'src/editor/editor.dart';

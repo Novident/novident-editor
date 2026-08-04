@@ -38,10 +38,7 @@ export 'paragraph_block_component/paragraph_block_component.dart';
 // quote
 export 'quote_block_component/quote_block_component.dart';
 export 'quote_block_component/quote_character_shortcut.dart';
-export 'rich_text/novident_rich_text.dart';
-export 'rich_text/novident_rich_text_keys.dart';
-// rich text
-export 'rich_text/default_selectable_mixin.dart';
+export 'package:novident_rich_text/novident_rich_text.dart';
 export 'standard_block_components.dart';
 export 'table_block_component/table_action.dart';
 export 'table_block_component/table_action_menu.dart';

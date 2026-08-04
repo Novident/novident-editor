@@ -11,4 +11,11 @@ extension NodeSelectionExtension on Node {
       return selection.end.path <= path && path <= selection.start.path;
     }
   }
+
+  /// Walks up the tree to find the first ancestor (or self) matching [test].
+  Node? findParent(bool Function(Node element) test) {
+    if (test(this)) return this;
+    final parent = this.parent;
+    return parent?.findParent(test);
+  }
 }

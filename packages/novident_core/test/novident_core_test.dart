@@ -105,13 +105,13 @@ void main() {
 
   group('TextSpanExtensions', () {
     test('copyWith text', () {
-      final span = TextSpan(text: 'hello');
+      const span = TextSpan(text: 'hello');
       final copy = span.copyWith(text: 'world');
       expect(copy.text, 'world');
     });
 
     test('updateTextStyle null returns self', () {
-      final span = TextSpan(text: 'hello');
+      const span = TextSpan(text: 'hello');
       expect(identical(span.updateTextStyle(null), span), isTrue);
     });
   });

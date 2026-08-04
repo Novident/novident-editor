@@ -28,7 +28,8 @@ void main() {
     });
 
     test('merge overrides properties', () {
-      const base = NovidentStyleDefinition(id: 'base', name: 'Base', fontSize: 14);
+      const base =
+          NovidentStyleDefinition(id: 'base', name: 'Base', fontSize: 14);
       const override = NovidentStyleDefinition(
         id: 'override',
         name: 'Override',
@@ -42,7 +43,8 @@ void main() {
     });
 
     test('nextSame sets next to id', () {
-      const style = NovidentStyleDefinition.nextSame(id: 'normal', name: 'Normal');
+      const style =
+          NovidentStyleDefinition.nextSame(id: 'normal', name: 'Normal');
       expect(style.next, 'normal');
     });
   });
@@ -89,7 +91,8 @@ void main() {
     });
 
     test('resolve walks basedOn chain', () {
-      final base = NovidentStyleDefinition(id: 'base', name: 'Base', fontSize: 12);
+      final base =
+          NovidentStyleDefinition(id: 'base', name: 'Base', fontSize: 12);
       final normal = NovidentStyleDefinition(
         id: 'normal',
         name: 'Normal',

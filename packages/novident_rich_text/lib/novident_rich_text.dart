@@ -1,6 +1,6 @@
-library novident_rich_text;
+library;
 
-export 'src/editor_config.dart';
+export 'src/mixins/editor_config.dart';
 export 'src/novident_rich_text_widget.dart';
-export 'src/default_selectable_mixin.dart';
-export 'src/rich_text_attributes.dart';
+export 'src/mixins/default_selectable_mixin.dart';
+export 'src/utils/rich_text_attributes.dart';

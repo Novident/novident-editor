@@ -1,5 +1,4 @@
-import 'package:novident_core/src/position.dart';
-import 'package:novident_core/src/selection.dart';
+import '../../novident_core.dart';
 import 'package:flutter/material.dart';
 
 enum CursorStyle {

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'style_definition.dart';
-import 'table_style_definition.dart';
+import '../../novident_styles.dart';
 
 /// Callback type for logging warnings within the registry.
 typedef StyleRegistryWarningCallback = void Function(String message);

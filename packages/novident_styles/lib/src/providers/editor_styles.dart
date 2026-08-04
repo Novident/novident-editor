@@ -1,8 +1,6 @@
-import 'package:novident_styles/src/style_registry.dart';
-import 'package:novident_styles/src/styles_config.dart';
-import 'package:novident_styles/src/style_definition.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:flutter/widgets.dart';
+import '../../novident_styles.dart';
 
 /// Attribute key used to reference a style by ID on a node.
 const _blockComponentStyleRef = 'styleRef';

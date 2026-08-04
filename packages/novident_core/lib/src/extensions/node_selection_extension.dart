@@ -1,5 +1,5 @@
 import 'package:novident_editor_document/novident_editor_document.dart';
-import 'package:novident_core/src/selection.dart';
+import '../../novident_core.dart';
 
 /// Extension on [Node] for selection-related operations.
 extension NodeSelectionExtension on Node {

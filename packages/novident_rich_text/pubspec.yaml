@@ -1,5 +1,5 @@
 name: novident_rich_text
-version: 0.1.0
+version: 1.0.0
 description: >-
   Rich text paragraph rendering for Novident Editor — widget,
   selection mixin, and abstract editor config. Usable without

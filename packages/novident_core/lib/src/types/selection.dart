@@ -1,5 +1,5 @@
 import 'package:novident_editor_document/novident_editor_document.dart';
-import 'package:novident_core/src/position.dart';
+import '../../novident_core.dart';
 
 /// Selection represents the selected area or the cursor area in the editor.
 ///

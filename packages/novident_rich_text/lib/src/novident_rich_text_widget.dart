@@ -1,16 +1,16 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:novident_rich_text/src/editor_config.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:novident_core/novident_core.dart';
+import 'package:novident_rich_text/src/utils/text_selection_from_node_selection.dart';
 import 'package:novident_styles/novident_styles.dart';
 import 'package:novident_selection/novident_selection.dart';
-import 'package:novident_core/src/block_component_keys.dart';
-import 'package:novident_rich_text/src/rich_text_attributes.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+
+import '../novident_rich_text.dart';
 
 //TODO: rich text needs to allow more customization
 class NovidentRichText extends StatefulWidget {
@@ -128,7 +128,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
       widget.editorConfig.autoCompleteTextProvider;
 
   bool get enableAutoComplete =>
-      widget.editorConfig.enableAutoComplete && autoCompleteTextProvider != null;
+      widget.editorConfig.enableAutoComplete &&
+      autoCompleteTextProvider != null;
 
   TextStyleConfiguration get textStyleConfiguration =>
       widget.editorConfig.textStyleConfiguration;
@@ -369,8 +370,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       ),
       text: textSpan,
       textDirection: textDirection(),
-      textScaler:
-          TextScaler.linear(widget.editorConfig.textScaleFactor),
+      textScaler: TextScaler.linear(widget.editorConfig.textScaleFactor),
     );
   }
 
@@ -441,8 +441,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
           ),
           text: textSpan,
           textDirection: textDirection(),
-          textScaler:
-              TextScaler.linear(widget.editorConfig.textScaleFactor),
+          textScaler: TextScaler.linear(widget.editorConfig.textScaleFactor),
         );
       },
     );
@@ -778,8 +777,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     );
 
     final textPos = rp.getPositionForOffset(targetLocal);
-    final newOffset =
-        (textPos.offset - _widgetSpanCount).clamp(0, textLen);
+    final newOffset = (textPos.offset - _widgetSpanCount).clamp(0, textLen);
 
     // 4. If the offset changed, we successfully moved to another line.
     if (newOffset != currentOffset) {
@@ -797,8 +795,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       halfTarget.dy.clamp(0.0, rp.size.height),
     );
     final halfPos = rp.getPositionForOffset(clampedHalf);
-    final halfOffset =
-        (halfPos.offset - _widgetSpanCount).clamp(0, textLen);
+    final halfOffset = (halfPos.offset - _widgetSpanCount).clamp(0, textLen);
 
     if (halfOffset != currentOffset) {
       return Position(path: widget.node.path, offset: halfOffset);
@@ -894,7 +891,11 @@ class _NovidentRichTextState extends State<NovidentRichText>
     if (kDebugMode && paragraph?.debugNeedsLayout == true) {
       return [];
     }
-    final textSelection = textSelectionFromEditorSelection(selection);
+    final textSelection = textSelectionFromEditorSelection(
+      widget.node,
+      selection,
+      _widgetSpanCount,
+    );
     if (textSelection == null) {
       return [];
     }
@@ -968,57 +969,4 @@ class _NovidentRichTextState extends State<NovidentRichText>
   TextDirection textDirection() {
     return widget.textDirection;
   }
-
-  TextSelection? textSelectionFromEditorSelection(Selection? selection) {
-    if (selection == null) {
-      return null;
-    }
-
-    final normalized = selection.normalized;
-    final path = widget.node.path;
-    if (path < normalized.start.path || path > normalized.end.path) {
-      return null;
-    }
-
-    final length = widget.node.delta?.length;
-    if (length == null) {
-      return null;
-    }
-
-    TextSelection? textSelection;
-
-    if (normalized.isSingle) {
-      if (path.equals(normalized.start.path)) {
-        if (normalized.isCollapsed) {
-          textSelection = TextSelection.collapsed(
-            offset: normalized.startIndex + _widgetSpanCount,
-          );
-        } else {
-          textSelection = TextSelection(
-            baseOffset: normalized.startIndex + _widgetSpanCount,
-            extentOffset: normalized.endIndex + _widgetSpanCount,
-          );
-        }
-      }
-    } else {
-      if (path.equals(normalized.start.path)) {
-        textSelection = TextSelection(
-          baseOffset: normalized.startIndex + _widgetSpanCount,
-          extentOffset: length + _widgetSpanCount,
-        );
-      } else if (path.equals(normalized.end.path)) {
-        textSelection = TextSelection(
-          baseOffset: _widgetSpanCount,
-          extentOffset: normalized.endIndex + _widgetSpanCount,
-        );
-      } else {
-        textSelection = TextSelection(
-          baseOffset: _widgetSpanCount,
-          extentOffset: length + _widgetSpanCount,
-        );
-      }
-    }
-    return textSelection;
-  }
 }
-

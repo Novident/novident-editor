@@ -71,7 +71,7 @@ All paint and move contexts include `textDirection` and `delegate` ([SelectableM
 
 ## MoveIntention
 
-Control how the editor handles cursor transitions:
+Control how the editor handles cursor transitions. Note that **cursor position animations are not supported** due to the polling-based measurement architecture — `BlockSelectionArea` rebuilds the cursor widget every frame via post-frame callbacks, which resets any widget-level animation state. The `MoveIntention` API controls *where* the cursor moves, not how the visual transition is rendered.
 
 ```dart
 // Let the editor move normally
@@ -79,18 +79,36 @@ return const MoveIntention.pass();
 
 // Cancel the movement entirely
 return const MoveIntention.cancel();
-
-// Animate the cursor smoothly between blocks
-return MoveIntention.animated(
-  target: ctx.targetPosition,
-  duration: Duration(milliseconds: 150),
-  curve: Curves.easeInOut,
-);
 ```
 
 When `takeFullControl` is `true`, the editor skips its default movement — you're responsible for updating the selection via [EditorState].
 
+## Limitations
+
+- **Cursor animations are not possible.** `BlockSelectionArea` uses per-frame polling (`_updateSelectionIfNeeded` via post-frame callbacks) to measure the cursor rect, then calls `setState()` which rebuilds the widget tree. Any `AnimatedContainer` or similar widget-level animation is reset on each rebuild. Use `onCursorRectMeasured` to adjust positioning, but visual transitions between positions won't animate.
+- The `renderParagraph` field in context objects is `null` when the context is created from `BlockSelectionArea` — it doesn't have direct access to the text's [RenderParagraph]. Use `ctx.delegate` to reach it if needed.
+
 ## Examples
+
+All examples are in `example/lib/cursor_renderers/`.
+
+### Rainbow Selection Highlight
+
+![Rainbow selection demo](images/samples/rainbow_example_selection_renderer.mp4)
+
+```dart
+class RainbowSelectionRenderer extends DefaultSelectionRenderer {
+  const RainbowSelectionRenderer();
+
+  @override
+  Widget buildSelectionHighlight(SelectionPaintContext ctx) {
+    return AnimatedSelectionAreaPaint(
+      rects: ctx.rects,
+      withAnimation: true,
+    );
+  }
+}
+```
 
 ### Custom Cursor Color by Block Type
 
@@ -115,32 +133,7 @@ class BlockAwareRenderer extends DefaultSelectionRenderer {
 
 ### Vim-Style Block Cursor
 
-```dart
-class VimCursorRenderer extends DefaultSelectionRenderer {
-  @override
-  Widget buildCursor(CursorPaintContext ctx) {
-    return Container(
-      width: 8,
-      height: ctx.rect.height,
-      color: ctx.color.withAlpha(80),
-      child: Center(
-        child: Text(
-          _getCharAtCursor(ctx),
-          style: TextStyle(color: Colors.white, fontSize: 14),
-        ),
-      ),
-    );
-  }
-
-  String _getCharAtCursor(CursorPaintContext ctx) {
-    final delta = ctx.node.delta;
-    if (delta == null) return '';
-    final text = delta.toPlainText();
-    if (ctx.position.offset >= text.length) return ' ';
-    return text[ctx.position.offset];
-  }
-}
-```
+See `example/lib/cursor_renderers/vim_cursor_renderer.dart`.
 
 ## Architecture
 

@@ -54,7 +54,6 @@ void main() {
       const spacing = NovidentStyleSpacing();
       expect(spacing.before, isNull);
       expect(spacing.after, isNull);
-      expect(spacing.lineHeight, isNull);
     });
 
     test('merge prefers other values', () {

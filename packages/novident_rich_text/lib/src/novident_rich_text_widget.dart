@@ -308,6 +308,10 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }
 
   Widget _buildPlaceholderText(BuildContext context) {
+    final textInserts = widget.node.delta?.whereType<TextInsert>();
+    if (textInserts != null && textInserts.isNotEmpty) {
+      return const SizedBox.shrink();
+    }
     var textSpan = getPlaceholderTextSpan();
     if (widget.placeholderTextSpanDecorator != null) {
       textSpan = widget.placeholderTextSpanDecorator!(textSpan);
@@ -349,6 +353,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   Widget _buildRichText(BuildContext context) {
     final textInserts = widget.node.delta!.whereType<TextInsert>();
+    if (textInserts.isEmpty) {
+      return const SizedBox.shrink();
+    }
     TextSpan textSpan = getTextSpan(textInserts: textInserts);
     if (widget.textSpanDecorator != null) {
       textSpan = widget.textSpanDecorator!(textSpan);
@@ -357,18 +364,12 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return RichText(
       key: textKey,
       textAlign: _effectiveTextAlign,
-      strutStyle: resolvedStyle?.spacing != null &&
-              resolvedStyle?.spacing?.hanging != null
-          ? StrutStyle(
-              leading: resolvedStyle!.spacing!.hanging!,
-              leadingDistribution: TextLeadingDistribution.proportional,
-            )
-          : null,
       textHeightBehavior: TextHeightBehavior(
         applyHeightToFirstAscent:
             textStyleConfiguration.applyHeightToFirstAscent,
         applyHeightToLastDescent:
             textStyleConfiguration.applyHeightToLastDescent,
+        leadingDistribution: textStyleConfiguration.leadingDistribution,
       ),
       text: textSpan,
       textDirection: textDirection(),
@@ -398,6 +399,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   Widget _buildAutoCompleteRichText() {
     final textInserts = widget.node.delta!.whereType<TextInsert>();
+    if (textInserts.isEmpty) {
+      return const SizedBox.shrink();
+    }
     TextSpan textSpan = getTextSpan(textInserts: textInserts);
     if (widget.textSpanDecorator != null) {
       textSpan = widget.textSpanDecorator!(textSpan);
@@ -473,10 +477,13 @@ class _NovidentRichTextState extends State<NovidentRichText>
         return textSpan;
       }
       textSpan = textSpan.copyWith(
-        style: textStyleConfiguration.text.copyWith(
-          height: height,
-          fontSize: fontSize,
-        ),
+        // used to maintain legacy compatibility
+        style: widget.node.type == HeadingBlockKeys.type
+            ? TextStyle(
+                height: height,
+                fontSize: fontSize,
+              )
+            : _baseTextStyle,
       );
     }
     return textSpan;
@@ -488,9 +495,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
         WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
       TextSpan(
         text: widget.placeholderText,
-        style: textStyleConfiguration.text.copyWith(
-          height: textStyleConfiguration.lineHeight,
-        ),
+        style: _baseTextStyle.copyWith(color: _baseTextStyle.color?.withAlpha(150)),
       ),
     ];
     return TextSpan(children: children);
@@ -509,9 +514,10 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   TextStyle _buildBaseTextStyle() {
     final resolved = resolvedStyle;
-    TextStyle style = textStyleConfiguration.text.copyWith(
-      height:
-          resolved?.spacing?.lineHeight ?? textStyleConfiguration.lineHeight,
+    TextStyle style = TextStyle(
+      fontSize: kDefaultBaseStyle.fontSize,
+      fontFamily: kDefaultBaseStyle.fontFamily,
+      color: kDefaultBaseStyle.textColor,
     );
     if (resolved == null) return style;
 
@@ -536,6 +542,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       background: resolved.fontBackground,
       fontFeatures: resolved.fontFeatures,
       decorationColor: resolved.decorationColor,
+      height: resolved.spacing?.lineHeight,
     );
     return style.merge(resolvedTextStyle);
   }
@@ -556,16 +563,22 @@ class _NovidentRichTextState extends State<NovidentRichText>
       final Attributes? attributes = textInsert.attributes;
       if (attributes != null) {
         if (attributes.bold == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.bold);
+          textStyle =
+              textStyle.combine(const TextStyle(fontWeight: FontWeight.bold));
         }
         if (attributes.italic == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.italic);
+          textStyle =
+              textStyle.combine(const TextStyle(fontStyle: FontStyle.italic));
         }
         if (attributes.underline == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.underline);
+          textStyle = textStyle.combine(const TextStyle(
+            decoration: TextDecoration.underline,
+          ));
         }
         if (attributes.strikethrough == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.strikethrough);
+          textStyle = textStyle.combine(const TextStyle(
+            decoration: TextDecoration.lineThrough,
+          ));
         }
         if (attributes.href != null) {
           textStyle = textStyle.combine(textStyleConfiguration.href);
@@ -823,8 +836,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
             const TextPosition(offset: 0);
     // Shift past the WidgetSpan so getWordBoundary operates on real text.
     final shiftedTextPosition = TextPosition(
-      offset: rawTextPosition.offset
-          .clamp(textShift, rawTextPosition.offset),
+      offset: rawTextPosition.offset.clamp(textShift, rawTextPosition.offset),
       affinity: rawTextPosition.affinity,
     );
     final textRange = _renderParagraph?.getWordBoundary(shiftedTextPosition) ??
@@ -849,8 +861,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
             const TextPosition(offset: 0);
     // Shift past the WidgetSpan so getWordBoundary operates on real text.
     final shiftedTextPosition = TextPosition(
-      offset: rawTextPosition.offset
-          .clamp(textShift, rawTextPosition.offset),
+      offset: rawTextPosition.offset.clamp(textShift, rawTextPosition.offset),
       affinity: rawTextPosition.affinity,
     );
     final textRange = _renderParagraph?.getWordBoundary(shiftedTextPosition) ??
@@ -868,8 +879,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   @override
   Selection? getWordBoundaryInPosition(Position position) {
-    final textPosition =
-        TextPosition(offset: position.offset + textShift);
+    final textPosition = TextPosition(offset: position.offset + textShift);
     final textRange =
         _renderParagraph?.getWordBoundary(textPosition) ?? TextRange.empty;
     final start = Position(

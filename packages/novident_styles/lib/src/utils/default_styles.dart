@@ -43,7 +43,8 @@ const NovidentStyleDefinition kDefaultBaseStyle =
   name: 'Base',
   fontSize: 12.0,
   fontFamily: 'Roboto',
-  spacing: NovidentStyleSpacing(after: 5.0),
+  spacing: NovidentStyleSpacing(after: 2, lineHeight: 1.0),
+  textColor: Colors.black,
 );
 
 final NovidentStyleDefinition kNormalBodyStyle =

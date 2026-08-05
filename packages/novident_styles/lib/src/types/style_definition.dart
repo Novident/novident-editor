@@ -9,7 +9,7 @@ class NovidentStyleSpacing {
     this.before,
     this.after,
     this.hanging,
-    this.lineHeight,
+    this.lineHeight = 1.0,
   });
 
   final double? before;
@@ -19,7 +19,7 @@ class NovidentStyleSpacing {
   final double? hanging;
 
   /// Line height multiplier (1.0 = single, 1.5 = one-and-a-half, 2.0 = double).
-  final double? lineHeight;
+  final double lineHeight;
 
   NovidentStyleSpacing merge(NovidentStyleSpacing? other) {
     if (other == null) return this;
@@ -27,7 +27,8 @@ class NovidentStyleSpacing {
       before: other.before ?? before,
       after: other.after ?? after,
       hanging: other.hanging ?? hanging,
-      lineHeight: other.lineHeight ?? lineHeight,
+      lineHeight:
+          other.lineHeight != lineHeight ? other.lineHeight : lineHeight,
     );
   }
 }

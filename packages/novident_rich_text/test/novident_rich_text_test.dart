@@ -106,24 +106,37 @@ void main() {
 }
 
 class _StandaloneConfig implements RichTextEditorConfig {
-  @override double get textScaleFactor => 1.0;
-  @override double? get firstLineIndentFallback => null;
-  @override TextSpanDecoratorForAttribute? get textSpanDecorator => null;
-  @override NovidentTextSpanOverlayBuilder? get textSpanOverlayBuilder => null;
-  @override TextStyleConfiguration get textStyleConfiguration =>
+  @override
+  double get textScaleFactor => 1.0;
+  @override
+  double? get firstLineIndentFallback => null;
+  @override
+  TextSpanDecoratorForAttribute? get textSpanDecorator => null;
+  @override
+  NovidentTextSpanOverlayBuilder? get textSpanOverlayBuilder => null;
+  @override
+  TextStyleConfiguration get textStyleConfiguration =>
       const TextStyleConfiguration();
-  @override bool get enableAutoComplete => false;
-  @override NovidentAutoCompleteTextProvider? get autoCompleteTextProvider =>
-      null;
-  @override final selectionNotifier = ValueNotifier<Selection?>(null);
-  @override final remoteSelections =
-      ValueNotifier<List<RemoteSelection>>([]);
-  @override bool isBlockSelectionMode() => false;
-  @override CursorAppearance? customizeCursor(
+  @override
+  bool get enableAutoComplete => false;
+  @override
+  NovidentAutoCompleteTextProvider? get autoCompleteTextProvider => null;
+  @override
+  final selectionNotifier = ValueNotifier<Selection?>(null);
+  @override
+  final remoteSelections = ValueNotifier<List<RemoteSelection>>([]);
+  @override
+  bool isBlockSelectionMode() => false;
+  @override
+  CursorAppearance? customizeCursor(
           {required Node node,
           required Selection? selection,
           required Position position}) =>
       null;
-  @override EdgeInsets? blockSelectionMargin(Node node) => null;
-  @override String? selectionDragModeValue() => null;
+  @override
+  EdgeInsets? blockSelectionMargin(Node node) => null;
+  @override
+  String? selectionDragModeValue() => null;
+  @override
+  SelectionRenderer? get selectionRenderer => DefaultSelectionRenderer();
 }

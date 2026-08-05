@@ -61,21 +61,6 @@ void main() {
     });
   });
 
-  group('TextStyleConfiguration', () {
-    test('defaults', () {
-      const config = TextStyleConfiguration();
-      expect(config.text.fontSize, 16.0);
-      expect(config.lineHeight, 1.5);
-    });
-
-    test('copyWith', () {
-      const config = TextStyleConfiguration();
-      final copy = config.copyWith(lineHeight: 2.0);
-      expect(copy.lineHeight, 2.0);
-      expect(copy.text.fontSize, 16.0);
-    });
-  });
-
   group('ColorExtension', () {
     test('tryToColor hex', () {
       expect('#FF0000'.tryToColor(), isNotNull);

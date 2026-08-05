@@ -166,11 +166,7 @@ class DefaultSelectionRenderer implements SelectionRenderer {
   Position? onVerticalMove(CursorMoveContext ctx) => null;
 
   @override
-  Position? onHorizontalMove(CursorMoveContext ctx, {bool byWord = false}) {
-    if (!byWord) return null;
-    final pos = Position(path: ctx.node.path, offset: ctx.currentOffset);
-    return ctx.delegate.getWordBoundaryInPosition(pos)?.end;
-  }
+  Position? onHorizontalMove(CursorMoveContext ctx, {bool byWord = false}) => null;
 
   @override
   Position? onMoveToLineStart(CursorMoveContext ctx) => null;

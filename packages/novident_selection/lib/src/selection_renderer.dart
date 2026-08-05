@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:novident_core/novident_core.dart';
 
 import 'cursor/cursor.dart';
-import 'painter/selection_area_painter.dart';
+import 'painter/selection_area_paint_widget.dart';
 import 'move_types.dart';
 import 'selection_contexts.dart';
 

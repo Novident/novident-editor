@@ -18,7 +18,6 @@ class NovidentRichText extends StatefulWidget {
     super.key,
     this.cursorHeight,
     this.cursorWidth = 2.0,
-    this.lineHeight,
     this.textSpanDecorator,
     this.placeholderText = ' ',
     this.placeholderTextSpanDecorator,
@@ -48,9 +47,6 @@ class NovidentRichText extends StatefulWidget {
 
   /// The width of the cursor.
   final double cursorWidth;
-
-  /// The height of each line.
-  final double? lineHeight;
 
   /// customize the text span for rich text
   final NovidentTextSpanDecorator? textSpanDecorator;

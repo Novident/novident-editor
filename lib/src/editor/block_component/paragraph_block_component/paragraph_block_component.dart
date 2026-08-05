@@ -181,10 +181,10 @@ class _ParagraphBlockComponentWidgetState
     effectiveDecoration = blockStyle.applyToDecoration(effectiveDecoration);
 
     child = Padding(
+      key: blockComponentKey,
       padding: effectivePadding,
       // ignore: use_decorated_box
       child: Container(
-        key: blockComponentKey,
         decoration: effectiveDecoration,
         child: child,
       ),

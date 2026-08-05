@@ -120,4 +120,9 @@ mixin SelectableMixin<T extends StatefulWidget> on State<T> {
   /// (scroll-independent) coordinates. Returns `null` when the
   /// [RenderParagraph] is not available (node not laid out yet).
   double? getCaretLocalDx(int offset) => null;
+
+  /// The number of [WidgetSpan]s prepended before the first character.
+  /// Used to shift text offsets when measuring cursor/selection rects.
+  /// Only relevant for text-based selectables; defaults to 0.
+  int get textShift => 0;
 }

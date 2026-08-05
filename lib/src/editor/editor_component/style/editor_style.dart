@@ -29,6 +29,7 @@ class EditorStyle {
     this.mobileDragHandleHeightExtend,
     this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
     this.firstLineIndent,
+    this.selectionRenderer,
     this.showTableActionBar = true,
   });
 
@@ -112,6 +113,9 @@ class EditorStyle {
   /// and does not define its own [NovidentStyleIndent.firstLineIndent].
   final double? firstLineIndent;
 
+  /// Custom selection/cursor renderer. When null, [DefaultSelectionRenderer] is used.
+  final SelectionRenderer? selectionRenderer;
+
   /// Whether to show the [TableActionBar] above table blocks.
   ///
   /// When `false`, the floating action bar (add column/row, delete, colors)
@@ -130,6 +134,7 @@ class EditorStyle {
     this.textScaleFactor = 1.0,
     this.maxWidth,
     this.firstLineIndent,
+    this.selectionRenderer,
     this.showTableActionBar = true,
   })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 100),
         cursorColor = cursorColor ?? const Color(0xFF00BCF0),
@@ -174,6 +179,7 @@ class EditorStyle {
     this.mobileDragHandleHeightExtend,
     this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
     this.firstLineIndent,
+    this.selectionRenderer,
     this.showTableActionBar = true,
   })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 20),
         cursorColor = cursorColor ?? const Color(0xFF00BCF0),

@@ -266,7 +266,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return _cachedInsideTable!;
   }
 
-  int get _widgetSpanCount {
+  @override
+  int get textShift {
     if (!widget.useFirstLineIndent ||
         _firstLineIndentWidth == null ||
         _firstLineIndentWidth! <= 0) {
@@ -482,7 +483,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   TextSpan getPlaceholderTextSpan() {
     final children = <InlineSpan>[
-      if (_widgetSpanCount > 0)
+      if (textShift > 0)
         WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
       TextSpan(
         text: widget.placeholderText,
@@ -543,7 +544,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }) {
     int offset = 0;
     List<InlineSpan> textSpans = [];
-    if (_widgetSpanCount > 0) {
+    if (textShift > 0) {
       textSpans.add(
         WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
       );
@@ -673,7 +674,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     }
 
     final textPosition = TextPosition(
-      offset: position.offset + _widgetSpanCount,
+      offset: position.offset + textShift,
     );
     double? placeholderCursorHeight =
         _placeholderRenderParagraph?.getFullHeightForCaret(textPosition);
@@ -727,7 +728,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     final offset = _renderParagraph?.globalToLocal(start) ?? Offset.zero;
     final rawOffset =
         _renderParagraph?.getPositionForOffset(offset).offset ?? -1;
-    final baseOffset = (rawOffset - _widgetSpanCount).clamp(0, rawOffset);
+    final baseOffset = (rawOffset - textShift).clamp(0, rawOffset);
     return Position(path: widget.node.path, offset: baseOffset);
   }
 
@@ -753,7 +754,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     //    This is scroll-independent — local coords are relative to
     //    the RenderParagraph, not the viewport.
     final textPosition = TextPosition(
-      offset: currentOffset + _widgetSpanCount,
+      offset: currentOffset + textShift,
     );
     final caretLocal = rp.getOffsetForCaret(textPosition, Rect.zero);
 
@@ -777,7 +778,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     );
 
     final textPos = rp.getPositionForOffset(targetLocal);
-    final newOffset = (textPos.offset - _widgetSpanCount).clamp(0, textLen);
+    final newOffset = (textPos.offset - textShift).clamp(0, textLen);
 
     // 4. If the offset changed, we successfully moved to another line.
     if (newOffset != currentOffset) {
@@ -795,7 +796,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       halfTarget.dy.clamp(0.0, rp.size.height),
     );
     final halfPos = rp.getPositionForOffset(clampedHalf);
-    final halfOffset = (halfPos.offset - _widgetSpanCount).clamp(0, textLen);
+    final halfOffset = (halfPos.offset - textShift).clamp(0, textLen);
 
     if (halfOffset != currentOffset) {
       return Position(path: widget.node.path, offset: halfOffset);
@@ -809,7 +810,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   double? getCaretLocalDx(int offset) {
     final rp = _renderParagraph;
     if (rp == null) return null;
-    final tp = TextPosition(offset: offset + _widgetSpanCount);
+    final tp = TextPosition(offset: offset + textShift);
     return rp.getOffsetForCaret(tp, Rect.zero).dx;
   }
 
@@ -822,7 +823,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     // Shift past the WidgetSpan so getWordBoundary operates on real text.
     final shiftedTextPosition = TextPosition(
       offset: rawTextPosition.offset
-          .clamp(_widgetSpanCount, rawTextPosition.offset),
+          .clamp(textShift, rawTextPosition.offset),
       affinity: rawTextPosition.affinity,
     );
     final textRange = _renderParagraph?.getWordBoundary(shiftedTextPosition) ??
@@ -834,7 +835,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return Selection.collapsed(
       Position(
         path: widget.node.path,
-        offset: wordEdgeOffset - _widgetSpanCount,
+        offset: wordEdgeOffset - textShift,
       ),
     );
   }
@@ -848,18 +849,18 @@ class _NovidentRichTextState extends State<NovidentRichText>
     // Shift past the WidgetSpan so getWordBoundary operates on real text.
     final shiftedTextPosition = TextPosition(
       offset: rawTextPosition.offset
-          .clamp(_widgetSpanCount, rawTextPosition.offset),
+          .clamp(textShift, rawTextPosition.offset),
       affinity: rawTextPosition.affinity,
     );
     final textRange = _renderParagraph?.getWordBoundary(shiftedTextPosition) ??
         TextRange.empty;
     final start = Position(
       path: widget.node.path,
-      offset: textRange.start - _widgetSpanCount,
+      offset: textRange.start - textShift,
     );
     final end = Position(
       path: widget.node.path,
-      offset: textRange.end - _widgetSpanCount,
+      offset: textRange.end - textShift,
     );
     return Selection(start: start, end: end);
   }
@@ -867,16 +868,16 @@ class _NovidentRichTextState extends State<NovidentRichText>
   @override
   Selection? getWordBoundaryInPosition(Position position) {
     final textPosition =
-        TextPosition(offset: position.offset + _widgetSpanCount);
+        TextPosition(offset: position.offset + textShift);
     final textRange =
         _renderParagraph?.getWordBoundary(textPosition) ?? TextRange.empty;
     final start = Position(
       path: widget.node.path,
-      offset: textRange.start - _widgetSpanCount,
+      offset: textRange.start - textShift,
     );
     final end = Position(
       path: widget.node.path,
-      offset: textRange.end - _widgetSpanCount,
+      offset: textRange.end - textShift,
     );
     return Selection(start: start, end: end);
   }
@@ -894,7 +895,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     final textSelection = textSelectionFromEditorSelection(
       widget.node,
       selection,
-      _widgetSpanCount,
+      textShift,
     );
     if (textSelection == null) {
       return [];
@@ -948,8 +949,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
         _renderParagraph?.getPositionForOffset(localStart).offset ?? -1;
     final rawExtent =
         _renderParagraph?.getPositionForOffset(localEnd).offset ?? -1;
-    final baseOffset = (rawBase - _widgetSpanCount).clamp(0, rawBase);
-    final extentOffset = (rawExtent - _widgetSpanCount).clamp(0, rawExtent);
+    final baseOffset = (rawBase - textShift).clamp(0, rawBase);
+    final extentOffset = (rawExtent - textShift).clamp(0, rawExtent);
     return Selection.single(
       path: widget.node.path,
       startOffset: baseOffset,

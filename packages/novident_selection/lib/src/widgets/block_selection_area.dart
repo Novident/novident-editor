@@ -19,6 +19,7 @@ class BlockSelectionArea extends StatefulWidget {
     required this.cursorColor,
     required this.selectionColor,
     required this.blockColor,
+    this.renderer = const DefaultSelectionRenderer(),
     this.supportTypes = const [
       BlockSelectionType.cursor,
       BlockSelectionType.selection,
@@ -42,6 +43,9 @@ class BlockSelectionArea extends StatefulWidget {
   final Color selectionColor;
 
   final Color blockColor;
+
+  /// Custom selection/cursor renderer. Defaults to [DefaultSelectionRenderer].
+  final SelectionRenderer renderer;
 
   // the node of the block
   final Node node;
@@ -102,6 +106,7 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
         }
 
         final host = widget.host;
+        final renderer = widget.renderer;
         if (host.isBlockSelectionMode()) {
           if (!widget.supportTypes.contains(BlockSelectionType.block) ||
               !path.inSelection(selection, isSameDepth: true) ||
@@ -109,16 +114,13 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
             return sizedBox;
           }
           final padding = host.blockSelectionMargin(widget.node);
-          return Positioned.fromRect(
+          final blockCtx = BlockSelectionContext(
+            node: widget.node,
             rect: prevBlockRect!,
-            child: Container(
-              margin: padding,
-              decoration: BoxDecoration(
-                color: widget.blockColor,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
+            color: widget.blockColor,
+            margin: padding,
           );
+          return renderer.buildBlockSelectionHighlight(blockCtx);
         }
         // show the cursor when the selection is collapsed
         else if (selection.isCollapsed) {
@@ -128,12 +130,12 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
           }
           final host = widget.host;
           final dragMode = host.selectionDragModeValue();
+          final renderer = widget.renderer;
           var rect = prevCursorRect!;
           var cursorStyle = widget.delegate.cursorStyle;
           var shouldBlink = widget.delegate.shouldCursorBlink &&
               dragMode != 'cursor';
           var color = widget.cursorColor;
-          // consult the optional caret customizer (e.g. vim block cursor).
           final appearance = host.customizeCursor(
             node: widget.node,
             selection: selection,
@@ -145,13 +147,19 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
             shouldBlink = appearance.shouldBlink ?? shouldBlink;
             color = appearance.color ?? color;
           }
-          return Cursor(
-            key: cursorKey,
+          final cursorCtx = CursorPaintContext(
+            node: widget.node,
+            selection: selection,
+            position: selection.start,
             rect: rect,
-            shouldBlink: shouldBlink,
-            cursorStyle: cursorStyle,
             color: color,
+            style: cursorStyle,
+            shouldBlink: shouldBlink,
+            isExpandedHead: false,
+            textDirection: widget.delegate.textDirection(),
+            delegate: widget.delegate,
           );
+          return renderer.buildCursor(cursorCtx);
         } else {
           // optionally paint the caret at the moving head of the expanded
           // selection (e.g. vim visual mode), above the block content.
@@ -169,10 +177,14 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
                   prevSelectionRects!.first.width == 0)) {
             return sizedBox;
           }
-          return SelectionAreaPaint(
+          final selCtx = SelectionPaintContext(
+            node: widget.node,
+            selection: selection,
             rects: prevSelectionRects!,
-            selectionColor: widget.selectionColor,
+            color: widget.selectionColor,
+            textDirection: widget.delegate.textDirection(),
           );
+          return renderer.buildSelectionHighlight(selCtx);
         }
       }),
       child: const SizedBox.shrink(),
@@ -197,6 +209,7 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
       return null;
     }
     final host = widget.host;
+    final renderer = widget.renderer;
     final appearance = host.customizeCursor(
       node: widget.node,
       selection: rawSelection,
@@ -209,16 +222,21 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
     if (headRect == null) {
       return null;
     }
-    return Cursor(
-      key: cursorKey,
-      rect: appearance.rectBuilder?.call(headRect) ?? headRect,
-      shouldBlink: appearance.shouldBlink ?? false,
-      cursorStyle: appearance.style ?? widget.delegate.cursorStyle,
+    final rect = appearance.rectBuilder?.call(headRect) ?? headRect;
+    final cursorCtx = CursorPaintContext(
+      node: widget.node,
+      selection: rawSelection,
+      position: head,
+      rect: rect,
       color: appearance.color ?? widget.cursorColor,
+      style: appearance.style ?? widget.delegate.cursorStyle,
+      shouldBlink: appearance.shouldBlink ?? false,
+      isExpandedHead: true,
+      textDirection: widget.delegate.textDirection(),
+      delegate: widget.delegate,
     );
+    return renderer.buildExpandedHeadCursor(cursorCtx);
   }
-
-  /// Measures the caret rect at the moving head of an expanded selection
   /// when the cursor customizer wants it painted (e.g. vim visual mode).
   ///
   /// Only called from the post-frame pass, where layout is complete.
@@ -294,7 +312,18 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
         }
       } else if (widget.supportTypes.contains(BlockSelectionType.cursor) &&
           selection.isCollapsed) {
-        final rect = widget.delegate.getCursorRectInPosition(selection.start);
+        final rawRect = widget.delegate.getCursorRectInPosition(selection.start);
+        var rect = rawRect;
+        if (rect != null) {
+          final measureCtx = CursorMeasureContext(
+            node: widget.node,
+            position: selection.start,
+            delegate: widget.delegate,
+            textDirection: widget.delegate.textDirection(),
+            textShift: widget.delegate.textShift,
+          );
+          rect = widget.renderer.onCursorRectMeasured(measureCtx) ?? rect;
+        }
         if (rect != prevCursorRect) {
           setState(() {
             prevCursorRect = rect;

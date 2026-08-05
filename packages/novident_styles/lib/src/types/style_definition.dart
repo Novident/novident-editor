@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:novident_core/novident_core.dart';
 
 import 'package:novident_editor_document/novident_editor_document.dart';
 
@@ -49,18 +50,16 @@ class NovidentStyleIndent {
   });
 
   static bool _defaultFilter(Node node) {
-    if (node.type == 'paragraph') {
+    if (node.type == ParagraphBlockKeys.type) {
       final prev = node.previous;
       if (prev == null) return true;
       final attrs = prev.attributes;
-      if ((attrs['styleRef'] as String?)?.startsWith('heading-') ?? false) {
-        return true;
-      }
-      if (attrs['type'] == 'heading') return true;
-      if (attrs['subtype'] == 'heading' && attrs['heading'] is String) {
+      if ((attrs[blockComponentStyleRef] as String?)?.startsWith('heading-') ??
+          false) {
         return true;
       }
     }
+    if (node.type == 'heading') return true;
     return false;
   }
 

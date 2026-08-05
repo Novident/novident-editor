@@ -179,6 +179,7 @@ class _NumberedListBlockComponentWidgetState
       delegate: this,
       listenable: editorState.selectionNotifier,
       host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

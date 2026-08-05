@@ -143,6 +143,7 @@ class ImageBlockComponentWidgetState extends State<ImageBlockComponentWidget>
       delegate: this,
       listenable: editorState.selectionNotifier,
       host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [
@@ -180,6 +181,7 @@ class ImageBlockComponentWidgetState extends State<ImageBlockComponentWidget>
                   delegate: this,
                   listenable: editorState.selectionNotifier,
       host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
                   remoteSelection: editorState.remoteSelections,
                   cursorColor: editorState.editorStyle.cursorColor,
                   selectionColor: editorState.editorStyle.selectionColor,

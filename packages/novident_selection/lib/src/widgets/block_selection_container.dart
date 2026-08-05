@@ -11,6 +11,7 @@ class BlockSelectionContainer extends StatelessWidget {
     required this.delegate,
     required this.listenable,
     required this.host,
+    this.renderer,
     this.remoteSelection,
     this.cursorColor = Colors.black,
     this.selectionColor = Colors.blue,
@@ -28,6 +29,9 @@ class BlockSelectionContainer extends StatelessWidget {
 
   /// Host providing editor-level state for selection rendering.
   final BlockSelectionHost host;
+
+  /// Custom selection/cursor renderer. Defaults to [DefaultSelectionRenderer].
+  final SelectionRenderer? renderer;
 
   // get the selection from the listenable
   final ValueListenable<Selection?> listenable;
@@ -61,6 +65,7 @@ class BlockSelectionContainer extends StatelessWidget {
       delegate: delegate,
       listenable: listenable,
       host: host,
+      renderer: renderer ?? const DefaultSelectionRenderer(),
       cursorColor: cursorColor,
       selectionColor: selectionColor,
       blockColor: blockColor,

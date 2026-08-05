@@ -36,6 +36,9 @@ abstract class RichTextEditorConfig implements BlockSelectionHost {
 
   /// Remote collaborative selections.
   ValueListenable<List<RemoteSelection>> get remoteSelections;
+
+  /// Custom selection/cursor renderer. When null, [DefaultSelectionRenderer] is used.
+  SelectionRenderer? get selectionRenderer;
 }
 
 /// Decorates an [InlineSpan] for a custom attribute.

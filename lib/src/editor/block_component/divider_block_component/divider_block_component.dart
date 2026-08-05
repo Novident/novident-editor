@@ -116,6 +116,7 @@ class _DividerBlockComponentWidgetState
       delegate: this,
       listenable: editorState.selectionNotifier,
       host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       cursorColor: editorState.editorStyle.cursorColor,

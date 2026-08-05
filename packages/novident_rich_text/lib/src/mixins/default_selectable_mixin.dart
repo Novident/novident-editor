@@ -99,4 +99,7 @@ mixin DefaultSelectableMixin {
       forward.moveVerticallyInText(offset, upwards);
 
   double? getCaretLocalDx(int offset) => forward.getCaretLocalDx(offset);
+
+  int get textShift => forward.textShift;
+  bool get skipSortingChildrenWhenSelecting => forward.skipSortingChildrenWhenSelecting;
 }

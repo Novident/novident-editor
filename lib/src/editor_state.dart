@@ -209,6 +209,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   TextStyleConfiguration get textStyleConfiguration =>
       editorStyle.textStyleConfiguration;
 
+  @override
+  SelectionRenderer? get selectionRenderer => editorStyle.selectionRenderer;
+
   /// The selection notifier of the editor.
   final PropertyValueNotifier<Selection?> selectionNotifier =
       PropertyValueNotifier<Selection?>(null);

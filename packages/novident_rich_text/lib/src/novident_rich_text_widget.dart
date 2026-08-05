@@ -233,6 +233,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       delegate: widget.delegate,
       listenable: widget.editorConfig.selectionNotifier,
       host: widget.editorConfig,
+      renderer: widget.editorConfig.selectionRenderer,
       remoteSelection: widget.editorConfig.remoteSelections,
       node: widget.node,
       cursorColor: widget.cursorColor,

@@ -215,7 +215,7 @@ class _NumberedListIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final editorState = context.read<EditorState>();
-    final text = editorState.editorStyle.textStyleConfiguration.text;
+    final defaultText = DefaultTextStyle.of(context).style;
     final textScaleFactor = editorState.editorStyle.textScaleFactor;
     return Container(
       constraints:
@@ -230,7 +230,7 @@ class _NumberedListIcon extends StatelessWidget {
           ),
           TextSpan(
             text: node.levelString,
-            style: text.combine(textStyle),
+            style: defaultText.combine(textStyle),
           ),
           textDirection: direction,
         ),

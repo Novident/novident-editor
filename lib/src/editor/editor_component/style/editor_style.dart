@@ -140,10 +140,8 @@ class EditorStyle {
         cursorColor = cursorColor ?? const Color(0xFF00BCF0),
         selectionColor =
             selectionColor ?? const Color.fromARGB(53, 111, 201, 231),
-        textStyleConfiguration = textStyleConfiguration ??
-            const TextStyleConfiguration(
-              text: TextStyle(fontSize: 16, color: Colors.black),
-            ),
+        textStyleConfiguration =
+            textStyleConfiguration ?? const TextStyleConfiguration(),
         textSpanDecorator =
             textSpanDecorator ?? defaultTextSpanDecoratorForAttribute,
         magnifierSize = Size.zero,
@@ -186,10 +184,8 @@ class EditorStyle {
         dragHandleColor = dragHandleColor ?? const Color(0xFF00BCF0),
         selectionColor =
             selectionColor ?? const Color.fromARGB(53, 111, 201, 231),
-        textStyleConfiguration = textStyleConfiguration ??
-            const TextStyleConfiguration(
-              text: TextStyle(fontSize: 16, color: Colors.black),
-            ),
+        textStyleConfiguration =
+            textStyleConfiguration ?? const TextStyleConfiguration(),
         textSpanDecorator =
             textSpanDecorator ?? mobileTextSpanDecoratorForAttribute;
 

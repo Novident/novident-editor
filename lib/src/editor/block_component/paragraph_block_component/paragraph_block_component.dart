@@ -168,15 +168,6 @@ class _ParagraphBlockComponentWidgetState
             editorConfig: editorState,
             textAlign: effectiveTextAlign,
             placeholderText: _showPlaceholder ? placeholderText : ' ',
-            textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
-              textStyleWithTextSpan(
-                textSpan: textSpan,
-              ),
-            ),
-            placeholderTextSpanDecorator: (textSpan) =>
-                textSpan.updateTextStyle(
-              placeholderTextStyleWithTextSpan(textSpan: textSpan),
-            ),
             textDirection: textDirection,
             cursorColor: editorState.editorStyle.cursorColor,
             selectionColor: editorState.editorStyle.selectionColor,
@@ -189,11 +180,14 @@ class _ParagraphBlockComponentWidgetState
     var effectiveDecoration = withBackgroundColor ? decoration : null;
     effectiveDecoration = blockStyle.applyToDecoration(effectiveDecoration);
 
-    child = Container(
-      key: blockComponentKey,
-      decoration: effectiveDecoration,
+    child = Padding(
       padding: effectivePadding,
-      child: child,
+      // ignore: use_decorated_box
+      child: Container(
+        key: blockComponentKey,
+        decoration: effectiveDecoration,
+        child: child,
+      ),
     );
 
     child = BlockSelectionContainer(

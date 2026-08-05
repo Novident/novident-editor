@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:novident_core/novident_core.dart';
 import 'package:novident_selection/novident_selection.dart';
+import 'package:novident_core/novident_core.dart';
+import 'package:flutter/material.dart';
 
 /// Changes cursor color and style based on the node type where the
 /// cursor is positioned.

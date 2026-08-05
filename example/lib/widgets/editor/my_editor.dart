@@ -1,4 +1,3 @@
-import 'package:example/cursor_renderers/animated_cursor_renderer.dart';
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
@@ -49,7 +48,6 @@ class MyEditor extends StatelessWidget {
         cursorColor: Colors.black87,
         firstLineIndent: 30, 
         selectionColor: const Color(0x33448AFF),
-        selectionRenderer: AnimatedCursorRenderer(),
         textSpanDecorator: zenController?.textSpanDecorator(),
       ),
       blockWrapper: zenController?.blockWrapper,

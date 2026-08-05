@@ -68,8 +68,7 @@ TextSpan _neutralizeColors(
       attributes[RichTextKeys.textColor] != null) {
     final editorState = context.read<EditorState>();
     final baseColor =
-        editorState.editorStyle.textStyleConfiguration.text.color ??
-            DefaultTextStyle.of(context).style.color;
+        DefaultTextStyle.of(context).style.color;
     if (baseColor != null && style.color != baseColor) {
       style = style.copyWith(color: baseColor);
       changed = true;

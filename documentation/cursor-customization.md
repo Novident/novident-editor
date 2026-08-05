@@ -92,65 +92,52 @@ When `takeFullControl` is `true`, the editor skips its default movement — you'
 
 All examples are in `example/lib/cursor_renderers/`.
 
-### Rainbow Selection Highlight
-
-![Rainbow selection demo](images/samples/rainbow_example_selection_renderer.mp4)
-
 ```dart
+import 'package:flutter/material.dart';
+import 'package:novident_editor_core/novident_editor_core.dart';
+import 'package:novident_editor_selection/novident_editor_selection.dart';
+
 class RainbowSelectionRenderer extends DefaultSelectionRenderer {
-  const RainbowSelectionRenderer();
+  const RainbowSelectionRenderer({
+    this.colors = const [
+      Color(0xFF4158D0), // blue
+      Color(0xFFC850C0), // pink
+      Color(0xFFFFCC70), // gold
+    ],
+    this.duration = const Duration(seconds: 3),
+    this.curve = Curves.easeInOut,
+  });
+
+  /// The gradient colors used for the animated selection highlight.
+  /// Must have at least 2 colors.
+  final List<Color> colors;
+
+  /// Duration of one full gradient rotation cycle.
+  final Duration duration;
+
+  /// Easing curve for the rotation animation.
+  final Curve curve;
 
   @override
   Widget buildSelectionHighlight(SelectionPaintContext ctx) {
     return AnimatedSelectionAreaPaint(
       rects: ctx.rects,
+      colors: colors,
+      duration: duration,
+      curve: curve,
       withAnimation: true,
     );
   }
-}
-```
 
-### Custom Cursor Color by Block Type
-
-```dart
-class BlockAwareRenderer extends DefaultSelectionRenderer {
   @override
   Widget buildCursor(CursorPaintContext ctx) {
-    final color = switch (ctx.node.type) {
-      'heading' => Colors.orange,
-      'quote' => Colors.purple,
-      _ => ctx.color,
-    };
+    // Use a thin colored cursor that matches the rainbow theme.
     return Cursor(
       rect: ctx.rect,
-      color: color,
-      cursorStyle: ctx.style,
+      color: colors.first.withValues(alpha: 0.9),
+      cursorStyle: CursorStyle.verticalLine,
       shouldBlink: ctx.shouldBlink,
     );
   }
 }
 ```
-
-### Vim-Style Block Cursor
-
-See `example/lib/cursor_renderers/vim_cursor_renderer.dart`.
-
-## Architecture
-
-```
-User Input → EditorState.selectionNotifier
-  → BlockSelectionArea._updateSelectionIfNeeded()
-    → delegate.getCursorRectInPosition()  → rawRect
-    → renderer.onCursorRectMeasured()     → customRect ?? rawRect
-    → prevCursorRect = finalRect
-  → BlockSelectionArea.build()
-    → renderer.buildCursor(ctx)           → custom widget
-    → renderer.buildSelectionHighlight()  → custom widget
-```
-
-## Related
-
-- [SelectableMixin] — the protocol each block implements
-- [DefaultSelectionRenderer] — standard behavior implementation
-- [EditorStyle.selectionRenderer] — configuration point
-- `example/lib/cursor_renderers/` — more complete examples

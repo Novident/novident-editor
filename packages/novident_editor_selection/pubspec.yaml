@@ -1,5 +1,5 @@
 name: novident_editor_selection
-version: 0.1.0
+version: 1.0.0
 description: >-
   Selection rendering layer for Novident Editor — cursor, block selection,
   remote collaboration indicators. Reusable independently.

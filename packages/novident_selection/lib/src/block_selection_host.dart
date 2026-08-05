@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:novident_core/novident_core.dart';
 
+import 'selection_renderer.dart';
+
 /// Host interface for [BlockSelectionArea] to query editor-level state
 /// without depending on [EditorState].
 ///
@@ -25,6 +27,11 @@ abstract class BlockSelectionHost {
   /// Extra selection info value for the drag mode key.
   /// Returns `null` when not available.
   String? selectionDragModeValue();
+
+  /// Custom selection/cursor renderer. Read from the host so it stays
+  /// current even when the parent widget hasn't rebuilt (e.g. after
+  /// [VimModeController.attach] swaps it at runtime).
+  SelectionRenderer? get selectionRenderer;
 }
 
 /// Describes custom cursor appearance provided by the host.

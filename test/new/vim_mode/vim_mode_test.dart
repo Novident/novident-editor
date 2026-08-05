@@ -183,6 +183,11 @@ void main() {
           home: Scaffold(
             body: NovidentEditor(
               editorState: editorState,
+              editorStyle: EditorStyle.desktop(
+                selectionRenderer: VimSelectionRenderer(
+                  controller: controller,
+                ),
+              ),
               commandShortcutEvents: [
                 ...controller.commandShortcutEvents,
                 ...standardCommandShortcutEvents,
@@ -723,6 +728,11 @@ void main() {
           home: Scaffold(
             body: NovidentEditor(
               editorState: editorState,
+              editorStyle: EditorStyle.desktop(
+                selectionRenderer: VimSelectionRenderer(
+                  controller: controller,
+                ),
+              ),
               commandShortcutEvents: [
                 ...controller.commandShortcutEvents,
                 ...standardCommandShortcutEvents,
@@ -744,20 +754,27 @@ void main() {
       return (editorState, controller);
     }
 
-    Finder caret() => find.byType(Cursor);
+    /// Finds the vim block cursor rendered in normal/visual mode.
+    Finder vimCaret() => find.byType(VimBlockCursor);
 
-    Cursor caretWidget(WidgetTester tester) =>
-        tester.widget<Cursor>(caret().first);
+    VimBlockCursor vimCaretWidget(WidgetTester tester) =>
+        tester.widget<VimBlockCursor>(vimCaret().first);
+
+    /// Finds the standard [Cursor] widget rendered in insert mode.
+    Finder insertCaret() => find.byType(Cursor);
+
+    Cursor insertCaretWidget(WidgetTester tester) =>
+        tester.widget<Cursor>(insertCaret().first);
 
     testWidgets(
         'normal mode paints one native block caret, insert mode restores '
         'the thin caret', (tester) async {
       final (_, controller) = await pumpVimEditorForCursor(tester);
 
-      // normal mode: a single native caret, widened into a steady block.
+      // normal mode: a single native block caret, widened into a steady block.
       expect(controller.mode, VimMode.normal);
-      expect(caret(), findsOneWidget);
-      var cursor = caretWidget(tester);
+      expect(vimCaret(), findsOneWidget);
+      var cursor = vimCaretWidget(tester);
       expect(cursor.shouldBlink, false);
       final height = cursor.rect.height;
       expect(
@@ -773,10 +790,10 @@ void main() {
       // line — still a single cursor, never two.
       controller.enterInsertMode();
       await tester.pumpAndSettle();
-      expect(caret(), findsOneWidget);
-      cursor = caretWidget(tester);
-      expect(cursor.shouldBlink, true);
-      expect(cursor.rect.width, lessThan(5));
+      expect(insertCaret(), findsOneWidget);
+      final insertCursor = insertCaretWidget(tester);
+      expect(insertCursor.shouldBlink, true);
+      expect(insertCursor.rect.width, lessThan(5));
 
       controller.dispose();
     });
@@ -792,7 +809,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final cursor = caretWidget(tester);
+      final cursor = vimCaretWidget(tester);
       expect(
         cursor.rect.width,
         greaterThanOrEqualTo(
@@ -808,7 +825,7 @@ void main() {
       final (editorState, controller) = await pumpVimEditorForCursor(tester);
 
       // block position in normal mode (caret on offset 2).
-      final normalLeft = caretWidget(tester).rect.left;
+      final normalLeft = vimCaretWidget(tester).rect.left;
 
       await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
       await tester.pumpAndSettle();
@@ -819,14 +836,14 @@ void main() {
       expect(editorState.selection?.end.offset, 3);
       // …but the painted block does NOT move: the head renders at
       // `end - 1`, on the same character, exactly like vim.
-      expect(caret(), findsOneWidget);
-      expect(caretWidget(tester).rect.left, normalLeft);
+      expect(vimCaret(), findsOneWidget);
+      expect(vimCaretWidget(tester).rect.left, normalLeft);
 
       // motions move the painted head along the last selected character.
-      final headBefore = caretWidget(tester).rect.left;
+      final headBefore = vimCaretWidget(tester).rect.left;
       await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
       await tester.pumpAndSettle();
-      expect(caretWidget(tester).rect.left, greaterThan(headBefore));
+      expect(vimCaretWidget(tester).rect.left, greaterThan(headBefore));
 
       controller.dispose();
     });
@@ -845,7 +862,7 @@ void main() {
         ),
       );
 
-      var cursor = caretWidget(tester);
+      var cursor = vimCaretWidget(tester);
       expect(cursor.rect.width, 12);
       expect(cursor.shouldBlink, true);
       expect(cursor.color.toARGB32(), customColor.toARGB32());
@@ -855,7 +872,7 @@ void main() {
         cursorStyle: const VimCursorStyle(blockWidth: 20),
       );
       await tester.pumpAndSettle();
-      cursor = caretWidget(tester);
+      cursor = vimCaretWidget(tester);
       expect(cursor.rect.width, 20);
       expect(cursor.shouldBlink, false);
 
@@ -868,7 +885,7 @@ void main() {
         configuration: const VimModeConfiguration(enabled: false),
       );
 
-      final cursor = caretWidget(tester);
+      final cursor = insertCaretWidget(tester);
       expect(cursor.shouldBlink, true);
       expect(cursor.rect.width, lessThan(5));
 

@@ -85,6 +85,13 @@ final vimController = VimModeController();
 
 NovidentEditor(
   editorState: editorState,
+  editorStyle: EditorStyle.desktop(
+    // The vim renderer paints a block cursor in normal/visual mode.
+    // Insert mode keeps the standard thin caret.
+    selectionRenderer: VimSelectionRenderer(
+      controller: vimController,
+    ),
+  ),
   commandShortcutEvents: [
     ...vimController.commandShortcutEvents,
     ...standardCommandShortcutEvents,
@@ -97,6 +104,31 @@ vimController.attach(editorState);
 // Remap any key at runtime:
 vimController.configuration =
     vimController.configuration.rebind(VimCommand.moveLeft, 'a');
+```
+
+### Customising the block cursor
+
+The block cursor color defaults to `EditorStyle.cursorColor`. Configure width,
+blink, and opacity through `VimCursorStyle`:
+
+```dart
+final vimController = VimModeController(
+  configuration: VimModeConfiguration(
+    cursorStyle: VimCursorStyle(
+      color: Colors.purple,
+      opacity: 0.55,
+      blink: false,
+    ),
+  ),
+);
+```
+
+Change it at runtime without rebuilding:
+
+```dart
+vimController.configuration = vimController.configuration.copyWith(
+  cursorStyle: const VimCursorStyle(blockWidth: 20, blink: true),
+);
 ```
 
 A `VimModeChip` widget is available in the example for status bars. Modes, the pending `dd` operator

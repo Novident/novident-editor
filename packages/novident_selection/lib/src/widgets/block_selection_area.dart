@@ -106,7 +106,7 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
         }
 
         final host = widget.host;
-        final renderer = widget.renderer;
+        final renderer = host.selectionRenderer ?? widget.renderer;
         if (host.isBlockSelectionMode()) {
           if (!widget.supportTypes.contains(BlockSelectionType.block) ||
               !path.inSelection(selection, isSameDepth: true) ||
@@ -130,7 +130,7 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
           }
           final host = widget.host;
           final dragMode = host.selectionDragModeValue();
-          final renderer = widget.renderer;
+          final renderer = host.selectionRenderer ?? widget.renderer;
           var rect = prevCursorRect!;
           var cursorStyle = widget.delegate.cursorStyle;
           var shouldBlink = widget.delegate.shouldCursorBlink &&
@@ -209,28 +209,32 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
       return null;
     }
     final host = widget.host;
-    final renderer = widget.renderer;
+    final renderer = host.selectionRenderer ?? widget.renderer;
     final appearance = host.customizeCursor(
       node: widget.node,
       selection: rawSelection,
       position: head,
     );
-    if (appearance == null || !appearance.paintOnExpandedSelection) {
+    // Gate: either the legacy CursorAppearance pipeline or the new
+    // SelectionRenderer requests painting of the expanded-selection head.
+    final viaLegacy = appearance != null && appearance.paintOnExpandedSelection;
+    final viaRenderer = renderer.paintExpandedHeadCursor;
+    if (!viaLegacy && !viaRenderer) {
       return null;
     }
     final headRect = prevCursorRect;
     if (headRect == null) {
       return null;
     }
-    final rect = appearance.rectBuilder?.call(headRect) ?? headRect;
+    final rect = appearance?.rectBuilder?.call(headRect) ?? headRect;
     final cursorCtx = CursorPaintContext(
       node: widget.node,
       selection: rawSelection,
       position: head,
       rect: rect,
-      color: appearance.color ?? widget.cursorColor,
-      style: appearance.style ?? widget.delegate.cursorStyle,
-      shouldBlink: appearance.shouldBlink ?? false,
+      color: appearance?.color ?? widget.cursorColor,
+      style: appearance?.style ?? widget.delegate.cursorStyle,
+      shouldBlink: appearance?.shouldBlink ?? false,
       isExpandedHead: true,
       textDirection: widget.delegate.textDirection(),
       delegate: widget.delegate,
@@ -240,7 +244,10 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
   /// when the cursor customizer wants it painted (e.g. vim visual mode).
   ///
   /// Only called from the post-frame pass, where layout is complete.
-  Rect? _expandedSelectionHeadRect() {
+  ///
+  /// Returns both the effective target position and the measured rect,
+  /// so the caller can use the same position for [onCursorRectMeasured].
+  ({Position position, Rect rect})? _expandedSelectionHeadPositionAndRect() {
     final raw = widget.listenable.value;
     final head = raw?.end;
     if (raw == null ||
@@ -250,22 +257,26 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
       return null;
     }
     final host = widget.host;
+    final renderer = host.selectionRenderer ?? widget.renderer;
     final appearance = host.customizeCursor(
       node: widget.node,
       selection: raw,
       position: head,
     );
-    if (appearance == null || !appearance.paintOnExpandedSelection) {
+    final viaLegacy = appearance != null && appearance.paintOnExpandedSelection;
+    final viaRenderer = renderer.paintExpandedHeadCursor;
+    if (!viaLegacy && !viaRenderer) {
       return null;
     }
-    // the appearance may re-anchor the painted head (e.g. vim keeps the
-    // block on the last selected character); only honored within this
-    // same block.
-    var target = appearance.position ?? head;
+    var target = appearance?.position ??
+        (viaRenderer ? renderer.expandedHeadPosition(raw) : null) ??
+        head;
     if (!target.path.equals(widget.node.path)) {
       target = head;
     }
-    return widget.delegate.getCursorRectInPosition(target);
+    final rect = widget.delegate.getCursorRectInPosition(target);
+    if (rect == null) return null;
+    return (position: target, rect: rect);
   }
 
   /// Schedules one measurement pass for the next frame (deduplicated).
@@ -322,7 +333,7 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
             textDirection: widget.delegate.textDirection(),
             textShift: widget.delegate.textShift,
           );
-          rect = widget.renderer.onCursorRectMeasured(measureCtx) ?? rect;
+          rect = (widget.host.selectionRenderer ?? widget.renderer).onCursorRectMeasured(measureCtx) ?? rect;
         }
         if (rect != prevCursorRect) {
           setState(() {
@@ -336,7 +347,20 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
         // expanded selection: cache the head caret rect for the cursor
         // customizer (e.g. vim visual mode). Measuring here — after the
         // frame — avoids touching render objects that need layout.
-        final rect = _expandedSelectionHeadRect();
+        final pr = _expandedSelectionHeadPositionAndRect();
+        var rect = pr?.rect;
+        if (rect != null && pr != null) {
+          final measureCtx = CursorMeasureContext(
+            node: widget.node,
+            position: pr.position,
+            delegate: widget.delegate,
+            textDirection: widget.delegate.textDirection(),
+            textShift: widget.delegate.textShift,
+          );
+          rect = (widget.host.selectionRenderer ?? widget.renderer)
+                  .onCursorRectMeasured(measureCtx) ??
+              rect;
+        }
         if (rect != prevCursorRect) {
           setState(() {
             prevCursorRect = rect;

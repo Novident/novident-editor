@@ -92,6 +92,22 @@ abstract class SelectionRenderer {
   /// Called when the editor loses input focus.
   void onFocusLost(FocusLifecycleContext ctx);
 
+  /// Whether this renderer should paint the cursor at the moving head of
+  /// an expanded selection (e.g. vim visual mode).
+  ///
+  /// When `true`, [buildExpandedHeadCursor] is called for the selection
+  /// head even when no [CursorAppearance] is configured on the host.
+  /// Defaults to `false`.
+  bool get paintExpandedHeadCursor => false;
+
+  /// Returns a custom position for the expanded-selection head cursor,
+  /// or null to use the raw selection end position.
+  ///
+  /// Override to re-anchor the head cursor — e.g. vim paints at `end-1`
+  /// so the block stays on the currently selected character.
+  /// Only consulted when [paintExpandedHeadCursor] returns `true`.
+  Position? expandedHeadPosition(Selection? rawSelection) => null;
+
   /// Called after the default cursor rect has been measured via
   /// [SelectableMixin.getCursorRectInPosition].
   ///
@@ -197,6 +213,12 @@ class DefaultSelectionRenderer implements SelectionRenderer {
 
   @override
   void onFocusLost(FocusLifecycleContext ctx) {}
+
+  @override
+  bool get paintExpandedHeadCursor => false;
+
+  @override
+  Position? expandedHeadPosition(Selection? rawSelection) => null;
 
   @override
   Rect? onCursorRectMeasured(CursorMeasureContext ctx) => null;

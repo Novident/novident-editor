@@ -2,6 +2,8 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'vim_selection_renderer.dart';
+
 /// Coordinates the vim emulation of the editor.
 ///
 /// Usage:
@@ -49,7 +51,6 @@ class VimModeController extends ChangeNotifier {
   bool _interceptorRegistered = false;
   bool _suppressSelectionSync = false;
   String? _pendingCommand;
-  CursorAppearanceBuilder? _previousCursorAppearanceBuilder;
 
   late final Map<VimCommand, CommandShortcutEvent> _events;
   late final VimModeKeyboardInterceptor _interceptor;
@@ -122,10 +123,6 @@ class VimModeController extends ChangeNotifier {
     detach();
     _editorState = editorState;
     editorState.selectionNotifier.addListener(_onEditorSelectionChanged);
-    // chain the caret customizer so the native pipeline paints the vim
-    // block cursor (no overlay involved).
-    _previousCursorAppearanceBuilder = editorState.cursorAppearanceBuilder;
-    editorState.cursorAppearanceBuilder = _cursorAppearanceBuilder;
     _registerInterceptor();
   }
 
@@ -135,18 +132,11 @@ class VimModeController extends ChangeNotifier {
     final editorState = _editorState;
     if (editorState != null) {
       editorState.selectionNotifier.removeListener(_onEditorSelectionChanged);
-      if (identical(
-        editorState.cursorAppearanceBuilder,
-        _cursorAppearanceBuilder,
-      )) {
-        editorState.cursorAppearanceBuilder = _previousCursorAppearanceBuilder;
-      }
       if (_interceptorRegistered) {
         editorState.service.keyboardService
             ?.unregisterInterceptor(_interceptor);
       }
     }
-    _previousCursorAppearanceBuilder = null;
     _interceptorRegistered = false;
     _pendingCommand = null;
     _editorState = null;
@@ -293,111 +283,8 @@ class VimModeController extends ChangeNotifier {
     }
   }
 
-  /// The caret customizer installed on the editor state: paints the vim
-  /// block cursor in normal/visual mode and leaves the insert caret alone.
-  CursorAppearance? _cursorAppearanceBuilder(
-    Node node,
-    Selection selection,
-    Position caretPosition,
-  ) {
-    if (!enabled || _mode == VimMode.insert) {
-      return _previousCursorAppearanceBuilder?.call(
-        node,
-        selection,
-        caretPosition,
-      );
-    }
-
-    final style = _configuration.cursorStyle;
-    final displayPosition = _displayCaretPosition(selection, caretPosition);
-    return CursorAppearance(
-      // in visual mode, also paint the block at the moving head of the
-      // selection so the user can see where it is being extended from.
-      paintOnExpandedSelection: true,
-      position: displayPosition,
-      shouldBlink: style.blink,
-      color: _resolveCursorBaseColor(style).withValues(alpha: style.opacity),
-      rectBuilder: (rect) => _vimBlockRect(node, displayPosition, rect, style),
-    );
-  }
-
-  /// Where the block cursor is *painted* — the selection itself is never
-  /// altered.
-  ///
-  /// The internal selection is end-exclusive (`[a, b)` covers the
-  /// characters `a..b-1`), so when the moving head is the upper bound of
-  /// an expanded selection the block is rendered on `b - 1`: the last
-  /// character actually selected. This keeps the caret visually still
-  /// when `v` wraps the character under it, exactly like vim.
-  ///
-  /// Guards: collapsed selections, heads at offset 0 (the character
-  /// `b - 1` would live in another block) and lower-bound heads
-  /// (leftward/backward selections, already inclusive at that end) are
-  /// left untouched.
-  Position _displayCaretPosition(Selection selection, Position head) {
-    if (selection.isCollapsed) {
-      return head;
-    }
-    final normalized = selection.normalized;
-    if (head != normalized.end || head.offset <= 0) {
-      return head;
-    }
-    return Position(path: head.path, offset: head.offset - 1);
-  }
-
-  /// The block base color: the configured one or the editor caret color.
-  ///
-  /// `EditorState.editorStyle` is a `late` field initialized by the
-  /// editor's first build; painting always happens afterwards, but keep a
-  /// defensive fallback anyway.
-  Color _resolveCursorBaseColor(VimCursorStyle style) {
-    if (style.color != null) {
-      return style.color!;
-    }
-    try {
-      return _editorState?.editorStyle.cursorColor ?? const Color(0xFF00BCF0);
-    } catch (_) {
-      return const Color(0xFF00BCF0);
-    }
-  }
-
-  /// Widens the caret rect into a block that covers the character under
-  /// the caret, clamped so whitespace, ligatures, tabs and wide glyphs
-  /// produce a reasonable block (see [VimCursorStyle]).
-  Rect _vimBlockRect(
-    Node node,
-    Position position,
-    Rect caretRect,
-    VimCursorStyle style,
-  ) {
-    final height = caretRect.height;
-    var width = style.blockWidth;
-
-    if (width == null) {
-      double? measured;
-      final delta = node.delta;
-      final selectable = node.selectable;
-      if (delta != null &&
-          selectable != null &&
-          position.offset < delta.length) {
-        final nextRect = selectable.getCursorRectInPosition(
-          Position(path: position.path, offset: position.offset + 1),
-        );
-        if (nextRect != null) {
-          final sameLine = (nextRect.top - caretRect.top).abs() < height / 2;
-          if (sameLine && nextRect.left > caretRect.left) {
-            measured = nextRect.left - caretRect.left;
-          }
-        }
-      }
-      final minWidth = height * style.minBlockWidthFactor;
-      final maxWidth = height * style.maxBlockWidthFactor;
-      width = (measured ?? minWidth).clamp(minWidth, maxWidth);
-    }
-
-    return Rect.fromLTWH(caretRect.left, caretRect.top, width, height);
-  }
-
+  /// Forces the selection areas to repaint the caret with the current
+  /// mode/configuration, without changing the selection.
   /// Keeps the mode in sync with selection changes coming from UI events
   /// (mouse drag/click, select all).
   void _onEditorSelectionChanged() {

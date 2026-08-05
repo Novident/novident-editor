@@ -162,6 +162,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   /// painting.
   CursorAppearanceBuilder? cursorAppearanceBuilder;
 
+  @override
+  SelectionRenderer? get selectionRenderer => editorStyle.selectionRenderer;
+
   /// @override from BlockSelectionHost
   @override
   bool isBlockSelectionMode() => selectionType == SelectionType.block;
@@ -208,10 +211,7 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   @override
   TextStyleConfiguration get textStyleConfiguration =>
       editorStyle.textStyleConfiguration;
-
-  @override
-  SelectionRenderer? get selectionRenderer => editorStyle.selectionRenderer;
-
+  /// The selection notifier of the editor.
   /// The selection notifier of the editor.
   final PropertyValueNotifier<Selection?> selectionNotifier =
       PropertyValueNotifier<Selection?>(null);

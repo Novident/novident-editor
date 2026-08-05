@@ -211,6 +211,7 @@ class EditorStyle {
     double? mobileDragHandleHeightExtend,
     Duration? autoDismissCollapsedHandleDuration,
     double? firstLineIndent,
+    SelectionRenderer? selectionRenderer,
     bool? showTableActionBar,
   }) {
     return EditorStyle(
@@ -245,6 +246,7 @@ class EditorStyle {
       autoDismissCollapsedHandleDuration: autoDismissCollapsedHandleDuration ??
           this.autoDismissCollapsedHandleDuration,
       firstLineIndent: firstLineIndent ?? this.firstLineIndent,
+      selectionRenderer: selectionRenderer ?? this.selectionRenderer,
       showTableActionBar: showTableActionBar ?? this.showTableActionBar,
     );
   }

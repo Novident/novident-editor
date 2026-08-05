@@ -55,6 +55,14 @@ final vimController = VimModeController();
 
 NovidentEditor(
   editorState: editorState,
+  editorStyle: EditorStyle.desktop(
+    // Pass the vim renderer so the block cursor is painted in
+    // normal/visual mode. The renderer delegates to the standard
+    // caret in insert mode automatically.
+    selectionRenderer: VimSelectionRenderer(
+      controller: vimController,
+    ),
+  ),
   commandShortcutEvents: [
     // vim shortcuts must come first so they take precedence.
     ...vimController.commandShortcutEvents,
@@ -264,6 +272,84 @@ NovidentEditor(
 Because `VimCommand` equality is based on the `code` integer, your custom
 commands can be stored in `VimModeConfiguration.keybindings` and resolved
 exactly like the built-in ones.
+
+---
+
+## Cursor styling
+
+The vim emulation uses a **block cursor** in normal and visual mode, rendered
+through a `VimSelectionRenderer` that is passed to `EditorStyle.desktop()`.
+The insert-mode caret is never altered — the standard thin blinking line is
+preserved.
+
+### Configuring the block cursor
+
+The block cursor is styled through `VimCursorStyle`, accessible from
+`VimModeConfiguration.cursorStyle`:
+
+```dart
+final vimController = VimModeController(
+  configuration: VimModeConfiguration(
+    cursorStyle: VimCursorStyle(
+      color: Colors.purple,      // defaults to EditorStyle.cursorColor
+      opacity: 0.55,             // 0.0 – 1.0, keep text readable underneath
+      blink: false,              // steady block (default), set true to blink
+      blockWidth: null,          // null = auto-measure the character width
+      minBlockWidthFactor: 0.4,  // lower clamp × caret height
+      maxBlockWidthFactor: 1.0,  // upper clamp × caret height
+    ),
+  ),
+);
+
+NovidentEditor(
+  editorState: editorState,
+  editorStyle: EditorStyle.desktop(
+    cursorColor: Colors.black87,  // insert-mode caret color
+    selectionRenderer: VimSelectionRenderer(
+      controller: vimController,
+    ),
+  ),
+  commandShortcutEvents: [
+    ...vimController.commandShortcutEvents,
+    ...standardCommandShortcutEvents,
+  ],
+);
+```
+
+### Width policy
+
+When `blockWidth` is null (default), the renderer measures the character
+under the caret from the text layout and clamps the result between
+`minBlockWidthFactor` and `maxBlockWidthFactor` (both relative to the caret
+height). This keeps the block usable on whitespace (too narrow) and on
+ligatures / tabs / wide glyphs (too wide).
+
+Set `blockWidth` to a fixed value to override the measurement entirely.
+
+### Changing the style at runtime
+
+The cursor style can be changed at runtime **without rebuilding the editor** —
+the `SelectionRenderer` reads the current `VimCursorStyle` from the controller
+on every frame:
+
+```dart
+vimController.configuration = vimController.configuration.copyWith(
+  cursorStyle: const VimCursorStyle(
+    color: Colors.red,
+    blockWidth: 20,
+    blink: true,
+  ),
+);
+```
+
+### How it works
+
+The `VimSelectionRenderer` implements the `SelectionRenderer` interface from
+`novident_selection`. In normal/visual mode it paints a `VimBlockCursor`
+(a semi-transparent `Container` that covers the character at the caret),
+while in insert mode every call delegates to the fallback `DefaultSelectionRenderer`
+(the standard thin caret). The mode switch triggers a repaint automatically
+via the editor's selection notifier — no manual rebuild required.
 
 ---
 

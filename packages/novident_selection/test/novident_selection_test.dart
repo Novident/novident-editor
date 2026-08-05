@@ -41,6 +41,7 @@ class _TestHost implements BlockSelectionHost {
       null;
   @override EdgeInsets? blockSelectionMargin(Node node) => null;
   @override String? selectionDragModeValue() => null;
+  @override SelectionRenderer? get selectionRenderer => null;
 }
 
 Node _makeNode() => Node(type: 'paragraph');

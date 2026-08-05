@@ -1,0 +1,27 @@
+import 'package:novident_editor_styles/novident_editor_styles.dart';
+
+class NovidentStylesConfig {
+  const NovidentStylesConfig({
+    required this.registry,
+    this.defaultStyle = kDefaultBaseStyle,
+    this.defaultStylesByType = const <String, NovidentStyleDefinition>{},
+  });
+
+  final NovidentStyleRegistry registry;
+  final NovidentStyleDefinition defaultStyle;
+  final Map<String, NovidentStyleDefinition> defaultStylesByType;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NovidentStylesConfig &&
+          registry == other.registry &&
+          defaultStyle == other.defaultStyle;
+
+  @override
+  int get hashCode => Object.hash(
+        registry,
+        defaultStyle,
+        defaultStylesByType,
+      );
+}

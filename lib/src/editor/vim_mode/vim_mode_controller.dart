@@ -2,8 +2,6 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'vim_selection_renderer.dart';
-
 /// Coordinates the vim emulation of the editor.
 ///
 /// Usage:
@@ -13,6 +11,7 @@ import 'vim_selection_renderer.dart';
 ///
 /// NovidentEditor(
 ///   editorState: editorState,
+///   editorStyle: EditoStyle.desktop(selectionRenderer: VimSelectionRenderer(controller: ...))
 ///   commandShortcutEvents: [
 ///     // vim shortcuts must come first so they take precedence.
 ///     ...vimController.commandShortcutEvents,

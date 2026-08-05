@@ -4,9 +4,9 @@ library;
 export 'package:novident_editor_document/novident_editor_document.dart';
 
 // core part, including document, node, selection, etc.
-export 'package:novident_styles/novident_styles.dart';
+export 'package:novident_editor_styles/novident_editor_styles.dart';
 export 'src/core/core.dart';
-export 'package:novident_rich_text/novident_rich_text.dart';
+export 'package:novident_editor_rich_text/novident_editor_rich_text.dart';
 export 'src/editor/block_component/table_block_component/table.dart';
 // editor part, including editor component, block component, etc.
 export 'src/editor/editor.dart';
@@ -25,8 +25,8 @@ export 'src/l10n/l10n.dart';
 // plugins part, including decoder and encoder.
 export 'src/plugins/plugins.dart';
 export 'src/render/selection/cursor_appearance.dart';
-export 'package:novident_core/novident_core.dart';
-export 'package:novident_selection/novident_selection.dart';
+export 'package:novident_editor_core/novident_editor_core.dart';
+export 'package:novident_editor_selection/novident_editor_selection.dart';
 export 'src/render/toolbar/toolbar_item.dart';
 export 'src/service/context_menu/context_menu.dart';
 export 'src/service/context_menu/built_in_context_menu_item.dart';

@@ -11,9 +11,7 @@ export 'base_component/insert_newline_in_type_command.dart';
 export 'base_component/markdown_format_helper.dart';
 export 'base_component/outdent_command.dart';
 // selection
-export 'package:novident_selection/novident_selection.dart';
 export 'base_component/text_direction_mixin.dart';
-export 'package:novident_core/src/types/text_style_configuration.dart';
 export 'base_component/widget/full_screen_overlay_entry.dart';
 export 'base_component/widget/nested_list_widget.dart';
 // bulleted list
@@ -37,7 +35,6 @@ export 'paragraph_block_component/paragraph_block_component.dart';
 // quote
 export 'quote_block_component/quote_block_component.dart';
 export 'quote_block_component/quote_character_shortcut.dart';
-export 'package:novident_rich_text/novident_rich_text.dart';
 export 'standard_block_components.dart';
 export 'table_block_component/table_action.dart';
 export 'table_block_component/table_action_menu.dart';

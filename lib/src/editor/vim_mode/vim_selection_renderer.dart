@@ -1,12 +1,30 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:novident_core/novident_core.dart';
-import 'package:novident_editor_document/novident_editor_document.dart';
-import 'package:novident_selection/novident_selection.dart';
-
-import 'vim_mode_configuration.dart';
-import 'vim_mode_controller.dart';
+import 'package:novident_editor/novident_editor.dart'
+    show
+        BlockSelectionContext,
+        Cursor,
+        CursorMeasureContext,
+        CursorMoveContext,
+        CursorPaintContext,
+        CursorStyle,
+        DefaultSelectionRenderer,
+        FocusLifecycleContext,
+        MoveAttemptContext,
+        MoveCompletedContext,
+        MoveIntention,
+        Node,
+        Position,
+        SelectableMixin,
+        Selection,
+        SelectionLifecycleContext,
+        SelectionMeasureContext,
+        SelectionPaintContext,
+        SelectionRenderer,
+        VimCursorStyle,
+        VimMode,
+        VimModeController;
 
 class VimSelectionRenderer implements SelectionRenderer {
   VimSelectionRenderer({
@@ -41,8 +59,6 @@ class VimSelectionRenderer implements SelectionRenderer {
     return end;
   }
 
-  // ─── Render ──────────────────────────────────────────
-
   @override
   Widget buildCursor(CursorPaintContext ctx) {
     if (!_isVimActive) return fallback.buildCursor(ctx);
@@ -71,51 +87,71 @@ class VimSelectionRenderer implements SelectionRenderer {
   Widget buildBlockSelectionHighlight(BlockSelectionContext ctx) =>
       fallback.buildBlockSelectionHighlight(ctx);
 
-  // ─── Movement ────────────────────────────────────────
+  @override
+  Position? onVerticalMove(CursorMoveContext ctx) =>
+      fallback.onVerticalMove(ctx);
+  @override
+  Position? onHorizontalMove(CursorMoveContext ctx, {bool byWord = false}) =>
+      fallback.onHorizontalMove(ctx, byWord: byWord);
+  @override
+  Position? onMoveToLineStart(CursorMoveContext ctx) =>
+      fallback.onMoveToLineStart(ctx);
+  @override
+  Position? onMoveToLineEnd(CursorMoveContext ctx) =>
+      fallback.onMoveToLineEnd(ctx);
+  @override
+  Position? onPageUp(CursorMoveContext ctx) => fallback.onPageUp(ctx);
+  @override
+  Position? onPageDown(CursorMoveContext ctx) => fallback.onPageDown(ctx);
 
-  @override Position? onVerticalMove(CursorMoveContext ctx) => fallback.onVerticalMove(ctx);
-  @override Position? onHorizontalMove(CursorMoveContext ctx, {bool byWord = false}) => fallback.onHorizontalMove(ctx, byWord: byWord);
-  @override Position? onMoveToLineStart(CursorMoveContext ctx) => fallback.onMoveToLineStart(ctx);
-  @override Position? onMoveToLineEnd(CursorMoveContext ctx) => fallback.onMoveToLineEnd(ctx);
-  @override Position? onPageUp(CursorMoveContext ctx) => fallback.onPageUp(ctx);
-  @override Position? onPageDown(CursorMoveContext ctx) => fallback.onPageDown(ctx);
+  @override
+  MoveIntention? onTryMove(MoveAttemptContext ctx) => fallback.onTryMove(ctx);
+  @override
+  void onMoveCompleted(MoveCompletedContext ctx) =>
+      fallback.onMoveCompleted(ctx);
 
-  // ─── Transition ──────────────────────────────────────
-
-  @override MoveIntention? onTryMove(MoveAttemptContext ctx) => fallback.onTryMove(ctx);
-  @override void onMoveCompleted(MoveCompletedContext ctx) => fallback.onMoveCompleted(ctx);
-
-  // ─── Lifecycle ───────────────────────────────────────
-
-  @override void onSelectionStarted(SelectionLifecycleContext ctx) => fallback.onSelectionStarted(ctx);
-  @override void onSelectionEnded(SelectionLifecycleContext ctx) => fallback.onSelectionEnded(ctx);
-  @override void onFocusGained(FocusLifecycleContext ctx) => fallback.onFocusGained(ctx);
-  @override void onFocusLost(FocusLifecycleContext ctx) => fallback.onFocusLost(ctx);
-
-  // ─── Measurement ─────────────────────────────────────
+  @override
+  void onSelectionStarted(SelectionLifecycleContext ctx) =>
+      fallback.onSelectionStarted(ctx);
+  @override
+  void onSelectionEnded(SelectionLifecycleContext ctx) =>
+      fallback.onSelectionEnded(ctx);
+  @override
+  void onFocusGained(FocusLifecycleContext ctx) => fallback.onFocusGained(ctx);
+  @override
+  void onFocusLost(FocusLifecycleContext ctx) => fallback.onFocusLost(ctx);
 
   @override
   Rect? onCursorRectMeasured(CursorMeasureContext ctx) {
     if (!_isVimActive) return fallback.onCursorRectMeasured(ctx);
-    return _vimBlockRect(ctx.node, ctx.position, ctx.delegate);
+    return VimSelectionRenderer.vimBlockRect(
+      ctx.node,
+      ctx.position,
+      ctx.delegate,
+      _style,
+    );
   }
 
   @override
   List<Rect>? onSelectionRectsMeasured(SelectionMeasureContext ctx) =>
       fallback.onSelectionRectsMeasured(ctx);
 
-  // ─── Helpers ─────────────────────────────────────────
-
   Color _resolveColor(VimCursorStyle style, Color fallback) {
-    if (style.color != null) return style.color!.withValues(alpha: style.opacity);
+    if (style.color != null) {
+      return style.color!.withValues(alpha: style.opacity);
+    }
     return fallback.withValues(alpha: style.opacity);
   }
 
-  Rect? _vimBlockRect(Node node, Position position, SelectableMixin delegate) {
+  static Rect? vimBlockRect(
+    Node node,
+    Position position,
+    SelectableMixin delegate,
+    VimCursorStyle style,
+  ) {
     final caretRect = delegate.getCursorRectInPosition(position);
     if (caretRect == null) return null;
 
-    final style = _style;
     final height = caretRect.height;
     var width = style.blockWidth;
 
@@ -207,9 +243,8 @@ class _VimBlockCursorState extends State<VimBlockCursor> {
 
   @override
   Widget build(BuildContext context) {
-    final color = (widget.shouldBlink && !showCursor)
-        ? Colors.transparent
-        : widget.color;
+    final color =
+        (widget.shouldBlink && !showCursor) ? Colors.transparent : widget.color;
     final size = widget.rect.size;
     return Positioned.fromRect(
       rect: widget.rect,

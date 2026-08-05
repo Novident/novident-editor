@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_selection/novident_selection.dart';
-import 'package:novident_rich_text/novident_rich_text.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/auto_scroller.dart';
 import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:novident_editor/src/history/undo_manager.dart';

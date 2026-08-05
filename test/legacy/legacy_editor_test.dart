@@ -1,5 +1,4 @@
-import 'package:novident_editor_document/novident_editor_document.dart';
-import 'package:novident_core/novident_core.dart';
+import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

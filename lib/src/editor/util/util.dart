@@ -1,4 +1,4 @@
-export 'package:novident_core/src/extensions/color_extension.dart';
+export 'package:novident_editor_core/src/extensions/color_extension.dart';
 export 'debounce.dart';
 export 'delta_util.dart';
 export 'editor_state_selectable_extension.dart';

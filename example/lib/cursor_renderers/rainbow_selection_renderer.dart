@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:novident_core/novident_core.dart';
-import 'package:novident_selection/novident_selection.dart';
+import 'package:novident_editor_core/novident_editor_core.dart';
+import 'package:novident_editor_selection/novident_editor_selection.dart';
 
 /// Animated rainbow gradient selection highlight that cycles through
 /// colors over time.

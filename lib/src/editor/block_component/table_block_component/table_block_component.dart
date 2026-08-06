@@ -239,7 +239,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
         }) ??
         tableStyle.enableHorizontalScroll;
 
-    Widget tableArea = LayoutBuilder(
+    final Widget tableArea = LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
         final tableNode = widget.tableNode;
@@ -335,7 +335,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
   RenderBox get _renderBox => context.findRenderObject() as RenderBox;
 
   @override
-  Position start() => Position(path: widget.node.path, offset: 0);
+  Position start() => Position(path: widget.node.path);
 
   @override
   Position end() => Position(path: widget.node.path, offset: 1);

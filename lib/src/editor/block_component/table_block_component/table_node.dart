@@ -4,9 +4,6 @@ import 'package:collection/collection.dart';
 import 'package:novident_editor/novident_editor.dart';
 
 class TableNode {
-  final Node node;
-  final List<List<Node>> _cells = [];
-
   TableNode({
     required this.node,
     NovidentTableStyleDefinition? style,
@@ -78,6 +75,8 @@ class TableNode {
   factory TableNode.fromJson(Map<String, Object> json) {
     return TableNode(node: Node.fromJson(json));
   }
+  final Node node;
+  final List<List<Node>> _cells = [];
 
   /// Creates a [TableNode] from a grid of plain strings.
   ///
@@ -363,7 +362,7 @@ class TableNode {
         }
       }
 
-      double totalUsed = widths.fold(
+      final double totalUsed = widths.fold(
         0,
         (a, b) => a + b,
       );
@@ -501,7 +500,7 @@ class TableNode {
     // The extra space matches the default vertical padding of the paragraph
     // inside the cell. It is configurable through
     // `TableStyle.cellVerticalPadding` (see `TableDefaults.cellVerticalPadding`).
-    double maxHeight = _cells
+    final double maxHeight = _cells
         .map<double>(
           (c) =>
               c[row].children.first.rect.height +
@@ -513,13 +512,18 @@ class TableNode {
     // the synchronization when column 0 is already up to date but the other
     // columns are stale (partial transactions, undo/redo, collab).
     final heightsNeedSync = _cells.any(
-      (c) => c[row].attributes[TableCellBlockKeys.height] != maxHeight,
+      (c) {
+        return tableRowHeightChanged(
+          _cells[0][row].attributes[TableCellBlockKeys.height],
+          maxHeight,
+        );
+      },
     );
 
-    if (heightsNeedSync && !maxHeight.isNaN) {
+    if (heightsNeedSync) {
       for (int i = 0; i < colsLen; i++) {
         final currHeight = _cells[i][row].attributes[TableCellBlockKeys.height];
-        if (currHeight == maxHeight) {
+        if (!tableRowHeightChanged(currHeight, maxHeight)) {
           continue;
         }
 
@@ -602,4 +606,31 @@ Node? _firstMatch(Node node, bool Function(Node) test) {
     if (found != null) return found;
   }
   return null;
+}
+
+/// Minimum height delta (in logical pixels) that counts as a real change
+/// when reconciling a table row's stored height against its measured
+/// height.
+///
+/// Layout reports `rect.height` with sub-pixel jitter between frames
+/// (device-pixel rounding, or a focus/selection-dependent measurement on
+/// mobile). Comparing with exact `!=` treated that jitter as a genuine
+/// change, so [TableNode.updateRowHeight] emitted a height transaction
+/// every frame -> apply -> rebuild -> re-measure: an unbounded relayout
+/// loop that pinned the UI isolate (a hang, not a crash) when a table was
+/// edited and then defocused. One logical pixel is imperceptible but
+/// safely above the jitter, so the height converges and the loop ends.
+const double _tableRowHeightTolerance = 1.0;
+
+/// Whether [measured] differs from the [stored] height attribute by at
+/// least [_tableRowHeightTolerance]. Also absorbs the old `!isNaN` guard:
+/// a NaN measurement is never treated as a change. Returns `true` when
+/// nothing is stored yet (or it can't be parsed) so the first real
+/// measurement is always written.
+bool tableRowHeightChanged(Object? stored, double measured) {
+  if (measured.isNaN) return false;
+  final current =
+      stored is num ? stored.toDouble() : double.tryParse('${stored ?? ''}');
+  if (current == null) return true;
+  return (current - measured).abs() >= _tableRowHeightTolerance;
 }

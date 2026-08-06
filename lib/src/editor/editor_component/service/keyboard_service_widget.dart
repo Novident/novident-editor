@@ -319,29 +319,22 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
 
     final renderer = editorState.selectionRenderer;
     final selection = editorState.selection;
+    final focusedNode = selection != null
+        ? editorState.getNodeAtPath(selection.end.path)
+        : null;
 
     if (focusNode.hasFocus) {
-      if (renderer != null) {
-        final focusedNode = selection != null
-            ? editorState.getNodeAtPath(selection.end.path)
-            : null;
-        renderer.onFocusGained(FocusLifecycleContext(
-          focusedNode: focusedNode,
-          hasSelection: selection != null,
-          selection: selection,
-        ));
-      }
+      renderer?.onFocusGained(FocusLifecycleContext(
+        focusedNode: focusedNode,
+        hasSelection: selection != null,
+        selection: selection,
+      ));
     } else {
-      if (renderer != null) {
-        final focusedNode = selection != null
-            ? editorState.getNodeAtPath(selection.end.path)
-            : null;
-        renderer.onFocusLost(FocusLifecycleContext(
-          focusedNode: focusedNode,
-          hasSelection: selection != null,
-          selection: selection,
-        ));
-      }
+      renderer?.onFocusLost(FocusLifecycleContext(
+        focusedNode: focusedNode,
+        hasSelection: selection != null,
+        selection: selection,
+      ));
 
       /// On web, we don't need to close the keyboard when the focus is lost.
       if (kIsWeb) {

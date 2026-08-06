@@ -1,39 +1,105 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# Novident Editor Rich Text
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+Paragraph rendering widget for the [Novident Editor](https://github.com/Novident/novident-editor).
+`NovidentRichText`, `DefaultSelectableMixin`, and abstract configuration interfaces.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+[![pub package](https://img.shields.io/pub/v/novident_editor_rich_text.svg)](https://pub.dev/packages/novident_editor_rich_text)
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- **NovidentRichText** — the primary paragraph-rendering widget. Renders `RichText`
+  from node deltas, resolves styles through `NovidentEditorStyles.maybeOf()`, and
+  provides cursor/selection rect measurements via `SelectableMixin`.
+- **DefaultSelectableMixin** — proxy mixin that wraps a forward `SelectableMixin`
+  with coordinate offset shifting (used by list items, quotes, and nested blocks).
+- **RichTextEditorConfig** — abstract interface (12 getters) that replaces the
+  `EditorState` dependency. Any object implementing this interface can drive
+  `NovidentRichText`.
+- **RichTextAttributes** — extension on `Attributes` for reading delta formatting
+  (bold, italic, underline, strikethrough, colour, background, href, font family,
+  font size, code, auto-complete).
+- **Lightweight** — depends only on `novident_editor_document`, `novident_editor_core`,
+  `novident_editor_styles`, `novident_editor_selection`, and Flutter. No editor
+  services or infrastructure.
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Add to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  novident_editor_rich_text: <latest>
+```
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+### Basic paragraph
 
 ```dart
-const like = 'sample';
+import 'package:novident_editor_rich_text/novident_editor_rich_text.dart';
+
+NovidentRichText(
+  node: paragraphNode,
+  delegate: this,               // your SelectableMixin
+  editorConfig: myConfig,       // implements RichTextEditorConfig
+);
+```
+
+### Implementing RichTextEditorConfig
+
+```dart
+import 'package:novident_editor_rich_text/novident_editor_rich_text.dart';
+
+class MyConfig implements RichTextEditorConfig {
+  @override double get textScaleFactor => 1.0;
+  @override double? get firstLineIndentFallback => null;
+  @override Color get cursorColor => Colors.black;
+  @override Color get selectionColor => Colors.blue.withValues(alpha: 0.2);
+  @override double get cursorWidth => 2.0;
+  @override TextSpanDecoratorForAttribute? get textSpanDecorator => null;
+  @override NovidentTextSpanOverlayBuilder? get textSpanOverlayBuilder => null;
+  @override bool get enableAutoComplete => false;
+  @override NovidentAutoCompleteTextProvider? get autoCompleteTextProvider => null;
+  @override TextStyleConfiguration get textStyleConfiguration => const TextStyleConfiguration();
+}
+```
+
+### DefaultSelectableMixin
+
+```dart
+class _MyListItemState extends State<MyListItem>
+    with SelectableMixin<MyListItem>, DefaultSelectableMixin<MyListItem> {
+
+  @override
+  SelectableMixin<MyListItem> get forward =>
+      forwardKey.currentState as SelectableMixin<MyListItem>;
+
+  @override
+  double baseOffset() => 24.0; // bullet/number width
+
+  // All SelectableMixin methods are delegated to `forward` with
+  // coordinate offset adjustment.
+}
+```
+
+### RichTextAttributes
+
+```dart
+final attrs = node.delta?.first.attributes ?? {};
+print(attrs.bold);        // true / false / null
+print(attrs.italic);
+print(attrs.textColor);   // '#000000'
+print(attrs.fontSize);    // 12.0
+print(attrs.href);        // 'https://example.com'
 ```
 
 ## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+- **Repository**: [github.com/Novident/novident-editor](https://github.com/Novident/novident-editor)
+- **Issue tracker**: [github.com/Novident/novident-editor/issues](https://github.com/Novident/novident-editor/issues)
+- **License**: Mozilla Public License 2.0
+
+This package is extracted from [novident_editor](https://pub.dev/packages/novident_editor)
+(the full rich-text editor widget). Use it to render rich-text paragraphs in document
+previews, export tools, or any surface that needs paragraph-level text rendering
+without the full editor infrastructure.

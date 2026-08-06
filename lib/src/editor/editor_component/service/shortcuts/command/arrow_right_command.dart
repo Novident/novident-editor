@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
+import 'move_hooks.dart';
+
 final List<CommandShortcutEvent> arrowRightKeys = [
   moveCursorRightCommand,
   moveCursorToEndCommand,
@@ -75,9 +77,25 @@ CommandShortcutEventHandler _moveCursorToEndCommandHandler = (editorState) {
       );
       final custom = renderer.onMoveToLineEnd(ctx);
       if (custom != null) {
+        final from = selection.end;
+        final hookResult = tryMoveHook(
+          renderer: renderer,
+          editorState: editorState,
+          fromPosition: from,
+          toPosition: custom,
+          direction: MoveDirection.lineEnd,
+        );
+        if (hookResult == null) return KeyEventResult.handled;
         editorState.updateSelectionWithReason(
-          Selection.collapsed(custom),
+          Selection.collapsed(hookResult),
           reason: SelectionUpdateReason.uiEvent,
+        );
+        moveCompletedHook(
+          renderer: renderer,
+          editorState: editorState,
+          fromPosition: from,
+          toPosition: hookResult,
+          direction: MoveDirection.lineEnd,
         );
         return KeyEventResult.handled;
       }
@@ -133,9 +151,25 @@ CommandShortcutEventHandler _moveCursorToRightWordCommandHandler =
       );
       final custom = renderer.onHorizontalMove(ctx, byWord: true);
       if (custom != null) {
+        final from = selection.end;
+        final hookResult = tryMoveHook(
+          renderer: renderer,
+          editorState: editorState,
+          fromPosition: from,
+          toPosition: custom,
+          direction: MoveDirection.wordRight,
+        );
+        if (hookResult == null) return KeyEventResult.handled;
         editorState.updateSelectionWithReason(
-          Selection.collapsed(custom),
+          Selection.collapsed(hookResult),
           reason: SelectionUpdateReason.uiEvent,
+        );
+        moveCompletedHook(
+          renderer: renderer,
+          editorState: editorState,
+          fromPosition: from,
+          toPosition: hookResult,
+          direction: MoveDirection.wordRight,
         );
         return KeyEventResult.handled;
       }
@@ -250,10 +284,31 @@ CommandShortcutEventHandler _moveCursorRightWordSelectCommandHandler =
   if (end == null) {
     return KeyEventResult.ignored;
   }
+
+  final from = selection.end;
+  final hookResult = tryMoveHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: end!,
+    direction: MoveDirection.wordRight,
+  );
+  if (hookResult == null) return KeyEventResult.handled;
+  end = hookResult;
+
   editorState.updateSelectionWithReason(
     selection.copyWith(end: end),
     reason: SelectionUpdateReason.uiEvent,
   );
+
+  moveCompletedHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: end!,
+    direction: MoveDirection.wordRight,
+  );
+
   return KeyEventResult.handled;
 };
 
@@ -301,10 +356,31 @@ CommandShortcutEventHandler _moveCursorRightSelectCommandHandler =
   if (end == null) {
     return KeyEventResult.ignored;
   }
+
+  final from = selection.end;
+  final hookResult = tryMoveHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: end!,
+    direction: MoveDirection.right,
+  );
+  if (hookResult == null) return KeyEventResult.handled;
+  end = hookResult;
+
   editorState.updateSelectionWithReason(
     selection.copyWith(end: end),
     reason: SelectionUpdateReason.uiEvent,
   );
+
+  moveCompletedHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: end!,
+    direction: MoveDirection.right,
+  );
+
   return KeyEventResult.handled;
 };
 

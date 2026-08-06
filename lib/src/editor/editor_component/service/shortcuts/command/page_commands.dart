@@ -1,6 +1,8 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
+import 'move_hooks.dart';
+
 final List<CommandShortcutEvent> pageUpKeys = [
   pageUpCommand,
   pageDownCommand,
@@ -42,9 +44,25 @@ CommandShortcutEventHandler _pageUpCommandHandler = (editorState) {
       );
       final custom = renderer.onPageUp(ctx);
       if (custom != null) {
+        final from = selection.end;
+        final hookResult = tryMoveHook(
+          renderer: renderer,
+          editorState: editorState,
+          fromPosition: from,
+          toPosition: custom,
+          direction: MoveDirection.pageUp,
+        );
+        if (hookResult == null) return KeyEventResult.handled;
         editorState.updateSelectionWithReason(
-          Selection.collapsed(custom),
+          Selection.collapsed(hookResult),
           reason: SelectionUpdateReason.uiEvent,
+        );
+        moveCompletedHook(
+          renderer: renderer,
+          editorState: editorState,
+          fromPosition: from,
+          toPosition: hookResult,
+          direction: MoveDirection.pageUp,
         );
         return KeyEventResult.handled;
       }
@@ -83,9 +101,25 @@ CommandShortcutEventHandler _pageDownCommandHandler = (editorState) {
       );
       final custom = renderer.onPageDown(ctx);
       if (custom != null) {
+        final from = selection.end;
+        final hookResult = tryMoveHook(
+          renderer: renderer,
+          editorState: editorState,
+          fromPosition: from,
+          toPosition: custom,
+          direction: MoveDirection.pageDown,
+        );
+        if (hookResult == null) return KeyEventResult.handled;
         editorState.updateSelectionWithReason(
-          Selection.collapsed(custom),
+          Selection.collapsed(hookResult),
           reason: SelectionUpdateReason.uiEvent,
+        );
+        moveCompletedHook(
+          renderer: renderer,
+          editorState: editorState,
+          fromPosition: from,
+          toPosition: hookResult,
+          direction: MoveDirection.pageDown,
         );
         return KeyEventResult.handled;
       }

@@ -1,6 +1,8 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
+import 'move_hooks.dart';
+
 final List<CommandShortcutEvent> arrowUpKeys = [
   moveCursorUpCommand,
   moveCursorTopSelectCommand,
@@ -52,10 +54,33 @@ CommandShortcutEventHandler _moveCursorUpCommandHandler = (editorState) {
   }
   upPosition ??= selection.end.moveVertical(editorState);
 
+  final from = selection.end;
+  if (upPosition != null) {
+    final hookResult = tryMoveHook(
+      renderer: renderer,
+      editorState: editorState,
+      fromPosition: from,
+      toPosition: upPosition!,
+      direction: MoveDirection.up,
+    );
+    if (hookResult == null) return KeyEventResult.handled;
+    upPosition = hookResult;
+  }
+
   editorState.updateSelectionWithReason(
     upPosition == null ? null : Selection.collapsed(upPosition),
     reason: SelectionUpdateReason.uiEvent,
   );
+
+  if (upPosition != null) {
+    moveCompletedHook(
+      renderer: renderer,
+      editorState: editorState,
+      fromPosition: from,
+      toPosition: upPosition!,
+      direction: MoveDirection.up,
+    );
+  }
 
   return KeyEventResult.handled;
 };
@@ -160,9 +185,30 @@ CommandShortcutEventHandler _moveCursorUpSelectCommandHandler = (editorState) {
   if (end == null) {
     return KeyEventResult.ignored;
   }
+
+  final from = selection.end;
+  final hookResult = tryMoveHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: end!,
+    direction: MoveDirection.up,
+  );
+  if (hookResult == null) return KeyEventResult.handled;
+  end = hookResult;
+
   editorState.updateSelectionWithReason(
     selection.copyWith(end: end),
     reason: SelectionUpdateReason.uiEvent,
   );
+
+  moveCompletedHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: end!,
+    direction: MoveDirection.up,
+  );
+
   return KeyEventResult.handled;
 };

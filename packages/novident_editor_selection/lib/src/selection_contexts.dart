@@ -125,7 +125,7 @@ class CursorMoveContext {
     required this.caretLocalDx,
     required this.textDirection,
     required this.delegate,
-    required this.renderParagraph,
+    this.renderParagraph,
     required this.textShift,
     this.delta,
   });
@@ -146,7 +146,7 @@ class CursorMoveContext {
   final SelectableMixin delegate;
 
   /// The [RenderParagraph] that lays out this node's text.
-  final RenderParagraph renderParagraph;
+  final RenderParagraph? renderParagraph;
 
   /// Number of [WidgetSpan]s prepended before the first character
   /// (used for first-line indent offset).

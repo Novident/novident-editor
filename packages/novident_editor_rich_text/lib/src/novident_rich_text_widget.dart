@@ -111,6 +111,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
   RenderParagraph? get _renderParagraph =>
       textKey.currentContext?.findRenderObject() as RenderParagraph?;
 
+  @override
+  RenderParagraph? getRenderParagraph() => _renderParagraph;
+
   RenderParagraph? get _placeholderRenderParagraph =>
       placeholderTextKey.currentContext?.findRenderObject() as RenderParagraph?;
 

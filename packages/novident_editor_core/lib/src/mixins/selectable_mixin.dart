@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
 
 enum CursorStyle {
@@ -125,4 +126,9 @@ mixin SelectableMixin<T extends StatefulWidget> on State<T> {
   /// Used to shift text offsets when measuring cursor/selection rects.
   /// Only relevant for text-based selectables; defaults to 0.
   int get textShift => 0;
+
+  /// The [RenderParagraph] that lays out this selectable's text content.
+  ///
+  /// Only relevant for text-based selectables; non-text blocks return `null`.
+  RenderParagraph? getRenderParagraph() => null;
 }

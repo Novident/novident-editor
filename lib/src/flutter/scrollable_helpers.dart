@@ -397,7 +397,7 @@ class EdgeDraggingAutoScroller {
       return clampedDelta;
     }
     final double smoothed =
-        lerpDouble(_previousScrollDelta!, clampedDelta, 0.35)!;
+        lerpDouble(_previousScrollDelta!, clampedDelta, 0.8)!;
     _previousScrollDelta = smoothed;
 
     return smoothed;

@@ -711,9 +711,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
       late AutoScroller scroller;
       scroller = AutoScroller(
         scrollableState,
-        velocityScalar: 0.15,
+        velocityScalar: 0.5,
         minimumAutoScrollDelta: 0.07,
-        maxAutoScrollDelta: 3.5,
+        maxAutoScrollDelta: 15.0,
         animationDuration: Duration.zero,
         onScrollViewScrolled: () {
           _notifyScrollViewScrolledListeners();

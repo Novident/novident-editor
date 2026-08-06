@@ -56,6 +56,34 @@ CommandShortcutEventHandler _moveCursorToBeginCommandHandler = (editorState) {
   if (selection == null) {
     return KeyEventResult.ignored;
   }
+
+  final renderer = editorState.selectionRenderer;
+  if (renderer != null) {
+    final node = editorState.getNodeAtPath(selection.end.path);
+    final selectable = node?.selectable;
+    final rp = selectable?.getRenderParagraph();
+    if (node != null && selectable != null && rp != null) {
+      final ctx = CursorMoveContext(
+        node: node,
+        currentOffset: selection.end.offset,
+        caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
+        textDirection: selectable.textDirection(),
+        delegate: selectable,
+        renderParagraph: rp,
+        textShift: selectable.textShift,
+        delta: node.delta,
+      );
+      final custom = renderer.onMoveToLineStart(ctx);
+      if (custom != null) {
+        editorState.updateSelectionWithReason(
+          Selection.collapsed(custom),
+          reason: SelectionUpdateReason.uiEvent,
+        );
+        return KeyEventResult.handled;
+      }
+    }
+  }
+
   if (isRTL(editorState)) {
     editorState.moveCursorBackward(SelectionMoveRange.line);
   } else {

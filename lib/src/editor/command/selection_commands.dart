@@ -445,6 +445,33 @@ extension SelectionTransform on EditorState {
         break;
       case SelectionMoveRange.line:
         if (delta != null) {
+          final renderer = editorState.selectionRenderer;
+          if (renderer != null) {
+            final selectable = node.selectable;
+            final rp = selectable?.getRenderParagraph();
+            if (selectable != null && rp != null) {
+              final ctx = CursorMoveContext(
+                node: node,
+                currentOffset: offset,
+                caretLocalDx: selectable.getCaretLocalDx(offset) ?? 0,
+                textDirection: selectable.textDirection(),
+                delegate: selectable,
+                renderParagraph: rp,
+                textShift: selectable.textShift,
+                delta: delta,
+              );
+              final custom = direction == SelectionMoveDirection.forward
+                  ? renderer.onMoveToLineStart(ctx)
+                  : renderer.onMoveToLineEnd(ctx);
+              if (custom != null) {
+                updateSelectionWithReason(
+                  Selection.collapsed(custom),
+                  reason: SelectionUpdateReason.uiEvent,
+                );
+                break;
+              }
+            }
+          }
           // move the cursor to the left or right by one line
           updateSelectionWithReason(
             Selection.collapsed(

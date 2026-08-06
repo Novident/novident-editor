@@ -126,6 +126,7 @@ final List<CommandShortcutEvent> standardCommandShortcutEvents = [
   ...arrowRightKeys,
   ...arrowUpKeys,
   ...arrowDownKeys,
+  ...pageUpKeys,
 
   //
   homeCommand,

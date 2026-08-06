@@ -172,7 +172,7 @@ class SearchService {
     final selection = editorState.selection!;
     editorState.formatDelta(
       selection,
-      {NovidentRichTextKeys.findBackgroundColor: null},
+      {RichTextKeys.findBackgroundColor: null},
     );
     editorState.undoManager.forgetRecentUndo();
 
@@ -225,7 +225,7 @@ class SearchService {
         : style.unselectedHighlightColor.toHex();
     editorState.formatDelta(
       selection,
-      {NovidentRichTextKeys.findBackgroundColor: color},
+      {RichTextKeys.findBackgroundColor: color},
       withUpdateSelection: false,
     );
   }

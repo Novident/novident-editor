@@ -54,7 +54,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.href] == linkAddress,
+                  element.attributes?[RichTextKeys.href] == linkAddress,
             );
       }),
       true,

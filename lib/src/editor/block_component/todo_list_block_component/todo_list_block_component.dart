@@ -3,23 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-class TodoListBlockKeys {
-  const TodoListBlockKeys._();
-
-  static const String type = 'todo_list';
-
-  /// The checked data of a todo list block.
-  ///
-  /// The value is a boolean.
-  static const String checked = 'checked';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node todoListNode({
   required bool checked,
   String? text,
@@ -177,7 +160,7 @@ class _TodoListBlockComponentWidgetState
               key: forwardKey,
               delegate: this,
               node: widget.node,
-              editorState: editorState,
+              editorConfig: editorState,
               textAlign: alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
               placeholderText: placeholderText,
               useFirstLineIndent: false,
@@ -212,6 +195,8 @@ class _TodoListBlockComponentWidgetState
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

@@ -147,7 +147,7 @@ extension on EditorState {
                 delta.insert(
                   paragraph.substring(startPos, endPos),
                   attributes: {
-                    NovidentRichTextKeys.href:
+                    RichTextKeys.href:
                         _phoneRegex.hasMatch(entity) ? 'tel:$entity' : entity,
                   },
                 );
@@ -193,7 +193,7 @@ extension on EditorState {
     final transaction = this.transaction;
     final isPhone = _phoneRegex.hasMatch(plainText);
     transaction.formatText(node, selection.startIndex, selection.length, {
-      NovidentRichTextKeys.href: isPhone ? 'tel:$plainText' : plainText,
+      RichTextKeys.href: isPhone ? 'tel:$plainText' : plainText,
     });
     await apply(transaction);
     return true;

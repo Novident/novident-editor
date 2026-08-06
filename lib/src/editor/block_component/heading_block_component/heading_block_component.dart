@@ -3,23 +3,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class HeadingBlockKeys {
-  const HeadingBlockKeys._();
-
-  static const String type = 'heading';
-
-  /// The level data of a heading block.
-  ///
-  /// The value is a int.
-  static const String level = 'level';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node headingNode({
   required int level,
   String? text,
@@ -144,7 +127,7 @@ class _HeadingBlockComponentWidgetState
               key: forwardKey,
               delegate: this,
               node: widget.node,
-              editorState: editorState,
+              editorConfig: editorState,
               textAlign: blockStyle.alignment ??
                   alignment?.toTextAlign ??
                   textAlign,
@@ -183,6 +166,8 @@ class _HeadingBlockComponentWidgetState
       key: blockComponentKey,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

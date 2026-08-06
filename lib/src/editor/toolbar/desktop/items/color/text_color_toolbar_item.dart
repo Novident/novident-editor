@@ -28,7 +28,7 @@ ToolbarItem buildTextColorItem({
         }
 
         return delta.everyAttributes((attr) {
-          textColorHex = attr[NovidentRichTextKeys.textColor];
+          textColorHex = attr[RichTextKeys.textColor];
           return (textColorHex != null);
         });
       });
@@ -47,7 +47,7 @@ ToolbarItem buildTextColorItem({
                 showClearButton = delta.whereType<TextInsert>().any(
                   (element) {
                     return element
-                            .attributes?[NovidentRichTextKeys.textColor] !=
+                            .attributes?[RichTextKeys.textColor] !=
                         null;
                   },
                 );

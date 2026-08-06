@@ -164,12 +164,12 @@ void main() {
             ..insert('plain ')
             ..insert(
               'pink',
-              attributes: {NovidentRichTextKeys.textColor: '0xFFE91E63'},
+              attributes: {RichTextKeys.textColor: '0xFFE91E63'},
             )
             ..insert(' and ')
             ..insert(
               'marked',
-              attributes: {NovidentRichTextKeys.backgroundColor: '0xFFFFEB3B'},
+              attributes: {RichTextKeys.backgroundColor: '0xFFFFEB3B'},
             ),
         ),
         paragraphNode(
@@ -222,9 +222,7 @@ void main() {
               disableAutoScroll: controller.shouldDisableNativeAutoScroll,
               blockWrapper: controller.blockWrapper,
               editorStyle: EditorStyle.desktop(
-                textStyleConfiguration: const TextStyleConfiguration(
-                  text: TextStyle(fontSize: 16, color: baseColor),
-                ),
+                textStyleConfiguration: const TextStyleConfiguration(),
                 textSpanDecorator: controller.textSpanDecorator(),
               ),
             ),
@@ -373,8 +371,7 @@ void main() {
             .toList();
         expect(
           delta.any(
-            (t) =>
-                t.attributes?[NovidentRichTextKeys.textColor] == '0xFFE91E63',
+            (t) => t.attributes?[RichTextKeys.textColor] == '0xFFE91E63',
           ),
           true,
         );

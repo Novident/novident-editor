@@ -1,3 +1,5 @@
+# Changelog
+
 ## 1.0.2
 
 * Feat: replaced `node.attributes` to return a direct `Map` instance, instead copies. It's NOT recommended to use for mutation. All the warnings is inside the method documentation. Use `updateAttributes` instead for any change to maintain the consistency.

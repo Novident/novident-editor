@@ -27,7 +27,7 @@ class _TextColorOptionsWidgetsState extends State<TextColorOptionsWidgets> {
     final nodes = widget.editorState.getNodesInSelection(selection);
     final hasTextColor = nodes.allSatisfyInSelection(selection, (delta) {
       return delta.everyAttributes(
-        (attributes) => attributes[NovidentRichTextKeys.textColor] != null,
+        (attributes) => attributes[RichTextKeys.textColor] != null,
       );
     });
 
@@ -48,7 +48,7 @@ class _TextColorOptionsWidgetsState extends State<TextColorOptionsWidgets> {
                 setState(() {
                   widget.editorState.formatDelta(
                     selection,
-                    {NovidentRichTextKeys.textColor: null},
+                    {RichTextKeys.textColor: null},
                   );
                 });
               }
@@ -60,7 +60,7 @@ class _TextColorOptionsWidgetsState extends State<TextColorOptionsWidgets> {
             final isSelected = nodes.allSatisfyInSelection(selection, (delta) {
               return delta.everyAttributes(
                 (attributes) =>
-                    attributes[NovidentRichTextKeys.textColor] == e.colorHex,
+                    attributes[RichTextKeys.textColor] == e.colorHex,
               );
             });
             return ColorButton(

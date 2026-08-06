@@ -1,0 +1,24 @@
+name: novident_editor_core
+version: 1.0.0
+description: >-
+  Core types and selection protocol for Novident Editor —
+  Position, Selection, SelectableMixin, and text rendering config.
+  Reusable independently of the full editor.
+homepage: https://github.com/Novident/
+repository: https://github.com/Novident/novident-editor/
+issue_tracker: https://github.com/Novident/novident-editor/issues
+
+environment:
+  sdk: ">=3.4.3 <4.0.0"
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  novident_editor_document:
+    path: ../novident_document
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter

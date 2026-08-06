@@ -16,14 +16,6 @@ Node columnNode({
   );
 }
 
-class ColumnBlockKeys {
-  const ColumnBlockKeys._();
-
-  static const String type = 'column';
-
-  static const String width = 'width';
-}
-
 class ColumnBlockComponentBuilder extends BlockComponentBuilder {
   ColumnBlockComponentBuilder({super.configuration});
 

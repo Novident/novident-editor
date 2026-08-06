@@ -4,10 +4,6 @@ import 'package:novident_editor/src/flutter/scrollable_positioned_list/scrollabl
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class PageBlockKeys {
-  static const String type = 'page';
-}
-
 Node pageNode({
   required Iterable<Node> children,
   Attributes attributes = const {},

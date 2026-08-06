@@ -21,7 +21,7 @@ TextSpan mobileTextSpanDecoratorForAttribute(
   }
   final editorState = context.read<EditorState>();
 
-  final hrefAddress = attributes[NovidentRichTextKeys.href] as String?;
+  final hrefAddress = attributes[RichTextKeys.href] as String?;
   if (hrefAddress != null) {
     Timer? timer;
 
@@ -203,7 +203,7 @@ class _LinkEditFormState extends State<LinkEditForm> {
                           widget.hrefText.length,
                           hrefTextTextEditingController.text,
                           attributes: {
-                            NovidentRichTextKeys.href:
+                            RichTextKeys.href:
                                 hrefAddressTextEditingController.text,
                           },
                         );
@@ -231,7 +231,7 @@ class _LinkEditFormState extends State<LinkEditForm> {
                       );
                     } else if (!textChanged && addressChanged) {
                       await widget.editorState.formatDelta(widget.selection, {
-                        NovidentRichTextKeys.href:
+                        RichTextKeys.href:
                             hrefAddressTextEditingController.value.text,
                       }).whenComplete(() {
                         if (context.mounted) {

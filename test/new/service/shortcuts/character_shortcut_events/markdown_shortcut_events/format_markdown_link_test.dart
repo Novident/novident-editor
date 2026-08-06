@@ -32,7 +32,7 @@ void main() async {
       expect(after.delta!.toPlainText(), text);
       expect(
         after.delta!.toList()[0].attributes,
-        {NovidentRichTextKeys.href: link},
+        {RichTextKeys.href: link},
       );
     });
 
@@ -63,7 +63,7 @@ void main() async {
       expect(after.delta!.toList()[0].attributes, null);
       expect(
         after.delta!.toList()[1].attributes,
-        {NovidentRichTextKeys.href: 'appflowy.com'},
+        {RichTextKeys.href: 'appflowy.com'},
       );
     });
 

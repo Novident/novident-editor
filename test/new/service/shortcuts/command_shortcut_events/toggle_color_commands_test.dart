@@ -16,7 +16,7 @@ void main() async {
         (tester) async {
       await _testUpdateTextColorByCommandX(
         tester,
-        NovidentRichTextKeys.backgroundColor,
+        RichTextKeys.backgroundColor,
         LogicalKeyboardKey.keyH,
       );
     });

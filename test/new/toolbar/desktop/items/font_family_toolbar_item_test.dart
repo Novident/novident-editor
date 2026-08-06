@@ -60,7 +60,7 @@ void main() {
         Selection.single(path: [0], startOffset: 0, endOffset: 2),
       );
       editorState.formatDelta(editorState.selection!, {
-        NovidentRichTextKeys.fontFamily: 'Georgia',
+        RichTextKeys.fontFamily: 'Georgia',
       });
 
       // Re-select to refresh.

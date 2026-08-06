@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
-
 import 'document_session.dart';
 
 /// The Novident Editor surface shared by every view of the app (split
@@ -48,11 +47,10 @@ class MyEditor extends StatelessWidget {
         cursorColor: Colors.black87,
         firstLineIndent: 30, 
         selectionColor: const Color(0x33448AFF),
-        textStyleConfiguration: const TextStyleConfiguration(
-          lineHeight: 1,
-          text: TextStyle(fontSize: 12, color: Colors.black87),
-        ),
         textSpanDecorator: zenController?.textSpanDecorator(),
+        selectionRenderer: VimSelectionRenderer(
+          controller: session.vimController,
+        ),
       ),
       blockWrapper: zenController?.blockWrapper,
       footer: footer,

@@ -30,7 +30,7 @@ class _BackgroundColorOptionsWidgetsState
     final hasTextColor = nodes.allSatisfyInSelection(selection, (delta) {
       return delta.everyAttributes(
         (attributes) =>
-            attributes[NovidentRichTextKeys.backgroundColor] != null,
+            attributes[RichTextKeys.backgroundColor] != null,
       );
     });
 
@@ -49,7 +49,7 @@ class _BackgroundColorOptionsWidgetsState
                 setState(() {
                   widget.editorState.formatDelta(
                     selection,
-                    {NovidentRichTextKeys.backgroundColor: null},
+                    {RichTextKeys.backgroundColor: null},
                   );
                 });
               }
@@ -61,7 +61,7 @@ class _BackgroundColorOptionsWidgetsState
             final isSelected = nodes.allSatisfyInSelection(selection, (delta) {
               return delta.everyAttributes(
                 (attributes) =>
-                    attributes[NovidentRichTextKeys.backgroundColor] ==
+                    attributes[RichTextKeys.backgroundColor] ==
                     e.colorHex,
               );
             });

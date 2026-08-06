@@ -217,7 +217,7 @@ class EdgeDraggingAutoScroller {
   ///
   /// If the scrollable is already scrolling, calling this method updates the
   /// previous dragTarget to the new value and continues scrolling if necessary.
-  void startAutoScrollIfNecessary(Rect dragTarget, {Duration? duration}) {
+  void startAutoScrollIfNecessary(Rect dragTarget, {Duration? duration}) async {
     final Offset deltaToOrigin = scrollable.deltaToScrollOrigin;
     _dragTargetRelatedToScrollOrigin =
         dragTarget.translate(deltaToOrigin.dx, deltaToOrigin.dy);
@@ -227,7 +227,7 @@ class EdgeDraggingAutoScroller {
       return;
     }
     assert(!_scrolling, 'scrolling must be false at this point');
-    _scroll();
+    await _scroll();
   }
 
   /// Stop any ongoing auto scrolling.
@@ -237,7 +237,7 @@ class EdgeDraggingAutoScroller {
     _currentDuration = null;
   }
 
-  void _scroll() {
+  Future<void> _scroll() async {
     try {
       final RenderBox scrollRenderBox =
           scrollable.context.findRenderObject()! as RenderBox;
@@ -369,7 +369,7 @@ class EdgeDraggingAutoScroller {
       //TODO: isnt there another way to make this better?
       // a queue at least?
       if (_scrolling) {
-        _scroll();
+        await _scroll();
       }
     } catch (e) {
       debugPrint(e.toString());

@@ -3,18 +3,6 @@ import 'package:novident_editor/src/editor/block_component/base_component/block_
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class QuoteBlockKeys {
-  const QuoteBlockKeys._();
-
-  static const String type = 'quote';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node quoteNode({
   Delta? delta,
   String? textDirection,
@@ -138,7 +126,7 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
                 key: forwardKey,
                 delegate: this,
                 node: widget.node,
-                editorState: editorState,
+                editorConfig: editorState,
                 textAlign:
                     alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
                 placeholderText: placeholderText,
@@ -172,6 +160,8 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

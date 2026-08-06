@@ -1,6 +1,4 @@
-import 'package:novident_editor/src/core/document/path.dart';
-import 'package:novident_editor/src/core/location/position.dart';
-import 'package:novident_editor/src/core/location/selection.dart';
+import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

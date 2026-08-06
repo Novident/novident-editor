@@ -10,7 +10,7 @@ final Document tavernDocument = Document(
           ..insert('The ')
           ..insert(
             'Wandering Lantern',
-            attributes: <String, dynamic>{NovidentRichTextKeys.bold: true},
+            attributes: <String, dynamic>{RichTextKeys.bold: true},
           )
           ..insert(' was the only building in the village with its windows '
               'still lit past midnight, and the only place where questions '

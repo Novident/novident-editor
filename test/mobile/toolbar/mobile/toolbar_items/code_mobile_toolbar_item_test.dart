@@ -38,7 +38,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.code] == true,
+                  element.attributes?[RichTextKeys.code] == true,
             );
       }),
       true,

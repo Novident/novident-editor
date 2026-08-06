@@ -90,7 +90,7 @@ enum TransactionTime {
 /// all the mutations should be applied through [Transaction].
 ///
 /// Mutating the document with document's API is not recommended.
-class EditorState {
+class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   EditorState({
     required this.document,
     this.minHistoryItemDuration = const Duration(milliseconds: 50),
@@ -160,6 +160,56 @@ class EditorState {
   /// painting.
   CursorAppearanceBuilder? cursorAppearanceBuilder;
 
+  @override
+  SelectionRenderer? get selectionRenderer => editorStyle.selectionRenderer;
+
+  /// @override from BlockSelectionHost
+  @override
+  bool isBlockSelectionMode() => selectionType == SelectionType.block;
+
+  /// @override from BlockSelectionHost
+  @override
+  CursorAppearance? customizeCursor({
+    required Node node,
+    required Selection? selection,
+    required Position position,
+  }) {
+    return cursorAppearanceBuilder?.call(node, selection!, position);
+  }
+
+  /// @override from BlockSelectionHost
+  @override
+  EdgeInsets? blockSelectionMargin(Node node) {
+    final builder =
+        service.rendererService.blockComponentBuilder(node.type);
+    return builder?.configuration.blockSelectionAreaMargin(node);
+  }
+
+  /// @override from BlockSelectionHost
+  @override
+  String? selectionDragModeValue() =>
+      selectionExtraInfo?[_selectionDragModeKey] as String?;
+
+  // ---- RichTextEditorConfig overrides ----
+
+  @override
+  double get textScaleFactor => editorStyle.textScaleFactor;
+
+  @override
+  double? get firstLineIndentFallback => editorStyle.firstLineIndent;
+
+  @override
+  TextSpanDecoratorForAttribute? get textSpanDecorator =>
+      editorStyle.textSpanDecorator;
+
+  @override
+  NovidentTextSpanOverlayBuilder? get textSpanOverlayBuilder =>
+      editorStyle.textSpanOverlayBuilder;
+
+  @override
+  TextStyleConfiguration get textStyleConfiguration =>
+      editorStyle.textStyleConfiguration;
+  /// The selection notifier of the editor.
   /// The selection notifier of the editor.
   final PropertyValueNotifier<Selection?> selectionNotifier =
       PropertyValueNotifier<Selection?>(null);
@@ -243,7 +293,7 @@ class EditorState {
       StreamController.broadcast();
 
   /// Store the toggled format style, like bold, italic, etc.
-  /// All the values must be the key from [NovidentRichTextKeys.supportToggled].
+  /// All the values must be the key from [RichTextKeys.supportToggled].
   ///
   /// Use the method [updateToggledStyle] to update key-value pairs
   ///

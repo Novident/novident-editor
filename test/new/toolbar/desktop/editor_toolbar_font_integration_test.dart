@@ -75,7 +75,7 @@ void main() {
       editorState.getNodesInSelection(sel).allSatisfyInSelection(
         sel,
         (d) => d.everyAttributes((attr) {
-          if (attr[NovidentRichTextKeys.fontSize] == 14.0) {
+          if (attr[RichTextKeys.fontSize] == 14.0) {
             hasSize = true;
             return false;
           }
@@ -137,7 +137,7 @@ void main() {
         Selection.single(path: [0], startOffset: 0, endOffset: 5),
       );
       editorState.formatDelta(editorState.selection!, {
-        NovidentRichTextKeys.fontFamily: 'Georgia',
+        RichTextKeys.fontFamily: 'Georgia',
       });
       // Re-select to refresh.
       editorState.updateSelectionWithReason(
@@ -203,7 +203,7 @@ void main() {
         Selection.single(path: [0], startOffset: 0, endOffset: 5),
       );
       editorState.formatDelta(editorState.selection!, {
-        NovidentRichTextKeys.fontSize: 24.0,
+        RichTextKeys.fontSize: 24.0,
       });
       editorState.updateSelectionWithReason(
         Selection.single(path: [0], startOffset: 0, endOffset: 5),

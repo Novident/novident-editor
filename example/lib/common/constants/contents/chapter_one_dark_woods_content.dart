@@ -15,7 +15,7 @@ final Document darkWoodsDocument = Document(
         delta: Delta()
           ..insert(
             'Twelve. There had always been eleven.',
-            attributes: <String, dynamic>{NovidentRichTextKeys.italic: true},
+            attributes: <String, dynamic>{RichTextKeys.italic: true},
           ),
       ),
       paragraphNode(
@@ -25,7 +25,7 @@ final Document darkWoodsDocument = Document(
               'decades, moss climbing its northern face. But it had ')
           ..insert(
             'not',
-            attributes: <String, dynamic>{NovidentRichTextKeys.bold: true},
+            attributes: <String, dynamic>{RichTextKeys.bold: true},
           )
           ..insert(' been there yesterday.'),
       ),
@@ -39,7 +39,7 @@ final Document darkWoodsDocument = Document(
           ..insert('Every story she had ever been told ended the same way: ')
           ..insert(
             'never follow the lantern',
-            attributes: <String, dynamic>{NovidentRichTextKeys.italic: true},
+            attributes: <String, dynamic>{RichTextKeys.italic: true},
           )
           ..insert('.'),
       ),
@@ -49,7 +49,7 @@ final Document darkWoodsDocument = Document(
               'when you refuse. It stops. And then it starts moving toward ')
           ..insert(
             'you',
-            attributes: <String, dynamic>{NovidentRichTextKeys.bold: true},
+            attributes: <String, dynamic>{RichTextKeys.bold: true},
           )
           ..insert('.'),
       ),

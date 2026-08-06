@@ -200,7 +200,7 @@ void main() async {
           builder: (index) => Delta()
             ..insert(
               'Hello',
-              attributes: {NovidentRichTextKeys.bold: true},
+              attributes: {RichTextKeys.bold: true},
             ),
         )
         ..addParagraph(
@@ -211,7 +211,7 @@ void main() async {
             ..insert(
               'World',
               attributes: {
-                NovidentRichTextKeys.bold: true,
+                RichTextKeys.bold: true,
               },
             ),
         );
@@ -226,7 +226,7 @@ void main() async {
         (delta) =>
             delta.isNotEmpty &&
             delta.everyAttributes(
-              (attr) => attr[NovidentRichTextKeys.bold] == true,
+              (attr) => attr[RichTextKeys.bold] == true,
             ),
       );
       expect(isHighlight, true);

@@ -27,7 +27,7 @@ ToolbarItem buildHighlightColorItem({List<ColorOption>? colorOptions}) {
         }
 
         return delta.everyAttributes((attributes) {
-          highlightColorHex = attributes[NovidentRichTextKeys.backgroundColor];
+          highlightColorHex = attributes[RichTextKeys.backgroundColor];
           return highlightColorHex != null;
         });
       });
@@ -44,7 +44,7 @@ ToolbarItem buildHighlightColorItem({List<ColorOption>? colorOptions}) {
               showClearButton = delta.whereType<TextInsert>().any(
                 (element) {
                   return element
-                          .attributes?[NovidentRichTextKeys.backgroundColor] !=
+                          .attributes?[RichTextKeys.backgroundColor] !=
                       null;
                 },
               );

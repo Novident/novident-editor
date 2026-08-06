@@ -4,56 +4,6 @@ import 'package:novident_editor/src/editor/block_component/table_block_component
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class TableCellBlockKeys {
-  const TableCellBlockKeys._();
-
-  static const String type = 'table/cell';
-
-  static const String rowPosition = 'rowPosition';
-
-  static const String colPosition = 'colPosition';
-
-  static const String height = 'height';
-
-  /// Relative weight of the column this cell belongs to.
-  ///
-  /// Columns with higher [colWeight] get proportionally more horizontal
-  /// space. A column without an explicit [colWeight] defaults to 1.0.
-  ///
-  /// Replaces the legacy [width] attribute for layout purposes, though
-  /// [width] is still stored for backward compatibility.
-  static const String colWeight = 'colWeight';
-
-  /// Legacy absolute pixel width. Still written by the resize logic for
-  /// backward compatibility, but no longer used for layout. Use [colWeight]
-  /// instead.
-  static const String width = 'width';
-
-  static const String rowBackgroundColor = 'rowBackgroundColor';
-
-  static const String colBackgroundColor = 'colBackgroundColor';
-
-  /// Per-cell padding override. Map with `top`, `bottom`,
-  /// `left`, `right` double values.
-  static const String cellPadding = 'cellPadding';
-
-  /// Horizontal text alignment for this cell. Stored as String
-  /// matching [TextAlign] enum values.
-  static const String cellAlignment = 'cellAlignment';
-
-  /// Vertical content alignment. Stored as String matching
-  /// [CrossAxisAlignment] enum values.
-  static const String cellVerticalAlignment = 'cellVerticalAlignment';
-
-  /// Text overflow behavior. Stored as String matching
-  /// [TextOverflow] enum values.
-  static const String cellTextOverflow = 'cellTextOverflow';
-
-  /// Background color override for this specific cell (overrides
-  /// row/col/even-odd striping). Stored as hex String.
-  static const String cellBackgroundColor = 'cellBackgroundColor';
-}
-
 typedef TableBlockCellComponentColorBuilder = Color? Function(
   BuildContext context,
   Node node,

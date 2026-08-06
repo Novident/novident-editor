@@ -6,6 +6,6 @@ final codeMobileToolbarItem = MobileToolbarItem.action(
     color: MobileToolbarTheme.of(context).iconColor,
   ),
   actionHandler: (_, editorState) => editorState.toggleAttribute(
-    NovidentRichTextKeys.code,
+    RichTextKeys.code,
   ),
 );

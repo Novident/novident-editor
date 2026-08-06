@@ -1,18 +1,6 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
-class ParagraphBlockKeys {
-  ParagraphBlockKeys._();
-
-  static const String type = 'paragraph';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node paragraphNode({
   String? text,
   Delta? delta,
@@ -177,18 +165,9 @@ class _ParagraphBlockComponentWidgetState
             key: forwardKey,
             delegate: this,
             node: widget.node,
-            editorState: editorState,
+            editorConfig: editorState,
             textAlign: effectiveTextAlign,
             placeholderText: _showPlaceholder ? placeholderText : ' ',
-            textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
-              textStyleWithTextSpan(
-                textSpan: textSpan,
-              ),
-            ),
-            placeholderTextSpanDecorator: (textSpan) =>
-                textSpan.updateTextStyle(
-              placeholderTextStyleWithTextSpan(textSpan: textSpan),
-            ),
             textDirection: textDirection,
             cursorColor: editorState.editorStyle.cursorColor,
             selectionColor: editorState.editorStyle.selectionColor,
@@ -201,17 +180,22 @@ class _ParagraphBlockComponentWidgetState
     var effectiveDecoration = withBackgroundColor ? decoration : null;
     effectiveDecoration = blockStyle.applyToDecoration(effectiveDecoration);
 
-    child = Container(
+    child = Padding(
       key: blockComponentKey,
-      decoration: effectiveDecoration,
       padding: effectivePadding,
-      child: child,
+      // ignore: use_decorated_box
+      child: Container(
+        decoration: effectiveDecoration,
+        child: child,
+      ),
     );
 
     child = BlockSelectionContainer(
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

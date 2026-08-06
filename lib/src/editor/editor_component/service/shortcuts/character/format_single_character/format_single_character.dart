@@ -55,7 +55,7 @@ class CheckSingleFormatFormatResult {
   // find the last inline code attributes
   final lastInlineCode = delta.indexed.lastWhereOrNull((element) {
     final (_, op) = element;
-    if (op.attributes?[NovidentRichTextKeys.code] == true) {
+    if (op.attributes?[RichTextKeys.code] == true) {
       return true;
     }
     return false;

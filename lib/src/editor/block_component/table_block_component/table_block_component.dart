@@ -4,45 +4,6 @@ import 'package:provider/provider.dart';
 
 import 'table_view.dart';
 
-class TableBlockKeys {
-  const TableBlockKeys._();
-
-  static const String type = 'table';
-
-  /// Default column weight applied to columns without an explicit
-  /// [TableCellBlockKeys.colWeight] attribute.
-  static const String colDefaultWeight = 'colDefaultWeight';
-
-  /// Legacy absolute pixel width. Kept for backward compatibility; layout
-  /// now uses [colDefaultWeight] and [TableCellBlockKeys.colWeight].
-  static const String colDefaultWidth = 'colDefaultWidth';
-
-  static const String rowDefaultHeight = 'rowDefaultHeight';
-
-  static const String colMinimumWidth = 'colMinimumWidth';
-
-  static const String borderWidth = 'borderWidth';
-
-  static const String colsLen = 'colsLen';
-
-  static const String rowsLen = 'rowsLen';
-
-  static const String colsHeight = 'colsHeight';
-
-  /// Per-table override of [TableStyle.enableHorizontalScroll].
-  ///
-  /// When the attribute is absent, the style value is used. Set it through
-  /// [TableActions.setEnableHorizontalScroll].
-  static const String enableHorizontalScroll = 'enableHorizontalScroll';
-
-  /// Per-table override of [TableStyle.borderColor], stored as a hex color
-  /// string (e.g. `0xFF9C27B0`).
-  ///
-  /// When the attribute is absent, the style value is used. Set it through
-  /// [TableActions.setBorderColor].
-  static const String borderColor = 'borderColor';
-}
-
 enum TableDirection { row, col }
 
 typedef TableBlockComponentMenuBuilder = Widget Function(
@@ -347,6 +308,8 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

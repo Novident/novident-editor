@@ -24,14 +24,6 @@ Node columnsNode({
   );
 }
 
-class ColumnsBlockKeys {
-  const ColumnsBlockKeys._();
-
-  static const String type = 'columns';
-
-  static const String columnCount = 'column_count';
-}
-
 class ColumnsBlockComponentBuilder extends BlockComponentBuilder {
   ColumnsBlockComponentBuilder({super.configuration});
 

@@ -1,10 +1,13 @@
 import 'dart:collection';
 
-import 'package:novident_editor/src/core/location/selection.dart';
-import 'package:novident_editor/src/core/transform/operation.dart';
-import 'package:novident_editor/src/core/transform/transaction.dart';
-import 'package:novident_editor/src/editor_state.dart';
-import 'package:novident_editor/src/infra/log.dart';
+import 'package:novident_editor/novident_editor.dart'
+    show
+        ApplyOptions,
+        EditorState,
+        NovidentEditorLog,
+        Operation,
+        Selection,
+        Transaction;
 
 /// A [HistoryItem] contains list of operations committed by users.
 /// If a [HistoryItem] is not sealed, operations can be added sequentially.

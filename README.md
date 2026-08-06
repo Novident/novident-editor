@@ -26,17 +26,17 @@ tables and more.
 - **First-line indent** per style (`NovidentStyleIndent.firstLineIndent`) or
   globally (`EditorStyle.firstLineIndent`) 
 - **Full control over tables** using **NovidentTableStyleDefinition** and new configurations for tables.
+- **Extracted important layers** of the editor API like the rich text component, the selection components, the core elements of the editor, and the document format that avoid using the whole editor for small things
 
 > [!NOTE]
 > Planned: 
 >
 > 1. Improve perfomance on Zen Mode.
-> 2. Improve VIM mode movement, and character positioning. 
-> 3. Full customization of every default block.
-> 5. Improve clipboard copy+paste content (now it copies pure plain text) 
-> 6. Translations
-> 7. Typewriting Scrolling without Zen Mode.
-> 8. Uncouple important parts of the editor into individual packages
+> 2. Full customization of every default block.
+> 3. Improve clipboard copy+paste content (now it copies pure plain text) 
+> 4. Translations
+> 5. Typewriting Scrolling without Zen Mode.
+> 6. Uncouple important parts of the editor into individual packages (block components, keyboard service, scroll service, etc)
 
 ## Quick start
 
@@ -85,6 +85,13 @@ final vimController = VimModeController();
 
 NovidentEditor(
   editorState: editorState,
+  editorStyle: EditorStyle.desktop(
+    // The vim renderer paints a block cursor in normal/visual mode.
+    // Insert mode keeps the standard thin caret.
+    selectionRenderer: VimSelectionRenderer(
+      controller: vimController,
+    ),
+  ),
   commandShortcutEvents: [
     ...vimController.commandShortcutEvents,
     ...standardCommandShortcutEvents,
@@ -97,6 +104,31 @@ vimController.attach(editorState);
 // Remap any key at runtime:
 vimController.configuration =
     vimController.configuration.rebind(VimCommand.moveLeft, 'a');
+```
+
+### Customising the block cursor
+
+The block cursor color defaults to `EditorStyle.cursorColor`. Configure width,
+blink, and opacity through `VimCursorStyle`:
+
+```dart
+final vimController = VimModeController(
+  configuration: VimModeConfiguration(
+    cursorStyle: VimCursorStyle(
+      color: Colors.purple,
+      opacity: 0.55,
+      blink: false,
+    ),
+  ),
+);
+```
+
+Change it at runtime without rebuilding:
+
+```dart
+vimController.configuration = vimController.configuration.copyWith(
+  cursorStyle: const VimCursorStyle(blockWidth: 20, blink: true),
+);
 ```
 
 A `VimModeChip` widget is available in the example for status bars. Modes, the pending `dd` operator
@@ -160,6 +192,9 @@ ListenableBuilder(
 Novident Editor includes a **named paragraph style system** with `basedOn`
 inheritance — define a base style once and every derived style inherits its
 font, size, spacing and colours automatically:
+
+> [!IMPORTANT]
+> Base styles require to have defined: `fontSize`, `fontFamily` and `textColor` properties always
 
 ```dart
 NovidentEditor(

@@ -29,7 +29,7 @@ KeyEventResult _openLinksHandler(
       .nonNulls
       .expand(
         (node) => node.map<String?>(
-          (op) => op.attributes?[NovidentRichTextKeys.href],
+          (op) => op.attributes?[RichTextKeys.href],
         ),
       )
       .nonNulls

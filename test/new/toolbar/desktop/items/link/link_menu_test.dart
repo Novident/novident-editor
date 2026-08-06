@@ -55,7 +55,7 @@ void main() async {
           ..insert(
             link,
             attributes: {
-              NovidentRichTextKeys.href: link,
+              RichTextKeys.href: link,
             },
           ),
       );

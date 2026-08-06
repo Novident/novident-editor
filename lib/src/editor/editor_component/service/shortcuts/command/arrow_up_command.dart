@@ -60,7 +60,7 @@ CommandShortcutEventHandler _moveCursorUpCommandHandler = (editorState) {
       renderer: renderer,
       editorState: editorState,
       fromPosition: from,
-      toPosition: upPosition!,
+      toPosition: upPosition,
       direction: MoveDirection.up,
     );
     if (hookResult == null) return KeyEventResult.handled;
@@ -77,7 +77,7 @@ CommandShortcutEventHandler _moveCursorUpCommandHandler = (editorState) {
       renderer: renderer,
       editorState: editorState,
       fromPosition: from,
-      toPosition: upPosition!,
+      toPosition: upPosition,
       direction: MoveDirection.up,
     );
   }
@@ -191,7 +191,7 @@ CommandShortcutEventHandler _moveCursorUpSelectCommandHandler = (editorState) {
     renderer: renderer,
     editorState: editorState,
     fromPosition: from,
-    toPosition: end!,
+    toPosition: end,
     direction: MoveDirection.up,
   );
   if (hookResult == null) return KeyEventResult.handled;
@@ -206,7 +206,7 @@ CommandShortcutEventHandler _moveCursorUpSelectCommandHandler = (editorState) {
     renderer: renderer,
     editorState: editorState,
     fromPosition: from,
-    toPosition: end!,
+    toPosition: end,
     direction: MoveDirection.up,
   );
 

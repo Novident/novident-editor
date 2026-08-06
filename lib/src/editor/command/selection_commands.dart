@@ -353,7 +353,7 @@ extension SelectionTransform on EditorState {
     switch (range) {
       case SelectionMoveRange.character:
         if (delta != null) {
-          final renderer = editorState.selectionRenderer;
+          final renderer = selectionRenderer;
           if (renderer != null) {
             final selectable = node.selectable;
             final rp = selectable?.getRenderParagraph();
@@ -370,9 +370,29 @@ extension SelectionTransform on EditorState {
               );
               final custom = renderer.onHorizontalMove(ctx);
               if (custom != null) {
+                final from = selection.start;
+                final hookResult = tryMoveHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: custom,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.left
+                      : MoveDirection.right,
+                );
+                if (hookResult == null) break;
                 updateSelectionWithReason(
-                  Selection.collapsed(custom),
+                  Selection.collapsed(hookResult),
                   reason: SelectionUpdateReason.uiEvent,
+                );
+                moveCompletedHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: hookResult,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.left
+                      : MoveDirection.right,
                 );
                 break;
               }
@@ -386,8 +406,8 @@ extension SelectionTransform on EditorState {
           );
           final from = selection.start;
           final hookResult = tryMoveHook(
-            renderer: editorState.selectionRenderer,
-            editorState: editorState,
+            renderer: selectionRenderer,
+            editorState: this,
             fromPosition: from,
             toPosition: targetPosition,
             direction: direction == SelectionMoveDirection.forward
@@ -400,8 +420,8 @@ extension SelectionTransform on EditorState {
             reason: SelectionUpdateReason.uiEvent,
           );
           moveCompletedHook(
-            renderer: editorState.selectionRenderer,
-            editorState: editorState,
+            renderer: selectionRenderer,
+            editorState: this,
             fromPosition: from,
             toPosition: hookResult,
             direction: direction == SelectionMoveDirection.forward
@@ -415,7 +435,7 @@ extension SelectionTransform on EditorState {
       case SelectionMoveRange.word:
         final delta = node.delta;
         if (delta != null) {
-          final renderer = editorState.selectionRenderer;
+          final renderer = selectionRenderer;
           if (renderer != null) {
             final selectable = node.selectable;
             final rp = selectable?.getRenderParagraph();
@@ -432,9 +452,29 @@ extension SelectionTransform on EditorState {
               );
               final custom = renderer.onHorizontalMove(ctx, byWord: true);
               if (custom != null) {
+                final from = selection.start;
+                final hookResult = tryMoveHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: custom,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.wordLeft
+                      : MoveDirection.wordRight,
+                );
+                if (hookResult == null) break;
                 updateSelectionWithReason(
-                  Selection.collapsed(custom),
+                  Selection.collapsed(hookResult),
                   reason: SelectionUpdateReason.uiEvent,
+                );
+                moveCompletedHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: hookResult,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.wordLeft
+                      : MoveDirection.wordRight,
                 );
                 break;
               }
@@ -455,8 +495,8 @@ extension SelectionTransform on EditorState {
                 : wordSelection.end;
             final from = selection.start;
             final hookResult = tryMoveHook(
-              renderer: editorState.selectionRenderer,
-              editorState: editorState,
+              renderer: selectionRenderer,
+              editorState: this,
               fromPosition: from,
               toPosition: targetPosition,
               direction: direction == SelectionMoveDirection.forward
@@ -469,8 +509,8 @@ extension SelectionTransform on EditorState {
               reason: SelectionUpdateReason.uiEvent,
             );
             moveCompletedHook(
-              renderer: editorState.selectionRenderer,
-              editorState: editorState,
+              renderer: selectionRenderer,
+              editorState: this,
               fromPosition: from,
               toPosition: hookResult,
               direction: direction == SelectionMoveDirection.forward
@@ -485,7 +525,7 @@ extension SelectionTransform on EditorState {
         break;
       case SelectionMoveRange.line:
         if (delta != null) {
-          final renderer = editorState.selectionRenderer;
+          final renderer = selectionRenderer;
           if (renderer != null) {
             final selectable = node.selectable;
             final rp = selectable?.getRenderParagraph();
@@ -504,9 +544,29 @@ extension SelectionTransform on EditorState {
                   ? renderer.onMoveToLineStart(ctx)
                   : renderer.onMoveToLineEnd(ctx);
               if (custom != null) {
+                final from = selection.start;
+                final hookResult = tryMoveHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: custom,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.lineStart
+                      : MoveDirection.lineEnd,
+                );
+                if (hookResult == null) break;
                 updateSelectionWithReason(
-                  Selection.collapsed(custom),
+                  Selection.collapsed(hookResult),
                   reason: SelectionUpdateReason.uiEvent,
+                );
+                moveCompletedHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: hookResult,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.lineStart
+                      : MoveDirection.lineEnd,
                 );
                 break;
               }
@@ -520,8 +580,8 @@ extension SelectionTransform on EditorState {
           );
           final from = selection.start;
           final hookResult = tryMoveHook(
-            renderer: editorState.selectionRenderer,
-            editorState: editorState,
+            renderer: selectionRenderer,
+            editorState: this,
             fromPosition: from,
             toPosition: targetPosition,
             direction: direction == SelectionMoveDirection.forward
@@ -534,8 +594,8 @@ extension SelectionTransform on EditorState {
             reason: SelectionUpdateReason.uiEvent,
           );
           moveCompletedHook(
-            renderer: editorState.selectionRenderer,
-            editorState: editorState,
+            renderer: selectionRenderer,
+            editorState: this,
             fromPosition: from,
             toPosition: hookResult,
             direction: direction == SelectionMoveDirection.forward

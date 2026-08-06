@@ -1,10 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:novident_editor_core/novident_editor_core.dart';
-import 'package:novident_editor_document/novident_editor_document.dart';
-
-import '../selection_renderer.dart';
-import '../selection_contexts.dart';
-import '../move_types.dart';
+import 'package:novident_editor/novident_editor.dart';
 
 /// Consults [renderer.onTryMove] before applying a cursor movement.
 ///

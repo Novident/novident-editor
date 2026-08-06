@@ -274,7 +274,7 @@ CommandShortcutEventHandler _moveCursorLeftWordSelectCommandHandler =
     renderer: renderer,
     editorState: editorState,
     fromPosition: from,
-    toPosition: end!,
+    toPosition: end,
     direction: MoveDirection.wordLeft,
   );
   if (hookResult == null) return KeyEventResult.handled;
@@ -289,7 +289,7 @@ CommandShortcutEventHandler _moveCursorLeftWordSelectCommandHandler =
     renderer: renderer,
     editorState: editorState,
     fromPosition: from,
-    toPosition: end!,
+    toPosition: end,
     direction: MoveDirection.wordLeft,
   );
 
@@ -346,7 +346,7 @@ CommandShortcutEventHandler _moveCursorLeftSelectCommandHandler =
     renderer: renderer,
     editorState: editorState,
     fromPosition: from,
-    toPosition: end!,
+    toPosition: end,
     direction: MoveDirection.left,
   );
   if (hookResult == null) return KeyEventResult.handled;
@@ -361,7 +361,7 @@ CommandShortcutEventHandler _moveCursorLeftSelectCommandHandler =
     renderer: renderer,
     editorState: editorState,
     fromPosition: from,
-    toPosition: end!,
+    toPosition: end,
     direction: MoveDirection.left,
   );
 

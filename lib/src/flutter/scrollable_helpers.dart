@@ -113,6 +113,7 @@ class ScrollableDetails {
     addIfNonNull('scroll controller: ', controller);
     addIfNonNull('scroll physics: ', physics);
     addIfNonNull('decorationClipBehavior: ', decorationClipBehavior);
+
     return '${describeIdentity(this)}(${description.join(", ")})';
   }
 
@@ -128,6 +129,7 @@ class ScrollableDetails {
     if (other.runtimeType != runtimeType) {
       return false;
     }
+
     return other is ScrollableDetails &&
         other.direction == direction &&
         other.controller == controller &&
@@ -208,6 +210,7 @@ class EdgeDraggingAutoScroller {
   }
 
   AxisDirection get _axisDirection => scrollable.axisDirection;
+
   Axis get _scrollDirection => axisDirectionToAxis(_axisDirection);
 
   /// Starts the auto scroll if the [dragTarget] is close to the edge.
@@ -217,7 +220,7 @@ class EdgeDraggingAutoScroller {
   ///
   /// If the scrollable is already scrolling, calling this method updates the
   /// previous dragTarget to the new value and continues scrolling if necessary.
-  void startAutoScrollIfNecessary(Rect dragTarget, {Duration? duration}) async {
+  void startAutoScrollIfNecessary(Rect dragTarget, {Duration? duration}) {
     final Offset deltaToOrigin = scrollable.deltaToScrollOrigin;
     _dragTargetRelatedToScrollOrigin =
         dragTarget.translate(deltaToOrigin.dx, deltaToOrigin.dy);
@@ -226,8 +229,8 @@ class EdgeDraggingAutoScroller {
       // The change will be picked up in the next scroll.
       return;
     }
-    assert(!_scrolling, 'scrolling must be false at this point');
-    await _scroll();
+    assert(!_scrolling);
+    _scroll();
   }
 
   /// Stop any ongoing auto scrolling.
@@ -338,12 +341,14 @@ class EdgeDraggingAutoScroller {
       if (newOffset == null) {
         // Drag should not trigger scroll.
         _scrolling = false;
+
         return;
       }
       double delta = newOffset - currentPixels;
       if (delta.abs() < _minimumAutoScrollDelta) {
         if (delta.abs() <= precisionErrorTolerance) {
           _scrolling = false;
+
           return;
         }
         final double direction = delta.sign;
@@ -356,18 +361,17 @@ class EdgeDraggingAutoScroller {
         delta = newOffset - currentPixels;
         if (delta.abs() <= precisionErrorTolerance) {
           _scrolling = false;
+
           return;
         }
       }
-      scrollable.position.moveTo(
+      await scrollable.position.moveTo(
         newOffset,
         duration: _currentDuration ?? _animationDuration,
         curve: Curves.linear,
         // clamp: true,
       );
       onScrollViewScrolled?.call();
-      //TODO: isnt there another way to make this better?
-      // a queue at least?
       if (_scrolling) {
         await _scroll();
       }
@@ -389,11 +393,13 @@ class EdgeDraggingAutoScroller {
     );
     if (_previousScrollDelta == null) {
       _previousScrollDelta = clampedDelta;
+
       return clampedDelta;
     }
     final double smoothed =
         lerpDouble(_previousScrollDelta!, clampedDelta, 0.35)!;
     _previousScrollDelta = smoothed;
+
     return smoothed;
   }
 }
@@ -502,6 +508,7 @@ class ScrollAction extends ContextAction<ScrollIntent> {
     }
     final ScrollController? primaryScrollController =
         PrimaryScrollController.maybeOf(context);
+
     return (primaryScrollController != null) &&
         primaryScrollController.hasClients;
   }
@@ -527,6 +534,7 @@ class ScrollAction extends ContextAction<ScrollIntent> {
         ScrollIncrementDetails(type: type, metrics: state.position),
       );
     }
+
     return switch (type) {
       ScrollIncrementType.line => 50.0,
       ScrollIncrementType.page => 0.8 * state.position.viewportDimension,
@@ -543,8 +551,10 @@ class ScrollAction extends ContextAction<ScrollIntent> {
         axisDirectionToAxis(state.axisDirection)) {
       final double increment =
           _calculateScrollIncrement(state, type: intent.type);
+
       return intent.direction == state.axisDirection ? increment : -increment;
     }
+
     return 0.0;
   }
 
@@ -575,6 +585,7 @@ class ScrollAction extends ContextAction<ScrollIntent> {
             ),
           ]);
         }
+
         return true;
       }());
 

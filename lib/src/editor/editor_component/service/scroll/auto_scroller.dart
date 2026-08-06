@@ -1,5 +1,5 @@
-import 'package:novident_editor/src/flutter/scrollable_helpers.dart';
 import 'package:flutter/material.dart' hide EdgeDraggingAutoScroller;
+import '../../../../flutter/scrollable_helpers.dart';
 
 abstract class AutoScrollerService {
   void startAutoScroll(
@@ -45,7 +45,14 @@ class AutoScroller extends EdgeDraggingAutoScroller
     lastDirection = direction;
     if (direction != null && direction == AxisDirection.up) {
       return startAutoScrollIfNecessary(
-        offset & Size(1, edgeOffset),
+        Rect.fromLTWH(offset.dx, offset.dy - edgeOffset, 1, edgeOffset),
+        duration: duration,
+      );
+    }
+
+    if (direction != null && direction == AxisDirection.down) {
+      return startAutoScrollIfNecessary(
+        Rect.fromLTWH(offset.dx, offset.dy, 1, edgeOffset),
         duration: duration,
       );
     }

@@ -88,6 +88,32 @@ CommandShortcutEventHandler _moveCursorToRightWordCommandHandler =
     return KeyEventResult.ignored;
   }
 
+  final renderer = editorState.selectionRenderer;
+  if (renderer != null) {
+    final selectable = node.selectable;
+    final rp = selectable?.getRenderParagraph();
+    if (selectable != null && rp != null) {
+      final ctx = CursorMoveContext(
+        node: node,
+        currentOffset: selection.end.offset,
+        caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
+        textDirection: selectable.textDirection(),
+        delegate: selectable,
+        renderParagraph: rp,
+        textShift: selectable.textShift,
+        delta: delta,
+      );
+      final custom = renderer.onHorizontalMove(ctx, byWord: true);
+      if (custom != null) {
+        editorState.updateSelectionWithReason(
+          Selection.collapsed(custom),
+          reason: SelectionUpdateReason.uiEvent,
+        );
+        return KeyEventResult.handled;
+      }
+    }
+  }
+
   if (isRTL(editorState)) {
     final startOfWord = selection.end.moveHorizontal(
       editorState,
@@ -167,7 +193,28 @@ CommandShortcutEventHandler _moveCursorRightWordSelectCommandHandler =
   if (isRTL(editorState)) {
     forward = true;
   }
-  final end = selection.end.moveHorizontal(
+
+  Position? end;
+  final renderer = editorState.selectionRenderer;
+  if (renderer != null) {
+    final node = editorState.getNodeAtPath(selection.end.path);
+    final selectable = node?.selectable;
+    final rp = selectable?.getRenderParagraph();
+    if (node != null && selectable != null && rp != null) {
+      final ctx = CursorMoveContext(
+        node: node,
+        currentOffset: selection.end.offset,
+        caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
+        textDirection: selectable.textDirection(),
+        delegate: selectable,
+        renderParagraph: rp,
+        textShift: selectable.textShift,
+        delta: node.delta,
+      );
+      end = renderer.onHorizontalMove(ctx, byWord: true);
+    }
+  }
+  end ??= selection.end.moveHorizontal(
     editorState,
     selectionRange: SelectionRange.word,
     forward: forward,
@@ -201,7 +248,28 @@ CommandShortcutEventHandler _moveCursorRightSelectCommandHandler =
   if (isRTL(editorState)) {
     forward = true;
   }
-  final end = selection.end.moveHorizontal(editorState, forward: forward);
+
+  Position? end;
+  final renderer = editorState.selectionRenderer;
+  if (renderer != null) {
+    final node = editorState.getNodeAtPath(selection.end.path);
+    final selectable = node?.selectable;
+    final rp = selectable?.getRenderParagraph();
+    if (node != null && selectable != null && rp != null) {
+      final ctx = CursorMoveContext(
+        node: node,
+        currentOffset: selection.end.offset,
+        caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
+        textDirection: selectable.textDirection(),
+        delegate: selectable,
+        renderParagraph: rp,
+        textShift: selectable.textShift,
+        delta: node.delta,
+      );
+      end = renderer.onHorizontalMove(ctx);
+    }
+  }
+  end ??= selection.end.moveHorizontal(editorState, forward: forward);
   if (end == null) {
     return KeyEventResult.ignored;
   }

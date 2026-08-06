@@ -350,13 +350,32 @@ extension SelectionTransform on EditorState {
     final delta = node.delta;
     switch (range) {
       case SelectionMoveRange.character:
-        // The following UnimplementedError was thrown while 
-        //    processing the key message handler:
-        // UnimplementedError
-        // When the exception was thrown, this was the stack:
-        // #0      SelectionTransform.moveCursor
-        // (package:novident_editor/src/editor/command/selection_commands.dart:293:11)
         if (delta != null) {
+          final renderer = editorState.selectionRenderer;
+          if (renderer != null) {
+            final selectable = node.selectable;
+            final rp = selectable?.getRenderParagraph();
+            if (selectable != null && rp != null) {
+              final ctx = CursorMoveContext(
+                node: node,
+                currentOffset: offset,
+                caretLocalDx: selectable.getCaretLocalDx(offset) ?? 0,
+                textDirection: selectable.textDirection(),
+                delegate: selectable,
+                renderParagraph: rp,
+                textShift: selectable.textShift,
+                delta: delta,
+              );
+              final custom = renderer.onHorizontalMove(ctx);
+              if (custom != null) {
+                updateSelectionWithReason(
+                  Selection.collapsed(custom),
+                  reason: SelectionUpdateReason.uiEvent,
+                );
+                break;
+              }
+            }
+          }
           // move the cursor to the left or right by one character
           updateSelectionWithReason(
             Selection.collapsed(
@@ -375,6 +394,31 @@ extension SelectionTransform on EditorState {
       case SelectionMoveRange.word:
         final delta = node.delta;
         if (delta != null) {
+          final renderer = editorState.selectionRenderer;
+          if (renderer != null) {
+            final selectable = node.selectable;
+            final rp = selectable?.getRenderParagraph();
+            if (selectable != null && rp != null) {
+              final ctx = CursorMoveContext(
+                node: node,
+                currentOffset: offset,
+                caretLocalDx: selectable.getCaretLocalDx(offset) ?? 0,
+                textDirection: selectable.textDirection(),
+                delegate: selectable,
+                renderParagraph: rp,
+                textShift: selectable.textShift,
+                delta: delta,
+              );
+              final custom = renderer.onHorizontalMove(ctx, byWord: true);
+              if (custom != null) {
+                updateSelectionWithReason(
+                  Selection.collapsed(custom),
+                  reason: SelectionUpdateReason.uiEvent,
+                );
+                break;
+              }
+            }
+          }
           final position = direction == SelectionMoveDirection.forward
               ? Position(
                   path: node.path,

@@ -30,7 +30,28 @@ CommandShortcutEventHandler _moveCursorDownCommandHandler = (editorState) {
     return KeyEventResult.ignored;
   }
 
-  final downPosition = selection.end.moveVertical(editorState, upwards: false);
+  Position? downPosition;
+  final renderer = editorState.selectionRenderer;
+  if (renderer != null) {
+    final node = editorState.getNodeAtPath(selection.end.path);
+    final selectable = node?.selectable;
+    final rp = selectable?.getRenderParagraph();
+    if (node != null && selectable != null && rp != null) {
+      final ctx = CursorMoveContext(
+        node: node,
+        currentOffset: selection.end.offset,
+        caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
+        textDirection: selectable.textDirection(),
+        delegate: selectable,
+        renderParagraph: rp,
+        textShift: selectable.textShift,
+        delta: node.delta,
+      );
+      downPosition = renderer.onVerticalMove(ctx);
+    }
+  }
+  downPosition ??= selection.end.moveVertical(editorState, upwards: false);
+
   editorState.updateSelectionWithReason(
     downPosition == null ? null : Selection.collapsed(downPosition),
     reason: SelectionUpdateReason.uiEvent,
@@ -118,7 +139,28 @@ CommandShortcutEventHandler _moveCursorDownSelectCommandHandler =
   if (selection == null) {
     return KeyEventResult.ignored;
   }
-  final end = selection.end.moveVertical(editorState, upwards: false);
+
+  Position? end;
+  final renderer = editorState.selectionRenderer;
+  if (renderer != null) {
+    final node = editorState.getNodeAtPath(selection.end.path);
+    final selectable = node?.selectable;
+    final rp = selectable?.getRenderParagraph();
+    if (node != null && selectable != null && rp != null) {
+      final ctx = CursorMoveContext(
+        node: node,
+        currentOffset: selection.end.offset,
+        caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
+        textDirection: selectable.textDirection(),
+        delegate: selectable,
+        renderParagraph: rp,
+        textShift: selectable.textShift,
+        delta: node.delta,
+      );
+      end = renderer.onVerticalMove(ctx);
+    }
+  }
+  end ??= selection.end.moveVertical(editorState, upwards: false);
   if (end == null) {
     return KeyEventResult.ignored;
   }

@@ -148,6 +148,8 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
 
         // soft keyboard
         // workaround: wait for the soft keyboard to show up
+        //TODO: @Cathood0 we need to replace the current keyboard height plugin
+        // to another that supports all platforms
         final keyboardDelay = KeyboardHeightObserver.currentKeyboardHeight == 0
             ? const Duration(milliseconds: 250)
             : Duration.zero;

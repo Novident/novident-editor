@@ -317,13 +317,38 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
       'keyboard service - focus changed: ${focusNode.hasFocus}}',
     );
 
-    /// On web, we don't need to close the keyboard when the focus is lost.
-    if (kIsWeb) {
-      return;
-    }
+    final renderer = editorState.selectionRenderer;
+    final selection = editorState.selection;
 
-    // clear the selection when the focus is lost.
-    if (!focusNode.hasFocus) {
+    if (focusNode.hasFocus) {
+      if (renderer != null) {
+        final focusedNode = selection != null
+            ? editorState.getNodeAtPath(selection.end.path)
+            : null;
+        renderer.onFocusGained(FocusLifecycleContext(
+          focusedNode: focusedNode,
+          hasSelection: selection != null,
+          selection: selection,
+        ));
+      }
+    } else {
+      if (renderer != null) {
+        final focusedNode = selection != null
+            ? editorState.getNodeAtPath(selection.end.path)
+            : null;
+        renderer.onFocusLost(FocusLifecycleContext(
+          focusedNode: focusedNode,
+          hasSelection: selection != null,
+          selection: selection,
+        ));
+      }
+
+      /// On web, we don't need to close the keyboard when the focus is lost.
+      if (kIsWeb) {
+        return;
+      }
+
+      // clear the selection when the focus is lost.
       if (keepEditorFocusNotifier.shouldKeepFocus) {
         return;
       }

@@ -17,7 +17,6 @@ dependencies:
   flutter:
     sdk: flutter
   collection: ^1.18.0
-  device_info_plus: ^12.4.0
   diff_match_patch: ^0.4.1
   novident_editor_core:
     path: packages/novident_editor_core
@@ -34,7 +33,6 @@ dependencies:
   html: ^0.15.5
   http: ^1.2.0
   intl: ^0.20.2
-  keyboard_height_plugin: ^0.3.0
   logging: ^1.2.0
   markdown: ^7.2.1
   nanoid: ^1.0.0
@@ -45,6 +43,7 @@ dependencies:
   universal_platform: ^1.1.0
   url_launcher: ^6.1.11
   web: ^1.1.1
+  keyboard_height: ^1.1.0
 
 dev_dependencies:
   flutter_lints: ^5.0.0
@@ -62,6 +61,14 @@ topics:
   - widgets
   - editor
   - novident
+
+platforms:
+  android:
+  ios:
+  linux:
+  macos:
+  windows:
+  web:
 
 flutter:
   assets:

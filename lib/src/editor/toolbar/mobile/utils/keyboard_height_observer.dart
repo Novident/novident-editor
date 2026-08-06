@@ -1,32 +1,27 @@
 import 'package:novident_editor/src/editor/util/platform_extension.dart';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:keyboard_height_plugin/keyboard_height_plugin.dart';
+import 'package:keyboard_height/keyboard_height.dart';
 
 typedef KeyboardHeightCallback = void Function(double height);
 
 // the KeyboardHeightPlugin only accepts one listener, so we need to create a
 //  singleton class to manage the multiple listeners.
 class KeyboardHeightObserver {
-  static int androidSDKVersion = -1;
-
   KeyboardHeightObserver._() {
-    if (PlatformExtension.isAndroid && androidSDKVersion == -1) {
-      DeviceInfoPlugin().androidInfo.then(
-            (value) => androidSDKVersion = value.version.sdkInt,
-          );
+    if (!_hasListener) {
+      _hasListener = true;
+      _keyboardHeightPlugin.addListener(() {
+        notify(_keyboardHeightPlugin.height);
+      });
     }
-    _keyboardHeightPlugin.onKeyboardHeightChanged((height) {
-      notify(height);
-
-      currentKeyboardHeight = height;
-    });
   }
 
+  static bool _hasListener = false;
+
   static final KeyboardHeightObserver instance = KeyboardHeightObserver._();
-  static double currentKeyboardHeight = 0;
+  static double get currentKeyboardHeight => _keyboardHeightPlugin.height;
 
   final List<KeyboardHeightCallback> _listeners = [];
-  final KeyboardHeightPlugin _keyboardHeightPlugin = KeyboardHeightPlugin();
+  static final KeyboardHeight _keyboardHeightPlugin = KeyboardHeight.instance;
 
   void addListener(KeyboardHeightCallback listener) {
     _listeners.add(listener);

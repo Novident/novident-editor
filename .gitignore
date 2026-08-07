@@ -21,6 +21,7 @@ AGENTS.md
 .project
 .settings/
 .vscode/
+.plans/
 
 # Flutter repo-specific
 /bin/cache/

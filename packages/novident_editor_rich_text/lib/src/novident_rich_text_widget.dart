@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart' hide RichText;
+import 'package:flutter/material.dart' hide RichText, TextPainter;
 import 'package:flutter/rendering.dart' hide RenderParagraph;
 import 'package:novident_editor_rich_text/novident_editor_rich_text.dart';
 import 'package:novident_editor_rich_text/src/utils/text_selection_from_node_selection.dart';

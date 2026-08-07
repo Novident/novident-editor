@@ -5,13 +5,13 @@ import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide RichText, TextPainter;
-import 'package:flutter/rendering.dart' hide RenderParagraph;
 import 'package:novident_editor_rich_text/novident_editor_rich_text.dart';
 import 'package:novident_editor_rich_text/src/utils/text_selection_from_node_selection.dart';
 import 'package:novident_editor_selection/novident_editor_selection.dart';
 import 'package:novident_editor_styles/novident_editor_styles.dart';
 
-import '../novident_editor_flutter.dart' show RenderParagraph, RichText;
+import '../novident_editor_flutter.dart'
+    show RenderParagraph, RichText, TextPainter;
 
 //TODO: rich text needs to allow more customization
 class NovidentRichText extends StatefulWidget {
@@ -787,8 +787,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     } else {
       // Already on the last visual line?
       if (currentLine.end >= textLen + textShift) return null;
-      adjacentLine =
-          tp.getLineBoundary(TextPosition(offset: currentLine.end));
+      adjacentLine = tp.getLineBoundary(TextPosition(offset: currentLine.end));
     }
 
     // 3. Get the caret baseline of the adjacent line's first character.

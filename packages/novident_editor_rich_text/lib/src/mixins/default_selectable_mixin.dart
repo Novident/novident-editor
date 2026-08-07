@@ -78,6 +78,9 @@ mixin DefaultSelectableMixin {
         shiftWithBaseOffset: shiftWithBaseOffset,
       );
 
+  RenderParagraph? getRenderParagraph() =>
+      forward.getRenderParagraph();
+
   Selection? getWordEdgeInOffset(Offset offset) =>
       forward.getWordEdgeInOffset(offset);
 

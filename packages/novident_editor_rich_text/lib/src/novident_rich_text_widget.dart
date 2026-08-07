@@ -11,7 +11,7 @@ import 'package:novident_editor_rich_text/src/utils/text_selection_from_node_sel
 import 'package:novident_editor_selection/novident_editor_selection.dart';
 import 'package:novident_editor_styles/novident_editor_styles.dart';
 
-import 'novident_editor_flutter.dart' show RenderParagraph, RichText;
+import '../novident_editor_flutter.dart' show RenderParagraph, RichText;
 
 //TODO: rich text needs to allow more customization
 class NovidentRichText extends StatefulWidget {

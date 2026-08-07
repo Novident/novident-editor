@@ -10,3 +10,4 @@ export 'src/types/position.dart';
 export 'src/types/remote_selection.dart';
 export 'src/types/selection.dart';
 export 'src/types/text_style_configuration.dart';
+export 'package:novident_editor_rich_text/novident_editor_flutter.dart';

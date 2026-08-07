@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
+import 'package:novident_editor_rich_text/novident_editor_flutter.dart';
 
 enum CursorStyle {
   verticalLine,

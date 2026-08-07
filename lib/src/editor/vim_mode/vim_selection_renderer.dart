@@ -43,6 +43,13 @@ class VimSelectionRenderer implements SelectionRenderer {
   /// and cleared on mode changes or horizontal-only movements.
   double? _preferredColumnDx;
 
+  /// Test-only access to the preferred column state.
+  @visibleForTesting
+  double? get debugPreferredColumnDx => _preferredColumnDx;
+
+  @visibleForTesting
+  set debugPreferredColumnDx(double? value) => _preferredColumnDx = value;
+
   /// Saved mode before focus was lost so it can be restored on
   /// [onFocusGained].
   VimMode? _savedModeBeforeFocusLost;

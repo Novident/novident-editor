@@ -171,7 +171,19 @@ Map<VimCommand, CommandShortcutEvent> buildVimModeCommandShortcutEvents(
     VimCommand.moveDocumentStart: event(
       VimCommand.moveDocumentStart,
       controller: controller,
-      onNormal: delegate(moveCursorTopCommand),
+      onNormal: (editorState, vimController) {
+        if (controller.pendingCommand ==
+            controller.configuration.commandOf(VimCommand.moveDocumentStart)) {
+          controller.setPendingCommand(null);
+          return moveCursorTopCommand.handler(editorState);
+        }
+        controller.setPendingCommand(
+          controller.configuration.commandOf(
+            VimCommand.moveDocumentStart,
+          )!,
+        );
+        return KeyEventResult.handled;
+      },
       onVisual: delegate(moveCursorTopSelectCommand),
     ),
     VimCommand.moveDocumentEnd: event(
@@ -218,11 +230,16 @@ Map<VimCommand, CommandShortcutEvent> buildVimModeCommandShortcutEvents(
       // vim's `d` operator: the first press arms it, the second (`dd`)
       // cuts the current line.
       onNormal: (editorState, controller) {
-        if (controller.pendingCommand == 'd') {
+        if (controller.pendingCommand ==
+            controller.configuration.commandOf(VimCommand.deleteLine)) {
           controller.setPendingCommand(null);
           return _cutLine(editorState, controller);
         }
-        controller.setPendingCommand('d');
+        controller.setPendingCommand(
+          controller.configuration.commandOf(
+            VimCommand.deleteLine,
+          )!,
+        );
         return KeyEventResult.handled;
       },
       onVisual: _cutSelectionAndExitVisual,

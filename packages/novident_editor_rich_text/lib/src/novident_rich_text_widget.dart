@@ -1,15 +1,17 @@
 import 'dart:math';
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/material.dart' hide RichText;
+import 'package:flutter/rendering.dart' hide RenderParagraph;
 import 'package:novident_editor_rich_text/novident_editor_rich_text.dart';
 import 'package:novident_editor_rich_text/src/utils/text_selection_from_node_selection.dart';
 import 'package:novident_editor_selection/novident_editor_selection.dart';
 import 'package:novident_editor_styles/novident_editor_styles.dart';
+
+import 'novident_editor_flutter.dart' show RenderParagraph, RichText;
 
 //TODO: rich text needs to allow more customization
 class NovidentRichText extends StatefulWidget {
@@ -493,7 +495,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
         WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
       TextSpan(
         text: widget.placeholderText,
-        style: _baseTextStyle.copyWith(color: _baseTextStyle.color?.withAlpha(150)),
+        style: _baseTextStyle.copyWith(
+            color: _baseTextStyle.color?.withAlpha(150)),
       ),
     ];
     return TextSpan(children: children);
@@ -912,7 +915,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     final rects = paragraph
         ?.getBoxesForSelection(
           textSelection,
-          boxHeightStyle: BoxHeightStyle.max,
+          boxHeightStyle: ui.BoxHeightStyle.max,
         )
         .map((box) => box.toRect())
         .toList(growable: false);

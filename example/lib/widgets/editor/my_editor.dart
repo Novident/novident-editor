@@ -44,9 +44,7 @@ class MyEditor extends StatelessWidget {
       disableAutoScroll: false,
       editorStyle: EditorStyle.desktop(
         padding: padding,
-        cursorColor: Colors.black87,
         firstLineIndent: 30, 
-        selectionColor: const Color(0x33448AFF),
         textSpanDecorator: zenController?.textSpanDecorator(),
         selectionRenderer: VimSelectionRenderer(
           controller: session.vimController,

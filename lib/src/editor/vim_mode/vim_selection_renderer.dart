@@ -344,7 +344,12 @@ class VimSelectionRenderer implements SelectionRenderer {
       width = (measured ?? minWidth).clamp(minWidth, maxWidth);
     }
 
-    return Rect.fromLTWH(caretRect.left, caretRect.top, width, height);
+    return Rect.fromLTWH(
+      caretRect.left,
+      caretRect.top,
+      width,
+      height,
+    );
   }
 }
 

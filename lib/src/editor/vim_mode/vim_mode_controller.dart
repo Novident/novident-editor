@@ -38,6 +38,7 @@ import 'package:flutter/widgets.dart';
 class VimModeController extends ChangeNotifier {
   VimModeController({
     VimModeConfiguration configuration = const VimModeConfiguration(),
+    this.pendingWaitForKeyDuration = const Duration(seconds: 2),
   })  : _configuration = configuration,
         _mode = configuration.initialMode {
     _events = buildVimModeCommandShortcutEvents(this);
@@ -50,6 +51,9 @@ class VimModeController extends ChangeNotifier {
   bool _interceptorRegistered = false;
   bool _suppressSelectionSync = false;
   String? _pendingCommand;
+  StringBuffer? _pendingBuffer;
+  int? _pendingCommandTimes;
+  Duration pendingWaitForKeyDuration;
 
   late final Map<VimCommand, CommandShortcutEvent> _events;
   late final VimModeKeyboardInterceptor _interceptor;
@@ -61,12 +65,46 @@ class VimModeController extends ChangeNotifier {
   /// sequence. Null when no operator is armed.
   String? get pendingCommand => _pendingCommand;
 
+  /// The pending operator, e.g. `'d'` after the first press of a `dd`
+  /// sequence. Null when no operator is armed.
+  String? get pendingCommandBuffer => _pendingBuffer?.toString();
+
+  /// The pending times that a key is repeated through [_pendingCommand]
+  ///
+  /// It's zero-based, so you can make `pendingCommandTimes + 1` to show the real value
+  int? get pendingCommandTimes => _pendingCommandTimes;
+
+  bool needsRepeatKeyAgain(VimCommand command, String key, String expected) {
+    if ((command.rawCommand ?? '').isEmpty ||
+        (command.rawCommand ?? '').length == 1) {
+      return false;
+    }
+    if (_pendingBuffer?.toString() == expected) {
+      return false;
+    }
+    return (_pendingCommandTimes != null &&
+            expected[_pendingCommandTimes!] == key &&
+            _pendingCommandTimes! < command.rawCommand!.length) ||
+        (_pendingCommand == null && command.rawCommand!.isNotEmpty);
+  }
+
   /// Arms/clears a pending operator (used by the vim shortcut handlers).
-  void setPendingCommand(String? command) {
-    if (_pendingCommand == command) {
+  void setPendingCommand(String? command, String? expected) {
+    if (command != null) {
+      _pendingBuffer ??= StringBuffer();
+      _pendingBuffer!.write(command);
+    }
+    if (command != null &&
+        _pendingBuffer != null &&
+        _pendingCommandTimes != null &&
+        expected != null &&
+        expected.startsWith(_pendingBuffer.toString())) {
+      _pendingCommandTimes = _pendingCommandTimes! + 1;
       return;
     }
+    _pendingCommandTimes = command != null ? 1 : null;
     _pendingCommand = command;
+    _pendingBuffer = command == null ? null : StringBuffer(command);
     notifyListeners();
   }
 
@@ -121,7 +159,9 @@ class VimModeController extends ChangeNotifier {
   void attach(EditorState editorState) {
     detach();
     _editorState = editorState;
-    editorState.selectionNotifier.addListener(_onEditorSelectionChanged);
+    if (!_suppressSelectionSync) {
+      editorState.selectionNotifier.addListener(_onEditorSelectionChanged);
+    }
     _registerInterceptor();
   }
 
@@ -130,7 +170,9 @@ class VimModeController extends ChangeNotifier {
   void detach() {
     final editorState = _editorState;
     if (editorState != null) {
-      editorState.selectionNotifier.removeListener(_onEditorSelectionChanged);
+      if (!_suppressSelectionSync) {
+        editorState.selectionNotifier.removeListener(_onEditorSelectionChanged);
+      }
       if (_interceptorRegistered) {
         editorState.service.keyboardService
             ?.unregisterInterceptor(_interceptor);
@@ -144,6 +186,7 @@ class VimModeController extends ChangeNotifier {
   @override
   void dispose() {
     detach();
+    _pendingCommand = null;
     super.dispose();
   }
 
@@ -164,7 +207,7 @@ class VimModeController extends ChangeNotifier {
       final selection = es.selection;
       if (selection != null && !selection.isCollapsed) {
         es.updateSelectionWithReason(
-          selection.normalized.collapse(),
+          selection.collapse(atStart: true),
           reason: SelectionUpdateReason.uiEvent,
         );
       }

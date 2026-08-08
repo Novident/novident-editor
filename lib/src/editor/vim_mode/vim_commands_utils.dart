@@ -23,11 +23,23 @@ CommandShortcutEvent event(
       if (!controller.enabled) {
         return KeyEventResult.ignored;
       }
-      // any vim command other than the delete operator disarms a pending
-      // `dd` sequence.
-      if (command != VimCommand.deleteLine &&
-          controller.mode != VimMode.insert) {
-        controller.setPendingCommand(null);
+      if (command.mode != null &&
+          command.mode != controller.mode &&
+          command.restrictToDefinedMode) {
+        return KeyEventResult.ignored;
+      }
+      if (command.rawCommand != null && command.rawCommand!.length > 1) {
+        controller.setPendingCommand(rawBinding, command.rawCommand);
+        if (controller.mode == command.mode &&
+            command.rawCommand != null &&
+            controller.needsRepeatKeyAgain(
+              command,
+              rawBinding,
+              command.rawCommand!,
+            )) {
+          return KeyEventResult.handled;
+        }
+        controller.setPendingCommand(null, null);
       }
       switch (controller.mode) {
         case VimMode.insert:

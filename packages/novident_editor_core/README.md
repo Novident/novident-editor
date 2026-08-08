@@ -44,9 +44,9 @@ import 'package:novident_editor_core/novident_editor_core.dart';
 final isMacOS = UniversalPlatform.isMacOS; 
 
 /// Returns true if the operating system is macOS and running on Web platform.
-final isWebOnMacOS = Platform.isWebOnMacOS; 
+final isWebOnMacOS = UniversalPlatform.isWebOnMacOS; 
 
-final isDesktopOrWeb = Platform.isDesktopOrWeb; 
+final isDesktopOrWeb = UniversalPlatform.isDesktopOrWeb; 
 ```
 
 ### Position and Selection

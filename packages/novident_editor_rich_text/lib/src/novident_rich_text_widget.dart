@@ -706,71 +706,27 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
       final textLen = displayText.length;
 
-      if (_hasSelection) {
-        final blockBg = textStyle.backgroundColor ?? Colors.white;
-        final decorationColor = textStyle.decorationColor ??
-            textStyleConfiguration.href.decorationColor ??
-            textStyleConfiguration.href.color;
-        final effectiveBg = Color.alphaBlend(
-          widget.selectionColor,
-          blockBg,
-        );
-        final effectiveDecorationColor = decorationColor == null
-            ? null
-            : Color.alphaBlend(
-                widget.selectionColor,
-                decorationColor,
-              );
-        final contrastColor =
-            effectiveBg.computeLuminance() > 0.5 ? Colors.black : Colors.white;
-        final decorationContrastColor = effectiveDecorationColor == null
-            ? null
-            : effectiveDecorationColor.computeLuminance() > 0.5
-                ? Colors.black
-                : Colors.white;
-        final int textStart = offset;
-        final int textEnd = offset + textLen;
-        final int intersectStart = max(textStart, selStart);
-        final int intersectEnd = min(textEnd, selEnd);
-        if (intersectStart < intersectEnd) {
-          // Before selection — normal color.
-          if (textStart < intersectStart) {
-            final beforeLen = intersectStart - textStart;
-            final beforeText = displayText.substring(0, beforeLen);
-            textSpans.add(emitSpan(
-              TextInsert(beforeText, attributes: textInsert.attributes),
-              beforeText,
-              textStyle,
-              offset,
-            ));
-          }
-          // Inside selection — contrast color.
-          final selPieceStart = intersectStart - textStart;
-          final selPieceEnd = intersectEnd - textStart;
-          final selText = displayText.substring(selPieceStart, selPieceEnd);
-          textSpans.add(emitSpan(
-            TextInsert(selText, attributes: textInsert.attributes),
-            selText,
-            textStyle.copyWith(
-              color: contrastColor,
-              decorationColor: decorationContrastColor,
-            ),
-            offset + selPieceStart,
-          ));
-          // After selection — normal color.
-          if (intersectEnd < textEnd) {
-            final afterStart = intersectEnd - textStart;
-            final afterText = displayText.substring(afterStart);
-            textSpans.add(emitSpan(
-              TextInsert(afterText, attributes: textInsert.attributes),
-              afterText,
-              textStyle,
-              offset + afterStart,
-            ));
-          }
-          offset += textLen;
-          continue;
-        }
+      final inserted = paintContrastColorForSelection(
+        context,
+        widget.node,
+        textInsert,
+        offset,
+        textLen,
+        selStart,
+        selEnd,
+        textSpans,
+        displayText,
+        textSpanDecoratorForAttribute: textSpanDecoratorForAttribute,
+        textSpanDecorator: widget.textSpanDecorator,
+        hasSelection: _hasSelection,
+        textStyle: textStyle,
+        textStyleConfiguration: textStyleConfiguration,
+        selectionColor: widget.selectionColor,
+      );
+
+      if (inserted) {
+        offset += textLen;
+        continue;
       }
 
       // Default: no selection intersection — emit the full span as-is.
@@ -779,6 +735,10 @@ class _NovidentRichTextState extends State<NovidentRichText>
         displayText,
         textStyle,
         offset,
+        context,
+        widget.node,
+        textSpanDecoratorForAttribute,
+        widget.textSpanDecorator,
       ));
       offset += textLen;
     }
@@ -787,24 +747,126 @@ class _NovidentRichTextState extends State<NovidentRichText>
     );
   }
 
-  InlineSpan emitSpan(
+  static InlineSpan emitSpan(
     TextInsert insert,
     String text,
     TextStyle style,
     int spanOffset,
+    BuildContext context,
+    Node node,
+    TextSpanDecoratorForAttribute? textSpanDecoratorForAttribute,
+    NovidentTextSpanDecorator? textSpanDecorator,
   ) {
     final span = TextSpan(text: text, style: style);
     if (textSpanDecoratorForAttribute != null) {
-      return textSpanDecoratorForAttribute!(
+      return textSpanDecoratorForAttribute(
         context,
-        widget.node,
+        node,
         spanOffset,
         insert,
         span,
-        widget.textSpanDecorator?.call(span) ?? span,
+        textSpanDecorator?.call(span) ?? span,
       );
     }
     return span;
+  }
+
+  static bool paintContrastColorForSelection(
+    BuildContext context,
+    Node node,
+    TextInsert textInsert,
+    int offset,
+    int textLen,
+    int selStart,
+    int selEnd,
+    List<InlineSpan> textSpans,
+    String displayText, {
+    TextSpanDecoratorForAttribute? textSpanDecoratorForAttribute,
+    NovidentTextSpanDecorator? textSpanDecorator,
+    required bool hasSelection,
+    required TextStyle textStyle,
+    required TextStyleConfiguration textStyleConfiguration,
+    required Color selectionColor,
+  }) {
+    if (!hasSelection) {
+      return false;
+    }
+    final blockBg = textStyle.backgroundColor ?? Colors.white;
+    final decorationColor = textStyle.decorationColor ??
+        textStyleConfiguration.href.decorationColor ??
+        textStyleConfiguration.href.color;
+    final effectiveBg = Color.alphaBlend(
+      selectionColor,
+      blockBg,
+    );
+    final effectiveDecorationColor = decorationColor == null
+        ? null
+        : Color.alphaBlend(
+            selectionColor,
+            decorationColor,
+          );
+    final contrastColor =
+        effectiveBg.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    final decorationContrastColor = effectiveDecorationColor == null
+        ? null
+        : effectiveDecorationColor.computeLuminance() > 0.5
+            ? Colors.black
+            : Colors.white;
+    final int textStart = offset;
+    final int textEnd = offset + textLen;
+    final int intersectStart = max(textStart, selStart);
+    final int intersectEnd = min(textEnd, selEnd);
+    if (intersectStart < intersectEnd) {
+      // Before selection — normal color.
+      if (textStart < intersectStart) {
+        final beforeLen = intersectStart - textStart;
+        final beforeText = displayText.substring(0, beforeLen);
+        textSpans.add(emitSpan(
+          TextInsert(beforeText, attributes: textInsert.attributes),
+          beforeText,
+          textStyle,
+          offset,
+          context,
+          node,
+          textSpanDecoratorForAttribute,
+          textSpanDecorator,
+        ));
+      }
+      // Inside selection — contrast color.
+      final selPieceStart = intersectStart - textStart;
+      final selPieceEnd = intersectEnd - textStart;
+      final selText = displayText.substring(selPieceStart, selPieceEnd);
+      textSpans.add(emitSpan(
+        TextInsert(selText, attributes: textInsert.attributes),
+        selText,
+        textStyle.copyWith(
+          color: contrastColor,
+          decorationColor: decorationContrastColor,
+        ),
+        offset + selPieceStart,
+        context,
+        node,
+        textSpanDecoratorForAttribute,
+        textSpanDecorator,
+      ));
+      // After selection — normal color.
+      if (intersectEnd < textEnd) {
+        final afterStart = intersectEnd - textStart;
+        final afterText = displayText.substring(afterStart);
+        textSpans.add(emitSpan(
+          TextInsert(afterText, attributes: textInsert.attributes),
+          afterText,
+          textStyle,
+          offset + afterStart,
+          context,
+          node,
+          textSpanDecoratorForAttribute,
+          textSpanDecorator,
+        ));
+      }
+      return true;
+    }
+    return false;
   }
 
   @override

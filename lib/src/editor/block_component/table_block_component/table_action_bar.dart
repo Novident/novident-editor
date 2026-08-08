@@ -34,7 +34,7 @@ class _TableActionBarState extends State<TableActionBar> {
 
   void _onEditableChange() {
     if (!mounted) return;
-    setState(() {});
+    _safeUpdate();
   }
 
   @override
@@ -51,7 +51,13 @@ class _TableActionBarState extends State<TableActionBar> {
     if (!inTable && !wasInTable) return;
     _cachedSelectionPath = null;
     _cachedCellNode = null;
-    setState(() {});
+    _safeUpdate();
+  }
+
+  void _safeUpdate() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {});
+    });
   }
 
   bool get _isVisible {
@@ -65,6 +71,7 @@ class _TableActionBarState extends State<TableActionBar> {
     final tablePath = widget.tableNode.node.path;
     return sel != null &&
         tablePath.isNotEmpty &&
+        sel.isSingle &&
         sel.start.path.first == tablePath.first;
   }
 
@@ -84,6 +91,7 @@ class _TableActionBarState extends State<TableActionBar> {
     }
 
     Node? cellNode;
+    //TODO: @CatHood0 isn't using getNodeAtPath into a for loop too expensive?
     for (var i = path.length - 1; i >= 0; i--) {
       final node = widget.editorState.getNodeAtPath(
         path.sublist(
@@ -175,9 +183,8 @@ class _TableActionBarState extends State<TableActionBar> {
       final isCol = item.direction == TableDirection.col;
       final position = isCol ? col : row;
       final atEnd = isCol ? colAtEnd : rowAtEnd;
-      final minCount = isCol
-          ? widget.tableNode.colsLen
-          : widget.tableNode.rowsLen;
+      final minCount =
+          isCol ? widget.tableNode.colsLen : widget.tableNode.rowsLen;
       final direction = item.direction ?? TableDirection.col;
 
       // Respect the item's visibility predicate

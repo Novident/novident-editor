@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
 

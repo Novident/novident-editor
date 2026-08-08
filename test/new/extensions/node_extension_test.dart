@@ -178,7 +178,7 @@ void main() async {
       // |Welcome <b>to Novident Editor 🔥!</b>
       // <b>Welcome to Novident</b> Editor 🔥!|
       final selection = Selection(
-        start: Position(path: [0], offset: 0),
+        start: Position(path: [0]),
         end: Position(
           path: [1],
           offset: welcome.length + toNovident.length + editor.length,
@@ -217,7 +217,7 @@ void main() async {
         );
       final editorState = EditorState(document: document);
       final selection = Selection(
-        start: Position(path: [0], offset: 0),
+        start: Position(path: [0]),
         end: Position(path: [2], offset: 5),
       );
       final nodes = editorState.getNodesInSelection(selection);

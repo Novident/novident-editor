@@ -113,13 +113,13 @@ class _HeadingMenuState extends State<_HeadingMenu> {
 }
 
 class HeadingUnit {
-  final NovidentMobileIcons icon;
-  final String label;
-  final int level;
 
   HeadingUnit({
     required this.icon,
     required this.label,
     required this.level,
   });
+  final NovidentMobileIcons icon;
+  final String label;
+  final int level;
 }

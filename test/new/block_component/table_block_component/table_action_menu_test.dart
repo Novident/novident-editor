@@ -280,7 +280,7 @@ void main() async {
         4,
       );
       expect(node.attributes[TableBlockKeys.colsHeight],
-          tableNode.colsHeight(kDefaultTableStyle));
+          tableNode.colsHeight(kDefaultTableStyle),);
     });
 
     testWidgets(
@@ -401,7 +401,7 @@ void main() async {
       await pumpTableEditor(
         tester,
         tableStyleDef: const NovidentTableStyleDefinition(
-            id: 'test', name: 'Test', enableHorizontalScroll: false),
+            id: 'test', name: 'Test', enableHorizontalScroll: false,),
       );
 
       expect(tableScrollView(), findsNothing);

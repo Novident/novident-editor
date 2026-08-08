@@ -111,7 +111,6 @@ void main() async {
           ..addNode(
             imageNode(
               url: url,
-              align: 'center',
               width: 100,
             ),
           )

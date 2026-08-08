@@ -145,13 +145,11 @@ extension SelectionTransform on EditorState {
               transaction.insertNodes(
                 node.path + [0],
                 last.children,
-                deepCopy: true,
               );
             } else {
               transaction.insertNodes(
                 node.path.next,
                 last.children,
-                deepCopy: true,
               );
             }
           }
@@ -234,7 +232,7 @@ extension SelectionTransform on EditorState {
               Selection.collapsed(Position(
                 path: child.path,
                 offset: upwards ? child.delta!.length : 0,
-              )),
+              ),),
               reason: SelectionUpdateReason.uiEvent,
             );
             return;

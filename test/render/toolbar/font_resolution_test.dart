@@ -27,7 +27,7 @@ void main() {
 
     /// Inserts a paragraph node at [path] with [text] and optional inline
     /// [attributes] on every character.
-    Node _insertParagraph({
+    Node insertParagraph({
       required Path path,
       required String text,
       Map<String, dynamic>? attributes,
@@ -51,7 +51,7 @@ void main() {
 
     group('fontSize — delta vs style', () {
       test('delta attribute takes priority over style', () {
-        _insertParagraph(
+        insertParagraph(
           path: [0],
           text: 'Hello',
           attributes: {RichTextKeys.fontSize: 14.0},
@@ -81,7 +81,7 @@ void main() {
       });
 
       test('falls back to default when no delta and no style', () {
-        _insertParagraph(path: [0], text: 'Plain');
+        insertParagraph(path: [0], text: 'Plain');
 
         editorState.updateSelectionWithReason(
           Selection.single(path: [0], startOffset: 0, endOffset: 5),
@@ -107,7 +107,7 @@ void main() {
       });
 
       test('collapsed cursor reads previous character delta', () {
-        _insertParagraph(
+        insertParagraph(
           path: [0],
           text: 'AB',
           attributes: {RichTextKeys.fontSize: 18.0},
@@ -149,7 +149,7 @@ void main() {
 
     group('fontFamily — delta vs default', () {
       test('delta fontFamily is detected', () {
-        _insertParagraph(
+        insertParagraph(
           path: [0],
           text: 'Hello',
           attributes: {RichTextKeys.fontFamily: 'Georgia'},
@@ -176,7 +176,7 @@ void main() {
       });
 
       test('no delta → falls back to kDefaultBaseStyle Roboto', () {
-        _insertParagraph(path: [0], text: 'Plain');
+        insertParagraph(path: [0], text: 'Plain');
 
         editorState.updateSelectionWithReason(
           Selection.single(path: [0], startOffset: 0, endOffset: 5),

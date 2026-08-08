@@ -113,7 +113,7 @@ void main() {
 
     test('the IME interceptor blocks input outside of insert mode', () async {
       final controller = VimModeController();
-      final editorState = EditorState.blank(withInitialText: true);
+      final editorState = EditorState.blank();
       const insertion = TextEditingDeltaInsertion(
         oldText: '',
         textInserted: 'a',
@@ -645,7 +645,6 @@ void main() {
           start: Position(path: [0]),
           end: Position(path: [0], offset: 5),
         ),
-        reason: SelectionUpdateReason.transaction,
       );
       await tester.pumpAndSettle();
       expect(controller.mode, VimMode.normal);
@@ -774,7 +773,7 @@ void main() {
       // normal mode: a single native block caret, widened into a steady block.
       expect(controller.mode, VimMode.normal);
       expect(vimCaret(), findsOneWidget);
-      var cursor = vimCaretWidget(tester);
+      final cursor = vimCaretWidget(tester);
       expect(cursor.shouldBlink, false);
       final height = cursor.rect.height;
       expect(

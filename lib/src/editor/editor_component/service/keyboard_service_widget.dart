@@ -1,6 +1,5 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/ime/delta_input_on_floating_cursor_update.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -240,7 +239,6 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         textEditingValue,
         TextInputConfiguration(
           viewId: View.of(context).viewId,
-          enableDeltaModel: false,
           inputType: TextInputType.multiline,
           textCapitalization: TextCapitalization.sentences,
           inputAction: TextInputAction.newline,
@@ -297,7 +295,7 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         _cachedPlainTextNodes = editableNodes;
         _cachedPlainText = buffer.toString();
       }
-      var text = _cachedPlainText!
+      final text = _cachedPlainText!
           .substring(0, _cachedPlainText!.length - 1); // strip trailing \n
 
       return TextEditingValue(
@@ -328,13 +326,13 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         focusedNode: focusedNode,
         hasSelection: selection != null,
         selection: selection,
-      ));
+      ),);
     } else {
       renderer?.onFocusLost(FocusLifecycleContext(
         focusedNode: focusedNode,
         hasSelection: selection != null,
         selection: selection,
-      ));
+      ),);
 
       /// On web, we don't need to close the keyboard when the focus is lost.
       if (kIsWeb) {

@@ -1,6 +1,5 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/find_replace_menu/find_menu_service.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/material.dart';
 
 List<CommandShortcutEvent> findAndReplaceCommands({
@@ -125,8 +124,6 @@ KeyEventResult _showFindAndReplaceDialog(
     showReplaceMenu: openReplace,
     localizations: localizations,
     style: style,
-    showRegexButton: true,
-    showCaseSensitiveButton: true,
   );
 
   _findReplaceService?.show();

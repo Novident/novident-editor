@@ -13,7 +13,6 @@ import 'viewport.dart';
 /// A version of [CustomScrollView] that allows does not constrict the extents
 /// to be within 0 and 1. See [CustomScrollView] for more information.
 class UnboundedCustomScrollView extends CustomScrollView {
-  final bool _shrinkWrap;
 
   const UnboundedCustomScrollView({
     super.key,
@@ -35,6 +34,7 @@ class UnboundedCustomScrollView extends CustomScrollView {
         super(
           shrinkWrap: false,
         );
+  final bool _shrinkWrap;
 
   // [CustomScrollView] enforces constraints on [CustomScrollView.anchor], so
   // we need our own version.

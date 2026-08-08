@@ -1,6 +1,5 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/selection/mobile_selection_service.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:novident_editor/src/render/selection/mobile_basic_handle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

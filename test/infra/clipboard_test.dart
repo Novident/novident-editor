@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class MockClipboard {
-  final String? text;
-  final String? html;
 
   const MockClipboard({required this.text, required this.html});
+  final String? text;
+  final String? html;
 
   MockClipboard copyWith({
     String? text,
@@ -44,7 +44,7 @@ void main() {
 
   group('Clipboard tests', () {
     test('NovidentClipboardData constructor', () {
-      const data = NovidentClipboardData(text: null, html: null);
+      const data = NovidentClipboardData();
 
       expect(data.text, null);
       expect(data.html, null);
@@ -62,7 +62,7 @@ void main() {
             children: [
               TextButton(
                 onPressed: () async =>
-                    await NovidentClipboard.setData(text: rawText),
+                    NovidentClipboard.setData(text: rawText),
                 child: const Text('setData'),
               ),
               TextButton(

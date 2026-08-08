@@ -9,20 +9,20 @@ void main() {
       TestWidgetsFlutterBinding.ensureInitialized();
     });
 
-    EditorState _editorWithText(String text) {
+    EditorState editorWithText(String text) {
       final doc = Document.blank();
       final delta = Delta()..insert(text);
       doc.insert([0], [
         Node(type: 'paragraph', attributes: {
           blockComponentDelta: delta.toJson(),
-        }),
+        },),
       ]);
       return EditorState(document: doc);
     }
 
     testWidgets('renders dropdown with default size (12) when no selection',
         (WidgetTester tester) async {
-      final editorState = _editorWithText('Hello');
+      final editorState = editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
       await tester.pumpWidget(
@@ -32,7 +32,7 @@ void main() {
               builder: (context) {
                 final item = buildFontSizeItem();
                 return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null);
+                    Colors.grey, null,);
               },
             ),
           ),
@@ -45,7 +45,7 @@ void main() {
 
     testWidgets('dropdown opens and shows size list',
         (WidgetTester tester) async {
-      final editorState = _editorWithText('Hello');
+      final editorState = editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
       editorState.updateSelectionWithReason(
@@ -59,7 +59,7 @@ void main() {
               builder: (context) {
                 final item = buildFontSizeItem();
                 return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null);
+                    Colors.grey, null,);
               },
             ),
           ),
@@ -77,7 +77,7 @@ void main() {
 
     testWidgets('selecting a size applies formatDelta',
         (WidgetTester tester) async {
-      final editorState = _editorWithText('Hello');
+      final editorState = editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
       editorState.updateSelectionWithReason(
@@ -91,7 +91,7 @@ void main() {
               builder: (context) {
                 final item = buildFontSizeItem();
                 return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null);
+                    Colors.grey, null,);
               },
             ),
           ),
@@ -124,7 +124,7 @@ void main() {
 
     testWidgets('custom min/max bounds are respected',
         (WidgetTester tester) async {
-      final editorState = _editorWithText('Hello');
+      final editorState = editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
       await tester.pumpWidget(
@@ -135,7 +135,7 @@ void main() {
                 // Range 20-24: only 5 items.
                 final item = buildFontSizeItem(minSize: 20, maxSize: 24);
                 return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null);
+                    Colors.grey, null,);
               },
             ),
           ),

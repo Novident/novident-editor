@@ -27,8 +27,6 @@ void main() {
             id: 'body',
             name: 'Body',
             basedOn: 'base',
-            // no fontFamily — should inherit 'Arial'
-            fontSize: 12, // overrides parent's 14
           ),
         });
 
@@ -71,7 +69,6 @@ void main() {
             name: 'Root',
             fontFamily: 'Arial',
             fontSize: 10,
-            bold: false,
           ),
           'middle': NovidentStyleDefinition(
             id: 'middle',

@@ -81,7 +81,7 @@ void main() async {
     });
 
     testWidgets('remove the last column', (tester) async {
-      var tableNode = TableNode.fromList([
+      final tableNode = TableNode.fromList([
         ['1', '2'],
       ]);
       final editor = tester.editor..addNode(tableNode.node);
@@ -102,7 +102,7 @@ void main() async {
     });
 
     testWidgets('remove the last row', (tester) async {
-      var tableNode = TableNode.fromList([
+      final tableNode = TableNode.fromList([
         ['1'],
         ['3'],
       ]);
@@ -139,7 +139,7 @@ void main() async {
         editor.editorState,
         TableDirection.col,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       tableNode = TableNode(node: tableNode.node);
 
       expect(tableNode.colsLen, 3);
@@ -168,7 +168,7 @@ void main() async {
         editor.editorState,
         TableDirection.row,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       tableNode = TableNode(node: tableNode.node);
 
       expect(tableNode.rowsLen, 3);
@@ -198,7 +198,7 @@ void main() async {
         TableDirection.col,
         kDefaultTableStyle,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       tableNode = TableNode(node: tableNode.node);
 
       expect(tableNode.colsLen, 3);
@@ -230,7 +230,7 @@ void main() async {
         TableDirection.row,
         kDefaultTableStyle,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       tableNode = TableNode(node: tableNode.node);
 
       expect(tableNode.rowsLen, 3);
@@ -242,13 +242,13 @@ void main() async {
         },
       );
 
-      var cell12 = getCellNode(tableNode.node, 1, 2)!;
+      final cell12 = getCellNode(tableNode.node, 1, 2)!;
       expect(tableNode.getRowHeight(2, kDefaultTableStyle), cell12.children.first.rect.height + 8);
       await editor.dispose();
     });
 
     testWidgets('set row bg color', (tester) async {
-      var tableNode = TableNode.fromList([
+      final tableNode = TableNode.fromList([
         ['', ''],
         ['', ''],
       ]);
@@ -265,7 +265,7 @@ void main() async {
         color,
         TableDirection.row,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
 
       for (var i = 0; i < 2; i++) {
         expect(
@@ -296,7 +296,7 @@ void main() async {
         color,
         TableDirection.row,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
 
       TableActions.add(
         tableNode.node,
@@ -305,7 +305,7 @@ void main() async {
         TableDirection.col,
         kDefaultTableStyle,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       tableNode = TableNode(node: tableNode.node);
 
       expect(tableNode.colsLen, 3);
@@ -336,7 +336,7 @@ void main() async {
         color,
         TableDirection.col,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
 
       TableActions.add(
         tableNode.node,

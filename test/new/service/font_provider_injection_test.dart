@@ -12,7 +12,7 @@ void main() {
 
     testWidgets('EditorState.fontProvider is set from NovidentEditor',
         (WidgetTester tester) async {
-      final editorState = EditorState.blank(withInitialText: true);
+      final editorState = EditorState.blank();
       addTearDown(() => editorState.dispose());
 
       final provider = NovidentFontProvider.fromList(['TestFont']);
@@ -41,7 +41,7 @@ void main() {
 
     testWidgets('falls back to NovidentFontProvider.fallback() when omitted',
         (WidgetTester tester) async {
-      final editorState = EditorState.blank(withInitialText: true);
+      final editorState = EditorState.blank();
       addTearDown(() => editorState.dispose());
 
       await tester.pumpWidget(
@@ -68,7 +68,7 @@ void main() {
 
     testWidgets('buildFontFamilyItem uses injected provider',
         (WidgetTester tester) async {
-      final editorState = EditorState.blank(withInitialText: true);
+      final editorState = EditorState.blank();
       addTearDown(() => editorState.dispose());
 
       // Set fontProvider directly on editorState (simulates NovidentEditor

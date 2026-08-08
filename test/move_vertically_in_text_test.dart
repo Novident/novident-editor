@@ -24,7 +24,7 @@ void main() {
 
     /// Build editor with the given [delta] and return the node's
     /// [SelectableMixin] so we can call [moveVerticallyInText] directly.
-    Future<SelectableMixin> _build(WidgetTester tester, Delta delta) async {
+    Future<SelectableMixin> build(WidgetTester tester, Delta delta) async {
       es = EditorState.blank(withInitialText: false);
 
       final tx = es.transaction;
@@ -32,7 +32,7 @@ void main() {
       await es.apply(tx);
 
       es.editorStyle = const EditorStyle.desktop(
-        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 0),
+        padding: EdgeInsets.symmetric(horizontal: 32),
         firstLineIndent: 30,
         maxWidth: 654,
       );
@@ -82,7 +82,7 @@ void main() {
           attributes: {RichTextKeys.fontSize: 12.0},
         );
 
-      final selectable = await _build(tester, delta);
+      final selectable = await build(tester, delta);
       final textLen = delta.length;
 
       // Walk from end to start.
@@ -92,14 +92,14 @@ void main() {
         final next = selectable.moveVerticallyInText(current, true);
         if (next == null) break;
         expect(next.offset, lessThan(current),
-            reason: 'Step $i: must move upward (${current} → ${next.offset})');
+            reason: 'Step $i: must move upward ($current → ${next.offset})',);
         current = next.offset;
         offsets.add(current);
       }
 
       // We should have walked multiple lines.
       expect(offsets.length, greaterThan(3),
-          reason: 'Expected at least 4 lines, got ${offsets.length}');
+          reason: 'Expected at least 4 lines, got ${offsets.length}',);
 
       // No step should jump more than ~100 characters (one line).
       for (var i = 1; i < offsets.length; i++) {
@@ -107,14 +107,14 @@ void main() {
         expect(diff, lessThan(120),
             reason:
                 'Step $i: jump of $diff chars is too large '
-                '(${offsets[i - 1]} → ${offsets[i]})');
+                '(${offsets[i - 1]} → ${offsets[i]})',);
       }
 
       // Should reach the beginning.
       expect(offsets.last, lessThanOrEqualTo(20),
           reason:
               'Should walk close to offset 0, got ${offsets.last}. '
-              'Full walk: $offsets');
+              'Full walk: $offsets',);
     });
 
     testWidgets('homogeneous font — walk up from end', (tester) async {
@@ -130,7 +130,7 @@ void main() {
           'The quick brown fox jumps over the lazy dog. ';
 
       final delta = Delta()..insert(text);
-      final selectable = await _build(tester, delta);
+      final selectable = await build(tester, delta);
       final textLen = delta.length;
 
       var current = textLen;
@@ -145,7 +145,7 @@ void main() {
 
       // Should reach close to offset 0.
       expect(current, lessThanOrEqualTo(80),
-          reason: 'Should walk close to start, stuck at $current');
+          reason: 'Should walk close to start, stuck at $current',);
       expect(steps, greaterThan(2));
     });
 
@@ -157,7 +157,7 @@ void main() {
           'The five boxing wizards jump quickly. ';
 
       final delta = Delta()..insert(text);
-      final selectable = await _build(tester, delta);
+      final selectable = await build(tester, delta);
       final textLen = delta.length;
 
       var current = 0;
@@ -166,20 +166,20 @@ void main() {
         final next = selectable.moveVerticallyInText(current, false);
         if (next == null) break;
         expect(next.offset, greaterThan(current),
-            reason: 'Step $steps: must move downward');
+            reason: 'Step $steps: must move downward',);
         current = next.offset;
         steps++;
       }
 
       expect(steps, greaterThan(1));
       expect(current, greaterThan(textLen ~/ 2),
-          reason: 'Should move past halfway, stuck at $current');
+          reason: 'Should move past halfway, stuck at $current',);
     });
 
     testWidgets('single-line paragraph — returns null at boundaries',
         (tester) async {
       final delta = Delta()..insert('Short text.');
-      final selectable = await _build(tester, delta);
+      final selectable = await build(tester, delta);
 
       // From start going up → null (no previous line).
       expect(selectable.moveVerticallyInText(0, true), isNull);
@@ -190,7 +190,7 @@ void main() {
 
     testWidgets('offset at 0 — returns null when going up', (tester) async {
       final delta = Delta()..insert('Line one\nLine two');
-      final selectable = await _build(tester, delta);
+      final selectable = await build(tester, delta);
 
       expect(selectable.moveVerticallyInText(0, true), isNull);
     });
@@ -198,7 +198,7 @@ void main() {
     testWidgets('offset at textLen — returns null when going down',
         (tester) async {
       final delta = Delta()..insert('Line one\nLine two');
-      final selectable = await _build(tester, delta);
+      final selectable = await build(tester, delta);
 
       expect(selectable.moveVerticallyInText(delta.length, false), isNull);
     });
@@ -219,7 +219,7 @@ void main() {
           attributes: {RichTextKeys.fontSize: 12.0},
         );
 
-      final selectable = await _build(tester, delta);
+      final selectable = await build(tester, delta);
       final textLen = delta.length;
 
       var current = textLen;
@@ -228,7 +228,7 @@ void main() {
         final next = selectable.moveVerticallyInText(current, true);
         if (next == null) break;
         expect(next.offset, lessThan(current),
-            reason: 'Step $i must decrease: $current → ${next.offset}');
+            reason: 'Step $i must decrease: $current → ${next.offset}',);
         current = next.offset;
         offsets.add(current);
       }

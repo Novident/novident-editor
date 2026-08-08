@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor_styles/novident_editor_styles.dart';
-import 'package:novident_editor_styles/src/providers/standard_fonts_by_os_provider.dart';
 
 /// A sensible preset of styles modelled after Microsoft Word defaults.
 ///

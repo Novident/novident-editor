@@ -10,11 +10,11 @@ void main() {
       TestWidgetsFlutterBinding.ensureInitialized();
     });
 
-    EditorState _editorWithText(String text) {
+    EditorState editorWithText(String text) {
       final doc = Document.blank();
       final delta = Delta()..insert(text);
       doc.insert([
-        0
+        0,
       ], [
         Node(
           type: 'paragraph',
@@ -28,7 +28,7 @@ void main() {
 
     testWidgets('shows provider default when no selection and no explicit font',
         (WidgetTester tester) async {
-      final editorState = _editorWithText('Hello');
+      final editorState = editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
       // No selection → no delta, no style resolution.
@@ -63,7 +63,7 @@ void main() {
     testWidgets(
         'shows effective font from selection when text has inline delta',
         (WidgetTester tester) async {
-      final editorState = _editorWithText('Hello');
+      final editorState = editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
       // Apply Georgia via inline delta + set selection.
@@ -107,12 +107,12 @@ void main() {
 
     testWidgets('dropdown opens and shows font list',
         (WidgetTester tester) async {
-      final editorState = _editorWithText('Hello');
+      final editorState = editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
       unawaited(editorState.updateSelectionWithReason(
         Selection.single(path: [0], startOffset: 0, endOffset: 2),
-      ));
+      ),);
 
       await tester.pumpWidget(
         MaterialApp(

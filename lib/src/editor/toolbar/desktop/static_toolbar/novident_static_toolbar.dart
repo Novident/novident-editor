@@ -133,7 +133,6 @@ class _StaticToolbarRow extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         key: _kContainerKey,
-        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: _buildChildren(),
       ),

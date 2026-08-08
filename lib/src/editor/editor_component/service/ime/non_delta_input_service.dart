@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/ime/text_diff.dart';
 import 'package:novident_editor/src/editor/editor_component/service/ime/text_input_service.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/services.dart';
 
 // string from flutter callback

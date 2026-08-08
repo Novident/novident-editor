@@ -43,7 +43,6 @@ class NovidentClipboard {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     return NovidentClipboardData(
       text: data?.text,
-      html: null,
     );
   }
 

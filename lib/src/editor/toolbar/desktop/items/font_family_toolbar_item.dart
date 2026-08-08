@@ -367,15 +367,15 @@ class _FontFamilyMenuPanel extends StatelessWidget {
 }
 
 class _FontFamilyEntry {
-  final String family;
-  final String label;
-  final bool isSelected;
 
   const _FontFamilyEntry({
     required this.family,
     required this.label,
     required this.isSelected,
   });
+  final String family;
+  final String label;
+  final bool isSelected;
 }
 
 class _FontFamilyMenuItem extends StatelessWidget {

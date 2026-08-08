@@ -36,7 +36,7 @@ CommandShortcutEventHandler _arrowRightCommandHandler = (editorState) {
     return KeyEventResult.ignored;
   }
   if (isRTL(editorState)) {
-    editorState.moveCursorForward(SelectionMoveRange.character);
+    editorState.moveCursorForward();
   } else {
     editorState.moveCursorBackward(SelectionMoveRange.character);
   }

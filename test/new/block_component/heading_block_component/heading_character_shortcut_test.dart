@@ -42,7 +42,6 @@ void main() async {
             expect(after.delta!.toPlainText(), text);
             expect(after.type, 'heading');
           },
-          text: text,
         );
       }
     });
@@ -61,7 +60,6 @@ void main() async {
           expect(result, false);
           expect(before.toJson(), after.toJson());
         },
-        text: text,
       );
     });
 
@@ -79,7 +77,6 @@ void main() async {
           expect(result, false);
           expect(before.toJson(), after.toJson());
         },
-        text: text,
       );
     });
 
@@ -133,7 +130,6 @@ void main() async {
           expect(after.next!.delta!.toPlainText(), '1 $text');
           expect(after.next!.next!.delta!.toPlainText(), '2 $text');
         },
-        text: text,
         node: bulletedListNode(
           text: '$syntax$text',
           children: [

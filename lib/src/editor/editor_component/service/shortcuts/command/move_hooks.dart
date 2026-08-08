@@ -66,6 +66,6 @@ void moveCompletedHook({
       fromPosition: fromPosition,
       toPosition: toPosition,
       direction: direction,
-    ));
+    ),);
   }
 }

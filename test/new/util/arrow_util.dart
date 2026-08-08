@@ -6,10 +6,6 @@ import '../infra/testable_editor.dart';
 import './typedef_util.dart';
 
 class ArrowTest {
-  String text;
-  Selection initialSel;
-  Selection expSel;
-  NodeDecorator? decorator;
 
   ArrowTest({
     required this.text,
@@ -17,6 +13,10 @@ class ArrowTest {
     required this.expSel,
     this.decorator,
   });
+  String text;
+  Selection initialSel;
+  Selection expSel;
+  NodeDecorator? decorator;
 }
 
 Future<void> runArrowLeftTest(

@@ -178,7 +178,7 @@ extension PositionExtension on Position {
 
     // ── Fast path: intra-node using local coords (scroll-independent) ──
     final withinNode =
-        nodeSelectable.moveVerticallyInText(this.offset, upwards);
+        nodeSelectable.moveVerticallyInText(offset, upwards);
     if (withinNode != null) return withinNode;
 
     // ── Fallback: pixel-based scan (tables, images, dividers, and nodes
@@ -226,7 +226,7 @@ extension PositionExtension on Position {
 
     // If the current node is not multiline, this will be ~= 0
     // so the loop will be skipped.
-    final remainingMultilineHeight = (textHeight - caretHeight);
+    final remainingMultilineHeight = textHeight - caretHeight;
 
     // Linearly search for a new position.
     // It's acceptable to use a linear search because the starting point is
@@ -320,7 +320,7 @@ extension PositionExtension on Position {
       if (adjSelectable != null) {
         // Try to preserve the caret's visual column (dx) across nodes
         // using local→global→local coordinate transforms.
-        final caretLocalDx = nodeSelectable.getCaretLocalDx(this.offset);
+        final caretLocalDx = nodeSelectable.getCaretLocalDx(offset);
         if (caretLocalDx != null) {
           final dstRenderBox = adjacent.renderBox;
           if (dstRenderBox != null && dstRenderBox.hasSize) {
@@ -347,7 +347,7 @@ extension PositionExtension on Position {
         if (adjStart.path.equals(adjacent.path) &&
             adjEnd.path.equals(adjacent.path)) {
           final clampedOffset =
-              this.offset.clamp(adjStart.offset, adjEnd.offset);
+              offset.clamp(adjStart.offset, adjEnd.offset);
           return Position(path: adjacent.path, offset: clampedOffset);
         }
       }
@@ -368,7 +368,7 @@ extension PositionExtension on Position {
     final delta = node.delta;
     if (delta != null) {
       if (upwards) {
-        return Position(path: path, offset: 0);
+        return Position(path: path);
       } else {
         final length = delta.length;
         return Position(path: path, offset: length);

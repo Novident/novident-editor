@@ -147,7 +147,7 @@ void _addCol(
 
   final transaction = editorState.transaction;
 
-  List<Node> cellNodes = [];
+  final List<Node> cellNodes = [];
   final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen],
       colsLen = tableNode.attributes[TableBlockKeys.colsLen];
 
@@ -286,7 +286,7 @@ void _deleteCol(Node tableNode, int col, EditorState editorState) {
     tableNode.dispose();
   } else {
     final table = TableNode(node: tableNode);
-    List<Node> nodes = [];
+    final List<Node> nodes = [];
     for (var i = 0; i < rowsLen; i++) {
       nodes.add(table.getCell(col, i));
     }
@@ -315,7 +315,7 @@ void _deleteRow(Node tableNode, int row, EditorState editorState) {
     tableNode.dispose();
   } else {
     final table = TableNode(node: tableNode);
-    List<Node> nodes = [];
+    final List<Node> nodes = [];
     for (var i = 0; i < colsLen; i++) {
       nodes.add(table.getCell(i, row));
     }
@@ -335,7 +335,7 @@ void _duplicateCol(Node tableNode, int col, EditorState editorState) {
   final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen],
       colsLen = tableNode.attributes[TableBlockKeys.colsLen];
   final table = TableNode(node: tableNode);
-  List<Node> nodes = [];
+  final List<Node> nodes = [];
   for (var i = 0; i < rowsLen; i++) {
     final node = table.getCell(col, i);
     nodes.add(

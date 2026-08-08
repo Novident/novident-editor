@@ -8,20 +8,20 @@ void main() {
       TestWidgetsFlutterBinding.ensureInitialized();
     });
 
-    EditorState _createEditor() {
+    EditorState createEditor() {
       final doc = Document.blank();
       final delta = Delta()..insert('Hello');
       doc.insert([0], [
         Node(type: 'paragraph', attributes: {
           blockComponentDelta: delta.toJson(),
-        }),
+        },),
       ]);
       return EditorState(document: doc);
     }
 
     testWidgets('shows items when selection is null and flag is true',
         (WidgetTester tester) async {
-      final editorState = _createEditor();
+      final editorState = createEditor();
       addTearDown(() => editorState.dispose());
 
       expect(editorState.selection, isNull);
@@ -44,7 +44,7 @@ void main() {
 
     testWidgets('hides items when flag is false (default)',
         (WidgetTester tester) async {
-      final editorState = _createEditor();
+      final editorState = createEditor();
       addTearDown(() => editorState.dispose());
 
       expect(editorState.selection, isNull);

@@ -131,10 +131,6 @@ class _BlocksMenuState extends State<_BlocksMenu> {
 }
 
 class _ListUnit {
-  final NovidentMobileIcons icon;
-  final String label;
-  final String name;
-  final int? level;
 
   _ListUnit({
     required this.icon,
@@ -142,4 +138,8 @@ class _ListUnit {
     required this.name,
     this.level,
   });
+  final NovidentMobileIcons icon;
+  final String label;
+  final String name;
+  final int? level;
 }

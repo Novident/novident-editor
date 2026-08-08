@@ -160,7 +160,7 @@ class _TableColState extends State<TableCol> {
                 as double?) ??
             style.verticalBorderWidth;
 
-    List<Widget> children = [];
+    final List<Widget> children = [];
 
     if (widget.colIdx == 0 && !noBorder && borderColor != null) {
       children.add(

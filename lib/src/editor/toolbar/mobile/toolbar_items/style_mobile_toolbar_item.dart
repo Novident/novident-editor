@@ -111,13 +111,13 @@ class _StyleMenuState extends State<_StyleMenu> {
 }
 
 class _StyleMenuEntry {
-  final String id;
-  final String name;
-  final bool isSelected;
 
   const _StyleMenuEntry({
     required this.id,
     required this.name,
     required this.isSelected,
   });
+  final String id;
+  final String name;
+  final bool isSelected;
 }

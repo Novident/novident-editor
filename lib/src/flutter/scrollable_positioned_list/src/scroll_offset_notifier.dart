@@ -5,9 +5,9 @@ import 'dart:async';
 import 'scroll_offset_listener.dart';
 
 class ScrollOffsetNotifier implements ScrollOffsetListener {
-  final bool recordProgrammaticScrolls;
 
   ScrollOffsetNotifier({this.recordProgrammaticScrolls = true});
+  final bool recordProgrammaticScrolls;
 
   final _streamController = StreamController<double>();
 

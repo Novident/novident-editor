@@ -355,7 +355,6 @@ class _UploadImageMenuState extends State<UploadImageMenu> {
             ),
             child: _imagePathOrContent != null
                 ? Align(
-                    alignment: Alignment.center,
                     child: kIsWeb
                         ? Image.memory(
                             dataFromBase64String(_imagePathOrContent!),
@@ -434,7 +433,6 @@ extension InsertImage on EditorState {
     transaction.afterSelection = Selection.collapsed(
       Position(
         path: node.path.next,
-        offset: 0,
       ),
     );
 

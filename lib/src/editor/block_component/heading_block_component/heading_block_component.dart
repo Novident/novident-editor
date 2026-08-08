@@ -119,7 +119,6 @@ class _HeadingBlockComponentWidgetState
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
         textDirection: textDirection,
         children: [
           Flexible(

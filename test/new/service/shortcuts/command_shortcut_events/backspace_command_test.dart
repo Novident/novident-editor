@@ -52,7 +52,7 @@ void main() async {
 
         // |Welcome to Novident Editor 🔥!
         final selection = Selection.collapsed(
-          Position(path: [0], offset: 0),
+          Position(path: [0]),
         );
         editorState.selection = selection;
 
@@ -82,7 +82,7 @@ void main() async {
         // Welcome to Novident Editor 🔥!
         // |Welcome to Novident Editor 🔥!
         final selection = Selection.collapsed(
-          Position(path: [1], offset: 0),
+          Position(path: [1]),
         );
         editorState.selection = selection;
 
@@ -123,7 +123,7 @@ void main() async {
         // Welcome to Novident Editor 🔥!
         // |Welcome to Novident Editor 🔥!
         final selection = Selection.collapsed(
-          Position(path: [0, 0], offset: 0),
+          Position(path: [0, 0]),
         );
         editorState.selection = selection;
 
@@ -137,14 +137,14 @@ void main() async {
         expect(
           editorState.selection,
           Selection.collapsed(
-            Position(path: [1], offset: 0),
+            Position(path: [1]),
           ),
         );
       });
 
       test("backspace convert bullet list to paragraph but keep direction",
           () async {
-        String rtlText = 'سلام';
+        final String rtlText = 'سلام';
         final document = Document.blank().addNode(
           BulletedListBlockKeys.type,
           initialText: rtlText,
@@ -159,7 +159,7 @@ void main() async {
         // Welcome to Novident Editor 🔥!
         // |Welcome to Novident Editor 🔥!
         final selection = Selection.collapsed(
-          Position(path: [0], offset: 0),
+          Position(path: [0]),
         );
         editorState.selection = selection;
 
@@ -182,7 +182,7 @@ void main() async {
         final editorState = EditorState(document: document);
 
         final selection = Selection(
-          start: Position(path: [0], offset: 0),
+          start: Position(path: [0]),
           end: Position(path: [4], offset: text.length),
         );
         editorState.updateSelectionWithReason(
@@ -604,7 +604,7 @@ void main() async {
       // Ensure the cursor is at the start of the new second row
       expect(
         editor.selection,
-        Selection.collapsed(Position(path: [0, 1, 0], offset: 0)),
+        Selection.collapsed(Position(path: [0, 1, 0])),
       );
 
       await editor.dispose();
@@ -672,7 +672,7 @@ void main() async {
 
     expect(
       editor.selection,
-      Selection.collapsed(Position(path: [0, 1, 0], offset: 0)),
+      Selection.collapsed(Position(path: [0, 1, 0])),
     );
 
     await editor.dispose();

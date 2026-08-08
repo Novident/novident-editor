@@ -13,7 +13,7 @@ void main() {
       const pattern = 'Novident';
       const text = 'Welcome to Novident 😁';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, [11]);
     });
@@ -29,7 +29,7 @@ Novident provides authors, researchers, and storytellers with powerful organizat
 features without the cost or limitations of closed source code.
       ''';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, [11, 24, 252]);
     });
@@ -47,7 +47,7 @@ features without the cost or limitations of closed source code.
       const pattern = '😁';
       const text = 'Welcome to Novident 😁';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, [20]);
     });
@@ -58,7 +58,7 @@ features without the cost or limitations of closed source code.
       const pattern = 'Nov';
       const text = 'Welcome to Novident 😁';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, [11]);
     });
@@ -67,7 +67,7 @@ features without the cost or limitations of closed source code.
       const pattern = 'NOVIDENT';
       const text = 'Welcome to Novident 😁';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, []);
     });
@@ -76,7 +76,7 @@ features without the cost or limitations of closed source code.
       final pattern = RegExp('NOVIDENT', caseSensitive: false);
       const text = 'Welcome to Novident 😁';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, [11]);
     });
@@ -85,7 +85,7 @@ features without the cost or limitations of closed source code.
       final pattern = RegExp('N[a-z]v', caseSensitive: false);
       const text = 'Welcome to Novident example app 😁';
 
-      Iterable<Match> result = algorithm.searchMethod(pattern, text);
+      final Iterable<Match> result = algorithm.searchMethod(pattern, text);
       final starts = result.map((e) => e.start).toList();
       final ends = result.map((e) => e.end).toList();
       expect(starts, [11]);

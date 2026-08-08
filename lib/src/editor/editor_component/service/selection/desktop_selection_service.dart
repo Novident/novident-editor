@@ -312,7 +312,7 @@ class _DesktopSelectionServiceWidgetState
       clearSelection();
       return;
     }
-    Selection selection = Selection(
+    final Selection selection = Selection(
       start: selectable.start(),
       end: selectable.end(),
     );
@@ -403,7 +403,7 @@ class _DesktopSelectionServiceWidgetState
         startNode: startNode,
         endNode: endNode,
         isCollapsed: isCollapsed,
-      ));
+      ),);
     }
   }
 
@@ -427,7 +427,6 @@ class _DesktopSelectionServiceWidgetState
 
     editorState.service.scrollService?.startAutoScroll(
       _lastPanOffset!,
-      edgeOffset: 200,
       duration: const Duration(milliseconds: 2),
     );
   }
@@ -454,7 +453,7 @@ class _DesktopSelectionServiceWidgetState
         startNode: startNode,
         endNode: endNode,
         isCollapsed: isCollapsed,
-      ));
+      ),);
     }
 
     _resetPanState();

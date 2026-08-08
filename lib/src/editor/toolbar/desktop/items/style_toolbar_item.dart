@@ -174,7 +174,6 @@ class _StyleDropdownButtonState extends State<_StyleDropdownButton> {
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
               color: _isOpen ? _highlightColor : Colors.transparent,
-              width: 1,
             ),
           ),
           child: Row(

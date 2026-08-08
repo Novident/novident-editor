@@ -3,7 +3,6 @@ import 'dart:collection';
 
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/auto_scroller.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:novident_editor/src/history/undo_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -211,6 +210,7 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
       editorStyle.textStyleConfiguration;
   /// The selection notifier of the editor.
   /// The selection notifier of the editor.
+  @override
   final PropertyValueNotifier<Selection?> selectionNotifier =
       PropertyValueNotifier<Selection?>(null);
 
@@ -218,6 +218,7 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   Selection? get selection => selectionNotifier.value;
 
   /// Remote selection is the selection from other users.
+  @override
   final PropertyValueNotifier<List<RemoteSelection>> remoteSelections =
       PropertyValueNotifier<List<RemoteSelection>>([]);
 
@@ -336,7 +337,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   bool showHeader = false;
   bool showFooter = false;
 
+  @override
   bool enableAutoComplete = false;
+  @override
   NovidentAutoCompleteTextProvider? autoCompleteTextProvider;
 
   // only used for testing
@@ -469,7 +472,7 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   Future<void> apply(
     Transaction transaction, {
     bool isRemote = false,
-    ApplyOptions options = const ApplyOptions(recordUndo: true),
+    ApplyOptions options = const ApplyOptions(),
     bool withUpdateSelection = true,
     bool skipHistoryDebounce = false,
   }) async {

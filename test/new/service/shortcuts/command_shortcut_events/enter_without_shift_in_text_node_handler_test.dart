@@ -73,7 +73,7 @@ void main() async {
         editor.selection,
         Selection.single(path: [lines - 1], startOffset: 0),
       );
-      var lastNode = editor.nodeAtPath([lines - 1]);
+      final lastNode = editor.nodeAtPath([lines - 1]);
       expect(lastNode != null, true);
       expect(lastNode?.type, 'paragraph');
       expect(lastNode?.delta?.toPlainText(), text);
@@ -289,7 +289,7 @@ Future<void> _testMultipleSelection(
   //
   const text = 'Welcome to Novident 😁';
   final editor = tester.editor;
-  var lines = 4;
+  final lines = 4;
 
   editor.addParagraphs(lines, initialText: text);
 

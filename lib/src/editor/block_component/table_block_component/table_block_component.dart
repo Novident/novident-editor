@@ -431,7 +431,6 @@ SelectionMenuItem tableMenuItem = SelectionMenuItem(
       transaction.afterSelection = Selection.collapsed(
         Position(
           path: selection.end.path + [0, 0],
-          offset: 0,
         ),
       );
     } else {
@@ -439,7 +438,6 @@ SelectionMenuItem tableMenuItem = SelectionMenuItem(
       transaction.afterSelection = Selection.collapsed(
         Position(
           path: selection.end.path.next + [0, 0],
-          offset: 0,
         ),
       );
     }

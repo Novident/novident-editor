@@ -21,7 +21,6 @@ void main() async {
           expect(result, false);
           expect(before.toJson(), after.toJson());
         },
-        text: text,
       );
     });
 
@@ -41,7 +40,6 @@ void main() async {
           expect(after.delta!.toPlainText(), text);
           expect(after.type, NumberedListBlockKeys.type);
         },
-        text: text,
       );
     });
 
@@ -59,7 +57,6 @@ void main() async {
           expect(result, false);
           expect(before.toJson(), after.toJson());
         },
-        text: text,
       );
     });
 
@@ -187,7 +184,6 @@ void main() async {
           expect(after.children[0].delta!.toPlainText(), '1 $text');
           expect(after.children[1].delta!.toPlainText(), '2 $text');
         },
-        text: text,
         node: todoListNode(
           text: '$syntax$text',
           checked: false,
@@ -212,7 +208,6 @@ void main() async {
           expect(after.delta!.toPlainText(), '$syntax$text');
           expect(after.type, HeadingBlockKeys.type);
         },
-        text: text,
         node: headingNode(
           text: '$syntax$text',
           level: 1,

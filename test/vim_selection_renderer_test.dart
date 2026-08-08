@@ -476,7 +476,7 @@ void main() {
           end: Position(path: [0], offset: 5),
         ),
         reason: SelectionUpdateReason.uiEvent,
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       final ctx = SelectionMeasureContext(
@@ -516,7 +516,7 @@ void main() {
           end: Position(path: [0], offset: 3),
         ),
         reason: SelectionUpdateReason.uiEvent,
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       final ctx = SelectionMeasureContext(

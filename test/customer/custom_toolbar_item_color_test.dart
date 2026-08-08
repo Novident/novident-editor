@@ -52,7 +52,6 @@ class CustomToolbarItemColor extends StatelessWidget {
       localizationsDelegates: const [
         NovidentEditorLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('en', 'US')],
       home: Scaffold(
         body: SafeArea(
           child: Container(

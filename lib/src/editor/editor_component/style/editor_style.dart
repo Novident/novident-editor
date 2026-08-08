@@ -7,6 +7,73 @@ import 'package:flutter/material.dart';
 ///  the [NovidentEditor].
 ///
 class EditorStyle {
+
+  const EditorStyle.desktop({
+    EdgeInsets? padding,
+    Color? cursorColor,
+    Color? selectionColor,
+    TextStyleConfiguration? textStyleConfiguration,
+    TextSpanDecoratorForAttribute? textSpanDecorator,
+    this.textSpanOverlayBuilder,
+    this.defaultTextDirection,
+    this.cursorWidth = 2.0,
+    this.textScaleFactor = 1.0,
+    this.maxWidth,
+    this.firstLineIndent,
+    this.selectionRenderer,
+    this.showTableActionBar = true,
+  })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 100),
+        cursorColor = cursorColor ?? const Color(0xFF00BCF0),
+        selectionColor =
+            selectionColor ?? const Color.fromARGB(255, 111, 201, 231),
+        textStyleConfiguration =
+            textStyleConfiguration ?? const TextStyleConfiguration(),
+        textSpanDecorator =
+            textSpanDecorator ?? defaultTextSpanDecoratorForAttribute,
+        magnifierSize = Size.zero,
+        mobileDragHandleBallSize = Size.zero,
+        mobileDragHandleWidth = 0.0,
+        enableHapticFeedbackOnAndroid = false,
+        dragHandleColor = Colors.transparent,
+        mobileDragHandleTopExtend = null,
+        mobileDragHandleWidthExtend = null,
+        mobileDragHandleLeftExtend = null,
+        mobileDragHandleHeightExtend = null,
+        autoDismissCollapsedHandleDuration = const Duration();
+
+  const EditorStyle.mobile({
+    EdgeInsets? padding,
+    Color? cursorColor,
+    Color? dragHandleColor,
+    Color? selectionColor,
+    TextStyleConfiguration? textStyleConfiguration,
+    TextSpanDecoratorForAttribute? textSpanDecorator,
+    this.textSpanOverlayBuilder,
+    this.defaultTextDirection,
+    this.magnifierSize = const Size(72, 48),
+    this.mobileDragHandleBallSize = const Size(8, 8),
+    this.mobileDragHandleWidth = 2.0,
+    this.cursorWidth = 2.0,
+    this.enableHapticFeedbackOnAndroid = true,
+    this.textScaleFactor = 1.0,
+    this.maxWidth,
+    this.mobileDragHandleTopExtend,
+    this.mobileDragHandleWidthExtend,
+    this.mobileDragHandleLeftExtend,
+    this.mobileDragHandleHeightExtend,
+    this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
+    this.firstLineIndent,
+    this.selectionRenderer,
+    this.showTableActionBar = true,
+  })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 20),
+        cursorColor = cursorColor ?? const Color(0xFF00BCF0),
+        dragHandleColor = dragHandleColor ?? const Color(0xFF00BCF0),
+        selectionColor =
+            selectionColor ?? const Color.fromARGB(53, 111, 201, 231),
+        textStyleConfiguration =
+            textStyleConfiguration ?? const TextStyleConfiguration(),
+        textSpanDecorator =
+            textSpanDecorator ?? mobileTextSpanDecoratorForAttribute;
   const EditorStyle({
     required this.padding,
     required this.cursorColor,
@@ -121,73 +188,6 @@ class EditorStyle {
   /// When `false`, the floating action bar (add column/row, delete, colors)
   /// is hidden for all tables. Defaults to `true`.
   final bool showTableActionBar;
-
-  const EditorStyle.desktop({
-    EdgeInsets? padding,
-    Color? cursorColor,
-    Color? selectionColor,
-    TextStyleConfiguration? textStyleConfiguration,
-    TextSpanDecoratorForAttribute? textSpanDecorator,
-    this.textSpanOverlayBuilder,
-    this.defaultTextDirection,
-    this.cursorWidth = 2.0,
-    this.textScaleFactor = 1.0,
-    this.maxWidth,
-    this.firstLineIndent,
-    this.selectionRenderer,
-    this.showTableActionBar = true,
-  })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 100),
-        cursorColor = cursorColor ?? const Color(0xFF00BCF0),
-        selectionColor =
-            selectionColor ?? const Color.fromARGB(255, 111, 201, 231),
-        textStyleConfiguration =
-            textStyleConfiguration ?? const TextStyleConfiguration(),
-        textSpanDecorator =
-            textSpanDecorator ?? defaultTextSpanDecoratorForAttribute,
-        magnifierSize = Size.zero,
-        mobileDragHandleBallSize = Size.zero,
-        mobileDragHandleWidth = 0.0,
-        enableHapticFeedbackOnAndroid = false,
-        dragHandleColor = Colors.transparent,
-        mobileDragHandleTopExtend = null,
-        mobileDragHandleWidthExtend = null,
-        mobileDragHandleLeftExtend = null,
-        mobileDragHandleHeightExtend = null,
-        autoDismissCollapsedHandleDuration = const Duration(seconds: 0);
-
-  const EditorStyle.mobile({
-    EdgeInsets? padding,
-    Color? cursorColor,
-    Color? dragHandleColor,
-    Color? selectionColor,
-    TextStyleConfiguration? textStyleConfiguration,
-    TextSpanDecoratorForAttribute? textSpanDecorator,
-    this.textSpanOverlayBuilder,
-    this.defaultTextDirection,
-    this.magnifierSize = const Size(72, 48),
-    this.mobileDragHandleBallSize = const Size(8, 8),
-    this.mobileDragHandleWidth = 2.0,
-    this.cursorWidth = 2.0,
-    this.enableHapticFeedbackOnAndroid = true,
-    this.textScaleFactor = 1.0,
-    this.maxWidth,
-    this.mobileDragHandleTopExtend,
-    this.mobileDragHandleWidthExtend,
-    this.mobileDragHandleLeftExtend,
-    this.mobileDragHandleHeightExtend,
-    this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
-    this.firstLineIndent,
-    this.selectionRenderer,
-    this.showTableActionBar = true,
-  })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 20),
-        cursorColor = cursorColor ?? const Color(0xFF00BCF0),
-        dragHandleColor = dragHandleColor ?? const Color(0xFF00BCF0),
-        selectionColor =
-            selectionColor ?? const Color.fromARGB(53, 111, 201, 231),
-        textStyleConfiguration =
-            textStyleConfiguration ?? const TextStyleConfiguration(),
-        textSpanDecorator =
-            textSpanDecorator ?? mobileTextSpanDecoratorForAttribute;
 
   EditorStyle copyWith({
     EdgeInsets? padding,

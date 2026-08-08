@@ -160,7 +160,7 @@ void main() async {
 
     final editorState = EditorState(document: document)
       ..selection = Selection(
-        start: Position(path: [0], offset: 0),
+        start: Position(path: [0]),
         end: Position(path: [1], offset: secondText.length),
       );
 

@@ -128,7 +128,7 @@ mixin NestedBlockComponentStatefulWidgetMixin<
   @override
   Widget build(BuildContext context) {
     return node.children.isEmpty
-        ? buildComponent(context, withBackgroundColor: true)
+        ? buildComponent(context)
         : buildComponentWithChildren(context);
   }
 

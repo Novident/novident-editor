@@ -129,7 +129,7 @@ void main() {
           const BoxDecoration();
       blockComponentDecorator = marker;
 
-      final editorState = EditorState.blank(withInitialText: true);
+      final editorState = EditorState.blank();
       final controller = ZenModeController();
       controller.attach(editorState: editorState);
 

@@ -84,7 +84,6 @@ extension EditorCopyPaste on EditorState {
       if (lastNode.delta != null) {
         nodes.last.insertDelta(
           delta.slice(selection.endIndex),
-          insertAfter: true,
         );
       }
     }

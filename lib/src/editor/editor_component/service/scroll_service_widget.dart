@@ -2,7 +2,6 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/desktop_scroll_service.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/mobile_scroll_service.dart';
 import 'package:novident_editor/src/editor/toolbar/mobile/utils/keyboard_height_observer.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

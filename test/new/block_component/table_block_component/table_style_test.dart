@@ -169,7 +169,6 @@ void main() async {
         tableStyleDef: const NovidentTableStyleDefinition(
           id: 'test_style',
           name: 'Test Style',
-          enableHorizontalScroll: true,
         ),
       );
 

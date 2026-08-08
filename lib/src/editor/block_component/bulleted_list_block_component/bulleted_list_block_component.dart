@@ -117,8 +117,6 @@ class _BulletedListBlockComponentWidgetState
       width: double.infinity,
       alignment: alignment,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         textDirection: textDirection,
         children: [

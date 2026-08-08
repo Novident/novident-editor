@@ -10,20 +10,20 @@ void main() {
       TestWidgetsFlutterBinding.ensureInitialized();
     });
 
-    EditorState _editorWithText(String text) {
+    EditorState editorWithText(String text) {
       final doc = Document.blank();
       final delta = Delta()..insert(text);
       doc.insert([0], [
         Node(type: 'paragraph', attributes: {
           blockComponentDelta: delta.toJson(),
-        }),
+        },),
       ]);
       return EditorState(document: doc);
     }
 
     testWidgets('uses highlightColor for border when dropdown is open',
         (WidgetTester tester) async {
-      final editorState = _editorWithText('Hello');
+      final editorState = editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
       editorState.updateSelectionWithReason(
@@ -38,7 +38,7 @@ void main() {
             body: Builder(
               builder: (context) {
                 return styleToolbarItem.builder!(
-                    context, editorState, myHighlight, Colors.grey, null);
+                    context, editorState, myHighlight, Colors.grey, null,);
               },
             ),
           ),
@@ -57,7 +57,7 @@ void main() {
 
     testWidgets('tooltipBuilder wraps the button when provided',
         (WidgetTester tester) async {
-      final editorState = _editorWithText('Hello');
+      final editorState = editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
       await tester.pumpWidget(

@@ -20,7 +20,7 @@ void main() {
       doc.insert([0], [
         Node(type: 'paragraph', attributes: {
           blockComponentDelta: delta.toJson(),
-        }),
+        },),
       ]);
       final editorState = EditorState(document: doc);
       addTearDown(() => editorState.dispose());
@@ -96,7 +96,7 @@ void main() {
       doc.insert([0], [
         Node(type: 'paragraph', attributes: {
           blockComponentDelta: delta.toJson(),
-        }),
+        },),
       ]);
       final editorState = EditorState(document: doc);
       addTearDown(() => editorState.dispose());
@@ -114,7 +114,7 @@ void main() {
                 NovidentStaticToolbar(
                   items: [
                     buildFontFamilyItem(
-                        fontFamilies: ['Arial', 'Georgia', 'Verdana']),
+                        fontFamilies: ['Arial', 'Georgia', 'Verdana'],),
                   ],
                   editorState: editorState,
                   showWhenNoSelection: true,
@@ -164,7 +164,7 @@ void main() {
       doc.insert([0], [
         Node(type: 'paragraph', attributes: {
           blockComponentDelta: delta.toJson(),
-        }),
+        },),
       ]);
       final editorState = EditorState(document: doc);
       addTearDown(() => editorState.dispose());

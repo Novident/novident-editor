@@ -179,10 +179,10 @@ class VimSelectionRenderer implements SelectionRenderer {
     final rp = ctx.renderParagraph ?? ctx.delegate.getRenderParagraph();
     if (rp != null) {
       final tp = rp.textPainter;
-      final tpOffset = ctx.currentOffset + ctx.textShift;
+      final tpOffset = ctx.currentOffset;
       final lineRange = tp.getLineBoundary(TextPosition(offset: tpOffset));
       // lineRange.end is exclusive; subtract textShift and clamp.
-      final lineEnd = lineRange.end - ctx.textShift;
+      final lineEnd = lineRange.end;
       final maxOffset = ctx.delegate.end().offset;
       if (lineEnd > 0 && lineEnd <= maxOffset) {
         // In visual mode, $ places the cursor on the last character.
@@ -286,29 +286,9 @@ class VimSelectionRenderer implements SelectionRenderer {
 
   @override
   List<Rect>? onSelectionRectsMeasured(SelectionMeasureContext ctx) {
-    if (!_isVimActive || controller.mode != VimMode.visual) {
-      return fallback.onSelectionRectsMeasured(ctx);
-    }
-
     // In visual mode, expand selection rects to block-cursor width
     // so the highlight matches the visual block cursor appearance.
-    final fallbackRects = fallback.onSelectionRectsMeasured(ctx) ??
-        ctx.delegate.getRectsInSelection(ctx.selection);
-
-    return fallbackRects.map((rect) {
-      final height = rect.height;
-      final width = _style.blockWidth ??
-          (height * _style.minBlockWidthFactor).clamp(
-            height * _style.minBlockWidthFactor,
-            height * _style.maxBlockWidthFactor,
-          );
-      return Rect.fromLTWH(
-        rect.left,
-        rect.top,
-        width,
-        height,
-      );
-    }).toList();
+    return fallback.onSelectionRectsMeasured(ctx);
   }
 
   Color _resolveColor(VimCursorStyle style, Color fallback) {
@@ -329,6 +309,8 @@ class VimSelectionRenderer implements SelectionRenderer {
     );
   }
 
+  /// Returns the effective [Rect] that its similar to the default
+  /// appearance of vim cursor
   static Rect? vimBlockRect(
     Node node,
     Position position,

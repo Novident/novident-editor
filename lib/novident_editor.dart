@@ -7,6 +7,7 @@ export 'package:novident_editor_document/novident_editor_document.dart';
 export 'package:novident_editor_styles/novident_editor_styles.dart';
 export 'src/core/core.dart';
 export 'package:novident_editor_rich_text/novident_editor_rich_text.dart';
+export 'package:novident_editor_rich_text/novident_editor_flutter.dart';
 export 'src/editor/block_component/table_block_component/table.dart';
 // editor part, including editor component, block component, etc.
 export 'src/editor/editor.dart';

@@ -13,6 +13,7 @@ import 'package:novident_editor/novident_editor.dart'
         FocusLifecycleContext,
         MoveAttemptContext,
         MoveCompletedContext,
+        MoveDirection,
         MoveIntention,
         Node,
         Position,
@@ -36,6 +37,22 @@ class VimSelectionRenderer implements SelectionRenderer {
   final SelectionRenderer fallback;
 
   VimCursorStyle get _style => controller.configuration.cursorStyle;
+
+  /// The X position (in local paragraph coordinates) that vim aims
+  /// to preserve across vertical movements. Updated after every move
+  /// and cleared on mode changes or horizontal-only movements.
+  double? _preferredColumnDx;
+
+  /// Test-only access to the preferred column state.
+  @visibleForTesting
+  double? get debugPreferredColumnDx => _preferredColumnDx;
+
+  @visibleForTesting
+  set debugPreferredColumnDx(double? value) => _preferredColumnDx = value;
+
+  /// Saved mode before focus was lost so it can be restored on
+  /// [onFocusGained].
+  VimMode? _savedModeBeforeFocusLost;
 
   /// Returns [fallback] in insert mode or when vim is disabled;
   /// returns `this` in normal/visual mode.
@@ -75,7 +92,6 @@ class VimSelectionRenderer implements SelectionRenderer {
     return VimBlockCursor(
       rect: ctx.rect,
       color: _resolveColor(_style, ctx.color),
-      shouldBlink: false,
     );
   }
 
@@ -88,38 +104,219 @@ class VimSelectionRenderer implements SelectionRenderer {
       fallback.buildBlockSelectionHighlight(ctx);
 
   @override
-  Position? onVerticalMove(CursorMoveContext ctx) =>
-      fallback.onVerticalMove(ctx);
-  @override
-  Position? onHorizontalMove(CursorMoveContext ctx, {bool byWord = false}) =>
-      fallback.onHorizontalMove(ctx, byWord: byWord);
-  @override
-  Position? onMoveToLineStart(CursorMoveContext ctx) =>
-      fallback.onMoveToLineStart(ctx);
-  @override
-  Position? onMoveToLineEnd(CursorMoveContext ctx) =>
-      fallback.onMoveToLineEnd(ctx);
-  @override
-  Position? onPageUp(CursorMoveContext ctx) => fallback.onPageUp(ctx);
-  @override
-  Position? onPageDown(CursorMoveContext ctx) => fallback.onPageDown(ctx);
+  Position? onVerticalMove(CursorMoveContext ctx) {
+    if (!_isVimActive) return fallback.onVerticalMove(ctx);
+
+    // Seed the preferred column on the first vertical move so subsequent
+    // 'j'/'k' presses preserve the horizontal position even when
+    // intermediate lines are shorter. We don't override the position —
+    // the editor's moveVerticallyInText handles the actual movement.
+    _preferredColumnDx ??= ctx.caretLocalDx;
+    return null;
+  }
 
   @override
-  MoveIntention? onTryMove(MoveAttemptContext ctx) => fallback.onTryMove(ctx);
+  Position? onHorizontalMove(CursorMoveContext ctx, {bool byWord = false}) {
+    if (!_isVimActive) {
+      return fallback.onHorizontalMove(ctx, byWord: byWord);
+    }
+
+    // In visual mode, allow full horizontal movement (selection expansion).
+    if (controller.mode == VimMode.visual) {
+      return fallback.onHorizontalMove(ctx, byWord: byWord);
+    }
+
+    // In normal mode ('h' / 'l'): do NOT cross line boundaries.
+    // Let the fallback compute the candidate, then validate it stays
+    // within the same line.
+    final candidate = fallback.onHorizontalMove(ctx, byWord: byWord);
+    if (candidate == null) return null;
+
+    final rp = ctx.renderParagraph ?? ctx.delegate.getRenderParagraph();
+    if (rp == null) return candidate; // can't validate, trust fallback
+
+    final tp = rp.textPainter;
+    final tpCurrent = ctx.currentOffset + ctx.textShift;
+    final tpCandidate = candidate.offset + ctx.textShift;
+
+    // Same line? Compare the line range of both positions.
+    final currentLine = tp.getLineBoundary(TextPosition(offset: tpCurrent));
+    final candidateLine = tp.getLineBoundary(TextPosition(offset: tpCandidate));
+    if (currentLine.start != candidateLine.start) {
+      return null; // blocked: would cross line boundary
+    }
+
+    // Update preferred column from the new position.
+    _preferredColumnDx = ctx.delegate.getCaretLocalDx(candidate.offset);
+    return candidate;
+  }
+
   @override
-  void onMoveCompleted(MoveCompletedContext ctx) =>
+  Position? onMoveToLineStart(CursorMoveContext ctx) {
+    if (!_isVimActive) return fallback.onMoveToLineStart(ctx);
+
+    // Vim '0': jump to the first character of the current line
+    // (after the first-line indent WidgetSpan).
+    // The RenderParagraph gives us the line boundary directly.
+    final rp = ctx.renderParagraph ?? ctx.delegate.getRenderParagraph();
+    if (rp != null) {
+      final tp = rp.textPainter;
+      final tpOffset = ctx.currentOffset + ctx.textShift;
+      final lineRange = tp.getLineBoundary(TextPosition(offset: tpOffset));
+      final lineStart =
+          (lineRange.start - ctx.textShift).clamp(0, ctx.delegate.end().offset);
+      return Position(path: ctx.node.path, offset: lineStart);
+    }
+
+    // Fallback: first character after textShift.
+    return Position(path: ctx.node.path, offset: ctx.textShift);
+  }
+
+  @override
+  Position? onMoveToLineEnd(CursorMoveContext ctx) {
+    if (!_isVimActive) return fallback.onMoveToLineEnd(ctx);
+
+    final rp = ctx.renderParagraph ?? ctx.delegate.getRenderParagraph();
+    if (rp != null) {
+      final tp = rp.textPainter;
+      final tpOffset = ctx.currentOffset + ctx.textShift;
+      final lineRange = tp.getLineBoundary(TextPosition(offset: tpOffset));
+      // lineRange.end is exclusive; subtract textShift and clamp.
+      final lineEnd = lineRange.end - ctx.textShift;
+      final maxOffset = ctx.delegate.end().offset;
+      if (lineEnd > 0 && lineEnd <= maxOffset) {
+        // In visual mode, $ places the cursor on the last character.
+        // In normal mode, we also want the last character (vim's $
+        // behavior moves to the last non-whitespace, but for now we
+        // keep it simple).
+        return Position(path: ctx.node.path, offset: lineEnd);
+      }
+      return Position(
+        path: ctx.node.path,
+        offset: lineEnd.clamp(0, maxOffset),
+      );
+    }
+    return fallback.onMoveToLineEnd(ctx);
+  }
+
+  @override
+  Position? onPageUp(CursorMoveContext ctx) {
+    if (!_isVimActive) return fallback.onPageUp(ctx);
+    // Vim Ctrl-U: scroll up half a page. Delegate the actual pixel
+    // math to the fallback (which goes through moveVerticallyInText).
+    return null;
+  }
+
+  @override
+  Position? onPageDown(CursorMoveContext ctx) {
+    if (!_isVimActive) return fallback.onPageDown(ctx);
+    // Vim Ctrl-D: scroll down half a page.
+    return null;
+  }
+
+  @override
+  MoveIntention? onTryMove(MoveAttemptContext ctx) {
+    if (!_isVimActive) return fallback.onTryMove(ctx);
+
+    // In normal mode, prevent moves that would leave the document.
+    // Cancel the move entirely when the target is null or invalid.
+    // This keeps the cursor from wrapping around or jumping to
+    // unexpected positions.
+    if (ctx.targetPosition.offset < 0) return const MoveIntention.cancel();
+
+    return null;
+  }
+
+  @override
+  void onMoveCompleted(MoveCompletedContext ctx) {
+    if (!_isVimActive) {
       fallback.onMoveCompleted(ctx);
+      return;
+    }
+
+    // After horizontal moves (h/l/w/b/e), clear the preferred column
+    // so the next j/k re-seeds from the new horizontal position.
+    if (ctx.direction != MoveDirection.up &&
+        ctx.direction != MoveDirection.down) {
+      _preferredColumnDx = null;
+    }
+    // For vertical moves: keep _preferredColumnDx unchanged so the
+    // user's intended column survives short lines (vim-like behavior).
+  }
 
   @override
   void onSelectionStarted(SelectionLifecycleContext ctx) =>
       fallback.onSelectionStarted(ctx);
+
   @override
   void onSelectionEnded(SelectionLifecycleContext ctx) =>
       fallback.onSelectionEnded(ctx);
+
   @override
-  void onFocusGained(FocusLifecycleContext ctx) => fallback.onFocusGained(ctx);
+  void onFocusGained(FocusLifecycleContext ctx) {
+    if (!_isVimActive) {
+      fallback.onFocusGained(ctx);
+      return;
+    }
+    // Restore the mode that was active before focus was lost, if any.
+    if (_savedModeBeforeFocusLost != null) {
+      switch (_savedModeBeforeFocusLost!) {
+        case VimMode.normal:
+          controller.enterNormalMode();
+        case VimMode.visual:
+          controller.enterVisualMode();
+        case VimMode.insert:
+          controller.enterInsertMode();
+      }
+      _savedModeBeforeFocusLost = null;
+    }
+  }
+
   @override
-  void onFocusLost(FocusLifecycleContext ctx) => fallback.onFocusLost(ctx);
+  void onFocusLost(FocusLifecycleContext ctx) {
+    if (!controller.enabled) {
+      fallback.onFocusLost(ctx);
+      return;
+    }
+    // Keep a snapshot of the current mode so we can restore later.
+    _savedModeBeforeFocusLost = controller.mode;
+    // Clear the preferred column — it's stale after focus loss.
+    _preferredColumnDx = null;
+  }
+
+  @override
+  List<Rect>? onSelectionRectsMeasured(SelectionMeasureContext ctx) {
+    if (!_isVimActive || controller.mode != VimMode.visual) {
+      return fallback.onSelectionRectsMeasured(ctx);
+    }
+
+    // In visual mode, expand selection rects to block-cursor width
+    // so the highlight matches the visual block cursor appearance.
+    final fallbackRects = fallback.onSelectionRectsMeasured(ctx) ??
+        ctx.delegate.getRectsInSelection(ctx.selection);
+
+    return fallbackRects.map((rect) {
+      final height = rect.height;
+      final width = _style.blockWidth ??
+          (height * _style.minBlockWidthFactor).clamp(
+            height * _style.minBlockWidthFactor,
+            height * _style.maxBlockWidthFactor,
+          );
+      return Rect.fromLTWH(
+        rect.left,
+        rect.top,
+        width,
+        height,
+      );
+    }).toList();
+  }
+
+  Color _resolveColor(VimCursorStyle style, Color fallback) {
+    if (style.color != null) {
+      return style.color!.withValues(alpha: style.opacity);
+    }
+    return fallback.withValues(alpha: style.opacity);
+  }
 
   @override
   Rect? onCursorRectMeasured(CursorMeasureContext ctx) {
@@ -130,17 +327,6 @@ class VimSelectionRenderer implements SelectionRenderer {
       ctx.delegate,
       _style,
     );
-  }
-
-  @override
-  List<Rect>? onSelectionRectsMeasured(SelectionMeasureContext ctx) =>
-      fallback.onSelectionRectsMeasured(ctx);
-
-  Color _resolveColor(VimCursorStyle style, Color fallback) {
-    if (style.color != null) {
-      return style.color!.withValues(alpha: style.opacity);
-    }
-    return fallback.withValues(alpha: style.opacity);
   }
 
   static Rect? vimBlockRect(

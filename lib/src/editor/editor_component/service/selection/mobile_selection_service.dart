@@ -544,6 +544,20 @@ class _MobileSelectionServiceWidgetState
 
     dragMode = mode;
 
+    final renderer = editorState.selectionRenderer;
+    if (renderer != null && selection != null) {
+      final isCollapsed = selection.isCollapsed;
+      final startNode = editorState.getNodeAtPath(selection.start.path);
+      final endNode =
+          isCollapsed ? startNode : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionStarted(SelectionLifecycleContext(
+        selection: selection,
+        startNode: startNode,
+        endNode: endNode,
+        isCollapsed: isCollapsed,
+      ));
+    }
+
     return selection;
   }
 
@@ -601,6 +615,21 @@ class _MobileSelectionServiceWidgetState
 
   @override
   void onPanEnd(DragEndDetails details, MobileSelectionDragMode mode) {
+    final renderer = editorState.selectionRenderer;
+    final selection = editorState.selection;
+    if (renderer != null && selection != null) {
+      final isCollapsed = selection.isCollapsed;
+      final startNode = editorState.getNodeAtPath(selection.start.path);
+      final endNode =
+          isCollapsed ? startNode : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionEnded(SelectionLifecycleContext(
+        selection: selection,
+        startNode: startNode,
+        endNode: endNode,
+        isCollapsed: isCollapsed,
+      ));
+    }
+
     _clearPanVariables();
     dragMode = MobileSelectionDragMode.none;
 

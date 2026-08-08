@@ -368,7 +368,18 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
           });
         }
       } else if (widget.supportTypes.contains(BlockSelectionType.selection)) {
-        final rects = widget.delegate.getRectsInSelection(selection);
+        var rects = widget.delegate.getRectsInSelection(selection);
+        final renderer = widget.host.selectionRenderer ?? widget.renderer;
+        final measureCtx = SelectionMeasureContext(
+          node: widget.node,
+          selection: selection,
+          textDirection: widget.delegate.textDirection(),
+          delegate: widget.delegate,
+        );
+        final adjustedRects = renderer.onSelectionRectsMeasured(measureCtx);
+        if (adjustedRects != null) {
+          rects = adjustedRects;
+        }
         if (!_deepEqual(rects, prevSelectionRects)) {
           setState(() {
             prevSelectionRects = rects;

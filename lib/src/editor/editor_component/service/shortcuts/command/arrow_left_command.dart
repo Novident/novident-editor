@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
+import 'move_hooks.dart';
+
 final List<CommandShortcutEvent> arrowLeftKeys = [
   moveCursorLeftCommand,
   moveCursorToBeginCommand,
@@ -56,6 +58,50 @@ CommandShortcutEventHandler _moveCursorToBeginCommandHandler = (editorState) {
   if (selection == null) {
     return KeyEventResult.ignored;
   }
+
+  final renderer = editorState.selectionRenderer;
+  if (renderer != null) {
+    final node = editorState.getNodeAtPath(selection.end.path);
+    final selectable = node?.selectable;
+    final rp = selectable?.getRenderParagraph();
+    if (node != null && selectable != null && rp != null) {
+      final ctx = CursorMoveContext(
+        node: node,
+        currentOffset: selection.end.offset,
+        caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
+        textDirection: selectable.textDirection(),
+        delegate: selectable,
+        renderParagraph: rp,
+        textShift: selectable.textShift,
+        delta: node.delta,
+      );
+      final custom = renderer.onMoveToLineStart(ctx);
+      if (custom != null) {
+        final from = selection.end;
+        final hookResult = tryMoveHook(
+          renderer: renderer,
+          editorState: editorState,
+          fromPosition: from,
+          toPosition: custom,
+          direction: MoveDirection.lineStart,
+        );
+        if (hookResult == null) return KeyEventResult.handled;
+        editorState.updateSelectionWithReason(
+          Selection.collapsed(hookResult),
+          reason: SelectionUpdateReason.uiEvent,
+        );
+        moveCompletedHook(
+          renderer: renderer,
+          editorState: editorState,
+          fromPosition: from,
+          toPosition: hookResult,
+          direction: MoveDirection.lineStart,
+        );
+        return KeyEventResult.handled;
+      }
+    }
+  }
+
   if (isRTL(editorState)) {
     editorState.moveCursorBackward(SelectionMoveRange.line);
   } else {
@@ -86,6 +132,32 @@ CommandShortcutEventHandler _moveCursorToLeftWordCommandHandler =
 
   if (node == null || delta == null) {
     return KeyEventResult.ignored;
+  }
+
+  final renderer = editorState.selectionRenderer;
+  if (renderer != null) {
+    final selectable = node.selectable;
+    final rp = selectable?.getRenderParagraph();
+    if (selectable != null && rp != null) {
+      final ctx = CursorMoveContext(
+        node: node,
+        currentOffset: selection.end.offset,
+        caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
+        textDirection: selectable.textDirection(),
+        delegate: selectable,
+        renderParagraph: rp,
+        textShift: selectable.textShift,
+        delta: delta,
+      );
+      final custom = renderer.onHorizontalMove(ctx, byWord: true);
+      if (custom != null) {
+        editorState.updateSelectionWithReason(
+          Selection.collapsed(custom),
+          reason: SelectionUpdateReason.uiEvent,
+        );
+        return KeyEventResult.handled;
+      }
+    }
   }
 
   if (isRTL(editorState)) {
@@ -167,7 +239,28 @@ CommandShortcutEventHandler _moveCursorLeftWordSelectCommandHandler =
   if (isRTL(editorState)) {
     forward = false;
   }
-  final end = selection.end.moveHorizontal(
+
+  Position? end;
+  final renderer = editorState.selectionRenderer;
+  if (renderer != null) {
+    final node = editorState.getNodeAtPath(selection.end.path);
+    final selectable = node?.selectable;
+    final rp = selectable?.getRenderParagraph();
+    if (node != null && selectable != null && rp != null) {
+      final ctx = CursorMoveContext(
+        node: node,
+        currentOffset: selection.end.offset,
+        caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
+        textDirection: selectable.textDirection(),
+        delegate: selectable,
+        renderParagraph: rp,
+        textShift: selectable.textShift,
+        delta: node.delta,
+      );
+      end = renderer.onHorizontalMove(ctx, byWord: true);
+    }
+  }
+  end ??= selection.end.moveHorizontal(
     editorState,
     selectionRange: SelectionRange.word,
     forward: forward,
@@ -175,10 +268,31 @@ CommandShortcutEventHandler _moveCursorLeftWordSelectCommandHandler =
   if (end == null) {
     return KeyEventResult.ignored;
   }
+
+  final from = selection.end;
+  final hookResult = tryMoveHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: end,
+    direction: MoveDirection.wordLeft,
+  );
+  if (hookResult == null) return KeyEventResult.handled;
+  end = hookResult;
+
   editorState.updateSelectionWithReason(
     selection.copyWith(end: end),
     reason: SelectionUpdateReason.uiEvent,
   );
+
+  moveCompletedHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: end,
+    direction: MoveDirection.wordLeft,
+  );
+
   return KeyEventResult.handled;
 };
 
@@ -201,14 +315,56 @@ CommandShortcutEventHandler _moveCursorLeftSelectCommandHandler =
   if (isRTL(editorState)) {
     forward = false;
   }
-  final end = selection.end.moveHorizontal(editorState, forward: forward);
+
+  Position? end;
+  final renderer = editorState.selectionRenderer;
+  if (renderer != null) {
+    final node = editorState.getNodeAtPath(selection.end.path);
+    final selectable = node?.selectable;
+    final rp = selectable?.getRenderParagraph();
+    if (node != null && selectable != null && rp != null) {
+      final ctx = CursorMoveContext(
+        node: node,
+        currentOffset: selection.end.offset,
+        caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
+        textDirection: selectable.textDirection(),
+        delegate: selectable,
+        renderParagraph: rp,
+        textShift: selectable.textShift,
+        delta: node.delta,
+      );
+      end = renderer.onHorizontalMove(ctx);
+    }
+  }
+  end ??= selection.end.moveHorizontal(editorState, forward: forward);
   if (end == null) {
     return KeyEventResult.ignored;
   }
+
+  final from = selection.end;
+  final hookResult = tryMoveHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: end,
+    direction: MoveDirection.left,
+  );
+  if (hookResult == null) return KeyEventResult.handled;
+  end = hookResult;
+
   editorState.updateSelectionWithReason(
     selection.copyWith(end: end),
     reason: SelectionUpdateReason.uiEvent,
   );
+
+  moveCompletedHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: end,
+    direction: MoveDirection.left,
+  );
+
   return KeyEventResult.handled;
 };
 

@@ -4,14 +4,14 @@ import 'dart:ui' as ui;
 import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart' hide RichText;
-import 'package:flutter/rendering.dart' hide RenderParagraph;
+import 'package:flutter/material.dart' hide RichText, TextPainter;
 import 'package:novident_editor_rich_text/novident_editor_rich_text.dart';
 import 'package:novident_editor_rich_text/src/utils/text_selection_from_node_selection.dart';
 import 'package:novident_editor_selection/novident_editor_selection.dart';
 import 'package:novident_editor_styles/novident_editor_styles.dart';
 
-import 'novident_editor_flutter.dart' show RenderParagraph, RichText;
+import '../novident_editor_flutter.dart'
+    show RenderParagraph, RichText, TextPainter;
 
 //TODO: rich text needs to allow more customization
 class NovidentRichText extends StatefulWidget {
@@ -112,6 +112,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   RenderParagraph? get _renderParagraph =>
       textKey.currentContext?.findRenderObject() as RenderParagraph?;
+
+  @override
+  RenderParagraph? getRenderParagraph() => _renderParagraph;
 
   RenderParagraph? get _placeholderRenderParagraph =>
       placeholderTextKey.currentContext?.findRenderObject() as RenderParagraph?;
@@ -751,6 +754,11 @@ class _NovidentRichTextState extends State<NovidentRichText>
   ///
   /// Returns `null` when the caret is at the first/last visual line —
   /// the caller should navigate to the adjacent document node.
+  ///
+  /// Uses [TextPainter.getLineBoundary] to identify line boundaries
+  /// directly from the text layout, which is correct for mixed font
+  /// sizes, first-line indents, and any paragraph geometry — unlike
+  /// pixel-based estimation that breaks when fonts change across lines.
   @override
   Position? moveVerticallyInText(int currentOffset, bool upwards) {
     final rp = _renderParagraph;
@@ -762,59 +770,45 @@ class _NovidentRichTextState extends State<NovidentRichText>
     final textLen = delta.length;
     if (currentOffset < 0 || currentOffset > textLen) return null;
 
-    // 1. Get the CURRENT caret position in LOCAL coordinates.
-    //    This is scroll-independent — local coords are relative to
-    //    the RenderParagraph, not the viewport.
-    final textPosition = TextPosition(
-      offset: currentOffset + textShift,
+    final tp = rp.textPainter;
+    final tpOffset = currentOffset + textShift;
+    if (tpOffset < 0) return null;
+
+    // 1. Find the current line's text range.
+    final currentLine = tp.getLineBoundary(TextPosition(offset: tpOffset));
+
+    // 2. Get the adjacent line's text range.
+    late final TextRange adjacentLine;
+    if (upwards) {
+      // Already on the first visual line?
+      if (currentLine.start <= textShift) return null;
+      adjacentLine =
+          tp.getLineBoundary(TextPosition(offset: currentLine.start - 1));
+    } else {
+      // Already on the last visual line?
+      if (currentLine.end >= textLen + textShift) return null;
+      adjacentLine = tp.getLineBoundary(TextPosition(offset: currentLine.end));
+    }
+
+    // 3. Get the caret baseline of the adjacent line's first character.
+    final adjacentCaret = tp.getOffsetForCaret(
+      TextPosition(offset: adjacentLine.start),
+      Rect.zero,
     );
-    final caretLocal = rp.getOffsetForCaret(textPosition, Rect.zero);
 
-    // 2. Estimate line height from the glyph at the current position.
-    //    Uses the strut-bounded height which accounts for font metrics.
-    final lineHeight = rp.getFullHeightForCaret(textPosition);
-    if (lineHeight <= 0) return null;
+    // 4. Preserve the current horizontal column.
+    final currentCaret =
+        tp.getOffsetForCaret(TextPosition(offset: tpOffset), Rect.zero);
 
-    // 3. Try to move one estimated line up/down, preserving the
-    //    horizontal column (caretLocal.dx).
-    Offset targetLocal = Offset(
-      caretLocal.dx,
-      caretLocal.dy + (upwards ? -lineHeight : lineHeight),
-    );
+    // 5. Find the text position at the same column on the adjacent line.
+    final target = Offset(currentCaret.dx, adjacentCaret.dy);
+    final newPos = tp.getPositionForOffset(target);
+    final newOffset = (newPos.offset - textShift).clamp(0, textLen);
 
-    // Clamp Y to stay within the paragraph's content area so we
-    // don't query beyond the rendered text.
-    targetLocal = Offset(
-      targetLocal.dx,
-      targetLocal.dy.clamp(0.0, rp.size.height),
-    );
-
-    final textPos = rp.getPositionForOffset(targetLocal);
-    final newOffset = (textPos.offset - textShift).clamp(0, textLen);
-
-    // 4. If the offset changed, we successfully moved to another line.
     if (newOffset != currentOffset) {
       return Position(path: widget.node.path, offset: newOffset);
     }
 
-    // 5. preferredLineHeight may have over/under-estimated for mixed
-    //    fonts. Try a half-step in the same direction before giving up.
-    final halfTarget = Offset(
-      caretLocal.dx,
-      caretLocal.dy + (upwards ? -lineHeight / 2 : lineHeight / 2),
-    ).translate(0.0, 0.0);
-    final clampedHalf = Offset(
-      halfTarget.dx,
-      halfTarget.dy.clamp(0.0, rp.size.height),
-    );
-    final halfPos = rp.getPositionForOffset(clampedHalf);
-    final halfOffset = (halfPos.offset - textShift).clamp(0, textLen);
-
-    if (halfOffset != currentOffset) {
-      return Position(path: widget.node.path, offset: halfOffset);
-    }
-
-    // 6. Still the same offset → we're at the visual boundary.
     return null;
   }
 

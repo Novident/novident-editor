@@ -1,5 +1,7 @@
 import 'package:novident_editor/novident_editor.dart';
 
+import '../editor_component/service/shortcuts/command/move_hooks.dart';
+
 enum SelectionMoveRange {
   character,
   word,
@@ -350,23 +352,81 @@ extension SelectionTransform on EditorState {
     final delta = node.delta;
     switch (range) {
       case SelectionMoveRange.character:
-        // The following UnimplementedError was thrown while 
-        //    processing the key message handler:
-        // UnimplementedError
-        // When the exception was thrown, this was the stack:
-        // #0      SelectionTransform.moveCursor
-        // (package:novident_editor/src/editor/command/selection_commands.dart:293:11)
         if (delta != null) {
+          final renderer = selectionRenderer;
+          if (renderer != null) {
+            final selectable = node.selectable;
+            final rp = selectable?.getRenderParagraph();
+            if (selectable != null && rp != null) {
+              final ctx = CursorMoveContext(
+                node: node,
+                currentOffset: offset,
+                caretLocalDx: selectable.getCaretLocalDx(offset) ?? 0,
+                textDirection: selectable.textDirection(),
+                delegate: selectable,
+                renderParagraph: rp,
+                textShift: selectable.textShift,
+                delta: delta,
+              );
+              final custom = renderer.onHorizontalMove(ctx);
+              if (custom != null) {
+                final from = selection.start;
+                final hookResult = tryMoveHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: custom,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.left
+                      : MoveDirection.right,
+                );
+                if (hookResult == null) break;
+                updateSelectionWithReason(
+                  Selection.collapsed(hookResult),
+                  reason: SelectionUpdateReason.uiEvent,
+                );
+                moveCompletedHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: hookResult,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.left
+                      : MoveDirection.right,
+                );
+                break;
+              }
+            }
+          }
           // move the cursor to the left or right by one character
+          final targetPosition = selection.start.copyWith(
+            offset: direction == SelectionMoveDirection.forward
+                ? delta.prevRunePosition(offset)
+                : delta.nextRunePosition(offset),
+          );
+          final from = selection.start;
+          final hookResult = tryMoveHook(
+            renderer: selectionRenderer,
+            editorState: this,
+            fromPosition: from,
+            toPosition: targetPosition,
+            direction: direction == SelectionMoveDirection.forward
+                ? MoveDirection.left
+                : MoveDirection.right,
+          );
+          if (hookResult == null) break;
           updateSelectionWithReason(
-            Selection.collapsed(
-              selection.start.copyWith(
-                offset: direction == SelectionMoveDirection.forward
-                    ? delta.prevRunePosition(offset)
-                    : delta.nextRunePosition(offset),
-              ),
-            ),
+            Selection.collapsed(hookResult),
             reason: SelectionUpdateReason.uiEvent,
+          );
+          moveCompletedHook(
+            renderer: selectionRenderer,
+            editorState: this,
+            fromPosition: from,
+            toPosition: hookResult,
+            direction: direction == SelectionMoveDirection.forward
+                ? MoveDirection.left
+                : MoveDirection.right,
           );
         } else {
           throw UnimplementedError();
@@ -375,6 +435,51 @@ extension SelectionTransform on EditorState {
       case SelectionMoveRange.word:
         final delta = node.delta;
         if (delta != null) {
+          final renderer = selectionRenderer;
+          if (renderer != null) {
+            final selectable = node.selectable;
+            final rp = selectable?.getRenderParagraph();
+            if (selectable != null && rp != null) {
+              final ctx = CursorMoveContext(
+                node: node,
+                currentOffset: offset,
+                caretLocalDx: selectable.getCaretLocalDx(offset) ?? 0,
+                textDirection: selectable.textDirection(),
+                delegate: selectable,
+                renderParagraph: rp,
+                textShift: selectable.textShift,
+                delta: delta,
+              );
+              final custom = renderer.onHorizontalMove(ctx, byWord: true);
+              if (custom != null) {
+                final from = selection.start;
+                final hookResult = tryMoveHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: custom,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.wordLeft
+                      : MoveDirection.wordRight,
+                );
+                if (hookResult == null) break;
+                updateSelectionWithReason(
+                  Selection.collapsed(hookResult),
+                  reason: SelectionUpdateReason.uiEvent,
+                );
+                moveCompletedHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: hookResult,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.wordLeft
+                      : MoveDirection.wordRight,
+                );
+                break;
+              }
+            }
+          }
           final position = direction == SelectionMoveDirection.forward
               ? Position(
                   path: node.path,
@@ -385,13 +490,32 @@ extension SelectionTransform on EditorState {
           final wordSelection =
               node.selectable?.getWordBoundaryInPosition(position);
           if (wordSelection != null) {
+            final targetPosition = direction == SelectionMoveDirection.forward
+                ? wordSelection.start
+                : wordSelection.end;
+            final from = selection.start;
+            final hookResult = tryMoveHook(
+              renderer: selectionRenderer,
+              editorState: this,
+              fromPosition: from,
+              toPosition: targetPosition,
+              direction: direction == SelectionMoveDirection.forward
+                  ? MoveDirection.wordLeft
+                  : MoveDirection.wordRight,
+            );
+            if (hookResult == null) break;
             updateSelectionWithReason(
-              Selection.collapsed(
-                direction == SelectionMoveDirection.forward
-                    ? wordSelection.start
-                    : wordSelection.end,
-              ),
+              Selection.collapsed(hookResult),
               reason: SelectionUpdateReason.uiEvent,
+            );
+            moveCompletedHook(
+              renderer: selectionRenderer,
+              editorState: this,
+              fromPosition: from,
+              toPosition: hookResult,
+              direction: direction == SelectionMoveDirection.forward
+                  ? MoveDirection.wordLeft
+                  : MoveDirection.wordRight,
             );
           }
         } else {
@@ -401,16 +525,82 @@ extension SelectionTransform on EditorState {
         break;
       case SelectionMoveRange.line:
         if (delta != null) {
+          final renderer = selectionRenderer;
+          if (renderer != null) {
+            final selectable = node.selectable;
+            final rp = selectable?.getRenderParagraph();
+            if (selectable != null && rp != null) {
+              final ctx = CursorMoveContext(
+                node: node,
+                currentOffset: offset,
+                caretLocalDx: selectable.getCaretLocalDx(offset) ?? 0,
+                textDirection: selectable.textDirection(),
+                delegate: selectable,
+                renderParagraph: rp,
+                textShift: selectable.textShift,
+                delta: delta,
+              );
+              final custom = direction == SelectionMoveDirection.forward
+                  ? renderer.onMoveToLineStart(ctx)
+                  : renderer.onMoveToLineEnd(ctx);
+              if (custom != null) {
+                final from = selection.start;
+                final hookResult = tryMoveHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: custom,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.lineStart
+                      : MoveDirection.lineEnd,
+                );
+                if (hookResult == null) break;
+                updateSelectionWithReason(
+                  Selection.collapsed(hookResult),
+                  reason: SelectionUpdateReason.uiEvent,
+                );
+                moveCompletedHook(
+                  renderer: renderer,
+                  editorState: this,
+                  fromPosition: from,
+                  toPosition: hookResult,
+                  direction: direction == SelectionMoveDirection.forward
+                      ? MoveDirection.lineStart
+                      : MoveDirection.lineEnd,
+                );
+                break;
+              }
+            }
+          }
           // move the cursor to the left or right by one line
+          final targetPosition = selection.start.copyWith(
+            offset: direction == SelectionMoveDirection.forward
+                ? 0
+                : delta.length,
+          );
+          final from = selection.start;
+          final hookResult = tryMoveHook(
+            renderer: selectionRenderer,
+            editorState: this,
+            fromPosition: from,
+            toPosition: targetPosition,
+            direction: direction == SelectionMoveDirection.forward
+                ? MoveDirection.lineStart
+                : MoveDirection.lineEnd,
+          );
+          if (hookResult == null) break;
           updateSelectionWithReason(
-            Selection.collapsed(
-              selection.start.copyWith(
-                offset: direction == SelectionMoveDirection.forward
-                    ? 0
-                    : delta.length,
-              ),
-            ),
+            Selection.collapsed(hookResult),
             reason: SelectionUpdateReason.uiEvent,
+          );
+          moveCompletedHook(
+            renderer: selectionRenderer,
+            editorState: this,
+            fromPosition: from,
+            toPosition: hookResult,
+            direction: direction == SelectionMoveDirection.forward
+                ? MoveDirection.lineStart
+                : MoveDirection.lineEnd,
           );
         } else {
           throw UnimplementedError();

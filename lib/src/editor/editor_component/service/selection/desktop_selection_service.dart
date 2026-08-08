@@ -389,6 +389,22 @@ class _DesktopSelectionServiceWidgetState
 
     _lastPanOffset = _panStartOffset;
     _isDraggingSelection = true;
+
+    final renderer = editorState.selectionRenderer;
+    if (renderer != null) {
+      final selection = currentSelection.value ??
+          Selection.collapsed(_panStartPosition!);
+      final isCollapsed = selection.isCollapsed;
+      final startNode = editorState.getNodeAtPath(selection.start.path);
+      final endNode =
+          isCollapsed ? startNode : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionStarted(SelectionLifecycleContext(
+        selection: selection,
+        startNode: startNode,
+        endNode: endNode,
+        isCollapsed: isCollapsed,
+      ));
+    }
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
@@ -425,6 +441,22 @@ class _DesktopSelectionServiceWidgetState
     }
 
     editorState.service.scrollService?.stopAutoScroll();
+
+    final renderer = editorState.selectionRenderer;
+    final selection = currentSelection.value;
+    if (renderer != null && selection != null) {
+      final isCollapsed = selection.isCollapsed;
+      final startNode = editorState.getNodeAtPath(selection.start.path);
+      final endNode =
+          isCollapsed ? startNode : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionEnded(SelectionLifecycleContext(
+        selection: selection,
+        startNode: startNode,
+        endNode: endNode,
+        isCollapsed: isCollapsed,
+      ));
+    }
+
     _resetPanState();
   }
 

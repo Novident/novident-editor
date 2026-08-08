@@ -60,7 +60,7 @@ class NovidentStyleIndent {
         return true;
       }
     }
-    if (node.type == HeadingBlockKeys.type) return true;
+    if (node.previous?.type == HeadingBlockKeys.type) return true;
     return false;
   }
 

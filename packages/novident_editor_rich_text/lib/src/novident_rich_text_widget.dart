@@ -27,7 +27,7 @@ class NovidentRichText extends StatefulWidget {
     this.textSpanOverlayBuilder,
     this.textAlign,
     this.cursorColor = const Color.fromARGB(255, 0, 0, 0),
-    this.selectionColor = const Color.fromARGB(53, 111, 201, 231),
+    this.selectionColor = const Color.fromARGB(255, 111, 201, 231),
     this.autoCompleteTextProvider,
     this.useFirstLineIndent = true,
     required this.delegate,
@@ -109,6 +109,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
   TextStyle? _cachedBaseTextStyle;
   bool? _cachedInsideTable;
   bool _styleInvalidated = true;
+  bool _hasSelection = false;
+  (int, int)? _selectionRange;
 
   RenderParagraph? get _renderParagraph =>
       textKey.currentContext?.findRenderObject() as RenderParagraph?;
@@ -138,68 +140,6 @@ class _NovidentRichTextState extends State<NovidentRichText>
       widget.textSpanOverlayBuilder ??
       widget.editorConfig.textSpanOverlayBuilder;
 
-  /// Resolves the effective style for this node.
-  ///
-  /// When inside a table cell, inherits text formatting properties
-  /// (font size, bold, color, alignment, etc.) from the resolved
-  /// [NovidentTableStyleDefinition] of the parent table as a fallback.
-  /// The cell's own `styleRef` / node type default still takes priority.
-  ///
-  /// Result is cached until the node identity or `styleRef` changes.
-  NovidentStyleDefinition? get resolvedStyle {
-    final styleRef = widget.node.attributes['styleRef'] as String?;
-    late final Node? cellParentNode;
-    final tableNode = widget.node.findParent((Node n) {
-      if (n.type == TableCellBlockKeys.type) {
-        cellParentNode = n;
-      }
-      return n.type == TableBlockKeys.type;
-    });
-    final tableStyleRef = tableNode?.attributes['styleRef'] as String?;
-
-    if (widget.node.id == _nodeId &&
-        styleRef == _styleRef &&
-        tableNode?.id == _tableNodeId &&
-        tableStyleRef == _tableStyleRef) {
-      return _cachedResolvedStyle;
-    }
-
-    _nodeId = widget.node.id;
-    _styleRef = styleRef;
-    _tableNodeId = tableNode?.id;
-    _tableStyleRef = tableStyleRef;
-    _styleInvalidated = true;
-
-    final own =
-        NovidentEditorStyles.maybeOf(context)?.resolveStyle(widget.node);
-
-    if (tableNode != null) {
-      final tableStyle =
-          NovidentEditorStyles.maybeOf(context)?.resolveStyle(tableNode);
-      if (tableStyle is NovidentTableStyleDefinition) {
-        // Detect if this cell is part of the header row range.
-        final cellRow =
-            cellParentNode?.attributes[TableCellBlockKeys.rowPosition] as int?;
-        final bool isHeader = cellParentNode != null &&
-            cellRow != null &&
-            tableStyle.headerRowCount > 0 &&
-            cellRow < tableStyle.headerRowCount;
-        if (own is NovidentTableStyleDefinition) {
-          _cachedResolvedStyle = tableStyle.mergeTable(own, isHeader: isHeader);
-        } else {
-          _cachedResolvedStyle = tableStyle.merge(
-            own ?? tableStyle,
-            isHeader: isHeader,
-          ) as NovidentTableStyleDefinition?;
-        }
-        return _cachedResolvedStyle;
-      }
-    }
-
-    _cachedResolvedStyle = own ?? defaultStyle;
-    return _cachedResolvedStyle;
-  }
-
   NovidentStyleDefinition? get defaultStyle =>
       NovidentEditorStyles.maybeOf(context)?.config.defaultStyle;
 
@@ -207,6 +147,14 @@ class _NovidentRichTextState extends State<NovidentRichText>
   void initState() {
     super.initState();
     confirmContextEnabled();
+    widget.editorConfig.selectionNotifier.addListener(_onSelectionChanged);
+    _syncSelectionState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    widget.editorConfig.selectionNotifier.removeListener(_onSelectionChanged);
   }
 
   @override
@@ -243,6 +191,128 @@ class _NovidentRichTextState extends State<NovidentRichText>
         child: child,
       ),
     );
+  }
+
+  void _onSelectionChanged() {
+    if (!mounted) return;
+
+    final selection = widget.editorConfig.selectionNotifier.value;
+    final bool nowInSelection = selection != null &&
+        !selection.isCollapsed &&
+        widget.node.inSelection(selection);
+
+    (int, int)? newRange;
+    if (nowInSelection) {
+      newRange = _rangeForSelection(selection);
+    }
+
+    if (_hasSelection != nowInSelection || _selectionRange != newRange) {
+      _hasSelection = nowInSelection;
+      _selectionRange = newRange;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  /// Computes `(selStart, selEnd)` for this node from a *normalized*
+  /// selection. Returns `null` when the node is not in the selection.
+  (int, int) _rangeForSelection(Selection selection) {
+    final norm = selection.normalized;
+    final nodePath = widget.node.path;
+    final nodeLen = widget.node.delta?.length ?? 0;
+
+    if (nodePath.equals(norm.start.path) && nodePath.equals(norm.end.path)) {
+      return (norm.start.offset, norm.end.offset);
+    }
+    if (nodePath.equals(norm.start.path)) {
+      return (norm.start.offset, nodeLen);
+    }
+    if (nodePath.equals(norm.end.path)) {
+      return (0, norm.end.offset);
+    }
+    return (0, nodeLen);
+  }
+
+  /// Syncs [_hasSelection] and [_selectionRange] from the current selection
+  /// value without scheduling a rebuild (called during [initState] before the
+  /// first build).
+  void _syncSelectionState() {
+    final selection = widget.editorConfig.selectionNotifier.value;
+    if (selection != null &&
+        !selection.isCollapsed &&
+        widget.node.inSelection(selection)) {
+      _hasSelection = true;
+      _selectionRange = _rangeForSelection(selection);
+    } else {
+      _hasSelection = false;
+      _selectionRange = null;
+    }
+  }
+
+  /// Resolves the effective style for this node.
+  ///
+  /// When inside a table cell, inherits text formatting properties
+  /// (font size, bold, color, alignment, etc.) from the resolved
+  /// [NovidentTableStyleDefinition] of the parent table as a fallback.
+  /// The cell's own `styleRef` / node type default still takes priority.
+  ///
+  /// Result is cached until the node identity or `styleRef` changes.
+  NovidentStyleDefinition? get resolvedStyle {
+    final styleRef = widget.node.attributes['styleRef'] as String?;
+    late final Node? cellParentNode;
+    final tableNode = widget.node.findParent((Node n) {
+      if (n.type == TableCellBlockKeys.type) {
+        cellParentNode = n;
+      }
+      return n.type == TableBlockKeys.type;
+    });
+    final tableStyleRef = tableNode?.attributes['styleRef'] as String?;
+
+    if (widget.node.id == _nodeId &&
+        styleRef == _styleRef &&
+        tableNode?.id == _tableNodeId &&
+        tableStyleRef == _tableStyleRef) {
+      return _cachedResolvedStyle;
+    }
+
+    _nodeId = widget.node.id;
+    _styleRef = styleRef;
+    _tableNodeId = tableNode?.id;
+    _tableStyleRef = tableStyleRef;
+    _styleInvalidated = true;
+
+    final registry = NovidentEditorStyles.maybeOf(
+      context,
+    );
+    final own = registry?.resolveStyle(widget.node);
+
+    if (tableNode != null) {
+      final tableStyle = registry?.resolveStyle(
+        tableNode,
+      );
+      if (tableStyle is NovidentTableStyleDefinition) {
+        // Detect if this cell is part of the header row range.
+        final cellRow =
+            cellParentNode?.attributes[TableCellBlockKeys.rowPosition] as int?;
+        final bool isHeader = cellParentNode != null &&
+            cellRow != null &&
+            tableStyle.headerRowCount > 0 &&
+            cellRow < tableStyle.headerRowCount;
+        if (own is NovidentTableStyleDefinition) {
+          _cachedResolvedStyle = tableStyle.mergeTable(own, isHeader: isHeader);
+        } else {
+          _cachedResolvedStyle = tableStyle.merge(
+            own ?? tableStyle,
+            isHeader: isHeader,
+          ) as NovidentTableStyleDefinition?;
+        }
+        return _cachedResolvedStyle;
+      }
+    }
+
+    _cachedResolvedStyle = own ?? defaultStyle;
+    return _cachedResolvedStyle;
   }
 
   /// Text alignment resolved by the block component builder.
@@ -347,7 +417,6 @@ class _NovidentRichTextState extends State<NovidentRichText>
       textScaler: TextScaler.linear(
         widget.editorConfig.textScaleFactor,
       ),
-      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -373,18 +442,10 @@ class _NovidentRichTextState extends State<NovidentRichText>
       ),
       text: textSpan,
       textDirection: textDirection(),
-      textScaler: TextScaler.linear(widget.editorConfig.textScaleFactor),
+      textScaler: TextScaler.linear(
+        widget.editorConfig.textScaleFactor,
+      ),
     );
-  }
-
-  List<Widget> _buildRichTextOverlay(BuildContext context) {
-    if (textKey.currentContext == null) return [];
-    return textSpanOverlayBuilder?.call(
-          context,
-          widget.node,
-          this,
-        ) ??
-        [];
   }
 
   void confirmContextEnabled() {
@@ -489,6 +550,16 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return textSpan;
   }
 
+  List<Widget> _buildRichTextOverlay(BuildContext context) {
+    if (textKey.currentContext == null) return [];
+    return textSpanOverlayBuilder?.call(
+          context,
+          widget.node,
+          this,
+        ) ??
+        [];
+  }
+
   TextSpan getPlaceholderTextSpan() {
     final children = <InlineSpan>[
       if (textShift > 0)
@@ -558,6 +629,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
         WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
       );
     }
+
+    final selStart = _selectionRange?.$1 ?? 0;
+    final selEnd = _selectionRange?.$2 ?? 0;
 
     for (final textInsert in textInserts) {
       TextStyle textStyle = _baseTextStyle;
@@ -630,27 +704,169 @@ class _NovidentRichTextState extends State<NovidentRichText>
         displayText = displayText.toLowerCase();
       }
 
-      final textSpan = TextSpan(
-        text: displayText,
-        style: textStyle,
+      final textLen = displayText.length;
+
+      final inserted = paintContrastColorForSelection(
+        context,
+        widget.node,
+        textInsert,
+        offset,
+        textLen,
+        selStart,
+        selEnd,
+        textSpans,
+        displayText,
+        textSpanDecoratorForAttribute: textSpanDecoratorForAttribute,
+        textSpanDecorator: widget.textSpanDecorator,
+        hasSelection: _hasSelection,
+        textStyle: textStyle,
+        textStyleConfiguration: textStyleConfiguration,
+        selectionColor: widget.selectionColor,
       );
-      textSpans.add(
-        textSpanDecoratorForAttribute != null
-            ? textSpanDecoratorForAttribute!(
-                context,
-                widget.node,
-                offset,
-                textInsert,
-                textSpan,
-                widget.textSpanDecorator?.call(textSpan) ?? textSpan,
-              )
-            : textSpan,
-      );
-      offset += textInsert.length;
+
+      if (inserted) {
+        offset += textLen;
+        continue;
+      }
+
+      // Default: no selection intersection — emit the full span as-is.
+      textSpans.add(emitSpan(
+        textInsert,
+        displayText,
+        textStyle,
+        offset,
+        context,
+        widget.node,
+        textSpanDecoratorForAttribute,
+        widget.textSpanDecorator,
+      ));
+      offset += textLen;
     }
     return TextSpan(
       children: textSpans,
     );
+  }
+
+  static InlineSpan emitSpan(
+    TextInsert insert,
+    String text,
+    TextStyle style,
+    int spanOffset,
+    BuildContext context,
+    Node node,
+    TextSpanDecoratorForAttribute? textSpanDecoratorForAttribute,
+    NovidentTextSpanDecorator? textSpanDecorator,
+  ) {
+    final span = TextSpan(text: text, style: style);
+    if (textSpanDecoratorForAttribute != null) {
+      return textSpanDecoratorForAttribute(
+        context,
+        node,
+        spanOffset,
+        insert,
+        span,
+        textSpanDecorator?.call(span) ?? span,
+      );
+    }
+    return span;
+  }
+
+  static bool paintContrastColorForSelection(
+    BuildContext context,
+    Node node,
+    TextInsert textInsert,
+    int offset,
+    int textLen,
+    int selStart,
+    int selEnd,
+    List<InlineSpan> textSpans,
+    String displayText, {
+    TextSpanDecoratorForAttribute? textSpanDecoratorForAttribute,
+    NovidentTextSpanDecorator? textSpanDecorator,
+    required bool hasSelection,
+    required TextStyle textStyle,
+    required TextStyleConfiguration textStyleConfiguration,
+    required Color selectionColor,
+  }) {
+    if (!hasSelection) {
+      return false;
+    }
+    final blockBg = textStyle.backgroundColor ?? Colors.white;
+    final decorationColor = textStyle.decorationColor ??
+        textStyleConfiguration.href.decorationColor ??
+        textStyleConfiguration.href.color;
+    final effectiveBg = Color.alphaBlend(
+      selectionColor,
+      blockBg,
+    );
+    final effectiveDecorationColor = decorationColor == null
+        ? null
+        : Color.alphaBlend(
+            selectionColor,
+            decorationColor,
+          );
+    final contrastColor =
+        effectiveBg.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    final decorationContrastColor = effectiveDecorationColor == null
+        ? null
+        : effectiveDecorationColor.computeLuminance() > 0.5
+            ? Colors.black
+            : Colors.white;
+    final int textStart = offset;
+    final int textEnd = offset + textLen;
+    final int intersectStart = max(textStart, selStart);
+    final int intersectEnd = min(textEnd, selEnd);
+    if (intersectStart < intersectEnd) {
+      // Before selection — normal color.
+      if (textStart < intersectStart) {
+        final beforeLen = intersectStart - textStart;
+        final beforeText = displayText.substring(0, beforeLen);
+        textSpans.add(emitSpan(
+          TextInsert(beforeText, attributes: textInsert.attributes),
+          beforeText,
+          textStyle,
+          offset,
+          context,
+          node,
+          textSpanDecoratorForAttribute,
+          textSpanDecorator,
+        ));
+      }
+      // Inside selection — contrast color.
+      final selPieceStart = intersectStart - textStart;
+      final selPieceEnd = intersectEnd - textStart;
+      final selText = displayText.substring(selPieceStart, selPieceEnd);
+      textSpans.add(emitSpan(
+        TextInsert(selText, attributes: textInsert.attributes),
+        selText,
+        textStyle.copyWith(
+          color: contrastColor,
+          decorationColor: decorationContrastColor,
+        ),
+        offset + selPieceStart,
+        context,
+        node,
+        textSpanDecoratorForAttribute,
+        textSpanDecorator,
+      ));
+      // After selection — normal color.
+      if (intersectEnd < textEnd) {
+        final afterStart = intersectEnd - textStart;
+        final afterText = displayText.substring(afterStart);
+        textSpans.add(emitSpan(
+          TextInsert(afterText, attributes: textInsert.attributes),
+          afterText,
+          textStyle,
+          offset + afterStart,
+          context,
+          node,
+          textSpanDecoratorForAttribute,
+          textSpanDecorator,
+        ));
+      }
+      return true;
+    }
+    return false;
   }
 
   @override

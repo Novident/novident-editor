@@ -282,12 +282,15 @@ class _NovidentRichTextState extends State<NovidentRichText>
     _tableStyleRef = tableStyleRef;
     _styleInvalidated = true;
 
-    final own =
-        NovidentEditorStyles.maybeOf(context)?.resolveStyle(widget.node);
+    final registry = NovidentEditorStyles.maybeOf(
+      context,
+    );
+    final own = registry?.resolveStyle(widget.node);
 
     if (tableNode != null) {
-      final tableStyle =
-          NovidentEditorStyles.maybeOf(context)?.resolveStyle(tableNode);
+      final tableStyle = registry?.resolveStyle(
+        tableNode,
+      );
       if (tableStyle is NovidentTableStyleDefinition) {
         // Detect if this cell is part of the header row range.
         final cellRow =
@@ -705,12 +708,26 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
       if (_hasSelection) {
         final blockBg = textStyle.backgroundColor ?? Colors.white;
+        final decorationColor = textStyle.decorationColor ??
+            textStyleConfiguration.href.decorationColor ??
+            textStyleConfiguration.href.color;
         final effectiveBg = Color.alphaBlend(
           widget.selectionColor,
           blockBg,
         );
+        final effectiveDecorationColor = decorationColor == null
+            ? null
+            : Color.alphaBlend(
+                widget.selectionColor,
+                decorationColor,
+              );
         final contrastColor =
             effectiveBg.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+        final decorationContrastColor = effectiveDecorationColor == null
+            ? null
+            : effectiveDecorationColor.computeLuminance() > 0.5
+                ? Colors.black
+                : Colors.white;
         final int textStart = offset;
         final int textEnd = offset + textLen;
         final int intersectStart = max(textStart, selStart);
@@ -719,9 +736,10 @@ class _NovidentRichTextState extends State<NovidentRichText>
           // Before selection — normal color.
           if (textStart < intersectStart) {
             final beforeLen = intersectStart - textStart;
+            final beforeText = displayText.substring(0, beforeLen);
             textSpans.add(emitSpan(
-              textInsert,
-              displayText.substring(0, beforeLen),
+              TextInsert(beforeText, attributes: textInsert.attributes),
+              beforeText,
               textStyle,
               offset,
             ));
@@ -729,18 +747,23 @@ class _NovidentRichTextState extends State<NovidentRichText>
           // Inside selection — contrast color.
           final selPieceStart = intersectStart - textStart;
           final selPieceEnd = intersectEnd - textStart;
+          final selText = displayText.substring(selPieceStart, selPieceEnd);
           textSpans.add(emitSpan(
-            textInsert,
-            displayText.substring(selPieceStart, selPieceEnd),
-            textStyle.copyWith(color: contrastColor),
+            TextInsert(selText, attributes: textInsert.attributes),
+            selText,
+            textStyle.copyWith(
+              color: contrastColor,
+              decorationColor: decorationContrastColor,
+            ),
             offset + selPieceStart,
           ));
           // After selection — normal color.
           if (intersectEnd < textEnd) {
             final afterStart = intersectEnd - textStart;
+            final afterText = displayText.substring(afterStart);
             textSpans.add(emitSpan(
-              textInsert,
-              displayText.substring(afterStart),
+              TextInsert(afterText, attributes: textInsert.attributes),
+              afterText,
               textStyle,
               offset + afterStart,
             ));

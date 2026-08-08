@@ -105,7 +105,7 @@ void main() {
   });
 
   group('Selection text color inversion', () {
-    testWidgets('inverts text color on light selection background', (
+    testWidgets('inverts text color to white on dark selection', (
       WidgetTester tester,
     ) async {
       // 1. Create a paragraph node with "Hello World".
@@ -122,13 +122,13 @@ void main() {
       );
       final config = _StandaloneConfig(selectionNotifier: selectionNotifier);
 
-      // 3. Pump with a light selection (yellow → white text).
+      // 3. Pump with a dark selection (blue → white text).
       await tester.pumpWidget(
         MaterialApp(
           home: _TestSelector(
             node: node,
             editorConfig: config,
-            selectionColor: Colors.yellow,
+            selectionColor: Colors.blue,
           ),
         ),
       );
@@ -159,7 +159,7 @@ void main() {
         reason: 'Expected at least 2 text spans after splitting at selection',
       );
 
-      // Selected "Hello" should have contrast color (white on yellow).
+      // Selected "Hello" should have contrast color (white on blue).
       // Unselected " World" should keep the default color (black).
       final helloSpan = textSpans.firstWhere(
         (s) => s.text == 'Hello',
@@ -173,8 +173,8 @@ void main() {
       expect(
         helloSpan.style?.color,
         Colors.white,
-        reason: 'Selected text "Hello" should have contrast color '
-            'against yellow selection background',
+        reason: 'Selected text "Hello" should have white contrast color '
+            'against blue selection background',
       );
       expect(
         worldSpan.style?.color ?? Colors.black,

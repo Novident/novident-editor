@@ -35,6 +35,20 @@ dependencies:
 
 ## Usage
 
+### Platform 
+
+```dart
+import 'package:novident_editor_core/novident_editor_core.dart';
+
+/// Returns true if the operating system is macOS and not running on Web platform.
+final isMacOS = UniversalPlatform.isMacOS; 
+
+/// Returns true if the operating system is macOS and running on Web platform.
+final isWebOnMacOS = Platform.isWebOnMacOS; 
+
+final isDesktopOrWeb = Platform.isDesktopOrWeb; 
+```
+
 ### Position and Selection
 
 ```dart

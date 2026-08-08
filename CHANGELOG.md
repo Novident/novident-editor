@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.4
+
+* feat(breaking changes): layered editor extraction + cursor rendering API by @CatHood0 in https://github.com/Novident/novident-editor/pull/14
+* feat: contrast spans text color during selection by @CatHood0 in https://github.com/Novident/novident-editor/pull/21
+* feat: default font families by platform by @CatHood0 in https://github.com/Novident/novident-editor/pull/22
+* fix: vertical cursor jumps to wrong position during scroll animation by @CatHood0 in https://github.com/Novident/novident-editor/pull/12
+* fix: cursor Disappears During KeyRepeat Events by @CatHood0 in https://github.com/Novident/novident-editor/pull/13
+* fix: stack overflow on drag scroll by @CatHood0 in https://github.com/Novident/novident-editor/pull/16
+* fix: replace universal_html with package:web to support wasm compilation by @CatHood0 in https://github.com/Novident/novident-editor/pull/17
+* fix: prevent infinite table row-height relayout loop on sub-pixel jitter by @CatHood0 in https://github.com/Novident/novident-editor/pull/18
+* fix: most of the API of `SelectionRenderer` implementations are not used by the editor by @CatHood0 in https://github.com/Novident/novident-editor/pull/20
+
 ## 1.0.3
 
 * feat: style system, font provider & static toolbar by @CatHood0 in https://github.com/Novident/novident-editor/pull/3

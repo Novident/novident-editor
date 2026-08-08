@@ -38,6 +38,10 @@ tables and more.
 > 5. Typewriting Scrolling without Zen Mode.
 > 6. Uncouple important parts of the editor into individual packages (block components, keyboard service, scroll service, etc)
 
+## If you were using version 1.0.4
+
+See [migration to 1.0.4](./documentation/migrations/1.0.3_to_1.0.4.md)
+
 ## Quick start
 
 ```dart

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:novident_editor/novident_editor.dart';
@@ -11,16 +13,20 @@ void main() {
     EditorState _editorWithText(String text) {
       final doc = Document.blank();
       final delta = Delta()..insert(text);
-      doc.insert([0], [
-        Node(type: 'paragraph', attributes: {
-          blockComponentDelta: delta.toJson(),
-        }),
+      doc.insert([
+        0
+      ], [
+        Node(
+          type: 'paragraph',
+          attributes: {
+            blockComponentDelta: delta.toJson(),
+          },
+        ),
       ]);
       return EditorState(document: doc);
     }
 
-    testWidgets(
-        'shows provider default when no selection and no explicit font',
+    testWidgets('shows provider default when no selection and no explicit font',
         (WidgetTester tester) async {
       final editorState = _editorWithText('Hello');
       addTearDown(() => editorState.dispose());
@@ -34,10 +40,15 @@ void main() {
             body: Builder(
               builder: (context) {
                 final item = buildFontFamilyItem(
-                  fontFamilies: ['Arial', 'Georgia'],
+                  fontFamilies: {'Arial', 'Georgia'},
                 );
-                return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null);
+                return item.builder!(
+                  context,
+                  editorState,
+                  Colors.blue,
+                  Colors.grey,
+                  null,
+                );
               },
             ),
           ),
@@ -74,10 +85,15 @@ void main() {
             body: Builder(
               builder: (context) {
                 final item = buildFontFamilyItem(
-                  fontFamilies: ['Arial', 'Georgia', 'Verdana'],
+                  fontFamilies: {'Arial', 'Georgia', 'Verdana'},
                 );
-                return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null);
+                return item.builder!(
+                  context,
+                  editorState,
+                  Colors.blue,
+                  Colors.grey,
+                  null,
+                );
               },
             ),
           ),
@@ -94,9 +110,9 @@ void main() {
       final editorState = _editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
-      editorState.updateSelectionWithReason(
+      unawaited(editorState.updateSelectionWithReason(
         Selection.single(path: [0], startOffset: 0, endOffset: 2),
-      );
+      ));
 
       await tester.pumpWidget(
         MaterialApp(
@@ -104,10 +120,15 @@ void main() {
             body: Builder(
               builder: (context) {
                 final item = buildFontFamilyItem(
-                  fontFamilies: ['Arial', 'Georgia'],
+                  fontFamilies: {'Arial', 'Georgia'},
                 );
-                return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null);
+                return item.builder!(
+                  context,
+                  editorState,
+                  Colors.blue,
+                  Colors.grey,
+                  null,
+                );
               },
             ),
           ),

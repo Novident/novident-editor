@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor_styles/novident_editor_styles.dart';
+import 'package:novident_editor_styles/src/providers/standard_fonts_by_os_provider.dart';
 
 /// A sensible preset of styles modelled after Microsoft Word defaults.
 ///
@@ -37,14 +38,14 @@ final NovidentStyleRegistry kDefaultStyleRegistry =
 // since kNormalBodyStyle base it self on the default one
 //
 // This style acts like a fallback when required
-const NovidentStyleDefinition kDefaultBaseStyle =
+final NovidentStyleDefinition kDefaultBaseStyle =
     NovidentStyleDefinition.nextSame(
   id: '__novident_base__',
   name: 'Base',
   fontSize: 12.0,
-  fontFamily: 'Roboto',
+  fontFamily: getDefaultFont(),
   textColor: Colors.black,
-  spacing: NovidentStyleSpacing(after: 2, lineHeight: 1.0),
+  spacing: NovidentStyleSpacing(lineHeight: 1.0),
 );
 
 final NovidentStyleDefinition kNormalBodyStyle =
@@ -62,8 +63,8 @@ const kHeadingDefaultStyles = <NovidentStyleDefinition>[
     name: 'Heading 1',
     fontSize: 32,
     bold: true,
-    spacing: NovidentStyleSpacing(before: 24, after: 12),
     next: 'normal',
+    spacing: NovidentStyleSpacing(before: 24, after: 12),
     allowGlobalFirstLineIndent: false,
   ),
   NovidentStyleDefinition(

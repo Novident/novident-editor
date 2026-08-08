@@ -24,7 +24,7 @@ const _kDropdownMaxHeight = 320.0;
 /// (received from the toolbar's style configuration). An optional
 /// [tooltipBuilder] wraps the button in a tooltip.
 ToolbarItem buildFontFamilyItem({
-  List<String>? fontFamilies,
+  Iterable<String>? fontFamilies,
 }) {
   return ToolbarItem(
     id: _kFontFamilyItemId,
@@ -37,9 +37,11 @@ ToolbarItem buildFontFamilyItem({
       Color? iconColor,
       ToolbarTooltipBuilder? tooltipBuilder,
     ) {
-      final families = fontFamilies ??
-          editorState.fontProvider?.availableFonts ??
-          NovidentFontProvider.fallback().availableFonts;
+      final families = Set<String>.from(
+        fontFamilies ??
+            editorState.fontProvider?.availableFonts ??
+            NovidentFontProvider.fallback().availableFonts,
+      );
 
       Widget child = _FontFamilyDropdownButton(
         editorState: editorState,
@@ -69,7 +71,7 @@ class _FontFamilyDropdownButton extends StatefulWidget {
   });
 
   final EditorState editorState;
-  final List<String> fontFamilies;
+  final Set<String> fontFamilies;
   final Color highlightColor;
   final Color? iconColor;
 
@@ -131,6 +133,7 @@ class _FontFamilyDropdownButtonState extends State<_FontFamilyDropdownButton> {
     final selection = widget.editorState.selection;
     if (selection != null) {
       final effective = _resolveFromNodeAndDelta();
+      //TODO: @Cathood0 probably we need to remove this element
       _cachedFontFamily = effective;
       return effective;
     }
@@ -250,15 +253,13 @@ class _FontFamilyDropdownButtonState extends State<_FontFamilyDropdownButton> {
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
               color: _isOpen ? _highlightColor : Colors.transparent,
-              width: 1,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               ConstrainedBox(
-                constraints:
-                    const BoxConstraints(minWidth: 90, maxWidth: 150),
+                constraints: const BoxConstraints(minWidth: 90, maxWidth: 150),
                 child: Text(
                   _displayLabel(),
                   maxLines: 1,
@@ -295,7 +296,7 @@ class _FontFamilyMenuPanel extends StatelessWidget {
     required this.onSelected,
   });
 
-  final List<String> fontFamilies;
+  final Set<String> fontFamilies;
   final String? currentFamily;
   final Color highlightColor;
   final Color selectedBg;
@@ -311,7 +312,9 @@ class _FontFamilyMenuPanel extends StatelessWidget {
     final entries = <_FontFamilyEntry>[
       _FontFamilyEntry(
         family: '',
-        label: currentFamily == null ? defaultFamily : NovidentEditorL10n.current.noStyle,
+        label: currentFamily == null
+            ? defaultFamily
+            : NovidentEditorL10n.current.noFontFamily,
         isSelected: currentFamily == null,
       ),
       ...fontFamilies.map(

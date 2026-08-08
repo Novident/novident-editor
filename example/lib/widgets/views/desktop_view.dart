@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart' hide Node;
 import 'package:novident_nodes/novident_nodes.dart';
-import 'package:novident_editor_styles/novident_editor_styles.dart';
 import 'package:novident_split_view/novident_split_view.dart';
 
 import '../drawer/tree_view_drawer.dart';

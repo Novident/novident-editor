@@ -18,16 +18,11 @@ dependencies:
     sdk: flutter
   collection: ^1.18.0
   diff_match_patch: ^0.4.1
-  novident_editor_core:
-    path: packages/novident_editor_core
-  novident_editor_selection:
-    path: packages/novident_editor_selection
-  novident_editor_rich_text:
-    path: packages/novident_editor_rich_text
-  novident_editor_styles:
-    path: packages/novident_editor_styles
-  novident_editor_document:
-    path: packages/novident_document
+  novident_editor_core: ^1.0.0
+  novident_editor_selection: ^1.0.0
+  novident_editor_rich_text: ^1.0.0 
+  novident_editor_styles: ^1.0.0
+  novident_editor_document: ^1.0.2
   file_picker: ^10.1.0
   flutter_svg: ^2.0.6
   html: ^0.15.5

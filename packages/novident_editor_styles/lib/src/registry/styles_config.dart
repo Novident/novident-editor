@@ -1,11 +1,11 @@
 import 'package:novident_editor_styles/novident_editor_styles.dart';
 
 class NovidentStylesConfig {
-  const NovidentStylesConfig({
+  NovidentStylesConfig({
     required this.registry,
-    this.defaultStyle = kDefaultBaseStyle,
+    NovidentStyleDefinition? defaultStyle,
     this.defaultStylesByType = const <String, NovidentStyleDefinition>{},
-  });
+  }) : defaultStyle = defaultStyle ?? kDefaultBaseStyle;
 
   final NovidentStyleRegistry registry;
   final NovidentStyleDefinition defaultStyle;

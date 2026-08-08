@@ -35,5 +35,13 @@ NovidentStyleDefinition resolveEffectiveToolbarStyle(
     config.defaultStyle.fontFamily != null,
     'NovidentStylesConfig.defaultStyle must have a non-null fontFamily.',
   );
+  assert(
+    config.defaultStyle.fontSize > 0,
+    'NovidentStylesConfig.defaultStyle must have a value major than zero for fontSize.',
+  );
+  assert(
+    config.defaultStyle.textColor!= null,
+    'NovidentStylesConfig.defaultStyle must have a non-null textColor.',
+  );
   return config.defaultStyle;
 }

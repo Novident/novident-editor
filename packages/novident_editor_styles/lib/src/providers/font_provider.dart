@@ -1,3 +1,5 @@
+import 'package:novident_editor_styles/src/providers/standard_fonts_by_os_provider.dart';
+
 /// Provides the list of available font families and a guaranteed
 /// non-null default.
 ///
@@ -17,8 +19,8 @@ class NovidentFontProvider {
   /// Android and it is widely available elsewhere.
   factory NovidentFontProvider.fallback() {
     return NovidentFontProvider._(
-      availableFonts: _universalFonts,
-      defaultFontFamily: _universalFonts.first,
+      availableFonts: getDefaultFonts(),
+      defaultFontFamily: getDefaultFont(),
     );
   }
 
@@ -32,29 +34,17 @@ class NovidentFontProvider {
   }) {
     assert(fonts.isNotEmpty, 'At least one font must be provided.');
     return NovidentFontProvider._(
-      availableFonts: List.unmodifiable(fonts),
+      availableFonts: Set.unmodifiable(fonts),
       defaultFontFamily: defaultFamily ?? fonts.first,
     );
   }
 
   /// All font families the user can choose from.
-  final List<String> availableFonts;
+  final Set<String> availableFonts;
 
   /// The font family applied when nothing else is specified.
   ///
   /// This is guaranteed to be non-null — Novident Editor never leaves the
   /// font family decision to the platform.
   final String defaultFontFamily;
-
-  /// Universal fonts available on all platforms without any extra
-  /// configuration or font bundling.
-  static const _universalFonts = <String>[
-    'Roboto',
-    'Arial',
-    'Times New Roman',
-    'Courier New',
-    'Georgia',
-    'Verdana',
-    'Helvetica',
-  ];
 }

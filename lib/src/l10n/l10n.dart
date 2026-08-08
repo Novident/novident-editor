@@ -1891,6 +1891,16 @@ class NovidentEditorLocalizations {
     );
   }
 
+  /// `No Font Family`
+  String get noFontFamily {
+    return Intl.message(
+      'Auto',
+      name: 'noFontFamily',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Font Family`
   String get fontFamily {
     return Intl.message(

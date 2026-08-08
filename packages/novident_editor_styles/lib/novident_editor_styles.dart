@@ -8,3 +8,4 @@ export 'src/types/style_definition.dart';
 export 'src/types/table_style_definition.dart';
 export 'src/utils/block_style_resolver.dart';
 export 'src/utils/default_styles.dart';
+export 'src/providers/standard_fonts_by_os_provider.dart';

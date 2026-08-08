@@ -4,11 +4,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart' hide Node;
 import 'package:novident_nodes/novident_nodes.dart';
+import 'package:novident_editor_styles/novident_editor_styles.dart';
 import 'package:novident_split_view/novident_split_view.dart';
 
 import '../drawer/tree_view_drawer.dart';
 import '../editor/editor_pane.dart';
-import '../../common/constants/contents/readme_document.dart' show kReadmeStripedTable, kReadmePlainTable, kReadmeAccentTable;
+import '../../common/constants/contents/readme_document.dart'
+    show kReadmeStripedTable, kReadmePlainTable, kReadmeAccentTable;
 
 /// Workspace colors.
 const Color _kWorkspaceBackground = Color(0xFFECECEC);
@@ -280,7 +282,7 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
   static final _kToolbarItems = <ToolbarItem>[
     styleToolbarItem,
     buildFontSizeItem(),
-    buildFontFamilyItem(),
+    buildFontFamilyItem(fontFamilies: getDefaultFonts()),
     ...markdownFormatItems,
     quoteItem,
     bulletedListItem,
@@ -303,13 +305,13 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
   );
 }
 
-const NovidentStyleDefinition kDefaultBaseStyle =
-    NovidentStyleDefinition.nextSame(
+final NovidentStyleDefinition kDefaultBaseStyle =
+    NovidentStyleDefinition(
   id: '__novident_base__',
   name: 'Base',
   fontSize: 12.0,
-  fontFamily: 'Roboto',
+  fontFamily: getDefaultFont(),
   textColor: Colors.black,
-  spacing: NovidentStyleSpacing(after: 2, lineHeight: 1.0),
+  spacing: NovidentStyleSpacing(lineHeight: 1.0),
   indent: NovidentStyleIndent.defaultLineFilter(),
 );

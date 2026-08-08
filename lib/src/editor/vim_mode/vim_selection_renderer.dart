@@ -163,8 +163,10 @@ class VimSelectionRenderer implements SelectionRenderer {
       final tp = rp.textPainter;
       final tpOffset = ctx.currentOffset + ctx.textShift;
       final lineRange = tp.getLineBoundary(TextPosition(offset: tpOffset));
-      final lineStart =
-          (lineRange.start - ctx.textShift).clamp(0, ctx.delegate.end().offset);
+      final lineStart = (lineRange.start - ctx.textShift).clamp(
+        0,
+        ctx.delegate.end().offset,
+      );
       return Position(path: ctx.node.path, offset: lineStart);
     }
 
@@ -179,10 +181,10 @@ class VimSelectionRenderer implements SelectionRenderer {
     final rp = ctx.renderParagraph ?? ctx.delegate.getRenderParagraph();
     if (rp != null) {
       final tp = rp.textPainter;
-      final tpOffset = ctx.currentOffset;
+      final tpOffset = ctx.currentOffset + ctx.textShift;
       final lineRange = tp.getLineBoundary(TextPosition(offset: tpOffset));
       // lineRange.end is exclusive; subtract textShift and clamp.
-      final lineEnd = lineRange.end;
+      final lineEnd = (lineRange.end - ctx.textShift) - 1;
       final maxOffset = ctx.delegate.end().offset;
       if (lineEnd > 0 && lineEnd <= maxOffset) {
         // In visual mode, $ places the cursor on the last character.

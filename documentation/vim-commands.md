@@ -74,8 +74,8 @@ NovidentEditor(
 vimController.attach(editorState);
 
 // Remap any built-in command at runtime:
-vimController.configuration =
-    vimController.configuration.rebind(VimCommand.moveLeft, 'a');
+vimController.configuration = vimController.configuration
+    .rebind(VimCommand.moveLeft, 'a', rawCommand: null);
 ```
 
 Key points:
@@ -180,6 +180,46 @@ that command is automatically unbound.  For example, rebinding `moveLeft` to
 Built-in commands use codes 0–28.  Pick any integer ≥ **100** for your own
 commands to avoid future collisions:
 
+### `mode`
+
+This is the required mode that this command needs to be executed successfully. Let `null` to disable check that avoids executing it when condition `currentMode != command.mode` returns `true`.
+Normally if you want to be strict you use this together with `restrictToDefinedMode` flag to true.
+
+### `rawCommand`
+
+This is the way that allow us supporting multi-key feature. It lets to the vim controller to wait in a "pending" mode, where the controller is waiting until you finishes the expected full command
+passed.   
+
+For example, this is the definition of `VimCommand.deleteLine` and how we register it in the configs:
+
+```dart
+/// Vim's `d` operator (default: `d`).
+///
+/// * In normal mode it is a pending operator: pressing it twice (`dd`)
+///   cuts the current line — the line is copied to the clipboard and
+///   removed. A single press only arms the operator
+///   (see `VimModeController.pendingCommand`).
+/// * In visual mode a single press cuts the selection.
+static const VimCommand deleteLine = VimCommand(
+  24,
+  mode: VimMode.normal,
+  rawCommand: 'dd',
+);
+
+/// You can set here the initial key that needs to start the pending state
+static final Map<VimCommand, String> defaultKeybindings = Map.unmodifiable({
+  VimCommand.deleteLine: 'd',
+});
+```
+
+
+
+The `mode` defined with the `rawCommand` property, will do that the controller filters any command until the mode is the appropiate, and the key matched with the expected by `rawCommand`. In simple words, in visual mode `VimCommand.deleteLine` ignores the `rawCommand` because its `mode` is defined to be `VimMode.normal`. So, only in `normal` mode, you can use `dd` command
+
+Take in account that there's no timer that disables this interaction. Only when the `rawCommand` ends (matched or not), the pending state is removed. 
+
+### Example
+
 ### 1. Define the command
 
 ```dart
@@ -188,13 +228,14 @@ class MyVimCommands {
   MyVimCommands._();
 
   /// Indents the current node by one level (vim's `>`).
+
   static const indent = VimCommand(101);
 
   /// Outdents the current node by one level (vim's `<`).
   static const outdent = VimCommand(102);
 
   /// Inserts a horizontal divider below the current line.
-  static const insertDivider = VimCommand(103);
+  static const insertDivider = VimCommand(103, mode: VimMode.normal, rawCommand: 'dw');
 }
 ```
 
@@ -389,10 +430,24 @@ all key events are forwarded to the standard editor shortcuts.
 
 ```dart
 class VimCommand {
-  final int code;
-  const VimCommand(this.code);
+  const VimCommand(
+    this.code, {
+    this.mode = VimMode.normal,
+    this.restrictToDefinedMode = false,
+    this.rawCommand,
+  });
 
-  // Two commands are equal when their codes match.
+  /// The mode required to execute this command. Set to null to allow any mode
+  final VimMode? mode;
+
+  /// The raw version of the full command
+  ///
+  /// Useful for multi-key commands that requires
+  final String? rawCommand;
+
+  /// Whether the command will ignore the command if the mode is not the specified
+  final bool restrictToDefinedMode;
+
   // Built-in codes: 0–28.  Use ≥ 100 for custom commands.
 }
 ```
@@ -405,7 +460,7 @@ class VimCommand {
 | `VimModeConfiguration.defaultBindings({...})` | Non-const; spreads defaults under user overrides. |
 | `keybindings` → `Map<VimCommand, String>` | **Resolved** map: defaults + conflict resolution + overrides. |
 | `commandOf(VimCommand) → String?` | Effective binding for one command (falls back to defaults). |
-| `rebind(VimCommand, String keys) → VimModeConfiguration` | Returns a copy with the command rebound. |
+| `rebind(VimCommand, String keys, {String? rawCommand}) → VimModeConfiguration` | Returns a copy with the command rebound. |
 | `copyWith({enabled, initialMode, …, keybindings})` | Standard immutable copy. |
 
 ### `VimModeController`
@@ -417,7 +472,9 @@ class VimCommand {
 | `attach(EditorState)` / `detach()` | Bind / unbind to the editor. |
 | `configuration` (get/set) | Read or replace the resolved configuration.  Setter updates bindings in-place. |
 | `mode → VimMode` | Current mode (`normal`, `insert`, `visual`). |
-| `pendingCommand → String?` | Armed operator (e.g. `'d'` for `dd`). |
+| `pendingCommand → String?` | Armed operator (e.g `d`, `g`). |
+| `pendingCommandBuffer → String?` | String containing the keys that starts like the `rawCommand` defined for command (e.g. `d` to times will be stored like `dd`). |
+| `pendingCommandTimes → String?` | Zero-index based that stores the times `key` matches with a `rawCommand`. |
 | `enabled → bool` | Whether the emulation is active. |
 | `toggleEnabled()` | Toggles the emulation. |
 | `enterNormalMode()` / `enterInsertMode()` / `enterVisualMode()` | Mode transitions. |

@@ -103,7 +103,7 @@ vimController.attach(editorState);
 
 // Remap any key at runtime:
 vimController.configuration =
-    vimController.configuration.rebind(VimCommand.moveLeft, 'a');
+    vimController.configuration.rebind(VimCommand.moveLeft, 'a', rawCommand: null);
 ```
 
 ### Customising the block cursor
@@ -218,7 +218,8 @@ NovidentEditor(
         id: 'heading-1', 
         name: 'Heading 1',
         basedOn: 'base',
-        fontSize: 32, bold: true,
+        fontSize: 32, 
+        bold: true,
         spacing: NovidentStyleSpacing(before: 24, after: 12),
         next: 'body',
       ),

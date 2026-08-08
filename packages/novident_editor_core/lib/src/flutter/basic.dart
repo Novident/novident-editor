@@ -12,7 +12,7 @@ import 'dart:ui' as ui show TextHeightBehavior;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' hide RenderParagraph;
-import 'package:novident_editor_rich_text/src/flutter/paragraph.dart';
+import 'paragraph.dart';
 
 /// A paragraph of rich text.
 ///

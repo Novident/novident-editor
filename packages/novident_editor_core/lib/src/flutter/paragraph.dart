@@ -21,7 +21,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' hide TextPainter, RichText;
 import 'package:flutter/rendering.dart' hide TextPainter;
 import 'package:flutter/services.dart';
-import 'package:novident_editor_rich_text/src/flutter/text_painter.dart';
+import 'text_painter.dart';
 
 /// The start and end positions for a text boundary.
 typedef _TextBoundaryRecord = ({

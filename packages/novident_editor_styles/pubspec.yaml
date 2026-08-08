@@ -14,10 +14,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  novident_editor_document:
-    path: ../novident_document
-  novident_editor_core:
-    path: ../novident_editor_core
+  novident_editor_document: ^1.0.0
+  novident_editor_core: ^1.0.0
   logging: ^1.2.0
 
 dev_dependencies:

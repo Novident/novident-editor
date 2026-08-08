@@ -27,7 +27,7 @@ class NovidentRichText extends StatefulWidget {
     this.textSpanOverlayBuilder,
     this.textAlign,
     this.cursorColor = const Color.fromARGB(255, 0, 0, 0),
-    this.selectionColor = const Color.fromARGB(53, 111, 201, 231),
+    this.selectionColor = const Color.fromARGB(255, 111, 201, 231),
     this.autoCompleteTextProvider,
     this.useFirstLineIndent = true,
     required this.delegate,
@@ -109,6 +109,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
   TextStyle? _cachedBaseTextStyle;
   bool? _cachedInsideTable;
   bool _styleInvalidated = true;
+  bool _hasSelection = false;
+  (int, int)? _selectionRange;
 
   RenderParagraph? get _renderParagraph =>
       textKey.currentContext?.findRenderObject() as RenderParagraph?;
@@ -137,6 +139,116 @@ class _NovidentRichTextState extends State<NovidentRichText>
   NovidentTextSpanOverlayBuilder? get textSpanOverlayBuilder =>
       widget.textSpanOverlayBuilder ??
       widget.editorConfig.textSpanOverlayBuilder;
+
+  NovidentStyleDefinition? get defaultStyle =>
+      NovidentEditorStyles.maybeOf(context)?.config.defaultStyle;
+
+  @override
+  void initState() {
+    super.initState();
+    confirmContextEnabled();
+    widget.editorConfig.selectionNotifier.addListener(_onSelectionChanged);
+    _syncSelectionState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    widget.editorConfig.selectionNotifier.removeListener(_onSelectionChanged);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child = Stack(
+      children: [
+        _buildPlaceholderText(context),
+        _buildRichText(context),
+        ..._buildRichTextOverlay(context),
+      ],
+    );
+
+    if (enableAutoComplete) {
+      final autoCompleteText = _buildAutoCompleteRichText();
+      child = Stack(
+        children: [
+          autoCompleteText,
+          child,
+        ],
+      );
+    }
+
+    return BlockSelectionContainer(
+      delegate: widget.delegate,
+      listenable: widget.editorConfig.selectionNotifier,
+      host: widget.editorConfig,
+      renderer: widget.editorConfig.selectionRenderer,
+      remoteSelection: widget.editorConfig.remoteSelections,
+      node: widget.node,
+      cursorColor: widget.cursorColor,
+      selectionColor: widget.selectionColor,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.text,
+        child: child,
+      ),
+    );
+  }
+
+  void _onSelectionChanged() {
+    if (!mounted) return;
+
+    final selection = widget.editorConfig.selectionNotifier.value;
+    final bool nowInSelection = selection != null &&
+        !selection.isCollapsed &&
+        widget.node.inSelection(selection);
+
+    (int, int)? newRange;
+    if (nowInSelection) {
+      newRange = _rangeForSelection(selection);
+    }
+
+    if (_hasSelection != nowInSelection || _selectionRange != newRange) {
+      _hasSelection = nowInSelection;
+      _selectionRange = newRange;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  /// Computes `(selStart, selEnd)` for this node from a *normalized*
+  /// selection. Returns `null` when the node is not in the selection.
+  (int, int) _rangeForSelection(Selection selection) {
+    final norm = selection.normalized;
+    final nodePath = widget.node.path;
+    final nodeLen = widget.node.delta?.length ?? 0;
+
+    if (nodePath.equals(norm.start.path) && nodePath.equals(norm.end.path)) {
+      return (norm.start.offset, norm.end.offset);
+    }
+    if (nodePath.equals(norm.start.path)) {
+      return (norm.start.offset, nodeLen);
+    }
+    if (nodePath.equals(norm.end.path)) {
+      return (0, norm.end.offset);
+    }
+    return (0, nodeLen);
+  }
+
+  /// Syncs [_hasSelection] and [_selectionRange] from the current selection
+  /// value without scheduling a rebuild (called during [initState] before the
+  /// first build).
+  void _syncSelectionState() {
+    final selection = widget.editorConfig.selectionNotifier.value;
+    if (selection != null &&
+        !selection.isCollapsed &&
+        widget.node.inSelection(selection)) {
+      _hasSelection = true;
+      _selectionRange = _rangeForSelection(selection);
+    } else {
+      _hasSelection = false;
+      _selectionRange = null;
+    }
+  }
 
   /// Resolves the effective style for this node.
   ///
@@ -198,51 +310,6 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
     _cachedResolvedStyle = own ?? defaultStyle;
     return _cachedResolvedStyle;
-  }
-
-  NovidentStyleDefinition? get defaultStyle =>
-      NovidentEditorStyles.maybeOf(context)?.config.defaultStyle;
-
-  @override
-  void initState() {
-    super.initState();
-    confirmContextEnabled();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    Widget child = Stack(
-      children: [
-        _buildPlaceholderText(context),
-        _buildRichText(context),
-        ..._buildRichTextOverlay(context),
-      ],
-    );
-
-    if (enableAutoComplete) {
-      final autoCompleteText = _buildAutoCompleteRichText();
-      child = Stack(
-        children: [
-          autoCompleteText,
-          child,
-        ],
-      );
-    }
-
-    return BlockSelectionContainer(
-      delegate: widget.delegate,
-      listenable: widget.editorConfig.selectionNotifier,
-      host: widget.editorConfig,
-      renderer: widget.editorConfig.selectionRenderer,
-      remoteSelection: widget.editorConfig.remoteSelections,
-      node: widget.node,
-      cursorColor: widget.cursorColor,
-      selectionColor: widget.selectionColor,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.text,
-        child: child,
-      ),
-    );
   }
 
   /// Text alignment resolved by the block component builder.
@@ -347,7 +414,6 @@ class _NovidentRichTextState extends State<NovidentRichText>
       textScaler: TextScaler.linear(
         widget.editorConfig.textScaleFactor,
       ),
-      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -373,18 +439,10 @@ class _NovidentRichTextState extends State<NovidentRichText>
       ),
       text: textSpan,
       textDirection: textDirection(),
-      textScaler: TextScaler.linear(widget.editorConfig.textScaleFactor),
+      textScaler: TextScaler.linear(
+        widget.editorConfig.textScaleFactor,
+      ),
     );
-  }
-
-  List<Widget> _buildRichTextOverlay(BuildContext context) {
-    if (textKey.currentContext == null) return [];
-    return textSpanOverlayBuilder?.call(
-          context,
-          widget.node,
-          this,
-        ) ??
-        [];
   }
 
   void confirmContextEnabled() {
@@ -489,6 +547,16 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return textSpan;
   }
 
+  List<Widget> _buildRichTextOverlay(BuildContext context) {
+    if (textKey.currentContext == null) return [];
+    return textSpanOverlayBuilder?.call(
+          context,
+          widget.node,
+          this,
+        ) ??
+        [];
+  }
+
   TextSpan getPlaceholderTextSpan() {
     final children = <InlineSpan>[
       if (textShift > 0)
@@ -558,6 +626,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
         WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
       );
     }
+
+    final selStart = _selectionRange?.$1 ?? 0;
+    final selEnd = _selectionRange?.$2 ?? 0;
 
     for (final textInsert in textInserts) {
       TextStyle textStyle = _baseTextStyle;
@@ -630,27 +701,87 @@ class _NovidentRichTextState extends State<NovidentRichText>
         displayText = displayText.toLowerCase();
       }
 
-      final textSpan = TextSpan(
-        text: displayText,
-        style: textStyle,
-      );
-      textSpans.add(
-        textSpanDecoratorForAttribute != null
-            ? textSpanDecoratorForAttribute!(
-                context,
-                widget.node,
-                offset,
-                textInsert,
-                textSpan,
-                widget.textSpanDecorator?.call(textSpan) ?? textSpan,
-              )
-            : textSpan,
-      );
-      offset += textInsert.length;
+      final textLen = displayText.length;
+
+      if (_hasSelection) {
+        final blockBg = textStyle.backgroundColor ?? Colors.white;
+        final effectiveBg = Color.alphaBlend(
+          widget.selectionColor,
+          blockBg,
+        );
+        final contrastColor =
+            effectiveBg.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+        final int textStart = offset;
+        final int textEnd = offset + textLen;
+        final int intersectStart = max(textStart, selStart);
+        final int intersectEnd = min(textEnd, selEnd);
+        if (intersectStart < intersectEnd) {
+          // Before selection — normal color.
+          if (textStart < intersectStart) {
+            final beforeLen = intersectStart - textStart;
+            textSpans.add(emitSpan(
+              textInsert,
+              displayText.substring(0, beforeLen),
+              textStyle,
+              offset,
+            ));
+          }
+          // Inside selection — contrast color.
+          final selPieceStart = intersectStart - textStart;
+          final selPieceEnd = intersectEnd - textStart;
+          textSpans.add(emitSpan(
+            textInsert,
+            displayText.substring(selPieceStart, selPieceEnd),
+            textStyle.copyWith(color: contrastColor),
+            offset + selPieceStart,
+          ));
+          // After selection — normal color.
+          if (intersectEnd < textEnd) {
+            final afterStart = intersectEnd - textStart;
+            textSpans.add(emitSpan(
+              textInsert,
+              displayText.substring(afterStart),
+              textStyle,
+              offset + afterStart,
+            ));
+          }
+          offset += textLen;
+          continue;
+        }
+      }
+
+      // Default: no selection intersection — emit the full span as-is.
+      textSpans.add(emitSpan(
+        textInsert,
+        displayText,
+        textStyle,
+        offset,
+      ));
+      offset += textLen;
     }
     return TextSpan(
       children: textSpans,
     );
+  }
+
+  InlineSpan emitSpan(
+    TextInsert insert,
+    String text,
+    TextStyle style,
+    int spanOffset,
+  ) {
+    final span = TextSpan(text: text, style: style);
+    if (textSpanDecoratorForAttribute != null) {
+      return textSpanDecoratorForAttribute!(
+        context,
+        widget.node,
+        spanOffset,
+        insert,
+        span,
+        widget.textSpanDecorator?.call(span) ?? span,
+      );
+    }
+    return span;
   }
 
   @override

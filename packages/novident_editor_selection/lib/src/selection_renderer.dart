@@ -161,6 +161,7 @@ class DefaultSelectionRenderer implements SelectionRenderer {
     return SelectionAreaPaint(
       rects: ctx.rects,
       selectionColor: ctx.color,
+      minRectWidth: 8,
     );
   }
 
@@ -182,7 +183,8 @@ class DefaultSelectionRenderer implements SelectionRenderer {
   Position? onVerticalMove(CursorMoveContext ctx) => null;
 
   @override
-  Position? onHorizontalMove(CursorMoveContext ctx, {bool byWord = false}) => null;
+  Position? onHorizontalMove(CursorMoveContext ctx, {bool byWord = false}) =>
+      null;
 
   @override
   Position? onMoveToLineStart(CursorMoveContext ctx) => null;

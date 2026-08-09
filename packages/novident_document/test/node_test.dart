@@ -96,6 +96,7 @@ void main() async {
         attributes: {},
         children: [child],
       );
+      expect(identical(base.children.first, child), isTrue);
       final node = base.copyWith(
         type: 'node',
       );

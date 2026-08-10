@@ -60,6 +60,7 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
   ///
   factory Node.fromJson(Map<String, Object> json) {
     return Node(
+      id: json['id'] as String? ?? nanoid(6),
       type: json['type'] as String,
       attributes: Attributes.from(
         json['data'] as Map? ?? {},
@@ -305,6 +306,7 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
 
   Map<String, Object> toJson() {
     final map = <String, Object>{
+      'id': id,
       'type': type,
     };
     if (children.isNotEmpty) {

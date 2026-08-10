@@ -110,8 +110,9 @@ void main() {
     ) async {
       // 1. Create a paragraph node with "Hello World".
       final node = Node(type: 'paragraph');
-      final delta = Delta()..insert('Hello World');
-      node.updateAttributes({'delta': delta.toJson()});
+      final doc = TextDocument()..pushText('Hello World');
+
+      node.updateAttributes({'td': doc});
 
       // 2. Create a selection covering only "Hello" (offsets 0..5).
       final selectionNotifier = ValueNotifier<Selection?>(
@@ -148,11 +149,11 @@ void main() {
           span.children?.forEach(walk);
         }
       }
+
       walk(textSpan);
 
       // 5. Collect spans that have text (skip WidgetSpan for indent).
-      final textSpans =
-          spans.where((s) => (s.text ?? '').isNotEmpty).toList();
+      final textSpans = spans.where((s) => (s.text ?? '').isNotEmpty).toList();
       expect(
         textSpans.length,
         greaterThanOrEqualTo(2),
@@ -189,7 +190,7 @@ void main() {
       // No selection at all — text should be rendered as one span.
       final node = Node(type: 'paragraph');
       node.updateAttributes({
-        'delta': (Delta()..insert('Hello World')).toJson(),
+        'td': TextDocument()..pushText('Hello World'),
       });
       final selectionNotifier = ValueNotifier<Selection?>(null);
       final config = _StandaloneConfig(selectionNotifier: selectionNotifier);

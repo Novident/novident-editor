@@ -217,9 +217,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
   (int, int) _rangeForSelection(Selection selection) {
     final norm = selection.normalized;
     final nodePath = widget.node.path;
-    final nodeLen = widget.node.delta?.length ?? 0;
+    final nodeLen = widget.node.textDocument?.length ?? 0;
 
-    if (nodePath.equals(norm.start.path) && nodePath.equals(norm.end.path)) {
+    if (selection.isSingle && selection.start.path.equals(nodePath)) {
       return (norm.start.offset, norm.end.offset);
     }
     if (nodePath.equals(norm.start.path)) {
@@ -256,7 +256,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   ///
   /// Result is cached until the node identity or `styleRef` changes.
   NovidentStyleDefinition? get resolvedStyle {
-    final styleRef = widget.node.attributes['styleRef'] as String?;
+    final styleRef = widget.node.attributes[blockComponentStyleRef] as String?;
     late final Node? cellParentNode;
     final tableNode = widget.node.findParent((Node n) {
       if (n.type == TableCellBlockKeys.type) {
@@ -264,7 +264,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       }
       return n.type == TableBlockKeys.type;
     });
-    final tableStyleRef = tableNode?.attributes['styleRef'] as String?;
+    final tableStyleRef = tableNode?.attributes[blockComponentStyleRef] as String?;
 
     if (widget.node.id == _nodeId &&
         styleRef == _styleRef &&
@@ -334,6 +334,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return _cachedInsideTable!;
   }
 
+  //TODO: @Cathood0 we need to test how works this on rtl directionality
   @override
   int get textShift {
     if (!widget.useFirstLineIndent ||
@@ -375,7 +376,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }
 
   Widget _buildPlaceholderText(BuildContext context) {
-    final textInserts = widget.node.delta?.whereType<TextInsert>();
+    final textInserts = widget.node.textDocument?.chunks;
     if (textInserts != null && textInserts.isNotEmpty) {
       return const SizedBox.shrink();
     }
@@ -384,8 +385,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
       textSpan = widget.placeholderTextSpanDecorator!(textSpan);
     }
     textSpan = adjustTextSpan(textSpan);
-    final delta = widget.node.delta;
-    if (delta != null && delta.isNotEmpty) {
+    final doc = widget.node.textDocument;
+    if (doc != null && doc.length > 0) {
       // Preserve WidgetSpans for indent layout, clear visible text.
       final preservedChildren = <InlineSpan>[
         for (final child in textSpan.children ?? <InlineSpan>[])
@@ -418,7 +419,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }
 
   Widget _buildRichText(BuildContext context) {
-    final textInserts = widget.node.delta!.whereType<TextInsert>();
+    final textInserts = widget.node.textDocument?.chunks ?? [];
     if (textInserts.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -456,7 +457,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }
 
   Widget _buildAutoCompleteRichText() {
-    final textInserts = widget.node.delta!.whereType<TextInsert>();
+    final textInserts = widget.node.textDocument?.chunks ?? [];
     if (textInserts.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -479,14 +480,14 @@ class _NovidentRichTextState extends State<NovidentRichText>
         textSpan = getTextSpan(
           textInserts: [
             ...textInserts.map(
-              (e) => TextInsert(
+              (e) => TextChunk(
                 e.text,
                 attributes: {
                   RichTextKeys.transparent: true,
                 },
               ),
             ),
-            TextInsert(
+            TextChunk(
               autoCompleteText,
               attributes: {
                 RichTextKeys.autoComplete: true,
@@ -617,7 +618,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }
 
   TextSpan getTextSpan({
-    required Iterable<TextInsert> textInserts,
+    required Iterable<TextChunk> textInserts,
   }) {
     int offset = 0;
     List<InlineSpan> textSpans = [];
@@ -745,7 +746,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }
 
   static InlineSpan emitSpan(
-    TextInsert insert,
+    TextChunk insert,
     String text,
     TextStyle style,
     int spanOffset,
@@ -771,7 +772,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   static bool paintContrastColorForSelection(
     BuildContext context,
     Node node,
-    TextInsert textInsert,
+    TextChunk textInsert,
     int offset,
     int textLen,
     int selStart,
@@ -819,7 +820,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
         final beforeLen = intersectStart - textStart;
         final beforeText = displayText.substring(0, beforeLen);
         textSpans.add(emitSpan(
-          TextInsert(beforeText, attributes: textInsert.attributes),
+          TextChunk(beforeText, attributes: textInsert.attributes),
           beforeText,
           textStyle,
           offset,
@@ -834,7 +835,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       final selPieceEnd = intersectEnd - textStart;
       final selText = displayText.substring(selPieceStart, selPieceEnd);
       textSpans.add(emitSpan(
-        TextInsert(selText, attributes: textInsert.attributes),
+        TextChunk(selText, attributes: textInsert.attributes),
         selText,
         textStyle.copyWith(
           color: contrastColor,
@@ -851,7 +852,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
         final afterStart = intersectEnd - textStart;
         final afterText = displayText.substring(afterStart);
         textSpans.add(emitSpan(
-          TextInsert(afterText, attributes: textInsert.attributes),
+          TextChunk(afterText, attributes: textInsert.attributes),
           afterText,
           textStyle,
           offset + afterStart,
@@ -872,7 +873,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   @override
   Position end() => Position(
         path: widget.node.path,
-        offset: widget.node.delta?.toPlainText().length ?? 0,
+        offset: widget.node.textDocument?.length ?? 0,
       );
 
   @override
@@ -895,9 +896,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
       return null;
     }
 
-    final delta = widget.node.delta;
+    final doc = widget.node.textDocument;
     if (position.offset < 0 ||
-        (delta != null && position.offset > delta.length)) {
+        (doc != null && position.offset > doc.length)) {
       return null;
     }
 
@@ -931,7 +932,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
       cursorHeight = max(cursorHeight ?? 0, placeholderCursorHeight);
     }
 
-    if (delta?.isEmpty == true) {
+    if (doc == null || doc.length <= 0) {
       cursorOffset = placeholderCursorOffset;
     }
 
@@ -977,10 +978,10 @@ class _NovidentRichTextState extends State<NovidentRichText>
     final rp = _renderParagraph;
     if (rp == null || !rp.hasSize) return null;
 
-    final delta = widget.node.delta;
-    if (delta == null) return null;
+    final doc = widget.node.textDocument;
+    if (doc == null) return null;
 
-    final textLen = delta.length;
+    final textLen = doc.length;
     if (currentOffset < 0 || currentOffset > textLen) return null;
 
     final tp = rp.textPainter;
@@ -1151,8 +1152,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   @override
   Selection getSelectionInRange(Offset start, Offset end) {
-    final delta = widget.node.delta;
-    if (delta == null) {
+    final doc = widget.node.textDocument;
+    if (doc == null || doc.isEmpty || doc.length <= 0) {
       return Selection.single(
         path: widget.node.path,
         startOffset: 0,

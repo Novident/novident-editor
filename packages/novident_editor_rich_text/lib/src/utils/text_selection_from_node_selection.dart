@@ -16,7 +16,7 @@ TextSelection? textSelectionFromEditorSelection(
     return null;
   }
 
-  final length = node.delta?.length;
+  final length = node.textDocument?.length;
   if (length == null) {
     return null;
   }

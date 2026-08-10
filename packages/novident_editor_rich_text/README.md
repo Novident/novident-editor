@@ -8,14 +8,14 @@ Paragraph rendering widget for the [Novident Editor](https://github.com/Novident
 ## Features
 
 - **NovidentRichText** — the primary paragraph-rendering widget. Renders `RichText`
-  from node deltas, resolves styles through `NovidentEditorStyles.maybeOf()`, and
+  from node `TextDocument`, resolves styles through `NovidentEditorStyles.maybeOf()`, and
   provides cursor/selection rect measurements via `SelectableMixin`.
 - **DefaultSelectableMixin** — proxy mixin that wraps a forward `SelectableMixin`
   with coordinate offset shifting (used by list items, quotes, and nested blocks).
 - **RichTextEditorConfig** — abstract interface (12 getters) that replaces the
   `EditorState` dependency. Any object implementing this interface can drive
   `NovidentRichText`.
-- **RichTextAttributes** — extension on `Attributes` for reading delta formatting
+- **RichTextAttributes** — extension on `Attributes` for reading delta/text-doc formatting
   (bold, italic, underline, strikethrough, colour, background, href, font family,
   font size, code, auto-complete).
 - **Lightweight** — depends only on `novident_editor_document`, `novident_editor_core`,
@@ -85,7 +85,7 @@ class _MyListItemState extends State<MyListItem>
 ### RichTextAttributes
 
 ```dart
-final attrs = node.delta?.first.attributes ?? {};
+final attrs = node.textDocument?.attributesAt(0) ?? {};
 print(attrs.bold);        // true / false / null
 print(attrs.italic);
 print(attrs.textColor);   // '#000000'

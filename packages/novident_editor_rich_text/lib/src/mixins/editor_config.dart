@@ -47,7 +47,7 @@ typedef TextSpanDecoratorForAttribute = InlineSpan Function(
   BuildContext context,
   Node node,
   int index,
-  TextInsert text,
+  TextChunk text,
   TextSpan before,
   TextSpan after,
 );

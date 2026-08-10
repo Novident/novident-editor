@@ -66,18 +66,18 @@ class _AnimatedSelectionAreaPaintState extends State<AnimatedSelectionAreaPaint>
     }
   }
 
+  Widget builder(double value) {
+    return CustomPaint(
+      painter: AnimatedSelectionAreaPainter(
+        colors: widget.colors,
+        animation: value,
+        rects: widget.rects,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    Widget builder(double value) {
-      return CustomPaint(
-        painter: AnimatedSelectionAreaPainter(
-          colors: widget.colors,
-          animation: value,
-          rects: widget.rects,
-        ),
-      );
-    }
-
     if (!widget.withAnimation) {
       return builder(1.0);
     }
@@ -99,4 +99,3 @@ class _AnimatedSelectionAreaPaintState extends State<AnimatedSelectionAreaPaint>
     super.dispose();
   }
 }
-

@@ -57,6 +57,7 @@ class BlockSelectionArea extends StatefulWidget {
 
 class _BlockSelectionAreaState extends State<BlockSelectionArea> {
   // We need to keep the key to refresh the cursor status when typing continuously.
+  //TODO: @Cathood0 we probably want to use this
   late GlobalKey cursorKey = GlobalKey(
     debugLabel: 'cursor_${widget.node.path}',
   );

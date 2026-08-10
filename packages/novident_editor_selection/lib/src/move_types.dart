@@ -41,7 +41,6 @@ enum MoveDirection {
 /// Three factory constructors cover common cases:
 /// - [MoveIntention.pass] — let the editor move normally.
 /// - [MoveIntention.cancel] — block the movement entirely.
-/// - [MoveIntention.animated] — request a smooth animated transition.
 class MoveIntention {
   /// The final position after the move.
   /// When `null`, the movement is cancelled entirely.

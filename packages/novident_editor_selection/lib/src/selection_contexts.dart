@@ -126,7 +126,7 @@ class CursorMoveContext {
     required this.delegate,
     this.renderParagraph,
     required this.textShift,
-    this.delta,
+    this.textDocument,
   });
 
   /// The node the cursor is currently in.
@@ -151,8 +151,8 @@ class CursorMoveContext {
   /// (used for first-line indent offset).
   final int textShift;
 
-  /// The text delta for this node, if any.
-  final Delta? delta;
+  /// The text document for this node, if any.
+  final TextDocument? textDocument;
 }
 
 /// Context passed to [SelectionRenderer.onTryMove] BEFORE a cursor

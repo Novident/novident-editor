@@ -8,12 +8,12 @@ class Cursor extends StatefulWidget {
     super.key,
     required this.rect,
     required this.color,
-    this.blinkingInterval = 0.5,
+    this.blinkingInterval = 1000,
     this.shouldBlink = true,
     this.cursorStyle = CursorStyle.verticalLine,
   });
 
-  final double blinkingInterval; // milliseconds
+  final double blinkingInterval;
   final bool shouldBlink;
   final CursorStyle cursorStyle;
   final Color color;
@@ -50,7 +50,7 @@ class CursorState extends State<Cursor> {
 
   Timer _initTimer() {
     return Timer.periodic(
-      Duration(milliseconds: (widget.blinkingInterval * 1000).toInt()),
+      Duration(milliseconds: (widget.blinkingInterval).toInt()),
       (timer) => setState(() => showCursor = !showCursor),
     );
   }
@@ -79,6 +79,8 @@ class CursorState extends State<Cursor> {
     if (widget.shouldBlink && !showCursor) {
       color = Colors.transparent;
     }
+    //TODO: @Cathood0 we should add a new style called `bottomLine`
+    // that only draws the cursor line in the bottom border
     switch (widget.cursorStyle) {
       case CursorStyle.verticalLine:
         return Container(

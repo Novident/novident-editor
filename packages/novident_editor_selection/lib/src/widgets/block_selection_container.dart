@@ -60,6 +60,11 @@ class BlockSelectionContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final supportedTypes = supportTypes
+        .where(
+          (element) => element != BlockSelectionType.cursor,
+        )
+        .toList();
     final blockSelectionArea = BlockSelectionArea(
       node: node,
       delegate: delegate,
@@ -69,11 +74,7 @@ class BlockSelectionContainer extends StatelessWidget {
       cursorColor: cursorColor,
       selectionColor: selectionColor,
       blockColor: blockColor,
-      supportTypes: supportTypes
-          .where(
-            (element) => element != BlockSelectionType.cursor,
-          )
-          .toList(),
+      supportTypes: supportedTypes,
     );
     return Stack(
       clipBehavior: Clip.none,
@@ -88,11 +89,7 @@ class BlockSelectionContainer extends StatelessWidget {
             node: node,
             delegate: delegate,
             remoteSelections: remoteSelection!,
-            supportTypes: supportTypes
-                .where(
-                  (element) => element != BlockSelectionType.cursor,
-                )
-                .toList(),
+            supportTypes: supportedTypes,
           ),
         // block selection or selection area
         if (!selectionAboveBlock) blockSelectionArea,

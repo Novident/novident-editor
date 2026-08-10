@@ -1,5 +1,5 @@
 name: novident_editor_selection
-version: 1.0.0
+version: 1.0.1
 description: >-
   Selection rendering layer for Novident Editor — cursor, block selection,
   remote collaboration indicators. Reusable independently.
@@ -15,8 +15,8 @@ dependencies:
   flutter:
     sdk: flutter
   collection: ^1.18.0
-  novident_editor_document: ^1.0.2 
-  novident_editor_core: ^1.0.0
+  novident_editor_document: ^1.0.3 
+  novident_editor_core: ^1.0.1
 
 dev_dependencies:
   flutter_lints: ^6.0.0

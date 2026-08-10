@@ -13,7 +13,7 @@ TextDocument docFromPairs(List<(String, Attributes?)> pairs) {
 void main() {
   group('TextDocument construction', () {
     test('empty()', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       expect(doc.length, 0);
       expect(doc.isEmpty, isTrue);
       expect(doc.chunks, isEmpty);
@@ -81,11 +81,11 @@ void main() {
 
   group('length and isEmpty', () {
     test('length on empty document', () {
-      expect(TextDocument.empty().length, 0);
+      expect(TextDocument().length, 0);
     });
 
     test('length after insert', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       doc.insert(0, 'Hello');
       expect(doc.length, 5);
       doc.insert(5, ' World');
@@ -100,11 +100,11 @@ void main() {
     });
 
     test('isEmpty true for empty', () {
-      expect(TextDocument.empty().isEmpty, isTrue);
+      expect(TextDocument().isEmpty, isTrue);
     });
 
     test('isEmpty false after insert', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       doc.insert(0, 'x');
       expect(doc.isEmpty, isFalse);
     });
@@ -141,7 +141,7 @@ void main() {
     });
 
     test('multiple sequential inserts build correct text', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       doc.insert(0, 'a');
       doc.insert(1, 'b');
       doc.insert(2, 'c');
@@ -164,14 +164,14 @@ void main() {
     });
 
     test('insert at position 0 in empty doc', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       doc.insert(0, 'First');
       expect(doc.plainText(), 'First');
       expect(doc.length, 5);
     });
 
     test('insert throws on negative position', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       expect(() => doc.insert(-1, 'x'), throwsRangeError);
     });
 
@@ -338,7 +338,7 @@ void main() {
     });
 
     test('throws on empty document', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       expect(() => doc.attributesAt(0), throwsRangeError);
     });
 
@@ -406,7 +406,7 @@ void main() {
     });
 
     test('slice after insert produces correct result', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       doc.insert(0, 'Hello');
       doc.insert(5, ' World');
       doc.insert(6, 'Beautiful ');
@@ -450,7 +450,7 @@ void main() {
     });
 
     test('empty document', () {
-      expect(TextDocument.empty().plainText(), '');
+      expect(TextDocument().plainText(), '');
     });
   });
 
@@ -596,7 +596,7 @@ void main() {
     });
 
     test('applyDelta on empty document', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       doc.applyDelta(Delta()..insert('Hello!'));
       expect(doc.plainText(), 'Hello!');
       expect(doc.length, 6);
@@ -626,7 +626,7 @@ void main() {
     });
 
     test('chunks on empty document', () {
-      expect(TextDocument.empty().chunks, isEmpty);
+      expect(TextDocument().chunks, isEmpty);
     });
 
     test('chunks after insert splits chunk correctly', () {
@@ -649,7 +649,7 @@ void main() {
 
   group('stress and edge cases', () {
     test('many sequential inserts', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       final buffer = StringBuffer();
       for (var i = 0; i < 500; i++) {
         final char = String.fromCharCode(65 + (i % 26));
@@ -701,7 +701,7 @@ void main() {
     });
 
     test('unicode (multi-byte) text is preserved', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       doc.insert(0, 'Hello 🌍 World');
       doc.insert(6, '🔥 ');
       expect(doc.plainText(), 'Hello 🔥 🌍 World');

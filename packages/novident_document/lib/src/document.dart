@@ -73,18 +73,18 @@ class Document {
     }
   }
 
-  /// Returns the node at the given [path]. O(depth × log n/B).
+  /// Returns the node at the given [path].
   Node? nodeAtPath(Path path) {
-    return tree.nodeAtPath(path);
+    return root.childAtPath(path);
   }
 
   /// Inserts [Node]s at the given [Path].
   ///
   /// Updates both the legacy [Node] tree AND the [DocumentTree] index.
-  bool insert(Path path, Iterable<Node> nodes) {
+  bool insert(Path path, Iterable<Node> nodes, {String id = ''}) {
     if (path.isEmpty || nodes.isEmpty) return false;
 
-    final parent = tree.nodeAtPath(path.parent);
+    final parent = tree.byId(id) ?? nodeAtPath(path.parent);
     if (parent == null) return false;
 
     for (var i = 0; i < nodes.length; i++) {
@@ -103,10 +103,10 @@ class Document {
   /// Deletes the [Node]s at the given [Path].
   ///
   /// Updates both the legacy [Node] tree AND the [DocumentTree] index.
-  bool delete(Path path, [int length = 1]) {
+  bool delete(Path path, [int length = 1, String id = '']) {
     if (path.isEmpty || length <= 0) return false;
 
-    var target = tree.nodeAtPath(path);
+    var target = tree.byId(id) ?? nodeAtPath(path);
     if (target == null) return false;
 
     while (target != null && length > 0) {
@@ -131,19 +131,21 @@ class Document {
       root.updateAttributes(attributes);
       return true;
     }
-    final target = tree.nodeAtPath(path);
+    final target = nodeAtPath(path);
     if (target == null) return false;
     target.updateAttributes(attributes);
     return true;
   }
 
   /// Updates the [Node] with [Delta] at the given [Path].
-  bool updateText(Path path, Delta delta) {
+  ///
+  /// Uses the native [TextDocument.applyDelta] path for O(log n)
+  /// mutation instead of the legacy compose + re-serialize round-trip.
+  bool updateText(Path path, Delta delta, {String? id}) {
     if (path.isEmpty) return false;
-    final target = tree.nodeAtPath(path);
-    final targetDelta = target?.delta;
-    if (target == null || targetDelta == null) return false;
-    target.updateAttributes({'delta': (targetDelta.compose(delta)).toJson()});
+    final target = tree.byId(id ?? '') ?? tree.nodeAtPath(path);
+    if (target == null) return false;
+    target.applyTextDelta(delta);
     return true;
   }
 

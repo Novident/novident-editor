@@ -6,6 +6,7 @@ import 'package:nanoid/non_secure.dart';
 
 import 'attributes.dart';
 import 'delta/text_delta.dart';
+import 'delta/text_document.dart';
 import 'path.dart';
 
 abstract class NodeExternalValues {
@@ -38,8 +39,29 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
     Attributes attributes = const {},
     Iterable<Node> children = const [],
   })  : _children = LinkedList<Node>(),
-        _attributes = attributes,
+        _attributes = <String, dynamic>{...attributes},
         id = id ?? nanoid(6) {
+    if (_attributes['td'] is Map) {
+      _textDocument = TextDocument.fromNativeJson(
+        Map<String, dynamic>.from(
+          _attributes['td'],
+        ),
+      );
+    }
+    if (_attributes['td'] is TextDocument) {
+      _textDocument = _attributes['td'];
+    }
+    if (_attributes['delta'] is List) {
+      _textDocument ??= TextDocument.fromJson(_attributes['delta']);
+      // Migrate to internal td format, drop legacy delta.
+      _attributes['td'] = _textDocument;
+    }
+    if (_attributes['delta'] is Delta) {
+      _textDocument ??= TextDocument.fromDelta(_attributes['delta']);
+      // Migrate to internal td format, drop legacy delta.
+      _attributes['td'] = _textDocument;
+    }
+    _attributes.remove('delta');
     _cacheChildren ??= [];
     int index = 0;
     for (final child in children) {
@@ -56,15 +78,19 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
     }
   }
 
-  /// Parses a [Map] into a [Node]
+  /// Parses a [Map] into a [Node].
   ///
+  /// Reads text from the `delta` key in `data` (legacy serialization
+  /// format) and stores it internally as native `td` format for fast
+  /// runtime access.  At runtime Delta is never used — it only exists
+  /// as a serialization bridge in [toJson] / [fromJson].
   factory Node.fromJson(Map<String, Object> json) {
     return Node(
       id: json['id'] as String? ?? nanoid(6),
       type: json['type'] as String,
-      attributes: Attributes.from(
-        json['data'] as Map? ?? {},
-      ),
+      attributes: json['data'] as Map<String, dynamic>? ??
+          json['attributes'] as Map<String, dynamic>? ??
+          <String, dynamic>{},
       children: (json['children'] as List? ?? []).map(
         (e) => Node.fromJson(Map<String, Object>.from(e)),
       ),
@@ -89,6 +115,8 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
 
   int get length => children.length;
 
+  int get textLength => textDocument?.length ?? -1;
+
   List<Node>? _cacheChildren;
 
   /// Bumped on every children mutation; used to validate the per-child
@@ -100,7 +128,15 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
   int _indexCacheVersion = -1;
   int _cachedIndex = -1;
 
-  // parsed-delta cache, keyed by the identity of the raw attribute list.
+  /// Native treap-backed text storage — the source of truth for rich text.
+  ///
+  /// Lazily initialised from [attributes] on first access via [textDocument]
+  /// or [delta].  Once parsed the treap stays in sync with [attributes]
+  /// through [updateAttributes] and [applyTextDelta].
+  TextDocument? _textDocument;
+
+  // Legacy parsed-delta cache, now keyed on the td/delta attribute identity.
+  // Kept for debugDeltaParseCount instrumentation and backward compat.
   Object? _cachedDeltaRaw;
   Delta? _cachedDelta;
 
@@ -132,6 +168,42 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
   /// Any mutation should be do it using [updateAttributes] method
   Attributes get attributes => _attributes;
 
+  /// The native rich-text content of this node.
+  ///
+  /// Returns `null` for nodes that have no text (containers with only
+  /// children, images, etc.).
+  ///
+  /// Eagerly parsed from the `td` or `delta` attribute during
+  /// construction and kept in sync by [updateAttributes] and
+  /// [applyTextDelta].  All mutations go through the treap directly.
+  ///
+  /// Prefer this over [delta] for new code — all operations are O(log n).
+  TextDocument? get textDocument {
+    if (_textDocument != null) return _textDocument;
+
+    // Lazy fallback: parse from internal td or legacy delta.
+    final tdRaw = _attributes['td'];
+    if (tdRaw is TextDocument) {
+      _textDocument = tdRaw;
+      return _textDocument;
+    }
+    if (tdRaw is Map) {
+      _textDocument =
+          TextDocument.fromNativeJson(Map<String, dynamic>.from(tdRaw));
+      return _textDocument;
+    }
+    final deltaRaw = _attributes['delta'];
+    if (deltaRaw is List) {
+      _textDocument = TextDocument.fromJson(deltaRaw);
+      return _textDocument;
+    }
+    if (deltaRaw is Delta) {
+      _textDocument = TextDocument.fromDelta(deltaRaw);
+      return _textDocument;
+    }
+    return null;
+  }
+
   /// The path of the node.
   Path get path => _computePath();
 
@@ -151,9 +223,66 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
 
   /// Update the attributes of the node.
   ///
+  /// When [attributes] contains a `delta` key the native [TextDocument]
+  /// is re-parsed so that [textDocument] and [delta] stay in sync.
   void updateAttributes(Attributes attributes) {
     _attributes = composeAttributes(this.attributes, attributes) ?? {};
 
+    // If text content changed, re-parse TextDocument.
+    if (attributes.containsKey('td')) {
+      final raw = attributes['td'];
+      if (raw is Map<String, dynamic>) {
+        _textDocument = TextDocument.fromNativeJson(raw);
+      }
+      if (raw is TextDocument) {
+        _textDocument = raw;
+      }
+    }
+    // To maintain some type of retro-compatibility
+    // we check if this element exists
+    if (attributes.containsKey('delta')) {
+      final raw = attributes['delta'];
+      if (raw is List) {
+        _textDocument = TextDocument.fromJson(raw);
+        _attributes['td'] = _textDocument;
+        _attributes.remove('delta');
+      }
+      if (raw is Delta) {
+        _textDocument = TextDocument.fromDelta(raw);
+        _attributes['td'] = _textDocument;
+        _attributes.remove('delta');
+      }
+    }
+
+    // Invalidate the legacy Delta cache so the next [delta] read rebuilds
+    // from the (possibly updated) TextDocument.
+    _cachedDelta = null;
+    _cachedDeltaRaw = null;
+
+    notifyListeners();
+  }
+
+  /// Apply a [Delta] change to this node's text using the native
+  /// [TextDocument] engine.
+  ///
+  /// This is the preferred mutation path for new code — it updates the
+  /// treap in-place in O(log n) and writes the result back to [attributes]
+  /// as native `td` JSON.  Legacy `delta` key in attributes is removed.
+  ///
+  /// If the node has no text yet an empty [TextDocument] is created first.
+  void applyTextDelta(Delta change) {
+    final td = textDocument ?? TextDocument();
+    td.applyDelta(change);
+    _textDocument = td;
+
+    // Sync to attributes — native format only.
+    final merged = Map<String, dynamic>.from(_attributes);
+    merged['td'] = td;
+    merged.remove('delta');
+    _attributes = merged;
+
+    _cachedDelta = null;
+    _cachedDeltaRaw = null;
     notifyListeners();
   }
 
@@ -278,33 +407,31 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
         'children: $children)';
   }
 
-  /// The rich-text content of the node, parsed from the `delta`
-  /// attribute.
+  /// Legacy rich-text accessor — delegates to [textDocument].
   ///
-  /// The parsed [Delta] is cached and invalidated by identity of the raw
-  /// attribute value: [updateAttributes] always composes a new attribute
-  /// map, so edits refresh the cache naturally.
+  /// Returns a [Delta] built from the native [TextDocument].  The result
+  /// is identity-cached on the backing `td` / `delta` attribute so repeated
+  /// reads on the same node are cheap.
   ///
   /// Treat the returned instance as immutable — its operations are shared
   /// with the cache and [Delta.add]/[Delta.insert] merge into the last
   /// operation IN PLACE. To derive a new value use `compose`/`slice`, or
   /// deep-copy first: `Delta.fromJson(node.delta!.toJson())`.
   Delta? get delta {
-    // read the backing map directly: the public [attributes] getter
-    // copies the whole map on every access.
-    final raw = _attributes['delta'];
-    if (raw is! List) {
-      return null;
-    }
-    if (!identical(raw, _cachedDeltaRaw)) {
+    final td = textDocument;
+    if (td == null) return null;
+
+    // Identity-cache on whichever attribute stores the text.
+    final cacheKey = _attributes['td'] ?? _attributes['delta'];
+    if (!identical(cacheKey, _cachedDeltaRaw)) {
       debugDeltaParseCount++;
-      _cachedDeltaRaw = raw;
-      _cachedDelta = Delta.fromJson(raw);
+      _cachedDeltaRaw = cacheKey;
+      _cachedDelta = td.toDelta();
     }
     return _cachedDelta;
   }
 
-  Map<String, Object> toJson() {
+  Map<String, Object> toJson({bool humanReadable = true}) {
     final map = <String, Object>{
       'id': id,
       'type': type,
@@ -316,9 +443,24 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
           )
           .toList(growable: false);
     }
-    if (attributes.isNotEmpty) {
-      // filter the null value
-      map['data'] = attributes..removeWhere((_, value) => value == null);
+
+    // Build the data map from attributes + native text.
+    final data = <String, dynamic>{...attributes};
+
+    // Ensure TextDocument is parsed if we have text attributes.
+    final td = textDocument;
+
+    // Write native text format, drop legacy delta.
+    if (td != null && humanReadable) {
+      data['delta'] = td.toDelta().toJson();
+      data.remove('td');
+    } else if (td != null) {
+      data['td'] = td.toNativeJson();
+      data.remove('delta');
+    }
+
+    if (data.isNotEmpty) {
+      map['data'] = data;
     }
     return map;
   }
@@ -336,7 +478,7 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
     bool preserveId = true,
   }) {
     final node = Node(
-      id: id ?? (!preserveId ? nanoid(6) : this.id),
+      id: id ?? (preserveId ? this.id : nanoid(6)),
       type: type ?? this.type,
       attributes: attributes ?? {...this.attributes},
       children: children ?? [],

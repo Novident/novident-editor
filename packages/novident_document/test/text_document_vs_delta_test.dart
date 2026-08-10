@@ -152,7 +152,7 @@ void main() {
     });
 
     test('native JSON handles empty document', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       final json = doc.toNativeJson();
       expect(json, {'v': 1, 'c': []});
 
@@ -603,7 +603,7 @@ void main() {
 
   group('Native JSON format', () {
     test('empty document round-trip', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       final json = doc.toNativeJson();
       final restored = TextDocument.fromNativeJson(json);
 
@@ -656,7 +656,7 @@ void main() {
     });
 
     test('native JSON with null attributes omits the key', () {
-      final doc = TextDocument.empty();
+      final doc = TextDocument();
       doc.insert(0, 'Plain text');
       doc.insert(10, 'Bold', attributes: {'bold': true});
 

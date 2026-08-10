@@ -59,7 +59,7 @@ class Document {
   /// }
   /// ```
   ///
-  factory Document.fromJson(Map<String, dynamic> json) {
+  factory Document.fromJson(Map<String, Object> json) {
     assert(json['document'] is Map);
 
     final root = Node.fromJson(json['document'] as Map<String, Object>);

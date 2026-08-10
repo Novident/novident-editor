@@ -51,6 +51,7 @@ final registry = NovidentStyleRegistry({
     name: 'Base',
     fontSize: 12,
     fontFamily: 'Arial',
+    textColor: Colors.black,
     indent: NovidentStyleIndent.defaultLineFilter(),
   ),
   'body': NovidentStyleDefinition.nextSame(
@@ -108,9 +109,11 @@ final tableStyle = NovidentTableStyleDefinition(
 ### Font provider
 
 ```dart
+// During debug, you can use these methods to get standard fonts
+// filtered by the platform
 final fontProvider = NovidentFontProvider.fromList(
-  ['Arial', 'Times New Roman', 'Georgia'],
-  defaultFamily: 'Arial',
+  getDefaultFonts(),
+  defaultFamily: getDefaultFont(),
 );
 
 final resolvedFont = fontProvider.resolve('NonExistentFont');

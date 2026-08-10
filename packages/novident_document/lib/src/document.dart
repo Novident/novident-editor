@@ -1,12 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
 
-import 'document_tree.dart';
-import 'node.dart';
-import 'path.dart';
-import 'attributes.dart';
-import 'delta/text_delta.dart';
-
 /// [Document] represents an Novident Editor document structure.
 ///
 /// It stores the root of the document.
@@ -32,8 +26,32 @@ class Document {
   ///           'delta': [
   ///             { 'insert': 'Welcome ' },
   ///             { 'insert': 'to ' },
-  ///             { 'insert': 'Novident!' }
+  ///             { 'insert': 'Novident!', 'attributes': { 'bold': true } }
   ///           ]
+  ///         }
+  ///       }
+  ///     ]
+  ///   }
+  /// }
+  /// ```
+  ///
+  /// _Another example without deltas:_
+  /// ```
+  /// {
+  ///   'document': {
+  ///     'type': 'page',
+  ///     'children': [
+  ///       {
+  ///         'type': 'paragraph',
+  ///         'data': {
+  ///           'td': {
+  ///             'v': 1,
+  ///             'c': [
+  ///               { 't': 'Welcome ' },
+  ///               { 't': 'to ' },
+  ///               { 't': 'Novident!', 'a': { 'bold': true } }
+  ///             ],
+  ///           }
   ///         }
   ///       }
   ///     ]
@@ -44,8 +62,7 @@ class Document {
   factory Document.fromJson(Map<String, dynamic> json) {
     assert(json['document'] is Map);
 
-    final document = Map<String, Object>.from(json['document'] as Map);
-    final root = Node.fromJson(document);
+    final root = Node.fromJson(json['document'] as Map<String, Object>);
     return Document(root: root);
   }
 
@@ -58,7 +75,7 @@ class Document {
               Node(
                 type: 'paragraph',
                 attributes: {
-                  'delta': (Delta()..insert('')).toJson(),
+                  'td': TextDocument()..pushText(''),
                 },
               )
             ]

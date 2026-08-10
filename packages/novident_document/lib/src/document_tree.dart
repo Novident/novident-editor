@@ -514,10 +514,7 @@ class DocumentTree {
   Map<String, Object> toJson() {
     if (_rootNode == null) {
       return {
-        'document': <String, Object>{
-          'type': 'page',
-          'children': <Object>[]
-        }
+        'document': <String, Object>{'type': 'page', 'children': <Object>[]}
       };
     }
     return {'document': _nodeToJson(_rootNode!)};

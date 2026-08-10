@@ -116,7 +116,9 @@ void main() async {
               {
                 'type': 'paragraph',
                 'data': {
-                  'delta': [{'insert': ''}],
+                  'delta': [
+                    {'insert': ''}
+                  ],
                 },
               }
             ],
@@ -133,7 +135,9 @@ void main() async {
               {
                 'type': 'paragraph',
                 'data': {
-                  'delta': [{'insert': 'Welcome to Novident!'}],
+                  'delta': [
+                    {'insert': 'Welcome to Novident!'}
+                  ],
                 },
               }
             ],
@@ -153,7 +157,9 @@ void main() async {
           {
             'type': 'paragraph',
             'data': {
-              'delta': [{'insert': firstLine}],
+              'delta': [
+                {'insert': firstLine}
+              ],
             },
           }
         ],
@@ -176,19 +182,25 @@ void main() async {
           {
             'type': 'paragraph',
             'data': {
-              'delta': [{'insert': firstLine}],
+              'delta': [
+                {'insert': firstLine}
+              ],
             },
             'children': [
               {
                 'type': 'paragraph',
                 'data': {
-                  'delta': [{'insert': firstChild}],
+                  'delta': [
+                    {'insert': firstChild}
+                  ],
                 },
               },
               {
                 'type': 'paragraph',
                 'data': {
-                  'delta': [{'insert': secondChild}],
+                  'delta': [
+                    {'insert': secondChild}
+                  ],
                 },
               }
             ],
@@ -411,7 +423,9 @@ void main() async {
 
     test('toJson round-trip preserves structure', () {
       final doc = Document.blank();
-      doc.insert([0], [
+      doc.insert([
+        0
+      ], [
         Node(
           type: 'paragraph',
           id: 'p1',
@@ -420,7 +434,9 @@ void main() async {
           },
         ),
       ]);
-      doc.insert([1], [
+      doc.insert([
+        1
+      ], [
         Node(
           type: 'paragraph',
           id: 'p2',
@@ -451,6 +467,7 @@ List<Node> _collectAll(Node root) {
       walk(child);
     }
   }
+
   walk(root);
   return result;
 }

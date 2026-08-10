@@ -75,8 +75,7 @@ void expectTreeEquivalence(Node legacyRoot, DocumentTree tree) {
   final legacyAll = _collectAllLegacy(legacyRoot);
   final treeAll = tree.allNodes;
 
-  expect(treeAll.length, legacyAll.length,
-      reason: 'Node count mismatch');
+  expect(treeAll.length, legacyAll.length, reason: 'Node count mismatch');
 
   // Compare each node's path, parent, children by ID.
   for (final legacyNode in legacyAll) {
@@ -118,6 +117,7 @@ List<Node> _collectAllLegacy(Node root) {
       walk(child);
     }
   }
+
   walk(root);
   return result;
 }
@@ -521,7 +521,8 @@ void main() {
       final tree = treeFromLegacy(root);
       treeStopwatch.stop();
 
-      debugPrint('CONSTRUCTION: legacy=${legacyStopwatch.elapsedMilliseconds}ms, '
+      debugPrint(
+          'CONSTRUCTION: legacy=${legacyStopwatch.elapsedMilliseconds}ms, '
           'tree=${treeStopwatch.elapsedMilliseconds}ms');
       debugPrint('TREE SIZE: ${tree.size} nodes, ${legacyAll.length} legacy');
 
@@ -583,7 +584,8 @@ void main() {
       final treeAll = tree.allNodes;
       final legacyAll = _collectAllLegacy(root);
       final rng = Random(123);
-      final sampleIndices = List.generate(50, (_) => rng.nextInt(treeAll.length));
+      final sampleIndices =
+          List.generate(50, (_) => rng.nextInt(treeAll.length));
 
       // Legacy: first path after mutation triggers _reindexChildren O(n).
       final legacyStopwatch = Stopwatch()..start();
@@ -726,8 +728,7 @@ void main() {
           'tree=${treeStopwatch.elapsedMicroseconds}us');
 
       final legacyUs = max(1, legacyStopwatch.elapsedMicroseconds);
-      expect(treeStopwatch.elapsedMicroseconds,
-          lessThan(legacyUs ~/ 10),
+      expect(treeStopwatch.elapsedMicroseconds, lessThan(legacyUs ~/ 10),
           reason: 'DocumentTree.byId (O(1)) should be '
               'at least 10x faster than O(n) tree scan');
     });
@@ -735,7 +736,8 @@ void main() {
     test('indexOf: O(log n) treap walk', () {
       final (root, _) = makeWideTree(5000, seed: 13);
       final tree = treeFromLegacy(root);
-      final nodes = tree.allNodes.where((n) => tree.parentOf(n) != null).toList();
+      final nodes =
+          tree.allNodes.where((n) => tree.parentOf(n) != null).toList();
 
       // Legacy: indexOf is embedded in path computation.
       int legacyIndexOf(Node node) => node.path.last;
@@ -816,7 +818,8 @@ void main() {
 
       // For O(k) array inserts, time/size ratio should be roughly constant
       // (linear). The key metric: all complete in reasonable time.
-      debugPrint('SCALING (insert 50 ops, O(k) array): sizes=$sizes, times=$times us');
+      debugPrint(
+          'SCALING (insert 50 ops, O(k) array): sizes=$sizes, times=$times us');
 
       final ratios = <double>[];
       for (var i = 0; i < sizes.length; i++) {

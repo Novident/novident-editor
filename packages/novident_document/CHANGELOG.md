@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3
+
+* feat: start of replace Delta with a new optimized version `TextDocument` by @CatHood0 in https://github.com/Novident/novident-editor/pull/23
+* feat: support for fast indexation and replaced delta with text document by @CatHood0 in https://github.com/Novident/novident-editor/pull/24
+
 ## 1.0.2
 
 * Feat: replaced `node.attributes` to return a direct `Map` instance, instead copies. It's NOT recommended to use for mutation. All the warnings is inside the method documentation. Use `updateAttributes` instead for any change to maintain the consistency.

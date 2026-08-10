@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 
 import 'document_tree.dart';
 import 'node.dart';
@@ -18,6 +19,28 @@ class Document {
   }) : tree = DocumentTree.fromRoot(root);
 
   /// Constructs a [Document] from a JSON structure.
+  ///
+  /// _Example of a [Document] in JSON format:_
+  /// ```
+  /// {
+  ///   'document': {
+  ///     'type': 'page',
+  ///     'children': [
+  ///       {
+  ///         'type': 'paragraph',
+  ///         'data': {
+  ///           'delta': [
+  ///             { 'insert': 'Welcome ' },
+  ///             { 'insert': 'to ' },
+  ///             { 'insert': 'Novident!' }
+  ///           ]
+  ///         }
+  ///       }
+  ///     ]
+  ///   }
+  /// }
+  /// ```
+  ///
   factory Document.fromJson(Map<String, dynamic> json) {
     assert(json['document'] is Map);
 
@@ -141,11 +164,23 @@ class Document {
   ///
   /// Uses the native [TextDocument.applyDelta] path for O(log n)
   /// mutation instead of the legacy compose + re-serialize round-trip.
+  ///
+  /// Only use this to apply specific changes, and not the entire delta
+  /// content
   bool updateText(Path path, Delta delta, {String? id}) {
     if (path.isEmpty) return false;
     final target = tree.byId(id ?? '') ?? tree.nodeAtPath(path);
     if (target == null) return false;
     target.applyTextDelta(delta);
+    return true;
+  }
+
+  /// Updates the [Node] with [TextDocument] at the given [Path].
+  bool updateTextDocument(Path path, TextDocument textDocument, {String? id}) {
+    if (path.isEmpty) return false;
+    final target = tree.byId(id ?? '') ?? tree.nodeAtPath(path);
+    if (target == null) return false;
+    target.updateAttributes({'td': textDocument});
     return true;
   }
 

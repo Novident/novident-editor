@@ -237,22 +237,20 @@ final class Node extends ChangeNotifier with LinkedListEntry<Node> {
       if (raw is TextDocument) {
         _textDocument = raw;
       }
-    }
-    // To maintain some type of retro-compatibility
-    // we check if this element exists
-    if (attributes.containsKey('delta')) {
+    } else if (attributes.containsKey('delta')) {
+      // To maintain some type of retro-compatibility
+      // we check if this element exists
       final raw = attributes['delta'];
       if (raw is List) {
         _textDocument = TextDocument.fromJson(raw);
         _attributes['td'] = _textDocument;
-        _attributes.remove('delta');
       }
       if (raw is Delta) {
         _textDocument = TextDocument.fromDelta(raw);
         _attributes['td'] = _textDocument;
-        _attributes.remove('delta');
       }
     }
+    _attributes.remove('delta');
 
     // Invalidate the legacy Delta cache so the next [delta] read rebuilds
     // from the (possibly updated) TextDocument.

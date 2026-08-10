@@ -1,5 +1,5 @@
 name: novident_editor_styles
-version: 1.0.0
+version: 1.0.1
 description: >-
   Style system for Novident Editor — reusable style definitions,
   table styles, registry, and font provider.

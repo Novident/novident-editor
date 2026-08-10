@@ -54,8 +54,8 @@ final isDesktopOrWeb = UniversalPlatform.isDesktopOrWeb;
 ```dart
 import 'package:novident_editor_core/novident_editor_core.dart';
 
-final start = Position(path: [0, 1], offset: 5);
-final end = Position(path: [0, 1], offset: 12);
+final start = Position(path: [0, 1], offset: 5, id: null);
+final end = Position(path: [0, 1], offset: 12, id: null);
 
 final collapsed = Selection.collapsed(start);
 final range = Selection(start: start, end: end);

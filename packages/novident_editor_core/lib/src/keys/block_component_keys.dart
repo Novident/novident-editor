@@ -4,6 +4,11 @@
 /// for more information, please refer to https://quilljs.com/docs/delta/
 const blockComponentDelta = 'delta';
 
+/// the TextDocument of the block component
+///
+/// its value is a string of json format, e.g. '{"v": 1, "c": [{"t": "Hello World"}]}'
+const blockComponentTextDocument = 'td';
+
 /// the background of the block component
 ///
 /// its value is a string of hex code, e.g. '#00000000'
@@ -51,7 +56,9 @@ class HeadingBlockKeys {
   /// The value is a int.
   static const String level = 'level';
 
+  @Deprecated("Use textDoc instead")
   static const String delta = blockComponentDelta;
+  static const String textDoc = blockComponentTextDocument;
 
   static const String backgroundColor = blockComponentBackgroundColor;
 
@@ -191,7 +198,9 @@ class TodoListBlockKeys {
   /// The value is a boolean.
   static const String checked = 'checked';
 
+  @Deprecated("Use textDoc instead")
   static const String delta = blockComponentDelta;
+  static const String textDoc = blockComponentTextDocument;
 
   static const String backgroundColor = blockComponentBackgroundColor;
 
@@ -201,7 +210,9 @@ class TodoListBlockKeys {
 class QuoteBlockKeys {
   const QuoteBlockKeys._();
   static const String type = 'quote';
+  @Deprecated("Use textDoc instead")
   static const String delta = blockComponentDelta;
+  static const String textDoc = blockComponentTextDocument;
   static const String backgroundColor = blockComponentBackgroundColor;
   static const String textDirection = blockComponentTextDirection;
 }
@@ -211,7 +222,9 @@ class BulletedListBlockKeys {
 
   static const String type = 'bulleted_list';
 
+  @Deprecated("Use textDoc instead")
   static const String delta = blockComponentDelta;
+  static const String textDoc = blockComponentTextDocument;
 
   static const String backgroundColor = blockComponentBackgroundColor;
 
@@ -222,7 +235,9 @@ class NumberedListBlockKeys {
   const NumberedListBlockKeys._();
   static const String type = 'numbered_list';
   static const String number = 'number';
+  @Deprecated("Use textDoc instead")
   static const String delta = blockComponentDelta;
+  static const String textDoc = blockComponentTextDocument;
   static const String backgroundColor = blockComponentBackgroundColor;
   static const String textDirection = blockComponentTextDirection;
 }

@@ -5,10 +5,11 @@ import 'package:novident_editor_core/novident_editor_core.dart';
 extension NodeSelectionExtension on Node {
   /// Returns `true` when this node's path falls inside [selection].
   bool inSelection(Selection selection) {
+    final nodePath = path;
     if (selection.start.path <= selection.end.path) {
-      return selection.start.path <= path && path <= selection.end.path;
+      return selection.start.path <= nodePath && nodePath <= selection.end.path;
     } else {
-      return selection.end.path <= path && path <= selection.start.path;
+      return selection.end.path <= nodePath && nodePath <= selection.start.path;
     }
   }
 

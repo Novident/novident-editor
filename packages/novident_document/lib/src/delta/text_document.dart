@@ -325,12 +325,13 @@ int _plainTextRange(
 /// final json = doc.toJson(); // legacy-compatible
 /// ```
 class TextDocument {
-  /// All the supported format versions are stored here
-  static const Set<int> _versions = <int>{1};
+  /// All the supported format versions are stored here.
+  /// Versions >= [currentVersion] are accepted for forward compatibility.
+  static const int _currentVersion = 1;
   _TreapNode? _root;
 
   /// Creates an empty document.
-  TextDocument.empty() : _root = null;
+  TextDocument() : _root = null;
 
   /// Build a [TextDocument] from a legacy [Delta].
   ///
@@ -374,12 +375,12 @@ class TextDocument {
   /// ```
   factory TextDocument.fromNativeJson(Map<String, dynamic> json) {
     final version = json['v'] as int?;
-    if (version == null || !_versions.contains(version)) {
+    if (version == null || version < _currentVersion) {
       throw FormatException('Unsupported native format version: $version');
     }
     final rawChunks = json['c'] as List<dynamic>?;
     if (rawChunks == null) {
-      return TextDocument.empty();
+      return TextDocument();
     }
     final chunks = rawChunks.map((c) {
       final map = c as Map<String, dynamic>;
@@ -474,6 +475,20 @@ class TextDocument {
   /// Throws [RangeError] if [position] is out of bounds.
   /// Does nothing if [text] is empty.
   void insert(int position, String text, {Attributes? attributes}) {
+    _assertInsertBounds(position, 'insert');
+    if (text.isEmpty) return;
+
+    final splitResult = _split(_root, position);
+    _root = _merge(
+      _merge(splitResult.left,
+          _TreapNode(TextChunk(text, attributes: attributes))),
+      splitResult.right,
+    );
+  }
+
+  /// Insert [text] at with optional [attributes].
+  void pushText(String text, {Attributes? attributes}) {
+    final position = (length - 1).clamp(0, length);
     _assertInsertBounds(position, 'insert');
     if (text.isEmpty) return;
 
@@ -602,7 +617,7 @@ class TextDocument {
       }
       chunkList.add(entry);
     }
-    return {'v': 1, 'c': chunkList};
+    return {'v': _currentVersion, 'c': chunkList};
   }
 
   /// Apply a legacy [Delta] change to this document.

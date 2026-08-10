@@ -1,10 +1,5 @@
-import 'dart:collection';
-
-import 'node.dart';
-import 'node_iterator.dart';
-import 'path.dart';
-import 'attributes.dart';
-import 'delta/text_delta.dart';
+import 'package:flutter/foundation.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
 
 /// [Document] represents an Novident Editor document structure.
 ///
@@ -15,7 +10,7 @@ import 'delta/text_delta.dart';
 class Document {
   Document({
     required this.root,
-  });
+  }) : tree = DocumentTree.fromRoot(root);
 
   /// Constructs a [Document] from a JSON structure.
   ///
@@ -31,7 +26,7 @@ class Document {
   ///           'delta': [
   ///             { 'insert': 'Welcome ' },
   ///             { 'insert': 'to ' },
-  ///             { 'insert': 'Novident!' }
+  ///             { 'insert': 'Novident!', 'attributes': { 'bold': true } }
   ///           ]
   ///         }
   ///       }
@@ -40,19 +35,38 @@ class Document {
   /// }
   /// ```
   ///
-  factory Document.fromJson(Map<String, dynamic> json) {
+  /// _Another example without deltas:_
+  /// ```
+  /// {
+  ///   'document': {
+  ///     'type': 'page',
+  ///     'children': [
+  ///       {
+  ///         'type': 'paragraph',
+  ///         'data': {
+  ///           'td': {
+  ///             'v': 1,
+  ///             'c': [
+  ///               { 't': 'Welcome ' },
+  ///               { 't': 'to ' },
+  ///               { 't': 'Novident!', 'a': { 'bold': true } }
+  ///             ],
+  ///           }
+  ///         }
+  ///       }
+  ///     ]
+  ///   }
+  /// }
+  /// ```
+  ///
+  factory Document.fromJson(Map<String, Object> json) {
     assert(json['document'] is Map);
 
-    final document = Map<String, Object>.from(json['document'] as Map);
-    final root = Node.fromJson(document);
+    final root = Node.fromJson(json['document'] as Map<String, Object>);
     return Document(root: root);
   }
 
   /// Creates a blank [Document] containing an empty root [Node].
-  ///
-  /// If [withInitialText] is true, the document will contain an empty
-  /// paragraph [Node].
-  ///
   factory Document.blank({bool withInitialText = false}) {
     final root = Node(
       type: 'page',
@@ -61,36 +75,40 @@ class Document {
               Node(
                 type: 'paragraph',
                 attributes: {
-                  'delta': (Delta()..insert('')).toJson(),
+                  'td': TextDocument()..pushText(''),
                 },
               )
             ]
           : [],
     );
-    return Document(
-      root: root,
-    );
+    return Document(root: root);
   }
 
   /// The root [Node] of the [Document]
   final Node root;
 
-  /// First node of the document.
-  Node? get first => root.children.firstOrNull;
+  /// Fast index for O(1)/O(log n) lookups. Kept in sync with [root].
+  @visibleForTesting
+  final DocumentTree tree;
 
-  /// Last node of the document.
+  /// First node of the document. O(1).
+  Node? get first => tree.childAt(root, 0);
+
+  /// Last node of the document. O(depth).
   Node? get last {
-    Node? current = root.children.lastOrNull;
-    while (current != null && current.children.isNotEmpty) {
-      current = current.children.last;
+    final rootKids = tree.childrenOf(root);
+    if (rootKids.isEmpty) return null;
+    Node? current = rootKids.last;
+    while (true) {
+      final kids = tree.childrenOf(current!);
+      if (kids.isEmpty) return current;
+      current = kids.last;
     }
-    return current;
   }
 
   /// Must call this method when the [Document] is no longer needed.
   void dispose() {
-    final nodes = NodeIterator(document: this, startNode: root).toList();
-    for (final node in nodes) {
+    for (final node in tree.allNodes) {
       node.dispose();
     }
   }
@@ -100,105 +118,105 @@ class Document {
     return root.childAtPath(path);
   }
 
-  /// Inserts a [Node]s at the given [Path].
-  bool insert(Path path, Iterable<Node> nodes) {
-    if (path.isEmpty || nodes.isEmpty) {
-      return false;
-    }
+  /// Inserts [Node]s at the given [Path].
+  ///
+  /// Updates both the legacy [Node] tree AND the [DocumentTree] index.
+  bool insert(Path path, Iterable<Node> nodes, {String id = ''}) {
+    if (path.isEmpty || nodes.isEmpty) return false;
 
-    final target = nodeAtPath(path);
-    if (target != null) {
-      for (final node in nodes) {
-        target.insertBefore(node);
-      }
-      return true;
-    }
+    final parent = tree.byId(id) ?? nodeAtPath(path.parent);
+    if (parent == null) return false;
 
-    final parent = nodeAtPath(path.parent);
-    if (parent != null) {
-      for (var i = 0; i < nodes.length; i++) {
-        parent.insert(nodes.elementAt(i), index: path.last + i);
-      }
-      return true;
-    }
+    for (var i = 0; i < nodes.length; i++) {
+      final child = nodes.elementAt(i);
+      final index = path.last + i;
 
-    return false;
+      // 1. Update legacy tree.
+      parent.insert(child, index: index);
+
+      // 2. Sync DocumentTree index.
+      tree.syncInsert(parent, child, index);
+    }
+    return true;
   }
 
   /// Deletes the [Node]s at the given [Path].
-  bool delete(Path path, [int length = 1]) {
-    if (path.isEmpty || length <= 0) {
-      return false;
-    }
-    var target = nodeAtPath(path);
-    if (target == null) {
-      return false;
-    }
+  ///
+  /// Updates both the legacy [Node] tree AND the [DocumentTree] index.
+  bool delete(Path path, [int length = 1, String id = '']) {
+    if (path.isEmpty || length <= 0) return false;
+
+    var target = tree.byId(id) ?? nodeAtPath(path);
+    if (target == null) return false;
+
     while (target != null && length > 0) {
       final next = target.next;
+      final parent = target.parent!;
+
+      // 1. Update legacy tree.
       target.unlink();
+
+      // 2. Sync DocumentTree index.
+      tree.syncRemove(parent, target);
+
       target = next;
       length--;
     }
     return true;
   }
 
-  /// Updates the [Node] at the given [Path]
+  /// Updates the [Node] at the given [Path].
   bool update(Path path, Attributes attributes) {
-    // if the path is empty, it means the root node.
     if (path.isEmpty) {
       root.updateAttributes(attributes);
       return true;
     }
     final target = nodeAtPath(path);
-    if (target == null) {
-      return false;
-    }
+    if (target == null) return false;
     target.updateAttributes(attributes);
     return true;
   }
 
-  /// Updates the [Node] with [Delta] at the given [Path]
-  bool updateText(Path path, Delta delta) {
-    if (path.isEmpty) {
-      return false;
-    }
-    final target = nodeAtPath(path);
-    final targetDelta = target?.delta;
-    if (target == null || targetDelta == null) {
-      return false;
-    }
-    target.updateAttributes(
-        {'delta': (targetDelta.compose(delta)).toJson()});
+  /// Updates the [Node] with [Delta] at the given [Path].
+  ///
+  /// Uses the native [TextDocument.applyDelta] path for O(log n)
+  /// mutation instead of the legacy compose + re-serialize round-trip.
+  ///
+  /// Only use this to apply specific changes, and not the entire delta
+  /// content
+  bool updateText(Path path, Delta delta, {String? id}) {
+    if (path.isEmpty) return false;
+    final target = tree.byId(id ?? '') ?? tree.nodeAtPath(path);
+    if (target == null) return false;
+    target.applyTextDelta(delta);
     return true;
   }
 
-  /// Returns whether the root [Node] does not contain
-  /// any text.
-  ///
+  /// Updates the [Node] with [TextDocument] at the given [Path].
+  bool updateTextDocument(Path path, TextDocument textDocument, {String? id}) {
+    if (path.isEmpty) return false;
+    final target = tree.byId(id ?? '') ?? tree.nodeAtPath(path);
+    if (target == null) return false;
+    target.updateAttributes({'td': textDocument});
+    return true;
+  }
+
+  /// Returns whether the root [Node] does not contain any text.
   bool get isEmpty {
-    if (root.children.isEmpty) {
-      return true;
-    }
+    final kids = tree.childrenOf(root);
+    if (kids.isEmpty) return true;
+    if (kids.length > 1) return false;
 
-    if (root.children.length > 1) {
-      return false;
-    }
-
-    final node = root.children.first;
+    final node = kids.first;
     final delta = node.delta;
     if (delta != null && (delta.isEmpty || delta.toPlainText().isEmpty)) {
       return true;
     }
-
     return false;
   }
 
   /// Encodes the [Document] into a JSON structure.
-  ///
   Map<String, Object> toJson() {
-    return {
-      'document': root.toJson(),
-    };
+    return {'document': root.toJson()};
   }
 }

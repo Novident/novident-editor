@@ -121,34 +121,7 @@ class VimSelectionRenderer implements SelectionRenderer {
       return fallback.onHorizontalMove(ctx, byWord: byWord);
     }
 
-    // In visual mode, allow full horizontal movement (selection expansion).
-    if (controller.mode == VimMode.visual) {
-      return fallback.onHorizontalMove(ctx, byWord: byWord);
-    }
-
-    // In normal mode ('h' / 'l'): do NOT cross line boundaries.
-    // Let the fallback compute the candidate, then validate it stays
-    // within the same line.
-    final candidate = fallback.onHorizontalMove(ctx, byWord: byWord);
-    if (candidate == null) return null;
-
-    final rp = ctx.renderParagraph ?? ctx.delegate.getRenderParagraph();
-    if (rp == null) return candidate; // can't validate, trust fallback
-
-    final tp = rp.textPainter;
-    final tpCurrent = ctx.currentOffset + ctx.textShift;
-    final tpCandidate = candidate.offset + ctx.textShift;
-
-    // Same line? Compare the line range of both positions.
-    final currentLine = tp.getLineBoundary(TextPosition(offset: tpCurrent));
-    final candidateLine = tp.getLineBoundary(TextPosition(offset: tpCandidate));
-    if (currentLine.start != candidateLine.start) {
-      return null; // blocked: would cross line boundary
-    }
-
-    // Update preferred column from the new position.
-    _preferredColumnDx = ctx.delegate.getCaretLocalDx(candidate.offset);
-    return candidate;
+    return fallback.onHorizontalMove(ctx, byWord: byWord);
   }
 
   @override
@@ -365,13 +338,13 @@ class VimBlockCursor extends StatefulWidget {
     required this.rect,
     required this.color,
     this.shouldBlink = false,
-    this.blinkingInterval = 0.5,
+    this.blinkingInterval = 500,
   });
 
   final Rect rect;
   final Color color;
   final bool shouldBlink;
-  final double blinkingInterval;
+  final int blinkingInterval;
 
   @override
   State<VimBlockCursor> createState() => _VimBlockCursorState();
@@ -403,7 +376,7 @@ class _VimBlockCursorState extends State<VimBlockCursor> {
 
   Timer _initTimer() {
     return Timer.periodic(
-      Duration(milliseconds: (widget.blinkingInterval * 1000).toInt()),
+      Duration(milliseconds: widget.blinkingInterval),
       (timer) => setState(() => showCursor = !showCursor),
     );
   }
@@ -420,13 +393,10 @@ class _VimBlockCursorState extends State<VimBlockCursor> {
   Widget build(BuildContext context) {
     final color =
         (widget.shouldBlink && !showCursor) ? Colors.transparent : widget.color;
-    final size = widget.rect.size;
     return Positioned.fromRect(
       rect: widget.rect,
       child: IgnorePointer(
         child: Container(
-          width: size.width,
-          height: size.height,
           color: color,
         ),
       ),

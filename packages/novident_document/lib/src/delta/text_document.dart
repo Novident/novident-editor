@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:flutter/services.dart';
+
 import '../attributes.dart';
 import 'text_delta.dart';
 
@@ -333,6 +335,8 @@ class TextDocument {
   /// Creates an empty document.
   TextDocument() : _root = null;
 
+  TextDocument.from(TextDocument textDocument) : _root = textDocument._root;
+
   /// Build a [TextDocument] from a legacy [Delta].
   ///
   /// Only [TextInsert] operations are consumed — the document
@@ -488,7 +492,7 @@ class TextDocument {
 
   /// Insert [text] at with optional [attributes].
   void pushText(String text, {Attributes? attributes}) {
-    final position = (length - 1).clamp(0, length);
+    final position = length;
     _assertInsertBounds(position, 'insert');
     if (text.isEmpty) return;
 
@@ -686,6 +690,101 @@ class TextDocument {
         '$method: range exceeds document',
       );
     }
+  }
+
+  /// Maximum grapheme cluster size in code units.
+  ///
+  /// The longest known grapheme cluster in Unicode (family emoji with
+  /// ZWJ sequences) spans ~11 code units. A window of 32 provides
+  /// ample safety margin.
+  static const int _runeWindowSize = 32;
+
+  /// Returns the position of the previous grapheme cluster boundary.
+  ///
+  /// Since Dart strings are UTF-16, a single user-perceived character
+  /// (grapheme cluster) may span multiple code units. Moving the cursor
+  /// with `pos - 1` would land inside a multi-unit character.
+  ///
+  /// Uses a sliding window over the treap so the operation is O(log n)
+  /// rather than O(n). Only the text immediately around [pos] is
+  /// materialised via [plainText].
+  ///
+  /// Returns -1 when [pos] is 0 or the document is empty.
+  int prevRunePosition(int pos, {int runeWindowSize = _runeWindowSize}) {
+    if (pos == 0 || _root == null) return -1;
+    assert(
+      runeWindowSize >= _runeWindowSize,
+      'runeWindowSize must no be less than $_runeWindowSize" to provide a safe search for previous runes',
+    );
+
+    final len = length;
+    int windowStart = (pos - runeWindowSize).clamp(0, pos);
+    // Extend the window past pos so we never cut a multi-unit
+    // character in half (plainText would otherwise end at pos
+    // which might be inside a surrogate pair or grapheme cluster).
+    int windowEnd = (pos + runeWindowSize).clamp(0, len);
+    String window = plainText(windowStart, windowEnd);
+    CharacterBoundary boundary = CharacterBoundary(window);
+    final relativePos = pos - windowStart;
+    int? result = boundary.getLeadingTextBoundaryAt(relativePos - 1);
+
+    // If the result lands on the very first code unit of the window
+    // AND there is still text before the window, the grapheme cluster
+    // may extend further back. Expand the window and retry.
+    if (result == 0 && windowStart > 0) {
+      windowStart = (pos - runeWindowSize * 2).clamp(0, pos);
+      windowEnd = (pos + runeWindowSize * 2).clamp(0, len);
+      window = plainText(windowStart, windowEnd);
+      boundary = CharacterBoundary(window);
+      final expandedRelativePos = pos - windowStart;
+      result = boundary.getLeadingTextBoundaryAt(expandedRelativePos - 1);
+    }
+
+    return windowStart + (result ?? 0);
+  }
+
+  /// Returns the position of the next grapheme cluster boundary.
+  ///
+  /// Mirrors [prevRunePosition] in the forward direction. The returned
+  /// value is the code-unit index where the next user-perceived
+  /// character begins (or `length` when [pos] is at or beyond the
+  /// last cluster).
+  ///
+  /// Complexity: O(log n) via sliding window.
+  int nextRunePosition(int pos, {int runeWindowSize = _runeWindowSize}) {
+    if (_root == null) return 0;
+    assert(
+      runeWindowSize >= _runeWindowSize,
+      'runeWindowSize must no be less than $_runeWindowSize" to provide a safe search for previous runes',
+    );
+
+    final len = length;
+    if (pos >= len) return len;
+
+    // Start the window a safe distance before pos so that even if
+    // pos lands inside a multi-unit grapheme cluster the window
+    // captures the full cluster.  CharacterBoundary requires a
+    // well-formed string — a window that starts with a lone trailing
+    // surrogate would throw.
+    final safeStart = (pos - runeWindowSize).clamp(0, pos);
+    int windowEnd = (pos + runeWindowSize).clamp(0, len);
+    String window = plainText(safeStart, windowEnd);
+    CharacterBoundary boundary = CharacterBoundary(window);
+    final relativePos = pos - safeStart;
+    int? result = boundary.getTrailingTextBoundaryAt(relativePos);
+
+    // If the result lands on the very last code unit of the window
+    // AND there is still text after the window, expand and retry.
+    if (result != null && result == window.length && windowEnd < len) {
+      windowEnd = (pos + runeWindowSize * 2).clamp(0, len);
+      window = plainText(safeStart, windowEnd);
+      boundary = CharacterBoundary(window);
+      result = boundary.getTrailingTextBoundaryAt(relativePos);
+    }
+
+    // result is relative to safeStart; convert to absolute document
+    // position.
+    return safeStart + (result ?? window.length);
   }
 
   @override

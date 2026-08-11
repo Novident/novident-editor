@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
 
@@ -719,6 +720,443 @@ void main() {
       expect(doc.length, 0);
       expect(doc.isEmpty, isTrue);
       expect(doc.chunks, isEmpty);
+    });
+  });
+
+  group('prevRunePosition', () {
+    test('empty document returns -1', () {
+      final doc = TextDocument();
+      expect(doc.prevRunePosition(0), -1);
+      expect(doc.prevRunePosition(5), -1);
+    });
+
+    test('position 0 returns -1 regardless of content', () {
+      final doc = TextDocument()..pushText('Hello');
+      expect(doc.prevRunePosition(0), -1);
+    });
+
+    test('simple ASCII — one char back', () {
+      final doc = TextDocument()..pushText('ABCDE');
+      expect(doc.prevRunePosition(1), 0);
+      expect(doc.prevRunePosition(2), 1);
+      expect(doc.prevRunePosition(3), 2);
+      expect(doc.prevRunePosition(4), 3);
+      expect(doc.prevRunePosition(5), 4);
+    });
+
+    test('simple ASCII — stepping backwards through entire doc', () {
+      final doc = TextDocument()..pushText('Hello World');
+      var pos = doc.length;
+      final positions = <int>[];
+      while (pos > 0) {
+        pos = doc.prevRunePosition(pos);
+        positions.add(pos);
+      }
+      expect(positions, [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
+      expect(doc.prevRunePosition(0), -1);
+    });
+
+    test('emoji (2 code units) — jumps to previous cluster start', () {
+      // '😀' is U+1F600 → surrogate pair, 2 code units
+      final doc = TextDocument()..pushText('a😀b');
+      // prevRunePosition should respect grapheme clusters.
+      // Verify against CharacterBoundary on the full text.
+      final fullText = doc.plainText();
+      final ref = CharacterBoundary(fullText);
+      for (var pos = 1; pos <= doc.length; pos++) {
+        final expected = ref.getLeadingTextBoundaryAt(pos - 1) ?? 0;
+        expect(doc.prevRunePosition(pos), expected,
+            reason: 'prevRunePosition($pos)');
+      }
+    });
+
+    test('emoji with skin tone — jumps to previous cluster start', () {
+      // '👍🏽' = 👍 + skin-tone modifier.
+      // Whether this is 1 or 2 grapheme clusters depends on the
+      // Flutter / Unicode version.  Compare against CharacterBoundary.
+      final doc = TextDocument()..pushText('a👍🏽b');
+      final fullText = doc.plainText();
+      final ref = CharacterBoundary(fullText);
+      for (var pos = 1; pos <= doc.length; pos++) {
+        final expected = ref.getLeadingTextBoundaryAt(pos - 1) ?? 0;
+        expect(doc.prevRunePosition(pos), expected,
+            reason: 'prevRunePosition($pos)');
+      }
+    });
+
+    test('family emoji ZWJ sequence — jumps to previous cluster start', () {
+      // 👨‍👩‍👧‍👦 = 👨 + ZWJ + 👩 + ZWJ + 👧 + ZWJ + 👦 (11 code units).
+      // CharacterBoundary may treat this as 1 or multiple clusters.
+      const family = '👨‍👩‍👧‍👦';
+      final doc = TextDocument()..pushText('x${family}y');
+      final fullText = doc.plainText();
+      final ref = CharacterBoundary(fullText);
+      for (var pos = 1; pos <= doc.length; pos++) {
+        final expected = ref.getLeadingTextBoundaryAt(pos - 1) ?? 0;
+        expect(doc.prevRunePosition(pos), expected,
+            reason: 'prevRunePosition($pos)');
+      }
+    });
+
+    test('mixed ASCII and emoji — walking backwards', () {
+      final doc = TextDocument()..pushText('Hello 😀 World 🌍!');
+      // Walk backwards from end and verify each step lands on a
+      // cluster boundary (not inside a multi-unit character).
+      var pos = doc.length;
+      final visited = <int>[];
+      while (pos > 0) {
+        pos = doc.prevRunePosition(pos);
+        visited.add(pos);
+      }
+      // Reconstruct text by slicing at each visited position.
+      // Should match the original text character by character.
+      final chars = <String>[];
+      for (var i = 0; i < visited.length; i++) {
+        final start = visited[visited.length - 1 - i];
+        final end = i < visited.length - 1
+            ? visited[visited.length - 2 - i]
+            : doc.length;
+        chars.add(doc.plainText(start, end));
+      }
+      final reconstructed = chars.join();
+      expect(reconstructed, doc.plainText());
+    });
+
+    // -- Chunk boundary crossing ------------------------------------
+
+    test('crosses chunk boundaries correctly (1 char per chunk)', () {
+      // Create a document where every character is in its own chunk.
+      final doc = TextDocument();
+      const text = 'A😀B👍🏽C';
+      for (var i = 0; i < text.length; i++) {
+        doc.insert(doc.length, text[i]);
+      }
+      // Now every code unit is a separate chunk.
+      // Walking backwards should still respect grapheme clusters.
+
+      // Find position of 'C' (last ASCII char)
+      final cPos = doc.length - 1; // last code unit = 'C'
+      expect(doc.prevRunePosition(cPos), doc.length - 5);
+      // 'C' is at the end, prev should be start of 👍🏽
+    });
+
+    test('crosses chunk boundaries — emoji split across chunks', () {
+      // Insert the emoji code unit by code unit to force chunk splits.
+      final doc = TextDocument();
+      const emoji = '😀'; // 2 code units
+      doc
+        ..pushText('a')
+        // high surrogate
+        ..pushText(emoji[0])
+        // low surrogate
+        ..pushText(emoji[1])
+        ..pushText('b');
+      // Layout: a(0) 😀[0](1) 😀[1](2) b(3)
+      // prevRunePosition from b(3) should jump to 1 (start of 😀)
+      expect(doc.prevRunePosition(3), 1);
+      // prevRunePosition from middle of emoji (2) should jump to 1
+      expect(doc.prevRunePosition(2), 1);
+    });
+
+    test('window expansion when cluster near window edge', () {
+      // This test verifies the fallback when the result lands at
+      // position 0 of the window but there is text before it.
+      // We need a chunk layout where position is near a window
+      // boundary. Insert many characters individually to create
+      // many small chunks.
+      final doc = TextDocument();
+      // Build: 60 ASCII chars + emoji + more text
+      final prefix = 'A' * 60; // 60 code units
+      doc.insert(0, prefix);
+      doc.pushText('😀'); // 2 code units at pos 60-61
+      doc.pushText('B'); // at pos 62
+
+      // Position 62 ('B') — prev should be 60 (start of 😀)
+      expect(doc.prevRunePosition(62), 60);
+      // Position 61 (inside 😀) — prev should be 60
+      expect(doc.prevRunePosition(61), 60);
+      // Position 60 (start of 😀) — prev should be 59 (last A)
+      expect(doc.prevRunePosition(60), 59);
+    });
+  });
+
+  group('nextRunePosition', () {
+    test('empty document returns 0', () {
+      final doc = TextDocument();
+      expect(doc.nextRunePosition(0), 0);
+    });
+
+    test('position at or beyond length returns length', () {
+      final doc = TextDocument()..pushText('Hello');
+      expect(doc.nextRunePosition(5), 5);
+      expect(doc.nextRunePosition(10), 5);
+    });
+
+    test('simple ASCII — one char forward', () {
+      final doc = TextDocument()..pushText('ABCDE');
+      expect(doc.nextRunePosition(0), 1);
+      expect(doc.nextRunePosition(1), 2);
+      expect(doc.nextRunePosition(2), 3);
+      expect(doc.nextRunePosition(3), 4);
+      expect(doc.nextRunePosition(4), 5);
+    });
+
+    test('simple ASCII — stepping forward through entire doc', () {
+      final doc = TextDocument()..pushText('Hello World');
+      var pos = 0;
+      final positions = <int>[];
+      while (pos < doc.length) {
+        positions.add(pos);
+        pos = doc.nextRunePosition(pos);
+      }
+      expect(positions, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+      expect(pos, doc.length);
+    });
+
+    test('emoji (2 code units) — jumps to next cluster start', () {
+      final doc = TextDocument()..pushText('a😀b');
+      final fullText = doc.plainText();
+      final ref = CharacterBoundary(fullText);
+      for (var pos = 0; pos < doc.length; pos++) {
+        final expected = ref.getTrailingTextBoundaryAt(pos) ?? doc.length;
+        expect(doc.nextRunePosition(pos), expected,
+            reason: 'nextRunePosition($pos)');
+      }
+    });
+
+    test('emoji with skin tone — jumps to next cluster start', () {
+      final doc = TextDocument()..pushText('a👍🏽b');
+      final fullText = doc.plainText();
+      final ref = CharacterBoundary(fullText);
+      for (var pos = 0; pos < doc.length; pos++) {
+        final expected = ref.getTrailingTextBoundaryAt(pos) ?? doc.length;
+        expect(doc.nextRunePosition(pos), expected,
+            reason: 'nextRunePosition($pos)');
+      }
+    });
+
+    test('family emoji ZWJ sequence — jumps to next cluster start', () {
+      const family = '👨‍👩‍👧‍👦';
+      final doc = TextDocument()..pushText('x${family}y');
+      final fullText = doc.plainText();
+      final ref = CharacterBoundary(fullText);
+      for (var pos = 0; pos < doc.length; pos++) {
+        final expected = ref.getTrailingTextBoundaryAt(pos) ?? doc.length;
+        expect(doc.nextRunePosition(pos), expected,
+            reason: 'nextRunePosition($pos)');
+      }
+    });
+
+    test('mixed ASCII and emoji — walking forward', () {
+      final doc = TextDocument()..pushText('Hello 😀 World 🌍!');
+      var pos = 0;
+      final chars = <String>[];
+      while (pos < doc.length) {
+        final next = doc.nextRunePosition(pos);
+        chars.add(doc.plainText(pos, next));
+        pos = next;
+      }
+      final reconstructed = chars.join();
+      expect(reconstructed, doc.plainText());
+    });
+
+    test('crosses chunk boundaries — emoji split across chunks', () {
+      final doc = TextDocument();
+      const emoji = '😀'; // 2 code units
+      doc
+        ..pushText('a')
+        // high surrogate
+        ..pushText(emoji[0])
+        // low surrogate
+        ..pushText(emoji[1])
+        ..pushText('b');
+      // Layout: a(0) 😀[0](1) 😀[1](2) b(3)
+      // nextRunePosition from 0 ('a') should jump to 1 (start of 😀)
+      expect(doc.nextRunePosition(0), 1);
+      // nextRunePosition from 1 (start of 😀) should jump to 3 ('b')
+      expect(doc.nextRunePosition(1), 3);
+      // nextRunePosition from inside emoji should jump to 'b'
+      expect(doc.nextRunePosition(2), 3);
+    });
+
+    test('window expansion when cluster near window edge', () {
+      final doc = TextDocument();
+      final prefix = 'A' * 60;
+      doc.insert(0, prefix);
+      doc.pushText('😀'); // pos 60-61
+      doc.pushText('B'); // pos 62
+      doc.pushText('C' * 30); // pos 63-92
+
+      // Position 60 (start of 😀) — next should be 62 ('B')
+      expect(doc.nextRunePosition(60), 62);
+      // Position 61 (inside 😀) — next should be 62
+      expect(doc.nextRunePosition(61), 62);
+    });
+  });
+
+  group('prevRunePosition + nextRunePosition (round-trip)', () {
+    /// Helper: collect all grapheme cluster boundaries in document order.
+    List<int> clusterBoundaries(TextDocument doc) {
+      final boundaries = <int>[0];
+      var p = 0;
+      while (p < doc.length) {
+        p = doc.nextRunePosition(p);
+        boundaries.add(p);
+      }
+      return boundaries;
+    }
+
+    test('prev then next returns original position (ASCII)', () {
+      final doc = TextDocument()..pushText('Hello World');
+      // Round-trip is only guaranteed at grapheme cluster boundaries.
+      final boundaries = clusterBoundaries(doc);
+      for (final pos in boundaries) {
+        if (pos < doc.length) {
+          final next = doc.nextRunePosition(pos);
+          final back = doc.prevRunePosition(next);
+          expect(back, pos, reason: 'next→prev failed at boundary $pos');
+        }
+        if (pos > 0) {
+          final prev = doc.prevRunePosition(pos);
+          final back = doc.nextRunePosition(prev);
+          expect(back, pos, reason: 'prev→next failed at boundary $pos');
+        }
+      }
+    });
+
+    test('next then prev returns original position (ASCII)', () {
+      final doc = TextDocument()..pushText('Hello World');
+      final boundaries = clusterBoundaries(doc);
+      for (final pos in boundaries) {
+        if (pos < doc.length) {
+          final next = doc.nextRunePosition(pos);
+          final back = doc.prevRunePosition(next);
+          expect(back, pos, reason: 'next→prev failed at boundary $pos');
+        }
+      }
+    });
+
+    test('round-trip with emojis and mixed content', () {
+      final doc = TextDocument()..pushText('Hello 😀 World 👍🏽!');
+      final boundaries = clusterBoundaries(doc);
+      for (final pos in boundaries) {
+        if (pos < doc.length) {
+          final next = doc.nextRunePosition(pos);
+          final back = doc.prevRunePosition(next);
+          expect(back, pos, reason: 'next→prev failed at boundary $pos');
+        }
+        if (pos > 0) {
+          final prev = doc.prevRunePosition(pos);
+          final back = doc.nextRunePosition(prev);
+          expect(back, pos, reason: 'prev→next failed at boundary $pos');
+        }
+      }
+    });
+
+    test('round-trip with one-char-per-chunk layout', () {
+      // Stress test: every character in its own chunk.
+      final doc = TextDocument();
+      const text = 'Hello 😀 World 👍🏽! 🌍';
+      for (var i = 0; i < text.length; i++) {
+        doc.insert(doc.length, text[i]);
+      }
+
+      // Round-trip at cluster boundaries only.
+      final boundaries = clusterBoundaries(doc);
+      for (final pos in boundaries) {
+        if (pos < doc.length) {
+          final next = doc.nextRunePosition(pos);
+          final back = doc.prevRunePosition(next);
+          expect(back, pos, reason: 'next→prev failed at boundary $pos');
+        }
+        if (pos > 0) {
+          final prev = doc.prevRunePosition(pos);
+          final back = doc.nextRunePosition(prev);
+          expect(back, pos, reason: 'prev→next failed at boundary $pos');
+        }
+      }
+    });
+  });
+
+  group('prevRunePosition / nextRunePosition — long document', () {
+    test('walking entire long ASCII document forwards and backwards', () {
+      final doc = TextDocument();
+      // Build a document of 1000 characters with many small chunks.
+      const baseText = 'The quick brown fox jumps over the lazy dog. ';
+      for (var i = 0; i < 20; i++) {
+        doc.insert(doc.length, baseText);
+      }
+
+      // Walk forward and collect all cluster boundaries.
+      final forwardPositions = <int>[0];
+      var pos = 0;
+      while (pos < doc.length) {
+        pos = doc.nextRunePosition(pos);
+        forwardPositions.add(pos);
+      }
+      expect(forwardPositions.length, doc.length + 1);
+      expect(forwardPositions.last, doc.length);
+
+      // Walk backwards from the end.
+      final backwardPositions = <int>[doc.length];
+      pos = doc.length;
+      while (pos > 0) {
+        pos = doc.prevRunePosition(pos);
+        backwardPositions.add(pos);
+      }
+      expect(backwardPositions.length, doc.length + 1);
+      expect(backwardPositions.last,
+          0); // stops at pos 0, doesn't call prevRunePosition(0)
+
+      // The forward and reversed-backward should match.
+      final reversedBackward = backwardPositions.reversed.toList();
+      expect(reversedBackward, forwardPositions);
+    });
+
+    test('walking long document with emojis scattered throughout', () {
+      final doc = TextDocument();
+      // Build a document with emojis interspersed.
+      const parts = [
+        'Hello ',
+        '😀',
+        ' World ',
+        '👍🏽',
+        '! ',
+        '🌍',
+        ' The ',
+        '👨‍👩‍👧‍👦',
+        ' family.',
+      ];
+      for (final part in parts) {
+        doc.insert(doc.length, part);
+      }
+      // Replicate to make it longer
+      for (var i = 0; i < 10; i++) {
+        doc.insert(doc.length, ' | ');
+        for (final part in parts) {
+          doc.insert(doc.length, part);
+        }
+      }
+
+      // Walk forward and reconstruct.
+      final chars = <String>[];
+      var pos = 0;
+      while (pos < doc.length) {
+        final next = doc.nextRunePosition(pos);
+        chars.add(doc.plainText(pos, next));
+        pos = next;
+      }
+      expect(chars.join(), doc.plainText());
+
+      // Walk backward and reconstruct.
+      final revChars = <String>[];
+      pos = doc.length;
+      while (pos > 0) {
+        final prev = doc.prevRunePosition(pos);
+        revChars.insert(0, doc.plainText(prev, pos));
+        pos = prev;
+      }
+      expect(revChars.join(), doc.plainText());
     });
   });
 }

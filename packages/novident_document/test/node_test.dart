@@ -21,7 +21,6 @@ void main() async {
         },
       );
       expect(node.toJson(), {
-        'id': node.id,
         'type': 'example',
         'data': {
           'example': 'example',
@@ -40,14 +39,12 @@ void main() async {
         },
       );
       expect(nodeWithChildren.toJson(), {
-        'id': nodeWithChildren.id,
         'type': 'example',
         'data': {
           'example': 'example',
         },
         'children': [
           {
-            'id': node.id,
             'type': 'example',
             'data': {
               'example': 'example',
@@ -74,11 +71,10 @@ void main() async {
           'delta': (Delta()..insert('Novident')).toJson(),
         },
       );
-      // Compare the JSON structure — now uses native 'td' format.
+      // Compare the JSON structure
       expect(nodeWithExample.toJson()['type'], node.toJson()['type']);
       expect(
-        (nodeWithExample.toJson(humanReadable: false)['data'] as Map)
-            .containsKey('td'),
+        (nodeWithExample.toJson()['data'] as Map).containsKey('delta'),
         true,
       );
 

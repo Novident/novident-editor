@@ -12,8 +12,6 @@ editor in any Dart or Flutter project.
   operations by path.
 - **Rich-text Delta** — Quill-inspired `Delta` format: compose, diff, invert, and
   serialize text changes with formatting attributes.
-- **Rich-text TextDocument** — New replace class of old `Delta`, supporting fast insert, delete and formatting operations, with no cost. It comes with full support to convert to/from `Delta` and
-composing operations using it.
 - **Typed attributes** — `Attributes` (map-based) with compose, invert, and diff helpers.
 - **Position paths** — `Path` (list of ints) with comparison operators, parent/child
   navigation, and ancestor checks.
@@ -62,29 +60,6 @@ final doc = Document.fromJson({
   }
 });
 
-// From JSON with [TextDocument] format
-final doc = Document.fromJson({
-  'document': {
-    'type': 'page',
-    'children': [
-      {
-        'type': 'paragraph',
-        'data': {
-          'td': [
-            // the current version of this format
-            'v': 1,
-            // chunks
-            'c': [
-              { 't': 'Welcome ' },
-              { 't': 'to ' },
-              { 't': 'Novident!', 'a': { 'bold': true } }
-            ],
-          ]
-        }
-      }
-    ]
-  }
-});
 ```
 
 
@@ -129,21 +104,9 @@ final change = Delta()
 final result = delta.compose(change);
 print(result.toPlainText()); // "Gandalf the White"
 
-// or use
-final TextDocument textDoc =
-    TextDocument.fromDelta(delta).applyDelta(change);
-
 // Serialize
 final json = delta.toJson();
 final restored = Delta.fromJson(json);
-final deltaJson = textDoc.toJson();
-final restoredFromTextDoc = Delta.fromJson(deltaJson);
-
-// or use the real json of the TextDocument
-// normally toJson is to maintain some
-// compatibility with Delta instances
-final nativeJson = textDoc.toNativeJson();
-final restoredNativeDoc = TextDocument.fromNativeJson(nativeJson);
 ```
 
 ### Attributes helpers

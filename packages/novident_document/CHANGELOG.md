@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.4
+
+* revert: removed `TextDocument` and `DocumentTree` — rolled back to pure `Delta`-based text storage by @CatHood0
+
 ## 1.0.3
 
 * feat: start of replace Delta with a new optimized version `TextDocument` by @CatHood0 in https://github.com/Novident/novident-editor/pull/23

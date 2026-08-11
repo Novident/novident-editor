@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.5
+
+* revert: removed `TextDocument` and `DocumentTree` across all packages — rolled back to pure `Delta`-based text storage by @CatHood0
+* chore: bumped all internal package dependencies to latest.
+
 ## 1.0.4
 
 * feat(breaking changes): layered editor extraction + cursor rendering API by @CatHood0 in https://github.com/Novident/novident-editor/pull/14

@@ -15,7 +15,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  novident_editor_document: ^1.0.4 
+  novident_editor_document: ^1.0.5 
   universal_platform: ^1.1.0
   web: ^1.1.1
 

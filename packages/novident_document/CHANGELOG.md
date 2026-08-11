@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.5
+
+* docs: remove all `TextDocument` references from README and examples.
+
 ## 1.0.4
 
 * revert: removed `TextDocument` and `DocumentTree` — rolled back to pure `Delta`-based text storage by @CatHood0

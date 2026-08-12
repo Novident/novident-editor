@@ -873,6 +873,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
         offset: widget.node.delta?.toPlainText().length ?? 0,
       );
 
+  //TODO: @Cathood0 I probably want to implement this when the selection wraps the whole
+  // node. This can avoid that weird space between the elements selection
   @override
   Rect getBlockRect({
     bool shiftWithBaseOffset = false,

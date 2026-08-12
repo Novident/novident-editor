@@ -19,7 +19,8 @@ dependencies:
   collection: ^1.18.0
   diff_match_patch: ^0.4.1
   novident_editor_core: ^1.0.2
-  novident_editor_selection: ^1.0.3
+  novident_editor_selection: 
+    path: ./packages/novident_editor_selection
   novident_editor_rich_text:  
     path: ./packages/novident_editor_rich_text
   novident_editor_styles: ^1.0.2

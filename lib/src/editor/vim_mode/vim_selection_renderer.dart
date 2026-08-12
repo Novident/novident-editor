@@ -2,32 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart'
-    show
-        BlockSelectionContext,
-        Cursor,
-        CursorMeasureContext,
-        CursorMoveContext,
-        CursorPaintContext,
-        CursorStyle,
-        DefaultSelectionRenderer,
-        FocusLifecycleContext,
-        MoveAttemptContext,
-        MoveCompletedContext,
-        MoveDirection,
-        MoveIntention,
-        Node,
-        Position,
-        SelectableMixin,
-        Selection,
-        SelectionLifecycleContext,
-        SelectionMeasureContext,
-        SelectionPaintContext,
-        SelectionRenderer,
-        VimCursorStyle,
-        VimMode,
-        VimModeController;
+    show BlockSelectionContext, Cursor, CursorMeasureContext, CursorMoveContext, CursorPaintContext, CursorStyle, DefaultSelectionRenderer, FocusLifecycleContext, MoveAttemptContext,
+MoveCompletedContext, MoveDirection, MoveIntention, Node, Position, SelectableMixin, SelectionLifecycleContext, SelectionMeasureContext, Selection, SelectionPaintContext, SelectionRenderer, VimCursorStyle, VimMode, VimModeController, SelectionAreaPaint;
 
-class VimSelectionRenderer implements SelectionRenderer {
+class VimSelectionRenderer extends SelectionRenderer {
   VimSelectionRenderer({
     required this.controller,
     this.fallback = const DefaultSelectionRenderer(),
@@ -59,22 +37,11 @@ class VimSelectionRenderer implements SelectionRenderer {
   bool get _isVimActive =>
       controller.enabled && controller.mode != VimMode.insert;
 
-  /// In normal/visual mode, paint the block cursor at the moving head
-  /// of an expanded selection (vim visual mode).
+  /// In normal/visual mode, the selection painter differentiates the
+  /// moving head rect by painting it with cursor color, giving the visual
+  /// effect of a vim block cursor over the selected character.
   @override
-  bool get paintExpandedHeadCursor => _isVimActive;
-
-  /// Vim paints the block cursor at `end-1` so it stays on the currently
-  /// selected character, not past it.
-  @override
-  Position? expandedHeadPosition(Selection? rawSelection) {
-    if (!_isVimActive || rawSelection == null) return null;
-    final end = rawSelection.end;
-    if (end.offset > 0) {
-      return Position(path: end.path, offset: end.offset - 1);
-    }
-    return end;
-  }
+  bool get shouldPaintHeadRect => _isVimActive;
 
   @override
   Widget buildCursor(CursorPaintContext ctx) {
@@ -87,17 +54,14 @@ class VimSelectionRenderer implements SelectionRenderer {
   }
 
   @override
-  Widget buildExpandedHeadCursor(CursorPaintContext ctx) {
-    if (!_isVimActive) return fallback.buildExpandedHeadCursor(ctx);
-    return VimBlockCursor(
-      rect: ctx.rect,
-      color: _resolveColor(_style, ctx.color),
+  Widget buildSelectionHighlight(SelectionPaintContext ctx) {
+    return SelectionAreaPaint(
+      rects: ctx.rects,
+      selectionColor: ctx.color,
+      headRectIndex: ctx.headRectIndex,
+      headColor: ctx.headColor,
     );
   }
-
-  @override
-  Widget buildSelectionHighlight(SelectionPaintContext ctx) =>
-      fallback.buildSelectionHighlight(ctx);
 
   @override
   Widget buildBlockSelectionHighlight(BlockSelectionContext ctx) =>
@@ -261,9 +225,24 @@ class VimSelectionRenderer implements SelectionRenderer {
 
   @override
   List<Rect>? onSelectionRectsMeasured(SelectionMeasureContext ctx) {
-    // In visual mode, expand selection rects to block-cursor width
-    // so the highlight matches the visual block cursor appearance.
-    return fallback.onSelectionRectsMeasured(ctx);
+    if (!_isVimActive) return fallback.onSelectionRectsMeasured(ctx);
+    final rects = List<Rect>.from(
+      ctx.delegate.getRectsInSelection(ctx.selection),
+    );
+    // Add a head rect for the block cursor at end-1 so the painter can
+    // differentiate it with cursor color without a separate widget.
+    final raw = ctx.rawSelection;
+    if (raw != null && raw.end.offset > 0) {
+      final headPosition = Position(
+        path: raw.end.path,
+        offset: raw.end.offset - 1,
+      );
+      final headRects = ctx.delegate.getRectsInSelection(
+        Selection(start: headPosition, end: raw.end),
+      );
+      rects.addAll(headRects);
+    }
+    return rects;
   }
 
   Color _resolveColor(VimCursorStyle style, Color fallback) {

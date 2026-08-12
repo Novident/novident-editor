@@ -1,5 +1,5 @@
 name: novident_editor_rich_text
-version: 1.0.3
+version: 1.0.4
 description: >-
   Rich text paragraph rendering for Novident Editor — widget,
   selection mixin, and abstract editor config. Usable without
@@ -18,7 +18,8 @@ dependencies:
   novident_editor_document: ^1.0.5
   novident_editor_core: ^1.0.2
   novident_editor_styles: ^1.0.2
-  novident_editor_selection: ^1.0.3
+  novident_editor_selection: 
+    path: ../novident_editor_selection
 
 dev_dependencies:
   flutter_lints: ^6.0.0

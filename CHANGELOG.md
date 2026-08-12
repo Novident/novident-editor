@@ -2,11 +2,12 @@
 
 ## 1.0.6
 
-* fix: `moveVerticallyInText` return `null` on empty paragraphs or empty nodes. `_renderParagraph` was the only used, and `_placeholderRenderParagraph` was ignored, causing the error
+* fix: `moveVerticallyInText` return `null` on empty paragraphs or empty nodes. `_renderParagraph` was the only used, and `_placeholderRenderParagraph` was ignored, causing the error.
+* fix: `getRectsInSelection` always gets a height of `0.0` since is not checking the `_placeholderRenderParagraph` first (always null when there's content). 
 
 ## 1.0.5
 
-* revert: removed `TextDocument` and `DocumentTree` across all packages — rolled back to pure `Delta`-based text storage by @CatHood0
+* revert: removed `TextDocument` and `DocumentTree` across all packages — rolled back to pure `Delta`-based text storage by @CatHood0.
 * chore: bumped all internal package dependencies to latest.
 
 ## 1.0.4

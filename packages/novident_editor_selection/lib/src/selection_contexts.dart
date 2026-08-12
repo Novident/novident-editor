@@ -4,9 +4,8 @@ import 'package:novident_editor_document/novident_editor_document.dart';
 
 import 'move_types.dart';
 
-/// Context passed to [SelectionRenderer.buildCursor] and
-/// [SelectionRenderer.buildExpandedHeadCursor] with everything needed
-/// to render a custom cursor widget.
+/// Context passed to [SelectionRenderer.buildCursor] with everything
+/// needed to render a custom cursor widget.
 class CursorPaintContext {
   const CursorPaintContext({
     required this.node,
@@ -72,6 +71,8 @@ class SelectionPaintContext {
     required this.rects,
     required this.color,
     required this.textDirection,
+    this.headRectIndex,
+    this.headColor,
   });
 
   /// The document node containing the selection.
@@ -88,6 +89,18 @@ class SelectionPaintContext {
 
   /// Text direction for the block.
   final TextDirection textDirection;
+
+  /// The index of the head rect within [rects], or `null` if the
+  /// head should not be visually differentiated.
+  ///
+  /// When non-null, painters should paint [rects]\[headRectIndex\]
+  /// with [headColor] instead of [color]. This gives the visual effect
+  /// of a cursor at the moving head of an expanded selection without
+  /// requiring a separate widget.
+  final int? headRectIndex;
+
+  /// The color to paint the head rect with, or `null` to use [color].
+  final Color? headColor;
 }
 
 /// Context passed to [SelectionRenderer.buildBlockSelectionHighlight]
@@ -327,12 +340,13 @@ class SelectionMeasureContext {
     required this.textDirection,
     required this.delegate,
     this.renderParagraph,
+    this.rawSelection,
   });
 
   /// The node containing the selection.
   final Node node;
 
-  /// The selection being measured.
+  /// The normalized selection being measured.
   final Selection selection;
 
   /// Text direction for the block.
@@ -343,4 +357,13 @@ class SelectionMeasureContext {
 
   /// The [RenderParagraph] for this node, if available.
   final RenderParagraph? renderParagraph;
+
+  /// The raw (non-normalized) selection, or `null`.
+  ///
+  /// When non-null, [Selection.end] is the moving head position.
+  /// Renderers can use this to add a head rect via
+  /// [SelectableMixin.getRectsInSelection] with an extended range,
+  /// then append it to the rects list so the painter can differentiate
+  /// it via [SelectionPaintContext.headRectIndex].
+  final Selection? rawSelection;
 }

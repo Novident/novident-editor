@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.6
+
+* fix: `moveVerticallyInText` return `null` on empty paragraphs or empty nodes. `_renderParagraph` was the only used, and `_placeholderRenderParagraph` was ignored, causing the error
+
 ## 1.0.5
 
 * revert: removed `TextDocument` and `DocumentTree` across all packages — rolled back to pure `Delta`-based text storage by @CatHood0

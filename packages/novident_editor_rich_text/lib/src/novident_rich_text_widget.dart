@@ -113,7 +113,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
       textKey.currentContext?.findRenderObject() as RenderParagraph?;
 
   @override
-  RenderParagraph? getRenderParagraph() => _renderParagraph;
+  RenderParagraph? getRenderParagraph() =>
+      _renderParagraph ?? _placeholderRenderParagraph;
 
   RenderParagraph? get _placeholderRenderParagraph =>
       placeholderTextKey.currentContext?.findRenderObject() as RenderParagraph?;
@@ -419,9 +420,6 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   Widget _buildRichText(BuildContext context) {
     final textInserts = widget.node.delta!.whereType<TextInsert>();
-    if (textInserts.isEmpty) {
-      return const SizedBox.shrink();
-    }
     TextSpan textSpan = getTextSpan(textInserts: textInserts);
     if (widget.textSpanDecorator != null) {
       textSpan = widget.textSpanDecorator!(textSpan);
@@ -955,8 +953,11 @@ class _NovidentRichTextState extends State<NovidentRichText>
   Position getPositionInOffset(Offset start) {
     final offset = _renderParagraph?.globalToLocal(start) ?? Offset.zero;
     final rawOffset =
-        _renderParagraph?.getPositionForOffset(offset).offset ?? -1;
-    final baseOffset = (rawOffset - textShift).clamp(0, rawOffset);
+        _renderParagraph?.getPositionForOffset(offset).offset ?? 0;
+    final baseOffset = (rawOffset - textShift).clamp(
+      0,
+      widget.node.delta?.length ?? rawOffset,
+    );
     return Position(path: widget.node.path, offset: baseOffset);
   }
 

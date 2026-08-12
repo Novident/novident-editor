@@ -48,7 +48,16 @@ CommandShortcutEvent event(
         case VimMode.normal:
           return onNormal(editorState, controller);
         case VimMode.visual:
-          return (onVisual ?? onNormal)(editorState, controller);
+          // In visual mode, motions may temporarily collapse the
+          // selection (e.g. 'h' at the start edge). Suppress the
+          // selection-sync listener so the controller does not
+          // auto-exit visual mode before the motion completes.
+          controller.suppressSelectionSync();
+          try {
+            return (onVisual ?? onNormal)(editorState, controller);
+          } finally {
+            controller.resumeSelectionSync();
+          }
       }
     },
   );

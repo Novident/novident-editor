@@ -49,7 +49,8 @@ class VimModeController extends ChangeNotifier {
   VimMode _mode;
   EditorState? _editorState;
   bool _interceptorRegistered = false;
-  bool _suppressSelectionSync = false;
+  int _suppressSelectionSyncCount = 0;
+  bool get _suppressSelectionSync => _suppressSelectionSyncCount > 0;
   String? _pendingCommand;
   StringBuffer? _pendingBuffer;
   int? _pendingCommandTimes;
@@ -313,16 +314,30 @@ class VimModeController extends ChangeNotifier {
   /// mode/configuration, without changing the selection.
   void _repaintCursor() {
     final editorState = _editorState;
-    if (editorState == null) {
-      return;
-    }
-    _suppressSelectionSync = true;
+    if (editorState == null) return;
+    _pushSuppress();
     try {
-      // PropertyValueNotifier notifies even when the value is identical.
       editorState.selectionNotifier.value = editorState.selection;
     } finally {
-      _suppressSelectionSync = false;
+      _popSuppress();
     }
+  }
+
+  /// Suppresses the next [EditorState.selectionNotifier] notification so
+  /// [syncModeWithSelection] does not react to it. Use before vim visual
+  /// motions that temporarily collapse the selection.
+  ///
+  /// Call [resumeSelectionSync] after the motion completes. Calls nest
+  /// safely — the sync resumes only when every suppress has been paired
+  /// with a resume.
+  void suppressSelectionSync() => _pushSuppress();
+
+  /// Re-enables selection sync after a previous [suppressSelectionSync].
+  void resumeSelectionSync() => _popSuppress();
+
+  void _pushSuppress() => _suppressSelectionSyncCount++;
+  void _popSuppress() {
+    if (_suppressSelectionSyncCount > 0) _suppressSelectionSyncCount--;
   }
 
   /// Forces the selection areas to repaint the caret with the current

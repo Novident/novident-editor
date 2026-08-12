@@ -51,7 +51,10 @@ extension PositionExtension on Position {
     if (forward && offset == 0) {
       if (insideCell != null) {
         return _horizontalCellNavigate(
-          editorState, insideCell, forwards: false, atStart: false,
+          editorState,
+          insideCell,
+          forwards: false,
+          atStart: false,
         );
       }
       final previousEnd = node.previous?.selectable?.end();
@@ -62,7 +65,10 @@ extension PositionExtension on Position {
       if (end != null && offset >= end.offset) {
         if (insideCell != null) {
           return _horizontalCellNavigate(
-            editorState, insideCell, forwards: true, atStart: true,
+            editorState,
+            insideCell,
+            forwards: true,
+            atStart: true,
           );
         }
         return node.next?.selectable?.start();
@@ -73,11 +79,13 @@ extension PositionExtension on Position {
       case SelectionRange.character:
         final delta = node.delta;
         if (delta != null) {
-          final newOffset =
-              forward ? delta.prevRunePosition(offset) : delta.nextRunePosition(offset);
+          final newOffset = forward
+              ? delta.prevRunePosition(offset)
+              : delta.nextRunePosition(offset);
           if (newOffset == offset && insideCell != null) {
             return _horizontalCellNavigate(
-              editorState, insideCell,
+              editorState,
+              insideCell,
               forwards: forward,
               atStart: forward,
             );
@@ -97,7 +105,8 @@ extension PositionExtension on Position {
             final target = forward ? result.start : result.end;
             if (insideCell != null && target.offset == offset) {
               return _horizontalCellNavigate(
-                editorState, insideCell,
+                editorState,
+                insideCell,
                 forwards: forward,
                 atStart: forward,
               );
@@ -127,19 +136,15 @@ extension PositionExtension on Position {
           );
         }
       }
-       return null;
+      return null;
     }
-
-
 
     /// Navigate to the cell at (sameCol, nextRow). Delegates to
     /// [TableCellNavigation.adjacentCellColumnMajor].
     Position? navigateToCell(Node cell, Node table, bool upwards) {
       final t = TableNode(node: table);
-      final col =
-          cell.attributes[TableCellBlockKeys.colPosition] as int?;
-      final row =
-          cell.attributes[TableCellBlockKeys.rowPosition] as int?;
+      final col = cell.attributes[TableCellBlockKeys.colPosition] as int?;
+      final row = cell.attributes[TableCellBlockKeys.rowPosition] as int?;
       if (col == null || row == null) return null;
       final nextCell = t.adjacentCellColumnMajor(col, row, upwards);
       if (nextCell == null ||
@@ -177,8 +182,7 @@ extension PositionExtension on Position {
     }
 
     // ── Fast path: intra-node using local coords (scroll-independent) ──
-    final withinNode =
-        nodeSelectable.moveVerticallyInText(offset, upwards);
+    final withinNode = nodeSelectable.moveVerticallyInText(offset, upwards);
     if (withinNode != null) return withinNode;
 
     // ── Fallback: pixel-based scan (tables, images, dividers, and nodes
@@ -266,8 +270,7 @@ extension PositionExtension on Position {
 
         // Not in a table cell — no table-specific guards needed.
         if (currentCell?.type != TableCellBlockKeys.type) {
-          final hitNode =
-              editorState.document.nodeAtPath(newPosition.path);
+          final hitNode = editorState.document.nodeAtPath(newPosition.path);
           if (hitNode != null) {
             final entry = textEntry(hitNode, !upwards);
             if (entry != null) return entry;
@@ -276,8 +279,7 @@ extension PositionExtension on Position {
         }
 
         // Inside a table cell, different cell — need full lookup.
-        final hitNode =
-            editorState.document.nodeAtPath(newPosition.path);
+        final hitNode = editorState.document.nodeAtPath(newPosition.path);
 
         // Route through proper vertical navigation when both nodes
         // are inside table cells — the pixel search may wrap columns.
@@ -327,8 +329,7 @@ extension PositionExtension on Position {
             final srcGlobal =
                 nodeRenderBox.localToGlobal(Offset(caretLocalDx, 0));
             final dstLocal = dstRenderBox.globalToLocal(srcGlobal);
-            final targetLocalY =
-                upwards ? dstRenderBox.size.height : 0.0;
+            final targetLocalY = upwards ? dstRenderBox.size.height : 0.0;
             final targetGlobal = dstRenderBox.localToGlobal(
               Offset(dstLocal.dx, targetLocalY),
             );
@@ -346,8 +347,7 @@ extension PositionExtension on Position {
         final adjEnd = adjSelectable.end();
         if (adjStart.path.equals(adjacent.path) &&
             adjEnd.path.equals(adjacent.path)) {
-          final clampedOffset =
-              offset.clamp(adjStart.offset, adjEnd.offset);
+          final clampedOffset = offset.clamp(adjStart.offset, adjEnd.offset);
           return Position(path: adjacent.path, offset: clampedOffset);
         }
       }

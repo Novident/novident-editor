@@ -1105,7 +1105,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     bool shiftWithBaseOffset = false,
     RenderParagraph? paragraph,
   }) {
-    paragraph ??= _renderParagraph;
+    paragraph ??= _placeholderRenderParagraph ?? _renderParagraph;
     if (kDebugMode && paragraph?.debugNeedsLayout == true) {
       return [];
     }
@@ -1141,7 +1141,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
             ) ??
             position;
         height = paragraph?.getFullHeightForCaret(textPosition) ?? height;
-        width = 2;
+        width = 8;
       }
       return [
         Rect.fromLTWH(position.dx, position.dy, width, height),

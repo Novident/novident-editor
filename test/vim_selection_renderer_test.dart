@@ -461,7 +461,7 @@ void main() {
     // ── Visual mode selection rects ───────────────────────────────
 
     testWidgets(
-        'onSelectionRectsMeasured delegates to fallback in both modes',
+        'onSelectionRectsMeasured without raw selection returns body rects',
         (tester) async {
       final delta = Delta()..insert('hello world');
       await build(tester, delta);
@@ -478,13 +478,17 @@ void main() {
         delegate: node.selectable!,
       );
 
-      // In normal mode, delegates to fallback.
+      // In normal mode, returns the body rects (raw selection is null).
       expect(vim.mode, VimMode.normal);
-      expect(renderer.onSelectionRectsMeasured(ctx), isNull);
+      expect(renderer.onSelectionRectsMeasured(ctx), isNotNull);
 
-      // In visual mode, also delegates to fallback.
+      // In visual mode, same.
       vim.enterVisualMode();
       await tester.pump();
+      expect(renderer.onSelectionRectsMeasured(ctx), isNotNull);
+
+      // In insert mode, delegates to fallback (null).
+      vim.enterInsertMode();
       expect(renderer.onSelectionRectsMeasured(ctx), isNull);
     });
   });

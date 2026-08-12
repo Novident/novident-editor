@@ -4,6 +4,7 @@
 
 * fix: `moveVerticallyInText` return `null` on empty paragraphs or empty nodes. `_renderParagraph` was the only used, and `_placeholderRenderParagraph` was ignored, causing the error.
 * fix: `getRectsInSelection` always gets a height of `0.0` since is not checking the `_placeholderRenderParagraph` first (always null when there's content). 
+* fix: head for the selection is never painted as expected on `VimSelectionRenderer`.
 
 ## 1.0.5
 

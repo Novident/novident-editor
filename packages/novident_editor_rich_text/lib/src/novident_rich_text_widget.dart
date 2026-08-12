@@ -10,6 +10,8 @@ import 'package:novident_editor_rich_text/src/utils/text_selection_from_node_sel
 import 'package:novident_editor_selection/novident_editor_selection.dart';
 import 'package:novident_editor_styles/novident_editor_styles.dart';
 
+final Map<Color, double> _cachedResolvedLuminanceColor = {};
+
 //TODO: rich text needs to allow more customization
 class NovidentRichText extends StatefulWidget {
   const NovidentRichText({
@@ -257,7 +259,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
   ///
   /// Result is cached until the node identity or `styleRef` changes.
   NovidentStyleDefinition? get resolvedStyle {
-    final styleRef = widget.node.attributes['styleRef'] as String?;
+    final styleRef = widget.node.attributes[blockComponentStyleRef] as String?;
     late final Node? cellParentNode;
     final tableNode = widget.node.findParent((Node n) {
       if (n.type == TableCellBlockKeys.type) {
@@ -265,7 +267,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
       }
       return n.type == TableBlockKeys.type;
     });
-    final tableStyleRef = tableNode?.attributes['styleRef'] as String?;
+    final tableStyleRef =
+        tableNode?.attributes[blockComponentStyleRef] as String?;
 
     if (widget.node.id == _nodeId &&
         styleRef == _styleRef &&
@@ -627,70 +630,9 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
     final selStart = _selectionRange?.$1 ?? 0;
     final selEnd = _selectionRange?.$2 ?? 0;
-
     for (final textInsert in textInserts) {
-      TextStyle textStyle = _baseTextStyle;
-      final Attributes? attributes = textInsert.attributes;
-      if (attributes != null) {
-        if (attributes.bold == true) {
-          textStyle =
-              textStyle.combine(const TextStyle(fontWeight: FontWeight.bold));
-        }
-        if (attributes.italic == true) {
-          textStyle =
-              textStyle.combine(const TextStyle(fontStyle: FontStyle.italic));
-        }
-        if (attributes.underline == true) {
-          textStyle = textStyle.combine(const TextStyle(
-            decoration: TextDecoration.underline,
-          ));
-        }
-        if (attributes.strikethrough == true) {
-          textStyle = textStyle.combine(const TextStyle(
-            decoration: TextDecoration.lineThrough,
-          ));
-        }
-        if (attributes.href != null) {
-          textStyle = textStyle.combine(textStyleConfiguration.href);
-        }
-        if (attributes.code == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.code);
-        }
-        if (attributes.backgroundColor != null) {
-          textStyle = textStyle.combine(
-            TextStyle(backgroundColor: attributes.backgroundColor),
-          );
-        }
-        if (attributes.findBackgroundColor != null) {
-          textStyle = textStyle.combine(
-            TextStyle(backgroundColor: attributes.findBackgroundColor),
-          );
-        }
-        if (attributes.color != null) {
-          textStyle = textStyle.combine(
-            TextStyle(color: attributes.color),
-          );
-        }
-        if (attributes.fontFamily != null) {
-          textStyle = textStyle.combine(
-            TextStyle(fontFamily: attributes.fontFamily),
-          );
-        }
-        if (attributes.fontSize != null) {
-          textStyle = textStyle.combine(
-            TextStyle(fontSize: attributes.fontSize),
-          );
-        }
-        if (attributes.autoComplete == true) {
-          textStyle = textStyle.combine(textStyleConfiguration.autoComplete);
-        }
-        if (attributes.transparent == true) {
-          textStyle = textStyle.combine(
-            const TextStyle(color: Colors.transparent),
-          );
-        }
-      }
-
+      final textStyle =
+          _attributesToStyle(textInsert.attributes, _baseTextStyle);
       String displayText = textInsert.text;
       if (resolvedStyle?.caps == true) {
         displayText = displayText.toUpperCase();
@@ -711,6 +653,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
         selEnd,
         textSpans,
         displayText,
+        selectionRenderer: widget.editorConfig.selectionRenderer,
         textSpanDecoratorForAttribute: textSpanDecoratorForAttribute,
         textSpanDecorator: widget.textSpanDecorator,
         hasSelection: _hasSelection,
@@ -740,6 +683,71 @@ class _NovidentRichTextState extends State<NovidentRichText>
     return TextSpan(
       children: textSpans,
     );
+  }
+
+  TextStyle _attributesToStyle(Attributes? attributes, TextStyle textStyle) {
+    if (attributes == null) {
+      return textStyle;
+    }
+
+    if (attributes.bold == true) {
+      textStyle =
+          textStyle.combine(const TextStyle(fontWeight: FontWeight.bold));
+    }
+    if (attributes.italic == true) {
+      textStyle =
+          textStyle.combine(const TextStyle(fontStyle: FontStyle.italic));
+    }
+    if (attributes.underline == true) {
+      textStyle = textStyle.combine(const TextStyle(
+        decoration: TextDecoration.underline,
+      ));
+    }
+    if (attributes.strikethrough == true) {
+      textStyle = textStyle.combine(const TextStyle(
+        decoration: TextDecoration.lineThrough,
+      ));
+    }
+    if (attributes.href != null) {
+      textStyle = textStyle.combine(textStyleConfiguration.href);
+    }
+    if (attributes.code == true) {
+      textStyle = textStyle.combine(textStyleConfiguration.code);
+    }
+    if (attributes.backgroundColor != null) {
+      textStyle = textStyle.combine(
+        TextStyle(backgroundColor: attributes.backgroundColor),
+      );
+    }
+    if (attributes.findBackgroundColor != null) {
+      textStyle = textStyle.combine(
+        TextStyle(backgroundColor: attributes.findBackgroundColor),
+      );
+    }
+    if (attributes.color != null) {
+      textStyle = textStyle.combine(
+        TextStyle(color: attributes.color),
+      );
+    }
+    if (attributes.fontFamily != null) {
+      textStyle = textStyle.combine(
+        TextStyle(fontFamily: attributes.fontFamily),
+      );
+    }
+    if (attributes.fontSize != null) {
+      textStyle = textStyle.combine(
+        TextStyle(fontSize: attributes.fontSize),
+      );
+    }
+    if (attributes.autoComplete == true) {
+      textStyle = textStyle.combine(textStyleConfiguration.autoComplete);
+    }
+    if (attributes.transparent == true) {
+      textStyle = textStyle.combine(
+        const TextStyle(color: Colors.transparent),
+      );
+    }
+    return textStyle;
   }
 
   static InlineSpan emitSpan(
@@ -776,6 +784,7 @@ class _NovidentRichTextState extends State<NovidentRichText>
     int selEnd,
     List<InlineSpan> textSpans,
     String displayText, {
+    SelectionRenderer? selectionRenderer,
     TextSpanDecoratorForAttribute? textSpanDecoratorForAttribute,
     NovidentTextSpanDecorator? textSpanDecorator,
     required bool hasSelection,
@@ -800,11 +809,16 @@ class _NovidentRichTextState extends State<NovidentRichText>
             selectionColor,
             decorationColor,
           );
-    final contrastColor =
-        effectiveBg.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    final contrastColor = (_cachedResolvedLuminanceColor[effectiveBg] ??=
+                effectiveBg.computeLuminance()) >
+            0.5
+        ? Colors.black
+        : Colors.white;
     final decorationContrastColor = effectiveDecorationColor == null
         ? null
-        : effectiveDecorationColor.computeLuminance() > 0.5
+        : (_cachedResolvedLuminanceColor[effectiveDecorationColor] ??=
+                    effectiveDecorationColor.computeLuminance()) >
+                0.5
             ? Colors.black
             : Colors.white;
     final int textStart = offset;

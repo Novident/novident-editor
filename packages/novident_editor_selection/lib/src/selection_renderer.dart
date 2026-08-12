@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
+import 'package:novident_editor_selection/novident_editor_selection.dart';
 
-import 'cursor/cursor.dart';
-import 'painter/selection_area_paint_widget.dart';
-import 'move_types.dart';
-import 'selection_contexts.dart';
+enum SelectionUpdateReason {
+  /// like mouse click, keyboard event
+  uiEvent,
+
+  /// like insert, delete, format
+  transaction,
+
+  /// like remote selection
+  remote,
+  selectAll,
+
+  /// Highlighting search results
+  searchHighlight,
+}
+
+enum SelectionType {
+  inline,
+  block,
+}
 
 /// Full control over cursor and selection rendering, movement behavior,
 /// transition animations, and lifecycle events.
@@ -17,6 +33,7 @@ import 'selection_contexts.dart';
 /// and is used when no custom renderer is configured.
 abstract class SelectionRenderer {
   const SelectionRenderer();
+
   /// Build the widget that represents a collapsed cursor (caret).
   ///
   /// The default implementation returns a [Cursor] widget using the
@@ -85,6 +102,18 @@ abstract class SelectionRenderer {
   /// Called AFTER a cursor movement has completed successfully.
   void onMoveCompleted(MoveCompletedContext ctx);
 
+  /// Called during the [editorState.updateSelectionWithReason]. Provides
+  /// the values that let us decide which will be the new selection for
+  /// the editor
+  Future<Selection?> updateSelectionWithReason(
+    BlockSelectionHost state,
+    Selection? selection, {
+    SelectionUpdateReason reason = SelectionUpdateReason.transaction,
+    Map? extraInfo,
+    SelectionType? customSelectionType,
+  }) async =>
+      null;
+
   /// Called when the user begins a selection drag (mouse down / touch start).
   void onSelectionStarted(SelectionLifecycleContext ctx);
 
@@ -107,6 +136,10 @@ abstract class SelectionRenderer {
   /// giving the visual effect of a cursor at the selection head without a
   /// separate widget.
   bool get shouldPaintHeadRect => false;
+
+  /// Whether the [NovidentRichText] should take in account the moving head
+  /// of an expanded selection to compute the correct character constrast color.
+  bool get headWrapsCharacter => false;
 
   @Deprecated(
       'Use shouldPaintHeadRect instead. Will be removed in a future version.')

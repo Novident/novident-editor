@@ -171,15 +171,14 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
           final renderer = host.selectionRenderer ?? widget.renderer;
           final isHeadBlock = renderer.shouldPaintHeadRect &&
               value?.end != null &&
+              prevSelectionRects!.length > 1 &&
               value!.end.path.equals(widget.node.path);
           final selCtx = SelectionPaintContext(
             node: widget.node,
             selection: selection,
             rects: prevSelectionRects!,
             color: widget.selectionColor,
-            headRectIndex: isHeadBlock
-                ? prevSelectionRects!.length - 1
-                : null,
+            headRectIndex: isHeadBlock ? prevSelectionRects!.length - 1 : null,
             headColor: isHeadBlock ? widget.cursorColor : null,
             textDirection: widget.delegate.textDirection(),
           );

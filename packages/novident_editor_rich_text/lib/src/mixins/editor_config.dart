@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
@@ -30,12 +29,6 @@ abstract class RichTextEditorConfig implements BlockSelectionHost {
 
   /// Provider for auto-complete text.
   NovidentAutoCompleteTextProvider? get autoCompleteTextProvider;
-
-  /// Selection change notifier.
-  ValueListenable<Selection?> get selectionNotifier;
-
-  /// Remote collaborative selections.
-  ValueListenable<List<RemoteSelection>> get remoteSelections;
 
   /// Custom selection/cursor renderer. When null, [DefaultSelectionRenderer] is used.
   @override

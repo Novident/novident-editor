@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/src/foundation/change_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
@@ -57,6 +58,12 @@ class _TestHost implements BlockSelectionHost {
   String? selectionDragModeValue() => null;
   @override
   SelectionRenderer? get selectionRenderer => null;
+
+  @override
+  ValueListenable<List<RemoteSelection>> get remoteSelections => throw UnimplementedError();
+
+  @override
+  ValueListenable<Selection?> get selectionNotifier => throw UnimplementedError();
 }
 
 Node _makeNode() => Node(type: 'paragraph');

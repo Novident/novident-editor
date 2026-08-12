@@ -5,6 +5,9 @@
 * fix: head for cursor is never being computed correctly by using `prevCursorRect` when the renderer shouldn't use it.
 * feat: added new method for `SelectionRenderer`: `resolveExpandedHeadRect` to resolve the cursor rect for the expanded
 * feat: added `headColor` and `headheadRectIndex` properties to paint heads (only works we add that head manually, like `VimSelectionRenderer`)
+* feat: added new method `headWrapsCharacter` to allow any rendering to telling to the `NovidentRichText` widget, that needs to paint the current text with the constrast color.
+* chore(breaking changes): moved `selectionNotifier` and `remoteSelections` from `RichTextEditorConfig` to `BlockSelectionHost`. 
+* chore: moved `SelectionUpdateReason` and `SelectionType` to this package.
 * chore: deprecated from `SelectionRenderer` these methods: `buildExpandedHeadCursor`, `paintExpandedHeadCursor` (replaced by `shouldPaintHeadRect`) and `expandedHeadPosition` since we recommend  computing the head and injecting it directly to the rects into `onSelectionRectsMeasured` (like I did with `VimSelectionRenderer`)
 
 ## 1.0.3

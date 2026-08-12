@@ -2,8 +2,32 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart'
-    show BlockSelectionContext, Cursor, CursorMeasureContext, CursorMoveContext, CursorPaintContext, CursorStyle, DefaultSelectionRenderer, FocusLifecycleContext, MoveAttemptContext,
-MoveCompletedContext, MoveDirection, MoveIntention, Node, Position, SelectableMixin, SelectionLifecycleContext, SelectionMeasureContext, Selection, SelectionPaintContext, SelectionRenderer, VimCursorStyle, VimMode, VimModeController, SelectionAreaPaint;
+    show
+        BlockSelectionContext,
+        Cursor,
+        CursorMeasureContext,
+        CursorMoveContext,
+        CursorPaintContext,
+        CursorStyle,
+        DefaultSelectionRenderer,
+        FocusLifecycleContext,
+        MoveAttemptContext,
+        MoveCompletedContext,
+        MoveDirection,
+        MoveIntention,
+        Node,
+        Position,
+        SelectableMixin,
+        SelectionLifecycleContext,
+        SelectionMeasureContext,
+        Selection,
+        SelectionPaintContext,
+        SelectionRenderer,
+        VimCursorStyle,
+        VimMode,
+        VimModeController,
+        SelectionAreaPaint;
+import 'package:novident_editor_document/novident_editor_document.dart';
 
 class VimSelectionRenderer extends SelectionRenderer {
   VimSelectionRenderer({
@@ -42,6 +66,9 @@ class VimSelectionRenderer extends SelectionRenderer {
   /// effect of a vim block cursor over the selected character.
   @override
   bool get shouldPaintHeadRect => _isVimActive;
+
+  @override
+  bool get headWrapsCharacter => _isVimActive;
 
   @override
   Widget buildCursor(CursorPaintContext ctx) {
@@ -226,23 +253,46 @@ class VimSelectionRenderer extends SelectionRenderer {
   @override
   List<Rect>? onSelectionRectsMeasured(SelectionMeasureContext ctx) {
     if (!_isVimActive) return fallback.onSelectionRectsMeasured(ctx);
-    final rects = List<Rect>.from(
-      ctx.delegate.getRectsInSelection(ctx.selection),
-    );
-    // Add a head rect for the block cursor at end-1 so the painter can
-    // differentiate it with cursor color without a separate widget.
+
     final raw = ctx.rawSelection;
-    if (raw != null && raw.end.offset > 0) {
-      final headPosition = Position(
-        path: raw.end.path,
-        offset: raw.end.offset - 1,
-      );
-      final headRects = ctx.delegate.getRectsInSelection(
-        Selection(start: headPosition, end: raw.end),
-      );
-      rects.addAll(headRects);
+    if (raw == null ||
+        raw.isCollapsed ||
+        !ctx.node.path.equals(raw.end.path)) {
+      return ctx.delegate.getRectsInSelection(ctx.selection);
     }
-    return rects;
+
+    final norm = raw.normalized;
+    final headAtMax = raw.end == norm.end;
+    final nodeLen = ctx.node.delta?.length ?? 0;
+    final Selection bodySel;
+    final Selection headSel;
+    if (headAtMax) {
+      if (raw.end.offset <= 0) {
+        return ctx.delegate.getRectsInSelection(ctx.selection);
+      }
+      final headPos = Position(path: raw.end.path, offset: raw.end.offset - 1);
+      bodySel = Selection(start: norm.start, end: headPos);
+      headSel = Selection(start: headPos, end: raw.end);
+    } else {
+      if (raw.end.offset + 1 > nodeLen) {
+        return ctx.delegate.getRectsInSelection(ctx.selection);
+      }
+      final headEnd = Position(path: raw.end.path, offset: raw.end.offset + 1);
+      bodySel = Selection(start: headEnd, end: norm.end);
+      headSel = Selection(start: raw.end, end: headEnd);
+    }
+
+    final bodyRects = ctx.delegate
+        .getRectsInSelection(bodySel)
+        .where((r) => r.width > 0)
+        .toList();
+    final headRects = ctx.delegate.getRectsInSelection(headSel);
+    if (headRects.isEmpty) {
+      return ctx.delegate.getRectsInSelection(ctx.selection);
+    }
+    final headRect = headRects.first;
+
+    return [...bodyRects, headRect];
   }
 
   Color _resolveColor(VimCursorStyle style, Color fallback) {

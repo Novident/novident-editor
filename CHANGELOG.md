@@ -5,7 +5,10 @@
 * fix: `moveVerticallyInText` return `null` on empty paragraphs or empty nodes. `_renderParagraph` was the only used, and `_placeholderRenderParagraph` was ignored, causing the error.
 * fix: `getRectsInSelection` always gets a height of `0.0` since is not checking the `_placeholderRenderParagraph` first (always null when there's content). 
 * fix: head for the selection is never painted as expected on `VimSelectionRenderer`.
+* fix: visual vim horizontal movement delegates the movement to the default editor command. Created new one that matches with the expected behavior for vim mode.
 * revert: removed `TextDocument` and `DocumentTree` across all packages — rolled back to pure `Delta`-based text storage by @CatHood0.
+* chore(breaking changes): moved `SelectionUpdateReason` and `SelectionType` to `novident_editor_selection` package.
+* chore: deprecated from `SelectionRenderer` these methods: `buildExpandedHeadCursor`, `paintExpandedHeadCursor` (replaced by `shouldPaintHeadRect`) and `expandedHeadPosition` since we recommend  computing the head and injecting it directly to the rects into `onSelectionRectsMeasured` (like I did with `VimSelectionRenderer`)
 * chore: bumped all internal package dependencies to latest.
 
 ## 1.0.4

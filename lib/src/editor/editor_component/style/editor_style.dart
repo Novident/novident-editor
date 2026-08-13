@@ -25,7 +25,7 @@ class EditorStyle {
   })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 100),
         cursorColor = cursorColor ?? const Color(0xFF00BCF0),
         selectionColor =
-            selectionColor ?? const Color.fromARGB(255, 111, 201, 231),
+            selectionColor ?? const Color.fromARGB(200, 111, 201, 231),
         textStyleConfiguration =
             textStyleConfiguration ?? const TextStyleConfiguration(),
         textSpanDecorator =

@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
+import 'package:novident_editor_selection/novident_editor_selection.dart';
 
-import 'cursor/cursor.dart';
-import 'painter/selection_area_paint_widget.dart';
-import 'move_types.dart';
-import 'selection_contexts.dart';
+enum SelectionUpdateReason {
+  /// like mouse click, keyboard event
+  uiEvent,
+
+  /// like insert, delete, format
+  transaction,
+
+  /// like remote selection
+  remote,
+  selectAll,
+
+  /// Highlighting search results
+  searchHighlight,
+}
+
+enum SelectionType {
+  inline,
+  block,
+}
 
 /// Full control over cursor and selection rendering, movement behavior,
 /// transition animations, and lifecycle events.
@@ -16,6 +32,8 @@ import 'selection_contexts.dart';
 /// The [DefaultSelectionRenderer] provides the standard editor behavior
 /// and is used when no custom renderer is configured.
 abstract class SelectionRenderer {
+  const SelectionRenderer();
+
   /// Build the widget that represents a collapsed cursor (caret).
   ///
   /// The default implementation returns a [Cursor] widget using the
@@ -26,7 +44,11 @@ abstract class SelectionRenderer {
   /// an expanded selection (e.g. where the user is still dragging).
   ///
   /// The default implementation returns a [Cursor] with blinking disabled.
-  Widget buildExpandedHeadCursor(CursorPaintContext ctx);
+  @Deprecated(
+      'Use shouldPaintHeadRect + SelectionPaintContext.headColor instead. '
+      'Will be removed in a future version.')
+  Widget buildExpandedHeadCursor(CursorPaintContext ctx) =>
+      const SizedBox.shrink();
 
   /// Build the widget that paints the selection highlight background
   /// behind selected text.
@@ -80,6 +102,18 @@ abstract class SelectionRenderer {
   /// Called AFTER a cursor movement has completed successfully.
   void onMoveCompleted(MoveCompletedContext ctx);
 
+  /// Called during the [editorState.updateSelectionWithReason]. Provides
+  /// the values that let us decide which will be the new selection for
+  /// the editor
+  Future<Selection?> updateSelectionWithReason(
+    BlockSelectionHost state,
+    Selection? selection, {
+    SelectionUpdateReason reason = SelectionUpdateReason.transaction,
+    Map? extraInfo,
+    SelectionType? customSelectionType,
+  }) async =>
+      null;
+
   /// Called when the user begins a selection drag (mouse down / touch start).
   void onSelectionStarted(SelectionLifecycleContext ctx);
 
@@ -92,20 +126,31 @@ abstract class SelectionRenderer {
   /// Called when the editor loses input focus.
   void onFocusLost(FocusLifecycleContext ctx);
 
-  /// Whether this renderer should paint the cursor at the moving head of
-  /// an expanded selection (e.g. vim visual mode).
+  /// Whether the selection painter should differentiate the moving head
+  /// of an expanded selection by painting its rect in cursor color.
   ///
-  /// When `true`, [buildExpandedHeadCursor] is called for the selection
-  /// head even when no [CursorAppearance] is configured on the host.
-  /// Defaults to `false`.
+  /// When `true`, [BlockSelectionArea] sets [SelectionPaintContext.headColor]
+  /// to the cursor color and [SelectionPaintContext.headRectIndex] to the
+  /// index of the last rect. The painter paints that rect with
+  /// [SelectionPaintContext.headColor] instead of [SelectionPaintContext.color],
+  /// giving the visual effect of a cursor at the selection head without a
+  /// separate widget.
+  bool get shouldPaintHeadRect => false;
+
+  /// Whether the [NovidentRichText] should take in account the moving head
+  /// of an expanded selection to compute the correct character constrast color.
+  bool get headWrapsCharacter => false;
+
+  /// Whether the [EditorState] should take in account the [start] and [end] positions 
+  /// of the selection and collapse if them starts at the same point.
+  bool get shouldCollapseIfSharePositions => true;
+
+  @Deprecated(
+      'Use shouldPaintHeadRect instead. Will be removed in a future version.')
   bool get paintExpandedHeadCursor => false;
 
-  /// Returns a custom position for the expanded-selection head cursor,
-  /// or null to use the raw selection end position.
-  ///
-  /// Override to re-anchor the head cursor — e.g. vim paints at `end-1`
-  /// so the block stays on the currently selected character.
-  /// Only consulted when [paintExpandedHeadCursor] returns `true`.
+  @Deprecated('The painter handles head positioning via shouldPaintHeadRect. '
+      'Will be removed in a future version.')
   Position? expandedHeadPosition(Selection? rawSelection) => null;
 
   /// Called after the default cursor rect has been measured via
@@ -133,7 +178,7 @@ abstract class SelectionRenderer {
 /// - Movement: delegates to [SelectableMixin] methods
 /// - Word movement: uses [SelectableMixin.getWordBoundaryInPosition]
 /// - All lifecycle and measurement overrides are no-ops by default
-class DefaultSelectionRenderer implements SelectionRenderer {
+class DefaultSelectionRenderer extends SelectionRenderer {
   const DefaultSelectionRenderer();
 
   @override
@@ -146,6 +191,9 @@ class DefaultSelectionRenderer implements SelectionRenderer {
     );
   }
 
+  @Deprecated(
+      'Use shouldPaintHeadRect + SelectionPaintContext.headColor instead. '
+      'Will be removed in a future version.')
   @override
   Widget buildExpandedHeadCursor(CursorPaintContext ctx) {
     return Cursor(
@@ -162,6 +210,8 @@ class DefaultSelectionRenderer implements SelectionRenderer {
       rects: ctx.rects,
       selectionColor: ctx.color,
       minRectWidth: 8,
+      headRectIndex: ctx.headRectIndex,
+      headColor: ctx.headColor,
     );
   }
 
@@ -217,8 +267,15 @@ class DefaultSelectionRenderer implements SelectionRenderer {
   void onFocusLost(FocusLifecycleContext ctx) {}
 
   @override
+  bool get shouldPaintHeadRect => false;
+
+  @Deprecated(
+      'Use shouldPaintHeadRect instead. Will be removed in a future version.')
+  @override
   bool get paintExpandedHeadCursor => false;
 
+  @Deprecated('The painter handles head positioning via shouldPaintHeadRect. '
+      'Will be removed in a future version.')
   @override
   Position? expandedHeadPosition(Selection? rawSelection) => null;
 

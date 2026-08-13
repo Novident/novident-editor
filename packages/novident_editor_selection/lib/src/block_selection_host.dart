@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:novident_editor_core/novident_editor_core.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
@@ -12,6 +13,12 @@ import 'selection_renderer.dart';
 abstract class BlockSelectionHost {
   /// Whether the current selection is a block-level selection.
   bool isBlockSelectionMode();
+
+  /// Selection change notifier.
+  ValueListenable<Selection?> get selectionNotifier;
+
+  /// Remote collaborative selections.
+  ValueListenable<List<RemoteSelection>> get remoteSelections;
 
   /// Optional cursor appearance customization (vim-style, etc.).
   CursorAppearance? customizeCursor({

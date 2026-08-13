@@ -48,25 +48,6 @@ class ApplyOptions {
   final bool inMemoryUpdate;
 }
 
-@Deprecated('use SelectionUpdateReason instead')
-enum CursorUpdateReason {
-  uiEvent,
-  others,
-}
-
-enum SelectionUpdateReason {
-  uiEvent, // like mouse click, keyboard event
-  transaction, // like insert, delete, format
-  remote, // like remote selection
-  selectAll,
-  searchHighlight, // Highlighting search results
-}
-
-enum SelectionType {
-  inline,
-  block,
-}
-
 enum TransactionTime {
   before,
   after,
@@ -179,8 +160,7 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   /// @override from BlockSelectionHost
   @override
   EdgeInsets? blockSelectionMargin(Node node) {
-    final builder =
-        service.rendererService.blockComponentBuilder(node.type);
+    final builder = service.rendererService.blockComponentBuilder(node.type);
     return builder?.configuration.blockSelectionAreaMargin(node);
   }
 
@@ -208,6 +188,7 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   @override
   TextStyleConfiguration get textStyleConfiguration =>
       editorStyle.textStyleConfiguration;
+
   /// The selection notifier of the editor.
   /// The selection notifier of the editor.
   @override
@@ -363,14 +344,6 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
   StreamSubscription? _subscription;
 
-  @Deprecated('use editorState.selection instead')
-  Selection? _cursorSelection;
-
-  @Deprecated('use editorState.selection instead')
-  Selection? get cursorSelection {
-    return _cursorSelection;
-  }
-
   final Set<VoidCallback> _onScrollViewScrolledListeners = {};
 
   void addScrollViewScrolledListener(VoidCallback callback) =>
@@ -414,28 +387,15 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     // broadcast to other users here
     selectionExtraInfo = extraInfo;
     _selectionUpdateReason = reason;
+    this.selection = (await selectionRenderer?.updateSelectionWithReason(
+          this,
+          selection,
+          reason: reason,
+          extraInfo: extraInfo,
+          customSelectionType: customSelectionType,
+        )) ??
+        selection;
 
-    this.selection = selection;
-
-    return completer.future;
-  }
-
-  @Deprecated('use updateSelectionWithReason or editorState.selection instead')
-  Future<void> updateCursorSelection(
-    Selection? cursorSelection, [
-    CursorUpdateReason reason = CursorUpdateReason.others,
-  ]) {
-    final completer = Completer<void>();
-
-    // broadcast to other users here
-    if (reason != CursorUpdateReason.uiEvent) {
-      service.selectionService.updateSelection(cursorSelection);
-    }
-    _cursorSelection = cursorSelection;
-    selection = cursorSelection;
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      completer.complete();
-    });
     return completer.future;
   }
 

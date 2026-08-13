@@ -296,6 +296,85 @@ void main() {
       controller.dispose();
     });
 
+    testWidgets('h/l keep the vim anchor while the cursor moves',
+        (tester) async {
+      final (editorState, controller) = await pumpVimEditor(tester);
+
+      // caret at offset 2 ('p' of 'alpha'). `v` wraps [2, 3).
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
+      await tester.pumpAndSettle();
+      expect(editorState.selection?.start.offset, 2);
+      expect(editorState.selection?.end.offset, 3);
+
+      // like vim, `h` moves the cursor onto the previous char while the
+      // anchor stays put: raw [3, 1] => normalized [1, 3) covers offsets
+      // 1-2 — the selection never collapses in between.
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyH);
+      await tester.pumpAndSettle();
+      var selection = editorState.selection;
+      expect(selection, isNotNull);
+      expect(selection!.isCollapsed, false);
+      expect(selection.start.offset, 3); // anchor side
+      expect(selection.end.offset, 1); // cursor side
+      expect(selection.normalized.start.offset, 1);
+      expect(selection.normalized.end.offset, 3);
+
+      // a second `h` keeps growing the selection to the left.
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyH);
+      await tester.pumpAndSettle();
+      selection = editorState.selection;
+      expect(selection!.isCollapsed, false);
+      expect(selection.normalized.start.offset, 0);
+      expect(selection.normalized.end.offset, 3);
+
+      // `h` at the start of the document stops instead of wrapping.
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyH);
+      await tester.pumpAndSettle();
+      selection = editorState.selection;
+      expect(selection!.normalized.start.offset, 0);
+      expect(selection.normalized.end.offset, 3);
+
+      // moving right past the anchor flips the selection back: after
+      // three `l` presses the cursor sits at offset 3 again.
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
+      await tester.pumpAndSettle();
+      selection = editorState.selection;
+      expect(selection, isNotNull);
+      expect(selection!.isCollapsed, false);
+      expect(selection.start.offset, 2);
+      expect(selection.end.offset, 4);
+
+      controller.dispose();
+    });
+
+    testWidgets('l at the end of the line stops instead of selecting past it',
+        (tester) async {
+      final (editorState, controller) = await pumpVimEditor(tester);
+
+      // caret on the last char of 'alpha beta'.
+      editorState.updateSelectionWithReason(
+        Selection.collapsed(
+          Position(path: [0], offset: 'alpha beta'.length - 1),
+        ),
+        reason: SelectionUpdateReason.uiEvent,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
+      await tester.pumpAndSettle();
+
+      final selection = editorState.selection;
+      expect(selection, isNotNull);
+      expect(selection!.start.offset, 'alpha beta'.length - 1);
+      expect(selection.end.offset, 'alpha beta'.length);
+
+      controller.dispose();
+    });
+
     testWidgets('x deletes the character under the caret and u undoes it',
         (tester) async {
       final (editorState, controller) = await pumpVimEditor(tester);

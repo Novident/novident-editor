@@ -18,16 +18,18 @@ import 'package:novident_editor/novident_editor.dart'
         Node,
         Position,
         SelectableMixin,
-        Selection,
         SelectionLifecycleContext,
         SelectionMeasureContext,
+        Selection,
         SelectionPaintContext,
         SelectionRenderer,
         VimCursorStyle,
         VimMode,
-        VimModeController;
+        VimModeController,
+        SelectionAreaPaint;
+import 'package:novident_editor_document/novident_editor_document.dart';
 
-class VimSelectionRenderer implements SelectionRenderer {
+class VimSelectionRenderer extends SelectionRenderer {
   VimSelectionRenderer({
     required this.controller,
     this.fallback = const DefaultSelectionRenderer(),
@@ -59,22 +61,18 @@ class VimSelectionRenderer implements SelectionRenderer {
   bool get _isVimActive =>
       controller.enabled && controller.mode != VimMode.insert;
 
-  /// In normal/visual mode, paint the block cursor at the moving head
-  /// of an expanded selection (vim visual mode).
+  /// In normal/visual mode, the selection painter differentiates the
+  /// moving head rect by painting it with cursor color, giving the visual
+  /// effect of a vim block cursor over the selected character.
   @override
-  bool get paintExpandedHeadCursor => _isVimActive;
+  bool get shouldPaintHeadRect => _isVimActive;
 
-  /// Vim paints the block cursor at `end-1` so it stays on the currently
-  /// selected character, not past it.
   @override
-  Position? expandedHeadPosition(Selection? rawSelection) {
-    if (!_isVimActive || rawSelection == null) return null;
-    final end = rawSelection.end;
-    if (end.offset > 0) {
-      return Position(path: end.path, offset: end.offset - 1);
-    }
-    return end;
-  }
+  bool get headWrapsCharacter => _isVimActive;
+
+  @override
+  bool get shouldCollapseIfSharePositions =>
+      _isVimActive && controller.mode == VimMode.visual;
 
   @override
   Widget buildCursor(CursorPaintContext ctx) {
@@ -87,17 +85,14 @@ class VimSelectionRenderer implements SelectionRenderer {
   }
 
   @override
-  Widget buildExpandedHeadCursor(CursorPaintContext ctx) {
-    if (!_isVimActive) return fallback.buildExpandedHeadCursor(ctx);
-    return VimBlockCursor(
-      rect: ctx.rect,
-      color: _resolveColor(_style, ctx.color),
+  Widget buildSelectionHighlight(SelectionPaintContext ctx) {
+    return SelectionAreaPaint(
+      rects: ctx.rects,
+      selectionColor: ctx.color,
+      headRectIndex: ctx.headRectIndex,
+      headColor: ctx.headColor,
     );
   }
-
-  @override
-  Widget buildSelectionHighlight(SelectionPaintContext ctx) =>
-      fallback.buildSelectionHighlight(ctx);
 
   @override
   Widget buildBlockSelectionHighlight(BlockSelectionContext ctx) =>
@@ -117,38 +112,20 @@ class VimSelectionRenderer implements SelectionRenderer {
 
   @override
   Position? onHorizontalMove(CursorMoveContext ctx, {bool byWord = false}) {
-    if (!_isVimActive) {
+    if (!_isVimActive ||
+        byWord ||
+        controller.mode != VimMode.visual ||
+        !ctx.selection.isSingle) {
       return fallback.onHorizontalMove(ctx, byWord: byWord);
     }
 
-    // In visual mode, allow full horizontal movement (selection expansion).
-    if (controller.mode == VimMode.visual) {
-      return fallback.onHorizontalMove(ctx, byWord: byWord);
-    }
-
-    // In normal mode ('h' / 'l'): do NOT cross line boundaries.
-    // Let the fallback compute the candidate, then validate it stays
-    // within the same line.
-    final candidate = fallback.onHorizontalMove(ctx, byWord: byWord);
-    if (candidate == null) return null;
-
-    final rp = ctx.renderParagraph ?? ctx.delegate.getRenderParagraph();
-    if (rp == null) return candidate; // can't validate, trust fallback
-
-    final tp = rp.textPainter;
-    final tpCurrent = ctx.currentOffset + ctx.textShift;
-    final tpCandidate = candidate.offset + ctx.textShift;
-
-    // Same line? Compare the line range of both positions.
-    final currentLine = tp.getLineBoundary(TextPosition(offset: tpCurrent));
-    final candidateLine = tp.getLineBoundary(TextPosition(offset: tpCandidate));
-    if (currentLine.start != candidateLine.start) {
-      return null; // blocked: would cross line boundary
-    }
-
-    // Update preferred column from the new position.
-    _preferredColumnDx = ctx.delegate.getCaretLocalDx(candidate.offset);
-    return candidate;
+    // Visual-mode `h`/`l` never reach this hook: the vim shortcut handlers
+    // (VimModeController.commandShortcutEvents) compute the whole selection
+    // themselves. The shared shift+arrow pipeline pins `selection.start` and
+    // only lets this hook move `end`, so moving the cursor past the anchor
+    // would collapse the selection instead of flipping it — vim needs both
+    // edges to move. No override here; the default move is harmless.
+    return null;
   }
 
   @override
@@ -288,9 +265,45 @@ class VimSelectionRenderer implements SelectionRenderer {
 
   @override
   List<Rect>? onSelectionRectsMeasured(SelectionMeasureContext ctx) {
-    // In visual mode, expand selection rects to block-cursor width
-    // so the highlight matches the visual block cursor appearance.
-    return fallback.onSelectionRectsMeasured(ctx);
+    if (!_isVimActive) return fallback.onSelectionRectsMeasured(ctx);
+
+    final raw = ctx.rawSelection;
+    if (raw == null || raw.isCollapsed || !ctx.node.path.equals(raw.end.path)) {
+      return ctx.delegate.getRectsInSelection(ctx.selection);
+    }
+
+    final norm = raw.normalized;
+    final headAtMax = raw.end == norm.end;
+    final nodeLen = ctx.node.delta?.length ?? 0;
+    final Selection bodySel;
+    final Selection headSel;
+    if (headAtMax) {
+      if (raw.end.offset <= 0) {
+        return ctx.delegate.getRectsInSelection(ctx.selection);
+      }
+      final headPos = Position(path: raw.end.path, offset: raw.end.offset - 1);
+      bodySel = Selection(start: norm.start, end: headPos);
+      headSel = Selection(start: headPos, end: raw.end);
+    } else {
+      if (raw.end.offset + 1 > nodeLen) {
+        return ctx.delegate.getRectsInSelection(ctx.selection);
+      }
+      final headEnd = Position(path: raw.end.path, offset: raw.end.offset + 1);
+      bodySel = Selection(start: headEnd, end: norm.end);
+      headSel = Selection(start: raw.end, end: headEnd);
+    }
+
+    final bodyRects = ctx.delegate
+        .getRectsInSelection(bodySel)
+        .where((r) => r.width > 0)
+        .toList();
+    final headRects = ctx.delegate.getRectsInSelection(headSel);
+    if (headRects.isEmpty) {
+      return ctx.delegate.getRectsInSelection(ctx.selection);
+    }
+    final headRect = headRects.first;
+
+    return [...bodyRects, headRect];
   }
 
   Color _resolveColor(VimCursorStyle style, Color fallback) {
@@ -365,13 +378,13 @@ class VimBlockCursor extends StatefulWidget {
     required this.rect,
     required this.color,
     this.shouldBlink = false,
-    this.blinkingInterval = 0.5,
+    this.blinkingInterval = 500,
   });
 
   final Rect rect;
   final Color color;
   final bool shouldBlink;
-  final double blinkingInterval;
+  final int blinkingInterval;
 
   @override
   State<VimBlockCursor> createState() => _VimBlockCursorState();
@@ -403,7 +416,7 @@ class _VimBlockCursorState extends State<VimBlockCursor> {
 
   Timer _initTimer() {
     return Timer.periodic(
-      Duration(milliseconds: (widget.blinkingInterval * 1000).toInt()),
+      Duration(milliseconds: widget.blinkingInterval),
       (timer) => setState(() => showCursor = !showCursor),
     );
   }
@@ -420,13 +433,10 @@ class _VimBlockCursorState extends State<VimBlockCursor> {
   Widget build(BuildContext context) {
     final color =
         (widget.shouldBlink && !showCursor) ? Colors.transparent : widget.color;
-    final size = widget.rect.size;
     return Positioned.fromRect(
       rect: widget.rect,
       child: IgnorePointer(
         child: Container(
-          width: size.width,
-          height: size.height,
           color: color,
         ),
       ),

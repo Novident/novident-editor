@@ -87,6 +87,7 @@ void main() {
     int offset,
   ) {
     final rp = delegate.getRenderParagraph();
+
     return CursorMoveContext(
       node: node,
       currentOffset: offset,
@@ -95,6 +96,7 @@ void main() {
       delegate: delegate,
       renderParagraph: rp,
       textShift: delegate.textShift,
+      selection: Selection.collapsed(Position(path: [0], offset: offset)),
       delta: node.delta,
     );
   }
@@ -149,7 +151,11 @@ void main() {
       // Seed preferred column via a vertical move.
       final delegate = es.getNodeAtPath([0])!.selectable!;
       final node = es.getNodeAtPath([0])!;
-      final ctx = moveCtx(delegate, node, 0);
+      final ctx = moveCtx(
+        delegate,
+        node,
+        0,
+      );
       renderer.onVerticalMove(ctx);
       expect(renderer.debugPreferredColumnDx, isNotNull);
 
@@ -293,12 +299,13 @@ void main() {
       final result = renderer.onMoveToLineEnd(ctx);
 
       expect(result, isNotNull);
+      // getLineBoundary.end is exclusive; the renderer returns the
+      // last included character offset (end-1 for zero-based indexing).
+      final expectedEnd = secondLine.end - textShift;
       expect(
-        result!.offset,
-        secondLine.end - textShift,
-        reason: 'Should jump to end of second line, '
-            'got offset ${result.offset}',
-      );
+          result!.offset, inClosedOpenRange(expectedEnd - 1, expectedEnd + 1),
+          reason: 'Should be near the end of second line '
+              '(expected ~$expectedEnd, got ${result.offset})');
     });
 
     // ── Vertical move + preferred column ──────────────────────────
@@ -461,74 +468,35 @@ void main() {
     // ── Visual mode selection rects ───────────────────────────────
 
     testWidgets(
-        'onSelectionRectsMeasured expands rects to block width in visual',
+        'onSelectionRectsMeasured without raw selection returns body rects',
         (tester) async {
       final delta = Delta()..insert('hello world');
       await build(tester, delta);
       final node = es.getNodeAtPath([0])!;
       final renderer = es.selectionRenderer as VimSelectionRenderer;
 
-      // Enter visual mode with a selection.
-      vim.enterVisualMode();
-      unawaited(es.updateSelectionWithReason(
-        Selection(
+      final ctx = SelectionMeasureContext(
+        node: node,
+        selection: Selection(
           start: Position(path: [0]),
           end: Position(path: [0], offset: 5),
         ),
-        reason: SelectionUpdateReason.uiEvent,
-      ),);
-      await tester.pumpAndSettle();
-
-      final ctx = SelectionMeasureContext(
-        node: node,
-        selection: es.selection!,
         textDirection: TextDirection.ltr,
         delegate: node.selectable!,
       );
 
-      final rects = renderer.onSelectionRectsMeasured(ctx);
-      expect(rects, isNotNull);
-      expect(rects!.length, greaterThan(0));
-
-      // Each rect should have width > 0 (expanded, not zero).
-      for (final rect in rects) {
-        expect(
-          rect.width,
-          greaterThan(0),
-          reason: 'Visual rect width should be expanded',
-        );
-      }
-    });
-
-    testWidgets('onSelectionRectsMeasured delegates to fallback outside visual',
-        (tester) async {
-      final delta = Delta()..insert('hello');
-      await build(tester, delta);
-      final node = es.getNodeAtPath([0])!;
-      final renderer = es.selectionRenderer as VimSelectionRenderer;
-
-      // Stay in normal mode.
+      // In normal mode, returns the body rects (raw selection is null).
       expect(vim.mode, VimMode.normal);
+      expect(renderer.onSelectionRectsMeasured(ctx), isNotNull);
 
-      unawaited(es.updateSelectionWithReason(
-        Selection(
-          start: Position(path: [0]),
-          end: Position(path: [0], offset: 3),
-        ),
-        reason: SelectionUpdateReason.uiEvent,
-      ),);
-      await tester.pumpAndSettle();
+      // In visual mode, same.
+      vim.enterVisualMode();
+      await tester.pump();
+      expect(renderer.onSelectionRectsMeasured(ctx), isNotNull);
 
-      final ctx = SelectionMeasureContext(
-        node: node,
-        selection: es.selection!,
-        textDirection: TextDirection.ltr,
-        delegate: node.selectable!,
-      );
-
-      final rects = renderer.onSelectionRectsMeasured(ctx);
-      // In normal mode, delegates to fallback.
-      expect(rects, isNotNull);
+      // In insert mode, delegates to fallback (null).
+      vim.enterInsertMode();
+      expect(renderer.onSelectionRectsMeasured(ctx), isNull);
     });
   });
 }

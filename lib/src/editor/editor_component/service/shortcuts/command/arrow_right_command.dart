@@ -73,7 +73,9 @@ CommandShortcutEventHandler _moveCursorToEndCommandHandler = (editorState) {
         delegate: selectable,
         renderParagraph: rp,
         textShift: selectable.textShift,
+        selection: selection,
         delta: node.delta,
+        forward: true,
       );
       final custom = renderer.onMoveToLineEnd(ctx);
       if (custom != null) {
@@ -147,7 +149,9 @@ CommandShortcutEventHandler _moveCursorToRightWordCommandHandler =
         delegate: selectable,
         renderParagraph: rp,
         textShift: selectable.textShift,
+        selection: selection,
         delta: delta,
+        forward: true,
       );
       final custom = renderer.onHorizontalMove(ctx, byWord: true);
       if (custom != null) {
@@ -271,7 +275,9 @@ CommandShortcutEventHandler _moveCursorRightWordSelectCommandHandler =
         delegate: selectable,
         renderParagraph: rp,
         textShift: selectable.textShift,
+        selection: selection,
         delta: node.delta,
+        forward: forward,
       );
       end = renderer.onHorizontalMove(ctx, byWord: true);
     }
@@ -347,7 +353,9 @@ CommandShortcutEventHandler _moveCursorRightSelectCommandHandler =
         delegate: selectable,
         renderParagraph: rp,
         textShift: selectable.textShift,
+        selection: selection,
         delta: node.delta,
+        forward: forward,
       );
       end = renderer.onHorizontalMove(ctx);
     }

@@ -10,15 +10,13 @@ Novident Editor is a **drop-in rich-text editor** for Flutter apps. It renders a
 tree built from composable block components — paragraphs, headings, lists, quotes, images,
 tables and more.
 
-<img src="./documentation/images/samples/editor-first-line-indent-esample.png" />
+<img src="./documentation/images/samples/screenshoot-desktop.png" />
 
 ## Unique Features
 
-- **Vim emulation** (normal / insert / visual, remappable keybindings, pending operator `dd`)
+- **Vim emulation** (normal / insert / visual, remappable keybindings and multi-key support)
 - **Zen mode** (typewriter centering, unfocused-block dimming, color neutralization without
   touching the document)
-- **Aggressive caching** throughout the document model, selection pipeline and text
-  rendering
 - **Named paragraph styles** with `basedOn` inheritance chains, similar to Word —
   font family, font size, bold, italic, spacing, colours and more, all resolved
   through a three-tier fallback (explicit style → type default → global default)

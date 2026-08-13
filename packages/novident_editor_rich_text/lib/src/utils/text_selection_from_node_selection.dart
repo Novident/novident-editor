@@ -4,7 +4,7 @@ import 'package:novident_editor_document/novident_editor_document.dart';
 TextSelection? textSelectionFromEditorSelection(
   Node node,
   Selection? selection,
-  int offsetSumFactor,
+  int textShift,
 ) {
   if (selection == null) {
     return null;
@@ -12,7 +12,7 @@ TextSelection? textSelectionFromEditorSelection(
 
   final normalized = selection.normalized;
   final path = node.path;
-  if (path < normalized.start.path || path > normalized.end.path) {
+  if (!node.inSelection(selection)) {
     return null;
   }
 
@@ -27,30 +27,30 @@ TextSelection? textSelectionFromEditorSelection(
     if (path.equals(normalized.start.path)) {
       if (normalized.isCollapsed) {
         textSelection = TextSelection.collapsed(
-          offset: normalized.startIndex + offsetSumFactor,
+          offset: normalized.startIndex + textShift,
         );
       } else {
         textSelection = TextSelection(
-          baseOffset: normalized.startIndex + offsetSumFactor,
-          extentOffset: normalized.endIndex + offsetSumFactor,
+          baseOffset: normalized.startIndex + textShift,
+          extentOffset: normalized.endIndex + textShift,
         );
       }
     }
   } else {
     if (path.equals(normalized.start.path)) {
       textSelection = TextSelection(
-        baseOffset: normalized.startIndex + offsetSumFactor,
-        extentOffset: length + offsetSumFactor,
+        baseOffset: normalized.startIndex + textShift,
+        extentOffset: length + textShift,
       );
     } else if (path.equals(normalized.end.path)) {
       textSelection = TextSelection(
-        baseOffset: offsetSumFactor,
-        extentOffset: normalized.endIndex + offsetSumFactor,
+        baseOffset: textShift > 0 ? 1 : 0,
+        extentOffset: normalized.endIndex + textShift,
       );
     } else {
       textSelection = TextSelection(
-        baseOffset: offsetSumFactor,
-        extentOffset: length + offsetSumFactor,
+        baseOffset: textShift > 0 ? 1 : 0,
+        extentOffset: length + textShift,
       );
     }
   }

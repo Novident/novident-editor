@@ -87,6 +87,7 @@ void main() {
     int offset,
   ) {
     final rp = delegate.getRenderParagraph();
+
     return CursorMoveContext(
       node: node,
       currentOffset: offset,
@@ -95,6 +96,7 @@ void main() {
       delegate: delegate,
       renderParagraph: rp,
       textShift: delegate.textShift,
+      selection: Selection.collapsed(Position(path: [0], offset: offset)),
       delta: node.delta,
     );
   }
@@ -149,7 +151,11 @@ void main() {
       // Seed preferred column via a vertical move.
       final delegate = es.getNodeAtPath([0])!.selectable!;
       final node = es.getNodeAtPath([0])!;
-      final ctx = moveCtx(delegate, node, 0);
+      final ctx = moveCtx(
+        delegate,
+        node,
+        0,
+      );
       renderer.onVerticalMove(ctx);
       expect(renderer.debugPreferredColumnDx, isNotNull);
 
@@ -296,7 +302,8 @@ void main() {
       // getLineBoundary.end is exclusive; the renderer returns the
       // last included character offset (end-1 for zero-based indexing).
       final expectedEnd = secondLine.end - textShift;
-      expect(result!.offset, inClosedOpenRange(expectedEnd - 1, expectedEnd + 1),
+      expect(
+          result!.offset, inClosedOpenRange(expectedEnd - 1, expectedEnd + 1),
           reason: 'Should be near the end of second line '
               '(expected ~$expectedEnd, got ${result.offset})');
     });

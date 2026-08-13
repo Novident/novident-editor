@@ -71,6 +71,10 @@ class VimSelectionRenderer extends SelectionRenderer {
   bool get headWrapsCharacter => _isVimActive;
 
   @override
+  bool get shouldCollapseIfSharePositions =>
+      _isVimActive && controller.mode == VimMode.visual;
+
+  @override
   Widget buildCursor(CursorPaintContext ctx) {
     if (!_isVimActive) return fallback.buildCursor(ctx);
     return VimBlockCursor(
@@ -108,11 +112,20 @@ class VimSelectionRenderer extends SelectionRenderer {
 
   @override
   Position? onHorizontalMove(CursorMoveContext ctx, {bool byWord = false}) {
-    if (!_isVimActive) {
+    if (!_isVimActive ||
+        byWord ||
+        controller.mode != VimMode.visual ||
+        !ctx.selection.isSingle) {
       return fallback.onHorizontalMove(ctx, byWord: byWord);
     }
 
-    return fallback.onHorizontalMove(ctx, byWord: byWord);
+    // Visual-mode `h`/`l` never reach this hook: the vim shortcut handlers
+    // (VimModeController.commandShortcutEvents) compute the whole selection
+    // themselves. The shared shift+arrow pipeline pins `selection.start` and
+    // only lets this hook move `end`, so moving the cursor past the anchor
+    // would collapse the selection instead of flipping it — vim needs both
+    // edges to move. No override here; the default move is harmless.
+    return null;
   }
 
   @override
@@ -255,9 +268,7 @@ class VimSelectionRenderer extends SelectionRenderer {
     if (!_isVimActive) return fallback.onSelectionRectsMeasured(ctx);
 
     final raw = ctx.rawSelection;
-    if (raw == null ||
-        raw.isCollapsed ||
-        !ctx.node.path.equals(raw.end.path)) {
+    if (raw == null || raw.isCollapsed || !ctx.node.path.equals(raw.end.path)) {
       return ctx.delegate.getRectsInSelection(ctx.selection);
     }
 

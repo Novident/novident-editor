@@ -137,8 +137,10 @@ class CursorMoveContext {
     required this.caretLocalDx,
     required this.textDirection,
     required this.delegate,
-    this.renderParagraph,
     required this.textShift,
+    required this.selection,
+    this.forward = false,
+    this.renderParagraph,
     this.delta,
   });
 
@@ -147,6 +149,9 @@ class CursorMoveContext {
 
   /// Current text offset within the node.
   final int currentOffset;
+
+  /// Current selection into the editor.
+  final Selection selection;
 
   /// X position of the caret in local (scroll-independent) coordinates.
   final double caretLocalDx;
@@ -163,6 +168,9 @@ class CursorMoveContext {
   /// Number of [WidgetSpan]s prepended before the first character
   /// (used for first-line indent offset).
   final int textShift;
+
+  /// Whether the cursor is trying to move forward
+  final bool forward;
 
   /// The text delta for this node, if any.
   final Delta? delta;

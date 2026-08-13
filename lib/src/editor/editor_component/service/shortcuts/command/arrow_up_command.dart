@@ -48,6 +48,8 @@ CommandShortcutEventHandler _moveCursorUpCommandHandler = (editorState) {
         renderParagraph: rp,
         textShift: selectable.textShift,
         delta: node.delta,
+        selection: selection,
+        forward: false,
       );
       upPosition = renderer.onVerticalMove(ctx);
     }
@@ -174,9 +176,11 @@ CommandShortcutEventHandler _moveCursorUpSelectCommandHandler = (editorState) {
         caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
         textDirection: selectable.textDirection(),
         delegate: selectable,
+        selection: selection,
         renderParagraph: rp,
         textShift: selectable.textShift,
         delta: node.delta,
+        forward: false,
       );
       end = renderer.onVerticalMove(ctx);
     }

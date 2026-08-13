@@ -141,6 +141,10 @@ abstract class SelectionRenderer {
   /// of an expanded selection to compute the correct character constrast color.
   bool get headWrapsCharacter => false;
 
+  /// Whether the [EditorState] should take in account the [start] and [end] positions 
+  /// of the selection and collapse if them starts at the same point.
+  bool get shouldCollapseIfSharePositions => true;
+
   @Deprecated(
       'Use shouldPaintHeadRect instead. Will be removed in a future version.')
   bool get paintExpandedHeadCursor => false;

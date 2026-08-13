@@ -6,6 +6,8 @@ class SelectionAreaPainter extends CustomPainter {
     required this.rects,
     required this.selectionColor,
     this.minRectWidth = 8.0,
+    this.headRectIndex,
+    this.headColor,
   });
 
   final List<Rect> rects;
@@ -15,13 +17,35 @@ class SelectionAreaPainter extends CustomPainter {
   /// (e.g. at the end of a line with no content). Defaults to 8.0.
   final double minRectWidth;
 
+  /// The index of the head rect within [rects], or `null`. When non-null,
+  /// loops in [rects] and using [headRectIndex] is painted with [headColor] instead of
+  /// [selectionColor].
+  ///
+  /// Flutter only returns 1 [Rect] covering the exact positions
+  /// using `getBoxesForSelection`. So, the [head] need to be added 
+  /// manually that specific [Rect]
+  final int? headRectIndex;
+
+  /// The color for the head rect. Ignored if [headRectIndex] is `null`.
+  final Color? headColor;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    final effectiveHeadColor = headColor;
+    final effectiveHeadIndex = headRectIndex;
+
+    final defaultPaint = Paint()
       ..color = selectionColor
       ..style = PaintingStyle.fill;
 
-    for (var rect in rects) {
+    final headPaint = (effectiveHeadIndex != null && effectiveHeadColor != null)
+        ? (Paint()
+          ..color = effectiveHeadColor
+          ..style = PaintingStyle.fill)
+        : null;
+
+    for (var i = 0; i < rects.length; i++) {
+      var rect = rects[i];
       // if rect.width is 0, we draw a small rect to indicate the selection area
       if (rect.width <= 0) {
         rect = Rect.fromLTWH(
@@ -33,7 +57,7 @@ class SelectionAreaPainter extends CustomPainter {
       }
       canvas.drawRect(
         rect,
-        paint,
+        i == effectiveHeadIndex ? (headPaint ?? defaultPaint) : defaultPaint,
       );
     }
   }
@@ -42,6 +66,8 @@ class SelectionAreaPainter extends CustomPainter {
   bool shouldRepaint(SelectionAreaPainter oldDelegate) {
     return selectionColor != oldDelegate.selectionColor ||
         minRectWidth != oldDelegate.minRectWidth ||
+        headRectIndex != oldDelegate.headRectIndex ||
+        headColor != oldDelegate.headColor ||
         !const DeepCollectionEquality().equals(rects, oldDelegate.rects);
   }
 }

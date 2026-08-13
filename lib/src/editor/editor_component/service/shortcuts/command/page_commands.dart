@@ -35,12 +35,14 @@ CommandShortcutEventHandler _pageUpCommandHandler = (editorState) {
       final ctx = CursorMoveContext(
         node: node,
         currentOffset: selection.end.offset,
+        selection: selection,
         caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
         textDirection: selectable.textDirection(),
         delegate: selectable,
         renderParagraph: rp,
         textShift: selectable.textShift,
         delta: node.delta,
+        forward: false,
       );
       final custom = renderer.onPageUp(ctx);
       if (custom != null) {
@@ -97,7 +99,9 @@ CommandShortcutEventHandler _pageDownCommandHandler = (editorState) {
         delegate: selectable,
         renderParagraph: rp,
         textShift: selectable.textShift,
+        selection: selection,
         delta: node.delta,
+        forward: true,
       );
       final custom = renderer.onPageDown(ctx);
       if (custom != null) {

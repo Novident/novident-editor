@@ -7,6 +7,8 @@ class SelectionAreaPaint extends StatelessWidget {
     required this.rects,
     required this.selectionColor,
     this.minRectWidth = 8.0,
+    this.headRectIndex,
+    this.headColor,
   });
 
   final List<Rect> rects;
@@ -16,6 +18,13 @@ class SelectionAreaPaint extends StatelessWidget {
   /// Defaults to 8.0.
   final double minRectWidth;
 
+  /// The index of the head rect within [rects], or `null`. When non-null,
+  /// that rect is painted with [headColor] instead of [selectionColor].
+  final int? headRectIndex;
+
+  /// The color for the head rect. Ignored if [headRectIndex] is `null`.
+  final Color? headColor;
+
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
@@ -23,6 +32,8 @@ class SelectionAreaPaint extends StatelessWidget {
         rects: rects,
         selectionColor: selectionColor,
         minRectWidth: minRectWidth,
+        headRectIndex: headRectIndex,
+        headColor: headColor,
       ),
     );
   }

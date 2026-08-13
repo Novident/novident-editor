@@ -48,7 +48,9 @@ CommandShortcutEvent event(
         case VimMode.normal:
           return onNormal(editorState, controller);
         case VimMode.visual:
-          return (onVisual ?? onNormal)(editorState, controller);
+          controller.suppressSelectionSync();
+          return onVisual?.call(editorState, controller) ??
+              KeyEventResult.ignored;
       }
     },
   );

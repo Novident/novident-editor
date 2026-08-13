@@ -18,11 +18,13 @@ dependencies:
   novident_split_view: ^1.0.1
   novident_tree_view: ^1.1.0
   novident_nodes: ^1.2.4
-  novident_editor_core: ^1.0.0
-  novident_editor_selection: ^1.0.0
-  novident_editor_rich_text: ^1.0.0 
-  novident_editor_styles: ^1.0.0
-  novident_editor_document: ^1.0.2
+  novident_editor_core: ^1.0.2
+  novident_editor_selection:
+    path: ../packages/novident_editor_selection
+  novident_editor_rich_text:  
+    path: ../packages/novident_editor_rich_text
+  novident_editor_styles: ^1.0.2
+  novident_editor_document: ^1.0.5
   cupertino_icons: ^1.0.8
   collection: ^1.19.1
   equatable: ^2.0.7

@@ -45,9 +45,11 @@ CommandShortcutEventHandler _moveCursorDownCommandHandler = (editorState) {
         caretLocalDx: selectable.getCaretLocalDx(selection.end.offset) ?? 0,
         textDirection: selectable.textDirection(),
         delegate: selectable,
+        selection: selection,
         renderParagraph: rp,
         textShift: selectable.textShift,
         delta: node.delta,
+        forward: true,
       );
       downPosition = renderer.onVerticalMove(ctx);
     }
@@ -180,6 +182,8 @@ CommandShortcutEventHandler _moveCursorDownSelectCommandHandler =
         delegate: selectable,
         renderParagraph: rp,
         textShift: selectable.textShift,
+        selection: selection,
+        forward: true,
         delta: node.delta,
       );
       end = renderer.onVerticalMove(ctx);

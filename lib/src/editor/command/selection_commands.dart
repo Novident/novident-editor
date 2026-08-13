@@ -222,17 +222,18 @@ extension SelectionTransform on EditorState {
         final row =
             cellParent.attributes[TableCellBlockKeys.rowPosition] as int?;
         if (col != null && row != null) {
-          final nextCell =
-              t.adjacentCellRowMajor(col, row, forward: !upwards);
+          final nextCell = t.adjacentCellRowMajor(col, row, forward: !upwards);
           if (nextCell != null &&
               nextCell.children.isNotEmpty &&
               nextCell.children.first.delta != null) {
             final child = nextCell.children.first;
             updateSelectionWithReason(
-              Selection.collapsed(Position(
-                path: child.path,
-                offset: upwards ? child.delta!.length : 0,
-              ),),
+              Selection.collapsed(
+                Position(
+                  path: child.path,
+                  offset: upwards ? child.delta!.length : 0,
+                ),
+              ),
               reason: SelectionUpdateReason.uiEvent,
             );
             return;
@@ -286,7 +287,9 @@ extension SelectionTransform on EditorState {
     }
 
     // If the selection is not collapsed, then we want to collapse the selection
-    if (!selection.isCollapsed && range != SelectionMoveRange.line) {
+    if (!selection.isCollapsed &&
+        range != SelectionMoveRange.line &&
+        (selectionRenderer?.shouldCollapseIfSharePositions ?? true)) {
       // move the cursor to the start or end of the selection
       this.selection = selection.collapse(
         atStart: direction == SelectionMoveDirection.forward,
@@ -365,6 +368,8 @@ extension SelectionTransform on EditorState {
                 renderParagraph: rp,
                 textShift: selectable.textShift,
                 delta: delta,
+                selection: selection,
+                forward: direction == SelectionMoveDirection.forward,
               );
               final custom = renderer.onHorizontalMove(ctx);
               if (custom != null) {
@@ -444,9 +449,11 @@ extension SelectionTransform on EditorState {
                 caretLocalDx: selectable.getCaretLocalDx(offset) ?? 0,
                 textDirection: selectable.textDirection(),
                 delegate: selectable,
+                selection: selection,
                 renderParagraph: rp,
                 textShift: selectable.textShift,
                 delta: delta,
+                forward: direction == SelectionMoveDirection.forward,
               );
               final custom = renderer.onHorizontalMove(ctx, byWord: true);
               if (custom != null) {
@@ -537,6 +544,8 @@ extension SelectionTransform on EditorState {
                 renderParagraph: rp,
                 textShift: selectable.textShift,
                 delta: delta,
+                selection: selection,
+                forward: direction == SelectionMoveDirection.forward,
               );
               final custom = direction == SelectionMoveDirection.forward
                   ? renderer.onMoveToLineStart(ctx)
@@ -572,9 +581,8 @@ extension SelectionTransform on EditorState {
           }
           // move the cursor to the left or right by one line
           final targetPosition = selection.start.copyWith(
-            offset: direction == SelectionMoveDirection.forward
-                ? 0
-                : delta.length,
+            offset:
+                direction == SelectionMoveDirection.forward ? 0 : delta.length,
           );
           final from = selection.start;
           final hookResult = tryMoveHook(

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:example/common/controller/tree_controller.dart';
 import 'package:example/common/constants/default_files_nodes.dart';
 import 'package:example/common/nodes/root.dart';
@@ -7,7 +6,7 @@ import 'package:example/widgets/views/android_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:novident_editor/novident_editor.dart'
-    show NovidentEditorLocalizations;
+    show NovidentEditorLocalizations, UniversalPlatform;
 import 'package:novident_split_view/novident_split_view.dart';
 import 'widgets/views/desktop_view.dart';
 
@@ -77,7 +76,7 @@ class MiddlewareView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid || Platform.isIOS || Platform.isFuchsia) {
+    if (UniversalPlatform.isMobile) {
       return AndroidTreeViewExample(controller: controller);
     }
     return DesktopTreeViewExample(controller: controller);

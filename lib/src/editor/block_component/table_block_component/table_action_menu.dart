@@ -118,7 +118,7 @@ final TableActionMenuItem tableActionAddColumnBeforeItem = TableActionMenuItem(
   direction: TableDirection.col,
   onPressed: (menuContext) {
     final styles = NovidentEditorStyles.maybeOf(menuContext.buildContext);
-    final resolved = styles?.resolveStyle(menuContext.node);
+    final resolved = styles?.resolveStyleForNode(menuContext.node);
     final tableStyleDef = resolved is NovidentTableStyleDefinition
         ? resolved
         : kDefaultTableStyle;
@@ -140,7 +140,7 @@ final TableActionMenuItem tableActionAddRowBeforeItem = TableActionMenuItem(
   direction: TableDirection.row,
   onPressed: (menuContext) {
     final styles = NovidentEditorStyles.maybeOf(menuContext.buildContext);
-    final resolved = styles?.resolveStyle(menuContext.node);
+    final resolved = styles?.resolveStyleForNode(menuContext.node);
     final tableStyleDef = resolved is NovidentTableStyleDefinition
         ? resolved
         : kDefaultTableStyle;
@@ -162,7 +162,7 @@ final TableActionMenuItem tableActionAddColumnAfterItem = TableActionMenuItem(
   direction: TableDirection.col,
   onPressed: (menuContext) {
     final styles = NovidentEditorStyles.maybeOf(menuContext.buildContext);
-    final resolved = styles?.resolveStyle(menuContext.node);
+    final resolved = styles?.resolveStyleForNode(menuContext.node);
     final tableStyleDef = resolved is NovidentTableStyleDefinition
         ? resolved
         : kDefaultTableStyle;
@@ -184,7 +184,7 @@ final TableActionMenuItem tableActionAddRowAfterItem = TableActionMenuItem(
   direction: TableDirection.row,
   onPressed: (menuContext) {
     final styles = NovidentEditorStyles.maybeOf(menuContext.buildContext);
-    final resolved = styles?.resolveStyle(menuContext.node);
+    final resolved = styles?.resolveStyleForNode(menuContext.node);
     final tableStyleDef = resolved is NovidentTableStyleDefinition
         ? resolved
         : kDefaultTableStyle;

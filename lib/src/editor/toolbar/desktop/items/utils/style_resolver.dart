@@ -12,7 +12,7 @@ NovidentStyleDefinition resolveEffectiveToolbarStyle(
   Node node,
 ) {
   final inherited = NovidentEditorStyles.maybeOf(context);
-  if (inherited != null) return inherited.resolveStyle(node);
+  if (inherited != null) return inherited.resolveStyleForNode(node);
 
   final config = editorState.editorStyles;
   if (config == null) return kDefaultBaseStyle;

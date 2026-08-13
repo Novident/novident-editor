@@ -336,14 +336,16 @@ class _UploadImageMenuState extends State<UploadImageMenu> {
               allowedExtensions: kIsWeb ? allowedExtensions : null,
             );
             if (result != null && result.files.isNotEmpty) {
-              final Uint8List? bytes = result.files.firstOrNull?.bytes;
-              setState(() {
-                if (kIsWeb && bytes != null) {
-                  _imagePathOrContent = base64String(bytes);
-                } else {
-                  _imagePathOrContent = result.files.first.path;
-                }
-              });
+              if (result.files.firstOrNull == null) return;
+              final String? path = result.files.firstOrNull!.path;
+              if (path == null) return;
+              if (kIsWeb) {
+                _imagePathOrContent =
+                    base64String(await result.files.firstOrNull!.readAsBytes());
+              } else {
+                _imagePathOrContent = result.files.first.path;
+              }
+              setState(() async {});
             }
           },
           child: Container(

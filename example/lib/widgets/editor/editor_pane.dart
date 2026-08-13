@@ -5,16 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_split_view/novident_split_view.dart';
 
-import 'document_session.dart';
 import 'my_editor.dart';
+import 'session_controller.dart';
 import 'vim_mode_chip.dart';
 import 'word_count_chip.dart';
 import 'zen_editor_view.dart';
 
 /// A self-contained editor pane for the split view.
 ///
-/// Every pane owns its own [DocumentSession] (editor, scroll, focus and
-/// vim state), but the document content lives in the
+/// Every pane owns an [EditorSessionController] (editor, scroll, focus
+/// and vim state), but the document content lives in the
 /// [DocumentContentProvider] (keyed by node id): edits are written there,
 /// the provider notifies, and every pane showing the same document re-reads
 /// it — duplicated panes stay in sync for free, with no extra wiring.
@@ -37,71 +37,43 @@ class EditorPane extends StatefulWidget {
 }
 
 class _EditorPaneState extends State<EditorPane> {
-  late DocumentSession _session;
+  late EditorSessionController _sessionController;
 
   @override
   void initState() {
     super.initState();
-    _session = _createSession();
-    // Notify the toolbar after the first frame so it picks up the
-    // editor state even when the pane gains focus asynchronously
-    // (e.g. via SplitController.open / focusPane).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _notifyToolbar();
-    });
-  }
-
-  DocumentSession _createSession() {
-    return DocumentSession(nodeId: widget.file.id)
-      ..addListener(_onSessionChanged);
+    _sessionController = EditorSessionController(
+      nodeId: widget.file.id,
+      toolbarNotifier: widget.toolbarNotifier,
+    )
+      ..addListener(_onSessionChanged)
+      ..isFocused = widget.isFocused;
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _session.syncFromStore(DocumentContentProvider.of(context));
+    _sessionController.syncFromStore(DocumentContentProvider.of(context));
   }
 
   @override
   void didUpdateWidget(covariant EditorPane oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.file.id != widget.file.id) {
-      _session.dispose();
-      _session = _createSession()
-        ..syncFromStore(DocumentContentProvider.of(context));
+      _sessionController.replace(widget.file.id);
     }
     if (oldWidget.isFocused != widget.isFocused) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _notifyToolbar();
-      });
+      _sessionController.isFocused = widget.isFocused;
     }
   }
 
   @override
   void dispose() {
-    _session.dispose();
+    _sessionController.dispose();
     super.dispose();
   }
 
-  void _sessionChanged() {
-    if (_session.isReady && widget.isFocused) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _notifyToolbar();
-      });
-    }
-  }
-
-  void _notifyToolbar() {
-    if (widget.isFocused && _session.isReady) {
-      widget.toolbarNotifier.value = _session.editorState;
-    } else if (!widget.isFocused &&
-        widget.toolbarNotifier.value == _session.editorState) {
-      widget.toolbarNotifier.value = null;
-    }
-  }
-
   void _onSessionChanged() {
-    _sessionChanged();
     if (mounted) setState(() {});
   }
 
@@ -134,9 +106,9 @@ class _EditorPaneState extends State<EditorPane> {
       ),
       child: Row(
         children: <Widget>[
-          VimModeChip(controller: _session.vimController),
+          VimModeChip(controller: _sessionController.session.vimController),
           const Spacer(),
-          WordCountChip(service: _session.wordCounter),
+          WordCountChip(service: _sessionController.session.wordCounter),
           const SizedBox(width: 10),
           IconButton(
             padding: EdgeInsets.zero,
@@ -178,7 +150,7 @@ class _EditorPaneState extends State<EditorPane> {
               ),
             ],
           ),
-          child: !_session.isReady
+          child: !_sessionController.isReady
               ? const SizedBox.expand()
               : Column(
                   children: <Widget>[
@@ -186,7 +158,7 @@ class _EditorPaneState extends State<EditorPane> {
                       child: Padding(
                         padding: const EdgeInsets.only(top: 15),
                         child: MyEditor(
-                          session: _session,
+                          session: _sessionController.session,
                           styles: widget.styles,
                         ),
                       ),
@@ -201,11 +173,6 @@ class _EditorPaneState extends State<EditorPane> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.isFocused && _session.isReady) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _notifyToolbar();
-      });
-    }
     return PaneHeader(
       // Drag the header to move this pane anywhere (center = swap).
       draggable: true,

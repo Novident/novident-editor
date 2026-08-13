@@ -20,10 +20,11 @@ enum NovidentMobileIcons {
   checkbox('toolbar_icons/checkbox'),
   quote('toolbar_icons/quote'),
   divider('toolbar_icons/divider'),
+  styleSolid('toolbar_icons/style_solid'),
   close('toolbar_icons/close');
 
-  final String iconPath;
   const NovidentMobileIcons(this.iconPath);
+  final String iconPath;
 }
 
 /// {@tool snippet}

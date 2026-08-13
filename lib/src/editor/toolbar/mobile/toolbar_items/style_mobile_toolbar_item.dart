@@ -3,12 +3,8 @@ import 'package:flutter/material.dart';
 
 final styleMobileToolbarItem = MobileToolbarItem.withMenu(
   itemIconBuilder: (context, _, __) {
-    final config = NovidentEditorStyles.maybeOf(context)?.config;
-    if (config == null || config.registry.styles.isEmpty) {
-      return const SizedBox.shrink();
-    }
     return NovidentMobileIcon(
-      afMobileIcons: NovidentMobileIcons.heading,
+      afMobileIcons: NovidentMobileIcons.styleSolid,
       color: MobileToolbarTheme.of(context).iconColor,
     );
   },
@@ -32,15 +28,14 @@ class _StyleMenu extends StatefulWidget {
 class _StyleMenuState extends State<_StyleMenu> {
   @override
   Widget build(BuildContext context) {
-    final config = NovidentEditorStyles.of(context).config;
+    final styles = NovidentEditorStyles.of(context);
+    final config = styles.config;
     final allStyles = config.registry.styles.values.toList();
     if (allStyles.isEmpty) return const SizedBox.shrink();
 
-    final node = widget.editorState
-        .getNodeAtPath(widget.selection.start.path);
+    final node = widget.editorState.getNodeAtPath(widget.selection.start.path);
     if (node == null) return const SizedBox.shrink();
-    final currentStyleRef =
-        node.attributes[blockComponentStyleRef] as String?;
+    final currentStyleRef = node.attributes[blockComponentStyleRef] as String?;
 
     final style = MobileToolbarTheme.of(context);
     final size = MediaQuery.sizeOf(context);
@@ -56,6 +51,7 @@ class _StyleMenuState extends State<_StyleMenu> {
           id: s.id,
           name: s.name,
           isSelected: s.id == currentStyleRef,
+          style: s,
         ),
       ),
     ];
@@ -65,36 +61,45 @@ class _StyleMenuState extends State<_StyleMenu> {
         (size.width - (columnCount + 1) * style.buttonSpacing) / columnCount;
 
     final btnList = entries.map((entry) {
+      final style = entry.style == null
+          ? kDefaultBaseStyle
+          : styles.resolveStyle(entry.style ?? kDefaultBaseStyle);
       return ConstrainedBox(
         constraints: BoxConstraints.tightFor(width: itemWidth),
-        child: MobileToolbarItemMenuBtn(
-          label: Text(
-            entry.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight:
-                  entry.isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-          isSelected: entry.isSelected,
-          onPressed: () {
-            setState(() {
-              widget.editorState.updateNode(
-                widget.selection,
-                (node) => node.copyWith(
-                  attributes: {
-                    ...node.attributes,
-                    if (entry.id.isNotEmpty)
-                      blockComponentStyleRef: entry.id
-                    else
-                      blockComponentStyleRef: null,
-                  },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: MobileToolbarItemMenuBtn(
+            label: Text(
+              entry.name,
+              maxLines: 2,
+              overflow: TextOverflow.clip,
+              style: _buildBaseTextStyle(
+                style,
+              ).merge(
+                TextStyle(
+                  fontWeight:
+                      entry.isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
-              );
-            });
-          },
+              ),
+            ),
+            isSelected: entry.isSelected,
+            onPressed: () {
+              setState(() {
+                widget.editorState.updateNode(
+                  widget.selection,
+                  (node) => node.copyWith(
+                    attributes: {
+                      ...node.attributes,
+                      if (entry.id.isNotEmpty)
+                        blockComponentStyleRef: entry.id
+                      else
+                        blockComponentStyleRef: null,
+                    },
+                  ),
+                );
+              });
+            },
+          ),
         ),
       );
     }).toList();
@@ -108,16 +113,51 @@ class _StyleMenuState extends State<_StyleMenu> {
       ),
     );
   }
+
+  TextStyle _buildBaseTextStyle(NovidentStyleDefinition? resolved) {
+    final TextStyle style = TextStyle(
+      fontSize: kDefaultBaseStyle.fontSize,
+      fontFamily: kDefaultBaseStyle.fontFamily,
+      color: kDefaultBaseStyle.textColor,
+    );
+    if (resolved == null) return style;
+
+    final resolvedTextStyle = TextStyle(
+      fontSize: resolved.fontSize,
+      fontWeight: resolved.bold ? FontWeight.bold : null,
+      fontStyle: resolved.italic ? FontStyle.italic : null,
+      decoration: TextDecoration.combine([
+        if (resolved.overline) TextDecoration.overline,
+        if (resolved.underline) TextDecoration.underline,
+        if (resolved.strikethrough) TextDecoration.lineThrough,
+      ]),
+      fontFamily: resolved.fontFamily,
+      color: resolved.textColor,
+      backgroundColor: resolved.textBackgroundColor,
+      decorationStyle: resolved.decorationStyle,
+      letterSpacing: resolved.letterSpacing,
+      wordSpacing: resolved.wordSpacing,
+      fontVariations: resolved.fontVariations,
+      shadows: resolved.fontShadows,
+      foreground: resolved.fontForeground,
+      background: resolved.fontBackground,
+      fontFeatures: resolved.fontFeatures,
+      decorationColor: resolved.decorationColor,
+      height: resolved.spacing?.lineHeight,
+    );
+    return style.merge(resolvedTextStyle);
+  }
 }
 
 class _StyleMenuEntry {
-
   const _StyleMenuEntry({
     required this.id,
     required this.name,
     required this.isSelected,
+    this.style,
   });
   final String id;
   final String name;
   final bool isSelected;
+  final NovidentStyleDefinition? style;
 }

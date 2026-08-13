@@ -7,12 +7,8 @@ import 'package:novident_nodes/novident_nodes.dart';
 import 'package:novident_split_view/novident_split_view.dart';
 
 import '../drawer/tree_view_drawer.dart';
+import '../editor/editor_configuration.dart';
 import '../editor/editor_pane.dart';
-import '../../common/constants/contents/readme_document.dart'
-    show kReadmeStripedTable, kReadmePlainTable, kReadmeAccentTable;
-
-/// Workspace colors.
-const Color _kWorkspaceBackground = Color(0xFFECECEC);
 
 /// Desktop workspace: binder on the left, a [NovSplitView] on the right.
 ///
@@ -41,8 +37,8 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
     super.initState();
     treeController = widget.controller
       ..selectNode(widget.controller.root.atPath(<int>[1, 0]));
-    final Node? initial = treeController.selection.value;
-    if (initial is File) {
+    final File? initial = treeController.selectedFile;
+    if (initial != null) {
       _splitController.open(initial.id);
     }
     treeController.selection.addListener(_onSelectionChanged);
@@ -72,11 +68,11 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
   /// selection changes: that is the whole point of the split view.
   void _onSelectionChanged() {
     if (!mounted) return;
-    final Node? node = treeController.selection.value;
-    if (node is! File) return;
-    final (int, int)? location = _splitController.locate(node.id);
+    final File? file = treeController.selectedFile;
+    if (file == null) return;
+    final (int, int)? location = _splitController.locate(file.id);
     if (location == null) {
-      _splitController.open(node.id);
+      _splitController.open(file.id);
       return;
     }
     _splitController.focusPane(location.$1, location.$2);
@@ -101,14 +97,14 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
       file: node,
       isFocused: pane.isFocused,
       toolbarNotifier: _toolbarNotifier,
-      styles: _kStyles,
+      styles: kEditorStyles,
     );
   }
 
   /// Shown when the document behind a pane was deleted from the tree.
   Widget _buildMissingDocumentPane(PaneContext pane) {
     return ColoredBox(
-      color: _kWorkspaceBackground,
+      color: kWorkspaceBackground,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -228,7 +224,7 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
         .clamp(240.0, 320.0)
         .toDouble();
     return Scaffold(
-      backgroundColor: _kWorkspaceBackground,
+      backgroundColor: kWorkspaceBackground,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -255,9 +251,9 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
                       return SizedBox(
                         width: constraints.maxWidth,
                         child: NovidentStaticToolbar(
-                          items: _kToolbarItems,
+                          items: kDesktopToolbarItems,
                           editorState: editorState,
-                          stylesConfig: _kStyles,
+                          stylesConfig: kEditorStyles,
                           showWhenNoSelection: true,
                         ),
                       );
@@ -277,40 +273,5 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
       ),
     );
   }
-
-  static final _kToolbarItems = <ToolbarItem>[
-    styleToolbarItem,
-    buildFontSizeItem(),
-    buildFontFamilyItem(fontFamilies: getDefaultFonts()),
-    ...markdownFormatItems,
-    quoteItem,
-    bulletedListItem,
-    numberedListItem,
-    linkItem,
-    ...alignmentItems,
-  ];
-
-  static final _kStyles = NovidentStylesConfig(
-    defaultStyle: kDefaultBaseStyle,
-    registry: NovidentStyleRegistry({
-      ...kDefaultStyleRegistry.styles,
-      kReadmeStripedTable.id: kReadmeStripedTable,
-      kReadmePlainTable.id: kReadmePlainTable,
-      kReadmeAccentTable.id: kReadmeAccentTable,
-    }),
-    defaultStylesByType: <String, NovidentStyleDefinition>{
-      'table': kDefaultTableStyle,
-    },
-  );
 }
 
-final NovidentStyleDefinition kDefaultBaseStyle =
-    NovidentStyleDefinition(
-  id: '__novident_base__',
-  name: 'Base',
-  fontSize: 12.0,
-  fontFamily: getDefaultFont(),
-  textColor: Colors.black,
-  spacing: NovidentStyleSpacing(lineHeight: 1.0),
-  indent: NovidentStyleIndent.defaultLineFilter(),
-);

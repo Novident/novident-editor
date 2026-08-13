@@ -23,7 +23,8 @@ dependencies:
     path: ./packages/novident_editor_selection
   novident_editor_rich_text:
     path: ./packages/novident_editor_rich_text
-  novident_editor_styles: ^1.0.2
+  novident_editor_styles: 
+    path: ./packages/novident_editor_styles
   novident_editor_document: ^1.0.5
   flutter_svg: ^2.0.6
   html: ^0.15.5
@@ -37,9 +38,8 @@ dependencies:
   scroll_to_index: ^3.0.1
   string_validator: ^1.0.0
   url_launcher: ^6.1.11
-  keyboard_height:
-    path: ../novident_keyboard_height
-  file_picker: ^11.0.3
+  file_picker: ^12.0.0-beta.7
+  keyboard_height_plugin: ^0.3.0
 
 dev_dependencies:
   flutter_lints: ^5.0.0

@@ -5,12 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
 import 'document_session.dart';
+import 'editor_configuration.dart';
 import 'my_editor.dart';
 import 'vim_mode_chip.dart';
 import 'word_count_chip.dart';
-
-/// Workspace colors (kept in sync with the desktop view).
-const Color _kWorkspaceBackground = Color(0xFFECECEC);
 
 /// Distraction-free writing view.
 ///
@@ -155,7 +153,7 @@ class _ZenEditorViewState extends State<ZenEditorView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _kWorkspaceBackground,
+      backgroundColor: kWorkspaceBackground,
       body: Stack(
         children: <Widget>[
           _buildSheet(),

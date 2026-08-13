@@ -29,7 +29,6 @@ class EditorStateDebugInfo {
 /// set true to this key to prevent attaching the text service when selection is changed.
 const selectionExtraInfoDoNotAttachTextService =
     'selectionExtraInfoDoNotAttachTextService';
-const _selectionDragModeKey = 'selection_drag_mode';
 
 class ApplyOptions {
   const ApplyOptions({
@@ -166,8 +165,8 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
   /// @override from BlockSelectionHost
   @override
-  String? selectionDragModeValue() =>
-      selectionExtraInfo?[_selectionDragModeKey] as String?;
+  dynamic selectionDragModeValue() =>
+      selectionExtraInfo?[selectionDragModeKey];
 
   // ---- RichTextEditorConfig overrides ----
 
@@ -681,7 +680,7 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
         onScrollViewScrolled: () {
           _notifyScrollViewScrolledListeners();
           if (!isDesktopOrWeb) {
-            final dynamic dragMode = selectionExtraInfo?[_selectionDragModeKey];
+            final dynamic dragMode = selectionExtraInfo?[selectionDragModeKey];
             final bool isDraggingSelection = dragMode != null &&
                 dragMode.toString() != 'MobileSelectionDragMode.none';
             if (!isDraggingSelection) {

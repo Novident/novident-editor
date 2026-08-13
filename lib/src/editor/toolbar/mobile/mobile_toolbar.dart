@@ -125,10 +125,10 @@ class MobileToolbarWidgetState extends State<MobileToolbarWidget>
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    final width = MediaQuery.sizeOf(context).width;
     final style = MobileToolbarTheme.of(context);
 
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
     if (updateKeyboardHeight) {
       previousKeyboardHeight = keyboardHeight;
     }

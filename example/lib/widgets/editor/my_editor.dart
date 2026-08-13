@@ -42,15 +42,21 @@ class MyEditor extends StatelessWidget {
       focusNode: session.focusNode,
       autoFocus: autoFocus,
       disableAutoScroll: false,
+      enableAutoComplete: true,
+      showMagnifier: UniversalPlatform.isMobile,
       editorStyle: EditorStyle.desktop(
         padding: padding,
-        firstLineIndent: 30, 
+        firstLineIndent: 30,
         cursorColor: Colors.blue.withAlpha(255),
         selectionColor: Colors.blue.withAlpha(140),
-        textSpanDecorator: zenController?.textSpanDecorator(),
-        selectionRenderer: VimSelectionRenderer(
-          controller: session.vimController,
-        ),
+        textSpanDecorator: UniversalPlatform.isMobile
+            ? null
+            : zenController?.textSpanDecorator(),
+        selectionRenderer: UniversalPlatform.isMobile
+            ? null
+            : VimSelectionRenderer(
+                controller: session.vimController,
+              ),
       ),
       blockWrapper: zenController?.blockWrapper,
       footer: footer,

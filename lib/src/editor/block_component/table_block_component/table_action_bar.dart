@@ -129,7 +129,7 @@ class _TableActionBarState extends State<TableActionBar> {
   //TODO: @CatHood0 We can make a cache for this
   NovidentTableStyleDefinition get tableStyle {
     final styles = NovidentEditorStyles.maybeOf(context);
-    final resolved = styles?.resolveStyle(widget.tableNode.node);
+    final resolved = styles?.resolveStyleForNode(widget.tableNode.node);
     return resolved is NovidentTableStyleDefinition
         ? resolved
         : kDefaultTableStyle;

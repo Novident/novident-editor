@@ -4,6 +4,22 @@ import 'package:novident_editor_document/novident_editor_document.dart';
 
 import 'move_types.dart';
 
+enum MobileSelectionDragMode {
+  none,
+  leftSelectionHandle,
+  rightSelectionHandle,
+  cursor;
+}
+
+enum MobileSelectionHandlerType {
+  leftHandle,
+  rightHandle,
+  cursorHandle,
+}
+
+// the value type is MobileSelectionDragMode
+const String selectionDragModeKey = 'selection_drag_mode';
+
 /// Context passed to [SelectionRenderer.buildCursor] with everything
 /// needed to render a custom cursor widget.
 class CursorPaintContext {

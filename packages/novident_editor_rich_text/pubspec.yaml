@@ -17,7 +17,8 @@ dependencies:
     sdk: flutter
   novident_editor_document: ^1.0.5
   novident_editor_core: ^1.0.2
-  novident_editor_styles: ^1.0.2
+  novident_editor_styles: 
+    path: ../novident_editor_styles
   novident_editor_selection: 
     path: ../novident_editor_selection
 

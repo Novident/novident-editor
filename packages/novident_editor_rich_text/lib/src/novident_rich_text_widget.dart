@@ -286,10 +286,10 @@ class _NovidentRichTextState extends State<NovidentRichText>
     final registry = NovidentEditorStyles.maybeOf(
       context,
     );
-    final own = registry?.resolveStyle(widget.node);
+    final own = registry?.resolveStyleForNode(widget.node);
 
     if (tableNode != null) {
-      final tableStyle = registry?.resolveStyle(
+      final tableStyle = registry?.resolveStyleForNode(
         tableNode,
       );
       if (tableStyle is NovidentTableStyleDefinition) {

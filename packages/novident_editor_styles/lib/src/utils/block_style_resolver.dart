@@ -59,7 +59,7 @@ class NovidentBlockStyleResolver {
     Node node,
   ) {
     final editorStyles = NovidentEditorStyles.maybeOf(context);
-    final style = editorStyles?.resolveStyle(node);
+    final style = editorStyles?.resolveStyleForNode(node);
 
     if (style == null) return const NovidentBlockStyleResolution();
 

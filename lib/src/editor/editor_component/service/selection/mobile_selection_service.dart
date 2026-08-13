@@ -17,21 +17,6 @@ import 'package:provider/provider.dart';
 StreamController<int> novidentEditorOnTapSelectionArea =
     StreamController<int>.broadcast();
 
-enum MobileSelectionDragMode {
-  none,
-  leftSelectionHandle,
-  rightSelectionHandle,
-  cursor;
-}
-
-enum MobileSelectionHandlerType {
-  leftHandle,
-  rightHandle,
-  cursorHandle,
-}
-
-// the value type is MobileSelectionDragMode
-const String selectionDragModeKey = 'selection_drag_mode';
 bool disableIOSSelectWordEdgeOnTap = false;
 bool disableMagnifier = false;
 

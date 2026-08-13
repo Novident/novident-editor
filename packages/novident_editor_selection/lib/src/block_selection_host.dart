@@ -33,7 +33,7 @@ abstract class BlockSelectionHost {
 
   /// Extra selection info value for the drag mode key.
   /// Returns `null` when not available.
-  String? selectionDragModeValue();
+  dynamic selectionDragModeValue();
 
   /// Custom selection/cursor renderer. Read from the host so it stays
   /// current even when the parent widget hasn't rebuilt (e.g. after

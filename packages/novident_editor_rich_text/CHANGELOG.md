@@ -2,6 +2,7 @@
 
 ## 1.0.3
 
+* fix: use `resolveStyleForNode` instead the changed `resolveStyle`.
 * fix: `moveVerticallyInText` return `null` on empty paragraphs or empty nodes. `_renderParagraph` was the only used, and `_placeholderRenderParagraph` was ignored, causing the error
 * fix: when the caret wraps the current character selection, the constrast color is never used.
 * chore: `getRenderParagraph()` returns the delta content `_renderParagraph` and, if it's null, returns the `_placeholderRenderParagraph` (can be null too)

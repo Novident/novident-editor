@@ -47,7 +47,7 @@ class TableBlockComponentBuilder extends BlockComponentBuilder {
 
     // Resolve the effective style for this table node.
     final styles = NovidentEditorStyles.maybeOf(context);
-    final resolved = styles?.resolveStyle(node);
+    final resolved = styles?.resolveStyleForNode(node);
     final effective = resolved is NovidentTableStyleDefinition
         ? resolved
         : (tableStyleDef ?? kDefaultTableStyle);

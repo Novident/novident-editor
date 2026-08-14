@@ -23,8 +23,13 @@ class NovidentEditor extends StatefulWidget {
     super.key,
     required this.editorState,
     Map<String, BlockComponentBuilder>? blockComponentBuilders,
+    @Deprecated(
+        "Use keyboardStrategies and define DefaultEditorStrategy instead")
     List<CharacterShortcutEvent>? characterShortcutEvents,
+    @Deprecated(
+        "Use keyboardStrategies and define DefaultEditorStrategy instead")
     List<CommandShortcutEvent>? commandShortcutEvents,
+    this.keyboardStrategies = const [],
     this.contextMenuBuilder,
     this.contentInsertionConfiguration,
     this.editable = true,
@@ -103,6 +108,7 @@ class NovidentEditor extends StatefulWidget {
   ///  ],
   /// );
   /// ```
+  @Deprecated("Use keyboardStrategies and define DefaultEditorStrategy instead")
   final List<CharacterShortcutEvent> characterShortcutEvents;
 
   /// Command event handlers
@@ -120,7 +126,15 @@ class NovidentEditor extends StatefulWidget {
   ///   ],
   /// );
   /// ```
+  @Deprecated("Use keyboardStrategies and define DefaultEditorStrategy instead")
   final List<CommandShortcutEvent> commandShortcutEvents;
+
+  /// Physical keyboard interpretation policies, consulted in order (the
+  /// first one that does not return `ignored` wins).
+  ///
+  /// When empty (default), a [DefaultEditorStrategy] is used over
+  /// [commandShortcutEvents].
+  final List<KeyboardStrategy> keyboardStrategies;
 
   /// The context menu builder.
   ///
@@ -351,6 +365,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
             widget.editable ? widget.characterShortcutEvents : [],
         // only allow copy and select all when the editor is not editable
         commandShortcutEvents: widget.commandShortcutEvents,
+        keyboardStrategies: widget.keyboardStrategies,
         focusNode: widget.focusNode,
         contentInsertionConfiguration: widget.contentInsertionConfiguration,
         child: child,
@@ -400,8 +415,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
         widget.fontProvider ?? NovidentFontProvider.fallback();
 
     assert(
-      widget.styles == null ||
-          widget.styles!.defaultStyle.fontFamily != null,
+      widget.styles == null || widget.styles!.defaultStyle.fontFamily != null,
       'NovidentStylesConfig.defaultStyle must have a non-null fontFamily. '
       'Set fontFamily on your default style or use kDefaultBaseStyle.',
     );

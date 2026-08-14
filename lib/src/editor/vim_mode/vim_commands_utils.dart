@@ -16,7 +16,7 @@ CommandShortcutEvent event(
   final String? name = controller.configuration.commandOf(command);
   final String rawBinding = controller.configuration.keybindings[command] ?? '';
   return CommandShortcutEvent(
-    key: 'vim mode: ${name ?? 'command code ${command.code}'}',
+    key: 'vim mode: ${controller.mode}, command code: ${command.code}',
     getDescription: () => 'Vim mode: $name',
     command: rawBinding,
     handler: (editorState) {

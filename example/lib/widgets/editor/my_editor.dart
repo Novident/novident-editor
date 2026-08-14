@@ -44,6 +44,20 @@ class MyEditor extends StatelessWidget {
       disableAutoScroll: false,
       enableAutoComplete: true,
       showMagnifier: UniversalPlatform.isMobile,
+      keyboardStrategies: [
+        VimStrategy(
+          session.vimController,
+        ),
+        DefaultEditorStrategy(
+          commandShortcutEvents: [
+            // vim shortcuts must come first so they take precedence.
+            ...session.vimController.commandShortcutEvents,
+            ...tableCommands,
+            ...standardCommandShortcutEvents,
+          ],
+          characterShortcutEvents: standardCharacterShortcutEvents,
+        ),
+      ],
       // The mobile surface needs the mobile style: `EditorStyle.desktop`
       // hardcodes `magnifierSize = Size.zero` (and zero-sized drag
       // handles), which makes the magnifier invisible on Android.
@@ -66,13 +80,6 @@ class MyEditor extends StatelessWidget {
             ),
       blockWrapper: zenController?.blockWrapper,
       footer: footer,
-      commandShortcutEvents: <CommandShortcutEvent>[
-        // vim shortcuts must come first so they take precedence.
-        ...session.vimController.commandShortcutEvents,
-        ...tableCommands,
-        ...standardCommandShortcutEvents,
-      ],
-      characterShortcutEvents: standardCharacterShortcutEvents,
       styles: styles,
     );
   }

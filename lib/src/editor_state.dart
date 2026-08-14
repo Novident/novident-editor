@@ -493,6 +493,14 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     document.root.notify();
   }
 
+  void applyCharacterCommand(CharacterShortcutEvent command) {
+    command.handler(this);
+  }
+
+  void applyCommand(CommandShortcutEvent command) {
+    command.handler(this);
+  }
+
   /// get nodes in selection
   ///
   /// if selection is backward, return nodes in order

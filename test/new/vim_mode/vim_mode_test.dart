@@ -111,8 +111,9 @@ void main() {
       controller.dispose();
     });
 
-    test('the IME interceptor blocks input outside of insert mode', () async {
+    test('the VimStrategy blocks input outside of insert mode', () async {
       final controller = VimModeController();
+      final strategy = VimStrategy(controller);
       final editorState = EditorState.blank();
       const insertion = TextEditingDeltaInsertion(
         oldText: '',
@@ -125,26 +126,23 @@ void main() {
       // normal mode: blocked.
       expect(controller.mode, VimMode.normal);
       expect(
-        await controller.keyboardInterceptor
-            .interceptInsert(insertion, editorState, []),
-        true,
+        await strategy.onInsert(insertion, editorState),
+        ImeDeltaResult.swallowed,
       );
 
       // insert mode: allowed.
       controller.enterInsertMode();
       expect(
-        await controller.keyboardInterceptor
-            .interceptInsert(insertion, editorState, []),
-        false,
+        await strategy.onInsert(insertion, editorState),
+        ImeDeltaResult.ignored,
       );
 
       // disabled: allowed even in normal mode.
       controller.configuration =
           controller.configuration.copyWith(enabled: false);
       expect(
-        await controller.keyboardInterceptor
-            .interceptInsert(insertion, editorState, []),
-        false,
+        await strategy.onInsert(insertion, editorState),
+        ImeDeltaResult.ignored,
       );
 
       controller.dispose();

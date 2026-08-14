@@ -13,6 +13,7 @@ class KeyboardServiceWidget extends StatefulWidget {
     super.key,
     this.commandShortcutEvents = const [],
     this.characterShortcutEvents = const [],
+    this.keyboardStrategies = const [],
     this.focusNode,
     this.contentInsertionConfiguration,
     required this.child,
@@ -22,6 +23,14 @@ class KeyboardServiceWidget extends StatefulWidget {
   final FocusNode? focusNode;
   final List<CommandShortcutEvent> commandShortcutEvents;
   final List<CharacterShortcutEvent> characterShortcutEvents;
+
+  /// Physical keyboard interpretation policies, consulted in order (the
+  /// first one that does not return `ignored` wins).
+  ///
+  /// When empty (default), a [DefaultEditorStrategy] is used over
+  /// [commandShortcutEvents].
+  final List<KeyboardStrategy> keyboardStrategies;
+
   final Widget child;
 
   @override
@@ -38,6 +47,9 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
 
   final List<NovidentKeyboardServiceInterceptor> interceptors = [];
 
+  /// Effective keyboard strategies, derived from the widget's parameters.
+  late List<KeyboardStrategy> _strategies;
+
   // previous selection
   Selection? previousSelection;
 
@@ -50,6 +62,8 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
   @override
   void initState() {
     super.initState();
+
+    _strategies = _buildStrategies();
 
     editorState = Provider.of<EditorState>(context, listen: false);
     editorState.selectionNotifier.addListener(_onSelectionChanged);
@@ -73,6 +87,31 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
 
     keepEditorFocusNotifier.addListener(_onKeepEditorFocusChanged);
   }
+
+  @override
+  void didUpdateWidget(covariant KeyboardServiceWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(
+          oldWidget.commandShortcutEvents,
+          widget.commandShortcutEvents,
+        ) ||
+        !identical(
+          oldWidget.characterShortcutEvents,
+          widget.characterShortcutEvents,
+        ) ||
+        !identical(oldWidget.keyboardStrategies, widget.keyboardStrategies)) {
+      _strategies = _buildStrategies();
+    }
+  }
+
+  List<KeyboardStrategy> _buildStrategies() => widget.keyboardStrategies.isEmpty
+      ? [
+          DefaultEditorStrategy(
+            commandShortcutEvents: widget.commandShortcutEvents,
+            characterShortcutEvents: widget.characterShortcutEvents,
+          ),
+        ]
+      : widget.keyboardStrategies;
 
   @override
   void dispose() {
@@ -128,7 +167,8 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
     Widget child = widget.child;
     // if there is no command shortcut event, we don't need to handle hardware keyboard.
     // like in read-only mode.
-    if (widget.commandShortcutEvents.isNotEmpty) {
+    if (widget.commandShortcutEvents.isNotEmpty ||
+        widget.keyboardStrategies.isNotEmpty) {
       // the Focus widget is used to handle hardware keyboard.
       child = Focus(
         focusNode: focusNode,
@@ -175,26 +215,7 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
       return KeyEventResult.ignored;
     }
 
-    for (final shortcutEvent in widget.commandShortcutEvents) {
-      // check if the shortcut event can respond to the raw key event
-      if (shortcutEvent.canRespondToRawKeyEvent(event)) {
-        final result = shortcutEvent.handler(editorState);
-        if (result == KeyEventResult.handled) {
-          NovidentEditorLog.keyboard.debug(
-            'keyboard service - handled by command shortcut event: $shortcutEvent',
-          );
-          return KeyEventResult.handled;
-        } else if (result == KeyEventResult.skipRemainingHandlers) {
-          NovidentEditorLog.keyboard.debug(
-            'keyboard service - skip by command shortcut event: $shortcutEvent',
-          );
-          return KeyEventResult.skipRemainingHandlers;
-        }
-        continue;
-      }
-    }
-
-    return KeyEventResult.ignored;
+    return dispatchKeyEvent(_strategies, event, editorState);
   }
 
   void _onSelectionChanged() {
@@ -295,8 +316,11 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         _cachedPlainTextNodes = editableNodes;
         _cachedPlainText = buffer.toString();
       }
-      final text = _cachedPlainText!
-          .substring(0, _cachedPlainText!.length - 1); // strip trailing \n
+      // strip trailing \n
+      final text = _cachedPlainText!.substring(
+        0,
+        _cachedPlainText!.length - 1,
+      );
 
       return TextEditingValue(
         text: text,
@@ -322,17 +346,21 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         : null;
 
     if (focusNode.hasFocus) {
-      renderer?.onFocusGained(FocusLifecycleContext(
-        focusedNode: focusedNode,
-        hasSelection: selection != null,
-        selection: selection,
-      ),);
+      renderer?.onFocusGained(
+        FocusLifecycleContext(
+          focusedNode: focusedNode,
+          hasSelection: selection != null,
+          selection: selection,
+        ),
+      );
     } else {
-      renderer?.onFocusLost(FocusLifecycleContext(
-        focusedNode: focusedNode,
-        hasSelection: selection != null,
-        selection: selection,
-      ),);
+      renderer?.onFocusLost(
+        FocusLifecycleContext(
+          focusedNode: focusedNode,
+          hasSelection: selection != null,
+          selection: selection,
+        ),
+      );
 
       /// On web, we don't need to close the keyboard when the focus is lost.
       if (kIsWeb) {
@@ -404,10 +432,21 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
           }
         }
 
+        for (final strategy in _strategies) {
+          final result = await strategy.onInsert(insertion, editorState);
+          switch (result) {
+            case ImeDeltaResult.handled:
+              return true;
+            case ImeDeltaResult.swallowed:
+              return false;
+            case ImeDeltaResult.ignored:
+              break;
+          }
+        }
+
         await onInsert(
           insertion,
           editorState,
-          widget.characterShortcutEvents,
         );
         return true;
       },
@@ -422,6 +461,18 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
               'keyboard service onDelete - intercepted by interceptor: $interceptor',
             );
             return false;
+          }
+        }
+
+        for (final strategy in _strategies) {
+          final result = await strategy.onDelete(deletion, editorState);
+          switch (result) {
+            case ImeDeltaResult.handled:
+              return true;
+            case ImeDeltaResult.swallowed:
+              return false;
+            case ImeDeltaResult.ignored:
+              break;
           }
         }
 
@@ -446,10 +497,46 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
           }
         }
 
+        for (final strategy in _strategies) {
+          final result = await strategy.onReplace(replacement, editorState);
+          switch (result) {
+            case ImeDeltaResult.handled:
+              return true;
+            case ImeDeltaResult.swallowed:
+              return false;
+            case ImeDeltaResult.ignored:
+              break;
+          }
+        }
+
+        final selection = editorState.selection;
+        if (selection != null && !selection.isSingle) {
+          // Multi-node: preserve the historical order (delete → dispatch →
+          // insert) — the selection is deleted BEFORE consulting the
+          // strategies about the converted insertion.
+          await editorState.deleteSelection(selection);
+          final insertion = replacement.toInsertion();
+          for (final strategy in _strategies) {
+            final result = await strategy.onInsert(insertion, editorState);
+            switch (result) {
+              case ImeDeltaResult.handled:
+                return true;
+              case ImeDeltaResult.swallowed:
+                return false;
+              case ImeDeltaResult.ignored:
+                break;
+            }
+          }
+          await onInsert(
+            insertion,
+            editorState,
+          );
+          return true;
+        }
+
         await onReplace(
           replacement,
           editorState,
-          widget.characterShortcutEvents,
         );
         return true;
       },
@@ -468,10 +555,22 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
           }
         }
 
+        for (final strategy in _strategies) {
+          final result =
+              await strategy.onNonTextUpdate(nonTextUpdate, editorState);
+          switch (result) {
+            case ImeDeltaResult.handled:
+              return true;
+            case ImeDeltaResult.swallowed:
+              return false;
+            case ImeDeltaResult.ignored:
+              break;
+          }
+        }
+
         await onNonTextUpdate(
           nonTextUpdate,
           editorState,
-          widget.characterShortcutEvents,
         );
         return true;
       },
@@ -485,6 +584,13 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             NovidentEditorLog.input.info(
               'keyboard service onPerformAction - intercepted by interceptor: $interceptor',
             );
+            return;
+          }
+        }
+
+        for (final strategy in _strategies) {
+          final result = await strategy.onPerformAction(action, editorState);
+          if (result != ImeDeltaResult.ignored) {
             return;
           }
         }
@@ -504,6 +610,13 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             NovidentEditorLog.input.info(
               'keyboard service onFloatingCursor - intercepted by interceptor: $interceptor',
             );
+            return;
+          }
+        }
+
+        for (final strategy in _strategies) {
+          final result = await strategy.onFloatingCursor(point, editorState);
+          if (result != ImeDeltaResult.ignored) {
             return;
           }
         }

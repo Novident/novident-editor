@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 /// Coordinates the vim emulation of the editor.
@@ -11,21 +10,19 @@ import 'package:flutter/widgets.dart';
 ///
 /// NovidentEditor(
 ///   editorState: editorState,
-///   editorStyle: EditoStyle.desktop(selectionRenderer: VimSelectionRenderer(controller: ...))
-///   commandShortcutEvents: [
-///     // vim shortcuts must come first so they take precedence.
-///     ...vimController.commandShortcutEvents,
-///     ...standardCommandShortcutEvents,
-///   ],
+///   editorStyle: EditorStyle.desktop(
+///     selectionRenderer: VimSelectionRenderer(controller: vimController),
+///   ),
+///   keyboardStrategies: vimKeyboardStrategies(vimController),
 /// );
 ///
-/// // after the editor is mounted (e.g. in a post frame callback):
+/// // keeps the mode in sync with mouse interactions:
 /// vimController.attach(editorState);
 /// ```
 ///
-/// [attach] registers an [NovidentKeyboardServiceInterceptor] that swallows
-/// IME input while the mode is not [VimMode.insert] — that's what prevents
-/// typing in normal/visual mode.
+/// [VimStrategy] (via [vimKeyboardStrategies]) is what blocks IME input
+/// outside insert mode — the mode is the strategy's hardware↔IME
+/// correlation.
 ///
 /// Keybindings can be changed at runtime through [configuration]; the
 /// cached [commandShortcutEvents] are re-bound in place, so the editor does
@@ -42,13 +39,11 @@ class VimModeController extends ChangeNotifier {
   })  : _configuration = configuration,
         _mode = configuration.initialMode {
     _events = buildVimModeCommandShortcutEvents(this);
-    _interceptor = VimModeKeyboardInterceptor(this);
   }
 
   VimModeConfiguration _configuration;
   VimMode _mode;
   EditorState? _editorState;
-  bool _interceptorRegistered = false;
   bool _suppressSelectionSyncCount = false;
   bool get _suppressSelectionSync => _suppressSelectionSyncCount;
   String? _pendingCommand;
@@ -57,7 +52,6 @@ class VimModeController extends ChangeNotifier {
   Duration pendingWaitForKeyDuration;
 
   late final Map<VimCommand, CommandShortcutEvent> _events;
-  late final VimModeKeyboardInterceptor _interceptor;
 
   /// The current mode.
   VimMode get mode => _mode;
@@ -146,40 +140,27 @@ class VimModeController extends ChangeNotifier {
   CommandShortcutEvent? commandShortcutEventOf(VimCommand command) =>
       _events[command];
 
-  /// The IME interceptor that suppresses typing outside of insert mode.
-  @visibleForTesting
-  NovidentKeyboardServiceInterceptor get keyboardInterceptor => _interceptor;
-
-  /// Binds the controller to [editorState], registers the IME interceptor
-  /// on its keyboard service and starts listening to selection changes to
-  /// keep the mode in sync with mouse interactions
+  /// Binds the controller to [editorState] and starts listening to selection
+  /// changes to keep the mode in sync with mouse interactions
   /// (see [VimModeConfiguration.syncModeWithSelection]).
   ///
-  /// The keyboard service only exists after the editor is mounted; when it
-  /// is not available yet, the registration is retried on the next frame.
+  /// Blocking input outside insert mode no longer lives here: [VimStrategy]
+  /// (the IME channel of the `KeyboardStrategy`) does it. Wire the editor
+  /// with `keyboardStrategies: vimKeyboardStrategies(controller)`.
   void attach(EditorState editorState) {
     detach();
     _editorState = editorState;
     if (!_suppressSelectionSync) {
       editorState.selectionNotifier.addListener(_onEditorSelectionChanged);
     }
-    _registerInterceptor();
   }
 
-  /// Unbinds the controller, unregisters the IME interceptor and restores
-  /// the previous caret customizer.
+  /// Unbinds the controller and restores the previous caret customizer.
   void detach() {
     final editorState = _editorState;
-    if (editorState != null) {
-      if (!_suppressSelectionSync) {
-        editorState.selectionNotifier.removeListener(_onEditorSelectionChanged);
-      }
-      if (_interceptorRegistered) {
-        editorState.service.keyboardService
-            ?.unregisterInterceptor(_interceptor);
-      }
+    if (editorState != null && !_suppressSelectionSync) {
+      editorState.selectionNotifier.removeListener(_onEditorSelectionChanged);
     }
-    _interceptorRegistered = false;
     _pendingCommand = null;
     _editorState = null;
   }
@@ -409,69 +390,5 @@ class VimModeController extends ChangeNotifier {
         entry.value.updateCommand(command: binding);
       }
     }
-  }
-
-  void _registerInterceptor() {
-    final editorState = _editorState;
-    if (editorState == null) {
-      return;
-    }
-    final keyboardService = editorState.service.keyboardService;
-    if (keyboardService != null) {
-      keyboardService.registerInterceptor(_interceptor);
-      _interceptorRegistered = true;
-      return;
-    }
-    // the editor is not mounted yet — retry on the next frame while the
-    // controller stays attached.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_editorState == editorState && !_interceptorRegistered) {
-        _registerInterceptor();
-      }
-    });
-  }
-}
-
-/// Swallows IME input while the vim emulation is enabled and the mode is
-/// not [VimMode.insert].
-class VimModeKeyboardInterceptor extends NovidentKeyboardServiceInterceptor {
-  VimModeKeyboardInterceptor(this.controller);
-
-  final VimModeController controller;
-
-  bool get _blocked => controller.enabled && controller.mode != VimMode.insert;
-
-  @override
-  Future<bool> interceptInsert(
-    TextEditingDeltaInsertion insertion,
-    EditorState editorState,
-    List<CharacterShortcutEvent> characterShortcutEvents,
-  ) async {
-    return _blocked;
-  }
-
-  @override
-  Future<bool> interceptDelete(
-    TextEditingDeltaDeletion deletion,
-    EditorState editorState,
-  ) async {
-    return _blocked;
-  }
-
-  @override
-  Future<bool> interceptReplace(
-    TextEditingDeltaReplacement replacement,
-    EditorState editorState,
-    List<CharacterShortcutEvent> characterShortcutEvents,
-  ) async {
-    return _blocked;
-  }
-
-  @override
-  Future<bool> interceptPerformAction(
-    TextInputAction action,
-    EditorState editorState,
-  ) async {
-    return _blocked;
   }
 }

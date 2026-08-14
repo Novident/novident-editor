@@ -44,6 +44,20 @@ class MyEditor extends StatelessWidget {
       disableAutoScroll: false,
       enableAutoComplete: true,
       showMagnifier: UniversalPlatform.isMobile,
+      keyboardStrategies: [
+        VimStrategy(
+          session.vimController,
+        ),
+        DefaultEditorStrategy(
+          commandShortcutEvents: [
+            // vim shortcuts must come first so they take precedence.
+            ...session.vimController.commandShortcutEvents,
+            ...tableCommands,
+            ...standardCommandShortcutEvents,
+          ],
+          characterShortcutEvents: standardCharacterShortcutEvents,
+        )
+      ],
       editorStyle: EditorStyle.desktop(
         padding: padding,
         firstLineIndent: 30,
@@ -60,13 +74,7 @@ class MyEditor extends StatelessWidget {
       ),
       blockWrapper: zenController?.blockWrapper,
       footer: footer,
-      commandShortcutEvents: <CommandShortcutEvent>[
-        // vim shortcuts must come first so they take precedence.
-        ...session.vimController.commandShortcutEvents,
-        ...tableCommands,
-        ...standardCommandShortcutEvents,
-      ],
-      characterShortcutEvents: standardCharacterShortcutEvents,
+      commandShortcutEvents: <CommandShortcutEvent>[],
       styles: styles,
     );
   }

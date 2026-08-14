@@ -25,6 +25,7 @@ class NovidentEditor extends StatefulWidget {
     Map<String, BlockComponentBuilder>? blockComponentBuilders,
     List<CharacterShortcutEvent>? characterShortcutEvents,
     List<CommandShortcutEvent>? commandShortcutEvents,
+    this.keyboardStrategies = const [],
     this.contextMenuBuilder,
     this.contentInsertionConfiguration,
     this.editable = true,
@@ -121,6 +122,12 @@ class NovidentEditor extends StatefulWidget {
   /// );
   /// ```
   final List<CommandShortcutEvent> commandShortcutEvents;
+
+  /// Custom Keyboard Strategies.
+  ///
+  /// By default, the editor injects the default implementation WYSIWYG
+  /// when theres no strategies.
+  final List<KeyboardStrategy> keyboardStrategies;
 
   /// The context menu builder.
   ///
@@ -351,6 +358,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
             widget.editable ? widget.characterShortcutEvents : [],
         // only allow copy and select all when the editor is not editable
         commandShortcutEvents: widget.commandShortcutEvents,
+        keyboardStrategies: widget.keyboardStrategies,
         focusNode: widget.focusNode,
         contentInsertionConfiguration: widget.contentInsertionConfiguration,
         child: child,

@@ -227,6 +227,7 @@ class EditorScrollController {
   }
 
   // listen to the visible item positions
+  //TODO: @Cathood0 take care of this
   void _listenItemPositions() {
     // the value from itemPositions is the list of item positions, we need to filter
     //  the list to find the first and last visible items.

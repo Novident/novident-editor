@@ -1,11 +1,9 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 Future<void> onNonTextUpdate(
   TextEditingDeltaNonTextUpdate nonTextUpdate,
   EditorState editorState,
-  List<CharacterShortcutEvent> characterShortcutEvents,
 ) async {
   NovidentEditorLog.input.debug('onNonTextUpdate: $nonTextUpdate');
 
@@ -14,10 +12,6 @@ Future<void> onNonTextUpdate(
   // when typing characters with CJK IME on Windows, a non-text update is sent
   // with the selection range.
   final selection = editorState.selection;
-
-  if (await _checkIfBacktickPressed(editorState, nonTextUpdate)) {
-    return;
-  }
 
   if (PlatformExtension.isWindows) {
     if (selection != null &&
@@ -78,75 +72,4 @@ Future<void> onNonTextUpdate(
     // so we don't need to handle the non-text update here.
     NovidentEditorLog.input.debug('[iOS] onNonTextUpdate: $nonTextUpdate');
   }
-}
-
-Future<bool> _checkIfBacktickPressed(
-  EditorState editorState,
-  TextEditingDeltaNonTextUpdate nonTextUpdate,
-) async {
-  // if the composing range is not empty, it means the user is typing a text,
-  // so we don't need to handle the backtick pressed event
-  if (!nonTextUpdate.composing.isCollapsed) {
-    return false;
-  }
-
-  // if the selection is not collapsed, it means the user is not typing a text,
-  // so we need to handle the backtick pressed event
-  if (!nonTextUpdate.selection.isCollapsed) {
-    return false;
-  }
-
-  final selection = editorState.selection;
-  if (selection == null || !selection.isCollapsed) {
-    NovidentEditorLog.input.debug('selection is null or not collapsed');
-    return false;
-  }
-
-  final node = editorState.getNodesInSelection(selection).firstOrNull;
-  if (node == null) {
-    NovidentEditorLog.input.debug('node is null');
-    return false;
-  }
-
-  // get last character of the node
-  final lastCharacter = node.delta?.toPlainText().characters.lastOrNull;
-  if (lastCharacter != '`') {
-    NovidentEditorLog.input.debug('last character is not backtick');
-    return false;
-  }
-
-  // check if the text should be formatted
-  final (shouldApplyFormat, _) = checkSingleCharacterFormatShouldBeApplied(
-    editorState: editorState,
-    // check before the last character
-    selection: selection.shift(-1),
-    character: '`',
-    formatStyle: FormatStyleByWrappingWithSingleChar.code,
-  );
-
-  if (!shouldApplyFormat) {
-    NovidentEditorLog.input.debug('should not apply format');
-    return false;
-  }
-
-  final transaction = editorState.transaction;
-  transaction.deleteText(node, node.delta!.toPlainText().length - 1, 1);
-  await editorState.apply(transaction);
-
-  // remove the last backtick, and try to format the text to code block
-  final isFormatted = handleFormatByWrappingWithSingleCharacter(
-    editorState: editorState,
-    character: '`',
-    formatStyle: FormatStyleByWrappingWithSingleChar.code,
-  );
-
-  if (!isFormatted) {
-    NovidentEditorLog.input.debug('format failed');
-    // revert the transaction
-    editorState.undoManager.undo();
-  } else {
-    editorState.sliceUpcomingAttributes = false;
-  }
-
-  return true;
 }

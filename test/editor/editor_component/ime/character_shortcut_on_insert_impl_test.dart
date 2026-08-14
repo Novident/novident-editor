@@ -22,7 +22,6 @@ void main() {
           insertionOffset: 0,
         ),
         editorState,
-        [insertNewLine],
       );
       final nodes = editorState.document.root.children;
       expect(nodes.length, 2);

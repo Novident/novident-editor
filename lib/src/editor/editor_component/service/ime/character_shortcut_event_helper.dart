@@ -10,28 +10,29 @@ Future<bool> executeCharacterShortcutEvent(
     character = '\n';
   }
 
-  if (character?.length != 1) {
+  if (character == null || character.length != 1) {
     return false;
   }
 
   for (final shortcutEvent in characterShortcutEvents) {
-    bool hasMatchRegExp = false;
     final regExp = shortcutEvent.regExp;
-    if (regExp != null && character != null) {
-      hasMatchRegExp = regExp.hasMatch(character);
-      if (hasMatchRegExp &&
-          shortcutEvent.handlerWithCharacter != null &&
-          await shortcutEvent.executeWithCharacter(
-            editorState,
-            character,
-          )) {
+    if (regExp != null && regExp.hasMatch(character)) {
+      // RegExp match: `handlerWithCharacter` takes priority; when missing,
+      // `handler` is used. It is never re-evaluated by the `==` branch (the
+      // previous path could run the handler twice when `handlerWithCharacter`
+      // returned `false`).
+      final handled = shortcutEvent.handlerWithCharacter != null
+          ? await shortcutEvent.executeWithCharacter(editorState, character)
+          : await shortcutEvent.handler(editorState);
+      if (handled) {
         NovidentEditorLog.input.debug(
           'keyboard service - handled by character shortcut event: $shortcutEvent',
         );
         return true;
       }
+      continue;
     }
-    if ((shortcutEvent.character == character || hasMatchRegExp) &&
+    if (shortcutEvent.character == character &&
         await shortcutEvent.handler(editorState)) {
       NovidentEditorLog.input.debug(
         'keyboard service - handled by character shortcut event: $shortcutEvent',

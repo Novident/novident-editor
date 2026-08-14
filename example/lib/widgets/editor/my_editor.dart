@@ -56,25 +56,30 @@ class MyEditor extends StatelessWidget {
             ...standardCommandShortcutEvents,
           ],
           characterShortcutEvents: standardCharacterShortcutEvents,
-        )
+        ),
       ],
-      editorStyle: EditorStyle.desktop(
-        padding: padding,
-        firstLineIndent: 30,
-        cursorColor: Colors.blue.withAlpha(255),
-        selectionColor: Colors.blue.withAlpha(140),
-        textSpanDecorator: UniversalPlatform.isMobile
-            ? null
-            : zenController?.textSpanDecorator(),
-        selectionRenderer: UniversalPlatform.isMobile
-            ? null
-            : VimSelectionRenderer(
+      // The mobile surface needs the mobile style: `EditorStyle.desktop`
+      // hardcodes `magnifierSize = Size.zero` (and zero-sized drag
+      // handles), which makes the magnifier invisible on Android.
+      editorStyle: UniversalPlatform.isMobile
+          ? EditorStyle.mobile(
+              padding: padding,
+              firstLineIndent: 30,
+              cursorColor: Colors.blue.withAlpha(255),
+              selectionColor: Colors.blue.withAlpha(140),
+            )
+          : EditorStyle.desktop(
+              padding: padding,
+              firstLineIndent: 30,
+              cursorColor: Colors.blue.withAlpha(255),
+              selectionColor: Colors.blue.withAlpha(140),
+              textSpanDecorator: zenController?.textSpanDecorator(),
+              selectionRenderer: VimSelectionRenderer(
                 controller: session.vimController,
               ),
-      ),
+            ),
       blockWrapper: zenController?.blockWrapper,
       footer: footer,
-      commandShortcutEvents: <CommandShortcutEvent>[],
       styles: styles,
     );
   }

@@ -12,6 +12,8 @@
 * chore(breaking changes): moved `SelectionUpdateReason` and `SelectionType` to `novident_editor_selection` package.
 * chore: deprecated from `SelectionRenderer` these methods: `buildExpandedHeadCursor`, `paintExpandedHeadCursor` (replaced by `shouldPaintHeadRect`) and `expandedHeadPosition` since we recommend  computing the head and injecting it directly to the rects into `onSelectionRectsMeasured` (like I did with `VimSelectionRenderer`)
 * chore: bumped all internal package dependencies to latest.
+* chore(breaking changes): deprecated `characterShortcutEvents` and `commandShortcutEvents` and replaced for `keyboardStrategies`.
+    
 
 
 ## 1.0.4

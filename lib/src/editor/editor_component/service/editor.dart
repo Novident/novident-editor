@@ -23,7 +23,11 @@ class NovidentEditor extends StatefulWidget {
     super.key,
     required this.editorState,
     Map<String, BlockComponentBuilder>? blockComponentBuilders,
+    @Deprecated(
+        "Use keyboardStrategies and define DefaultEditorStrategy instead")
     List<CharacterShortcutEvent>? characterShortcutEvents,
+    @Deprecated(
+        "Use keyboardStrategies and define DefaultEditorStrategy instead")
     List<CommandShortcutEvent>? commandShortcutEvents,
     this.keyboardStrategies = const [],
     this.contextMenuBuilder,
@@ -104,6 +108,7 @@ class NovidentEditor extends StatefulWidget {
   ///  ],
   /// );
   /// ```
+  @Deprecated("Use keyboardStrategies and define DefaultEditorStrategy instead")
   final List<CharacterShortcutEvent> characterShortcutEvents;
 
   /// Command event handlers
@@ -121,12 +126,14 @@ class NovidentEditor extends StatefulWidget {
   ///   ],
   /// );
   /// ```
+  @Deprecated("Use keyboardStrategies and define DefaultEditorStrategy instead")
   final List<CommandShortcutEvent> commandShortcutEvents;
 
-  /// Custom Keyboard Strategies.
+  /// Physical keyboard interpretation policies, consulted in order (the
+  /// first one that does not return `ignored` wins).
   ///
-  /// By default, the editor injects the default implementation WYSIWYG
-  /// when theres no strategies.
+  /// When empty (default), a [DefaultEditorStrategy] is used over
+  /// [commandShortcutEvents].
   final List<KeyboardStrategy> keyboardStrategies;
 
   /// The context menu builder.
@@ -408,8 +415,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
         widget.fontProvider ?? NovidentFontProvider.fallback();
 
     assert(
-      widget.styles == null ||
-          widget.styles!.defaultStyle.fontFamily != null,
+      widget.styles == null || widget.styles!.defaultStyle.fontFamily != null,
       'NovidentStylesConfig.defaultStyle must have a non-null fontFamily. '
       'Set fontFamily on your default style or use kDefaultBaseStyle.',
     );

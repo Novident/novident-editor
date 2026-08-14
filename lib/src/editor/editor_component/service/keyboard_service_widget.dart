@@ -12,7 +12,13 @@ class KeyboardServiceWidget extends StatefulWidget {
   const KeyboardServiceWidget({
     super.key,
     this.commandShortcutEvents = const [],
+    @Deprecated(
+      "Use keyboardStrategies and define DefaultEditorStrategy instead",
+    )
     this.characterShortcutEvents = const [],
+    @Deprecated(
+      "Use keyboardStrategies and define DefaultEditorStrategy instead",
+    )
     this.keyboardStrategies = const [],
     this.focusNode,
     this.contentInsertionConfiguration,
@@ -21,7 +27,10 @@ class KeyboardServiceWidget extends StatefulWidget {
 
   final ContentInsertionConfiguration? contentInsertionConfiguration;
   final FocusNode? focusNode;
+
+  @Deprecated("Use keyboardStrategies and define DefaultEditorStrategy instead")
   final List<CommandShortcutEvent> commandShortcutEvents;
+  @Deprecated("Use keyboardStrategies and define DefaultEditorStrategy instead")
   final List<CharacterShortcutEvent> characterShortcutEvents;
 
   /// Physical keyboard interpretation policies, consulted in order (the

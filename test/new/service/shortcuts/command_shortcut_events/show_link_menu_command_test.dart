@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../infra/testable_editor.dart';
+import '../../../util/editor_text_finders.dart';
 
 void main() async {
   setUpAll(() {
@@ -106,9 +107,15 @@ Future<void> _testLinkMenuInSingleTextSelection(WidgetTester tester) async {
 
   // Check if the link menu is shown
   expect(find.byType(LinkMenu), findsOneWidget);
+  // The LinkMenu input field shows the current link address.
+  final menuField = find.descendant(
+    of: find.byType(LinkMenu),
+    matching: find.byType(TextFormField),
+  );
+  expect(menuField, findsOneWidget);
   expect(
-    find.text(link, findRichText: true, skipOffstage: false),
-    findsOneWidget,
+    tester.widget<TextFormField>(menuField).controller?.text,
+    link,
   );
 
   // Copy link

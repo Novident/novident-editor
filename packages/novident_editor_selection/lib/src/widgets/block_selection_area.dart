@@ -133,7 +133,7 @@ class _BlockSelectionAreaState extends State<BlockSelectionArea> {
           var rect = prevCursorRect!;
           var cursorStyle = widget.delegate.cursorStyle;
           var shouldBlink = widget.delegate.shouldCursorBlink &&
-              dragMode == MobileSelectionDragMode.none;
+              dragMode != MobileSelectionDragMode.cursor;
           var color = widget.cursorColor;
           final appearance = host.customizeCursor(
             node: widget.node,

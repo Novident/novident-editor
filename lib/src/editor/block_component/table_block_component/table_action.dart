@@ -4,17 +4,17 @@ import 'package:novident_editor/novident_editor.dart';
 class TableActions {
   const TableActions._();
 
-  static void add(
+  static Future<void> add(
     Node node,
     int position,
     EditorState editorState,
     TableDirection dir,
     NovidentTableStyleDefinition style,
-  ) {
+  ) async {
     if (dir == TableDirection.col) {
       _addCol(node, position, editorState, style);
     } else {
-      _addRow(node, position, editorState, style);
+      await _addRow(node, position, editorState, style);
     }
   }
 
@@ -31,16 +31,16 @@ class TableActions {
     }
   }
 
-  static void duplicate(
+  static Future<void> duplicate(
     Node node,
     int position,
     EditorState editorState,
     TableDirection dir,
-  ) {
+  ) async {
     if (dir == TableDirection.col) {
       _duplicateCol(node, position, editorState);
     } else {
-      _duplicateRow(node, position, editorState);
+      await _duplicateRow(node, position, editorState);
     }
   }
 
@@ -203,7 +203,7 @@ void _addCol(
   editorState.apply(transaction, withUpdateSelection: false);
 }
 
-void _addRow(
+Future<void> _addRow(
   Node tableNode,
   int position,
   EditorState editorState,
@@ -360,33 +360,45 @@ void _duplicateCol(Node tableNode, int col, EditorState editorState) {
   editorState.apply(transaction, withUpdateSelection: false);
 }
 
-void _duplicateRow(Node tableNode, int row, EditorState editorState) async {
-  Transaction transaction = editorState.transaction;
-  _updateCellPositions(tableNode, editorState, 0, row + 1, 0, 1);
-  await editorState.apply(transaction, withUpdateSelection: false);
+Future<void> _duplicateRow(Node tableNode, int row, EditorState editorState) async {
+  final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen];
+  final int colsLen = tableNode.attributes[TableBlockKeys.colsLen];
 
-  final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen],
-      colsLen = tableNode.attributes[TableBlockKeys.colsLen];
+  // Built while the table is still in a valid state: the copy must be
+  // inserted BEFORE the rows below are shifted, otherwise there is a
+  // transient gap at row+1 that invalidates the TableNode.
   final table = TableNode(node: tableNode);
   for (var i = 0; i < colsLen; i++) {
-    final node = table.getCell(i, row);
-    transaction = editorState.transaction;
+    final cell = table.getCell(i, row);
+    final transaction = editorState.transaction;
+
+    // Shift the rows below `row` down by one.
+    for (var j = row + 1; j < rowsLen; j++) {
+      final cellNode = table.getCell(i, j);
+      transaction.updateNode(
+        cellNode,
+        {TableCellBlockKeys.rowPosition: j + 1},
+      );
+    }
+
+    // Insert the copy right after the original cell.
     transaction.insertNode(
-      node.path.next,
-      node.copyWith(
+      cell.path.next,
+      cell.copyWith(
         attributes: {
-          ...node.attributes,
+          ...cell.attributes,
           TableCellBlockKeys.rowPosition: row + 1,
           TableCellBlockKeys.colPosition: i,
         },
       ),
     );
+
     await editorState.apply(transaction, withUpdateSelection: false);
   }
 
-  transaction = editorState.transaction;
+  final transaction = editorState.transaction;
   transaction.updateNode(tableNode, {TableBlockKeys.rowsLen: rowsLen + 1});
-  editorState.apply(transaction, withUpdateSelection: false);
+  await editorState.apply(transaction, withUpdateSelection: false);
 }
 
 void _setColBgColor(

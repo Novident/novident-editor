@@ -19,21 +19,10 @@ void main() {
         ..editorStyle = const EditorStyle.desktop();
     }
 
-    test('returns the same list instance on repeated calls', () {
-      final editor = buildEditor();
-      editor.updateSelectionWithReason(
-        Selection.collapsed(Position(path: [0], offset: 2)),
-        reason: SelectionUpdateReason.uiEvent,
-      );
-
-      final first = editor.selectionRects();
-      for (var i = 0; i < 10; i++) {
-        expect(identical(editor.selectionRects(), first), true);
-      }
-
-      editor.dispose();
-    });
-
+    // selectionRects() is computed fresh on every call (global coords
+    // depend on the scroll offset, so caching would go stale during scroll
+    // animations). The invalidate test below documents that the values are
+    // recomputed after the selection changes.
     test('invalidates when the selection changes', () {
       final editor = buildEditor();
       editor.updateSelectionWithReason(

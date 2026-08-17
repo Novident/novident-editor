@@ -19,8 +19,8 @@ dependencies:
   collection: ^1.18.0
   diff_match_patch: ^0.4.1
   novident_editor_core: ^1.0.3
-  novident_editor_selection: ^1.0.4
-  novident_editor_rich_text: ^1.0.3
+  novident_editor_selection: ^1.0.5
+  novident_editor_rich_text: ^1.0.4
   novident_editor_spell_check_interface: ^1.0.0
   novident_editor_styles: ^1.0.3
   novident_editor_document: ^1.0.6

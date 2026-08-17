@@ -201,11 +201,13 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
     double availableWidth,
     TableNode tableNode, {
     bool noBorder = false,
+    double? borderWidth,
   }) {
     final hash = _weightHash(tableNode);
     if (availableWidth == _cachedAvailableWidth &&
         hash == _cachedWeightHash &&
         _cachedNoBorder == noBorder &&
+        _cachedBorderWidth == borderWidth &&
         _cachedWidths != null &&
         _cachedWidths!.length == tableNode.colsLen) {
       return _cachedWidths!;
@@ -213,15 +215,18 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
     _cachedAvailableWidth = availableWidth;
     _cachedWeightHash = hash;
     _cachedNoBorder = noBorder;
+    _cachedBorderWidth = borderWidth;
     _cachedWidths = tableNode.distributeColumnWidths(
       availableWidth,
       noBorder: noBorder,
       style: tableStyle,
+      borderWidth: borderWidth,
     );
     return _cachedWidths!;
   }
 
   bool _cachedNoBorder = false;
+  double? _cachedBorderWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -255,6 +260,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
             minWidth,
             tableNode,
             noBorder: noBorder,
+            borderWidth: borderPx,
           );
           return Scrollbar(
             controller: _scrollController,
@@ -282,6 +288,7 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
             contentWidth,
             tableNode,
             noBorder: noBorder,
+            borderWidth: borderPx,
           );
           return Padding(
             padding: tablePadding,

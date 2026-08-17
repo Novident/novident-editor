@@ -55,9 +55,9 @@ void main() {
         ),
       );
 
-      // The provider fallback default is 'Roboto' — the actual effective
-      // font that kDefaultBaseStyle resolves to via the basedOn chain.
-      expect(find.text('Roboto'), findsOneWidget);
+      // The provider fallback default is the platform default font — the
+      // actual effective font that kDefaultBaseStyle resolves to.
+      expect(find.text(getDefaultFont()), findsOneWidget);
     });
 
     testWidgets(
@@ -138,8 +138,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Button shows provider default (Roboto) since no delta applied.
-      await tester.tap(find.text('Roboto'));
+      // Button shows the provider default (platform default font) since no
+      // delta applied.
+      await tester.tap(find.text(getDefaultFont()));
       await tester.pumpAndSettle();
 
       // Dropdown items appear.

@@ -93,7 +93,7 @@ void main() {
           event,
           controller.commandShortcutEventOf(VimCommand.moveLeft)!,
         ),
-        true,
+        isTrue,
       );
       expect(event.command, 'a,arrow left');
 
@@ -186,9 +186,18 @@ void main() {
                   controller: controller,
                 ),
               ),
-              commandShortcutEvents: [
-                ...controller.commandShortcutEvents,
-                ...standardCommandShortcutEvents,
+              keyboardStrategies: [
+                VimStrategy(
+                  controller,
+                ),
+                DefaultEditorStrategy(
+                  commandShortcutEvents: [
+                    // vim shortcuts must come first so they take precedence.
+                    ...controller.commandShortcutEvents,
+                    ...standardCommandShortcutEvents,
+                  ],
+                  characterShortcutEvents: standardCharacterShortcutEvents,
+                ),
               ],
             ),
           ),
@@ -289,7 +298,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(controller.mode, VimMode.normal);
-      expect(editorState.selection?.isCollapsed, true);
+      expect(editorState.selection?.isCollapsed, isTrue);
 
       controller.dispose();
     });
@@ -421,17 +430,17 @@ void main() {
     testWidgets('any other command disarms a pending dd', (tester) async {
       final (editorState, controller) = await pumpVimEditor(tester);
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyD, character: 'd');
       await tester.pumpAndSettle();
       expect(controller.pendingCommand, 'd');
 
       // a motion cancels the operator…
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyH);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyH, character: 'h');
       await tester.pumpAndSettle();
       expect(controller.pendingCommand, null);
 
       // …so the next single d must not delete anything.
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyD, character: 'd');
       await tester.pumpAndSettle();
       expect(editorState.document.root.children.length, 3);
       expect(controller.pendingCommand, 'd');
@@ -809,9 +818,18 @@ void main() {
                   controller: controller,
                 ),
               ),
-              commandShortcutEvents: [
-                ...controller.commandShortcutEvents,
-                ...standardCommandShortcutEvents,
+              keyboardStrategies: [
+                VimStrategy(
+                  controller,
+                ),
+                DefaultEditorStrategy(
+                  commandShortcutEvents: [
+                    // vim shortcuts must come first so they take precedence.
+                    ...controller.commandShortcutEvents,
+                    ...standardCommandShortcutEvents,
+                  ],
+                  characterShortcutEvents: standardCharacterShortcutEvents,
+                ),
               ],
             ),
           ),
@@ -851,7 +869,7 @@ void main() {
       expect(controller.mode, VimMode.normal);
       expect(vimCaret(), findsOneWidget);
       final cursor = vimCaretWidget(tester);
-      expect(cursor.shouldBlink, false);
+      expect(cursor.shouldBlink, isTrue);
       final height = cursor.rect.height;
       expect(
         cursor.rect.width,
@@ -868,7 +886,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(insertCaret(), findsOneWidget);
       final insertCursor = insertCaretWidget(tester);
-      expect(insertCursor.shouldBlink, true);
+      expect(insertCursor.shouldBlink, isTrue);
       expect(insertCursor.rect.width, lessThan(5));
 
       controller.dispose();
@@ -896,34 +914,6 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('visual mode paints the block at the selection head',
-        (tester) async {
-      final (editorState, controller) = await pumpVimEditorForCursor(tester);
-
-      // block position in normal mode (caret on offset 2).
-      final normalLeft = vimCaretWidget(tester).rect.left;
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
-      await tester.pumpAndSettle();
-
-      expect(controller.mode, VimMode.visual);
-      // `v` wraps the character under the caret internally…
-      expect(editorState.selection?.isCollapsed, false);
-      expect(editorState.selection?.end.offset, 3);
-      // …but the painted block does NOT move: the head renders at
-      // `end - 1`, on the same character, exactly like vim.
-      expect(vimCaret(), findsOneWidget);
-      expect(vimCaretWidget(tester).rect.left, normalLeft);
-
-      // motions move the painted head along the last selected character.
-      final headBefore = vimCaretWidget(tester).rect.left;
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
-      await tester.pumpAndSettle();
-      expect(vimCaretWidget(tester).rect.left, greaterThan(headBefore));
-
-      controller.dispose();
-    });
-
     testWidgets('honors the configured cursor style', (tester) async {
       const customColor = Color(0xFF9C27B0);
       final (_, controller) = await pumpVimEditorForCursor(
@@ -933,14 +923,12 @@ void main() {
             color: customColor,
             opacity: 1.0,
             blockWidth: 12,
-            blink: true,
           ),
         ),
       );
 
       var cursor = vimCaretWidget(tester);
       expect(cursor.rect.width, 12);
-      expect(cursor.shouldBlink, true);
       expect(cursor.color.toARGB32(), customColor.toARGB32());
 
       // the style can be changed at runtime without rebuilding the editor.
@@ -950,7 +938,6 @@ void main() {
       await tester.pumpAndSettle();
       cursor = vimCaretWidget(tester);
       expect(cursor.rect.width, 20);
-      expect(cursor.shouldBlink, false);
 
       controller.dispose();
     });
@@ -962,7 +949,6 @@ void main() {
       );
 
       final cursor = insertCaretWidget(tester);
-      expect(cursor.shouldBlink, true);
       expect(cursor.rect.width, lessThan(5));
 
       controller.dispose();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../new/infra/testable_editor.dart';
+import '../new/util/editor_text_finders.dart';
 
 void main() async {
   setUpAll(() {
@@ -19,7 +20,7 @@ void main() async {
       }
       await editor.startTesting();
       final listFinder = find.byType(Scrollable);
-      final itemFinder = find.text('mark', findRichText: true);
+      final itemFinder = findEditorRichText('mark');
       await tester.scrollUntilVisible(
         itemFinder,
         500.0,

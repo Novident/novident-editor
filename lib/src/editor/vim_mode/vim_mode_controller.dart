@@ -83,6 +83,8 @@ class VimModeController extends ChangeNotifier {
         (_pendingCommand == null && command.rawCommand!.isNotEmpty);
   }
 
+  void clearPendingBuffer() => _pendingBuffer = null;
+
   /// Arms/clears a pending operator (used by the vim shortcut handlers).
   void setPendingCommand(String? command, String? expected) {
     if (command != null) {
@@ -92,9 +94,16 @@ class VimModeController extends ChangeNotifier {
     if (command != null &&
         _pendingBuffer != null &&
         _pendingCommandTimes != null &&
-        expected != null &&
-        expected.startsWith(_pendingBuffer.toString())) {
+        expected != null) {
+      if (!expected.startsWith(_pendingBuffer.toString())) {
+        _pendingCommandTimes = null;
+        _pendingCommand = null;
+        _pendingBuffer = null;
+        notifyListeners();
+        return;
+      }
       _pendingCommandTimes = _pendingCommandTimes! + 1;
+      notifyListeners();
       return;
     }
     _pendingCommandTimes = command != null ? 1 : null;

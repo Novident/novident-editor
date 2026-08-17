@@ -318,9 +318,10 @@ class TableNode {
     double availableWidth, {
     required NovidentTableStyleDefinition style,
     bool noBorder = false,
+    double? borderWidth,
   }) {
     final totalBorders =
-        noBorder ? 0.0 : style.verticalBorderWidth * (colsLen + 1);
+        noBorder ? 0.0 : (borderWidth ?? style.verticalBorderWidth) * (colsLen + 1);
     final usableWidth =
         (availableWidth - totalBorders).clamp(0, double.infinity);
 
@@ -380,7 +381,16 @@ class TableNode {
             shrinkableTotal += widths[i];
           }
         }
-        if (shrinkable.isEmpty) break; // all at min, can't shrink more
+        if (shrinkable.isEmpty) {
+          // Everything is at the minimum and it still overflows — scale
+          // below the minimum to fit (graceful degradation, e.g. when
+          // horizontal scroll is disabled).
+          final scale = usableWidth / totalUsed;
+          for (var i = 0; i < colsLen; i++) {
+            widths[i] *= scale;
+          }
+          break;
+        }
         for (final i in shrinkable) {
           widths[i] = (widths[i] - (widths[i] / shrinkableTotal) * diff)
               .clamp(style.colMinimumWidth, double.infinity);
@@ -514,7 +524,7 @@ class TableNode {
     final heightsNeedSync = _cells.any(
       (c) {
         return tableRowHeightChanged(
-          _cells[0][row].attributes[TableCellBlockKeys.height],
+          c[row].attributes[TableCellBlockKeys.height],
           maxHeight,
         );
       },

@@ -140,8 +140,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // No selection → shows provider default (Roboto).
-      expect(find.text('Roboto'), findsOneWidget);
+      // No selection → shows provider default (platform default font).
+      expect(find.text(getDefaultFont()), findsOneWidget);
 
       // Select text and apply Georgia via delta.
       editorState.updateSelectionWithReason(
@@ -212,7 +212,7 @@ void main() {
 
       // Both items visible with defaults.
       expect(find.text('12'), findsOneWidget);
-      expect(find.text('Roboto'), findsOneWidget);
+      expect(find.text(getDefaultFont()), findsOneWidget);
 
       // Select text → apply font size 24.
       editorState.updateSelectionWithReason(
@@ -234,7 +234,7 @@ void main() {
 
       // Items still visible (flag on), showing cached values.
       expect(find.text('24'), findsOneWidget); // cached font size
-      expect(find.text('Roboto'), findsOneWidget); // font family never changed
+      expect(find.text(getDefaultFont()), findsOneWidget); // font family never changed
     });
   });
 }

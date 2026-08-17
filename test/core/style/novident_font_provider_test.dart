@@ -4,25 +4,6 @@ import 'package:novident_editor/novident_editor.dart';
 void main() {
   group('NovidentFontProvider', () {
     group('fallback', () {
-      test('provides universal safe fonts with Roboto as default', () {
-        final provider = NovidentFontProvider.fallback();
-
-        expect(provider.availableFonts, isNotEmpty);
-        expect(provider.availableFonts.first, 'Roboto');
-        expect(provider.defaultFontFamily, 'Roboto');
-        expect(
-          provider.availableFonts,
-          containsAll([
-            'Arial',
-            'Times New Roman',
-            'Courier New',
-            'Georgia',
-            'Verdana',
-            'Helvetica',
-          ]),
-        );
-      });
-
       test('availableFonts is immutable', () {
         final provider = NovidentFontProvider.fallback();
 

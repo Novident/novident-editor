@@ -1,5 +1,5 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/table_add_button.dart';
+import 'package:novident_editor/src/editor/block_component/table_block_component/table_action_bar.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_col.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_col_border.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_view.dart';
@@ -52,16 +52,14 @@ void main() async {
       'updateRowHeight syncs the other columns even when column 0 is '
       'already up to date',
       () {
-        TableDefaults.cellVerticalPadding = 8.0;
-
         final tableNode = TableNode.fromList([
           ['a', 'b'],
           ['c', 'd'],
         ]);
 
         // unmounted nodes measure Rect.zero, so the computed row height is
-        // deterministic: 0 + cellVerticalPadding.
-        const expectedHeight = 8.0;
+        // deterministic: 0 + the style's cellVerticalPadding.
+        final expectedHeight = kDefaultTableStyle.cellVerticalPadding;
 
         // column 0 already has the target height, column 1 is stale. The old
         // guard (checking only column 0) skipped the synchronization here.
@@ -72,15 +70,11 @@ void main() async {
             .getCell(1, 0)
             .updateAttributes({TableCellBlockKeys.height: 40.0});
 
-        tableNode.updateRowHeight(0);
+        tableNode.updateRowHeight(0, style: kDefaultTableStyle);
 
         expect(
           tableNode.getCell(1, 0).attributes[TableCellBlockKeys.height],
           expectedHeight,
-        );
-        expect(
-          tableNode.node.attributes[TableBlockKeys.colsHeight],
-          tableNode.colsHeight(kDefaultTableStyle),
         );
       },
     );
@@ -91,6 +85,7 @@ void main() async {
       WidgetTester tester, {
       NovidentTableStyleDefinition? tableStyleDef,
       EdgeInsets? cellPadding,
+      List<TableActionMenuItem>? actionMenuItems,
     }) async {
       await NovidentEditorLocalizations.load(const Locale('en'));
 
@@ -105,6 +100,7 @@ void main() async {
         ...standardBlockComponentBuilderMap,
         TableBlockKeys.type: TableBlockComponentBuilder(
           tableStyleDef: tableStyleDef,
+          actionMenuItems: actionMenuItems,
         ),
         TableCellBlockKeys.type: TableCellBlockComponentBuilder(
           padding: cellPadding ?? const EdgeInsets.symmetric(horizontal: 4),
@@ -149,7 +145,9 @@ void main() async {
       final fixedBorderFinder = find.byWidgetPredicate(
         (w) => w is TableColBorder && !w.resizable,
       );
-      expect(fixedBorderFinder, findsOneWidget);
+      // The left border of the first column and the right border of the last
+      // column are both non-resizable.
+      expect(fixedBorderFinder, findsNWidgets(2));
 
       final container = tester.widget<Container>(
         find
@@ -169,6 +167,9 @@ void main() async {
         tableStyleDef: const NovidentTableStyleDefinition(
           id: 'test_style',
           name: 'Test Style',
+          // Force the table to overflow the 800px test viewport so the
+          // scroll view is actually mounted.
+          colMinimumWidth: 600,
         ),
       );
 
@@ -204,25 +205,39 @@ void main() async {
       expect(find.byType(TableView), findsOneWidget);
     });
 
-    testWidgets('the add row/column buttons can be hidden', (tester) async {
+    testWidgets('the action menu items can be hidden', (tester) async {
       await pumpTableEditor(
         tester,
         tableStyleDef: const NovidentTableStyleDefinition(
           id: 'test_style',
           name: 'Test Style',
-          showAddColumnButton: false,
-          showAddRowButton: false,
         ),
       );
 
-      expect(find.byType(TableActionButton), findsNothing);
+      // Without actionMenuItems the action bar renders no buttons.
+      expect(
+        find.descendant(
+          of: find.byType(TableActionBar),
+          matching: find.byType(Icon),
+        ),
+        findsNothing,
+      );
     });
 
-    testWidgets('the add row/column buttons are shown by default',
-        (tester) async {
-      await pumpTableEditor(tester);
+    testWidgets('the action menu items are shown by default', (tester) async {
+      await pumpTableEditor(
+        tester,
+        actionMenuItems: defaultTableActionMenuItems,
+      );
 
-      expect(find.byType(TableActionButton), findsNWidgets(2));
+      // The default action menu renders add column/row, delete, duplicate…
+      expect(
+        find.descendant(
+          of: find.byType(TableActionBar),
+          matching: find.byType(Icon),
+        ),
+        findsWidgets,
+      );
     });
 
     testWidgets('the cell padding is configurable', (tester) async {

@@ -198,7 +198,7 @@ class VimCursorStyle {
   const VimCursorStyle({
     this.color,
     this.opacity = 0.55,
-    this.blink = false,
+    this.blink = true,
     this.blockWidth,
     this.minBlockWidthFactor = 0.4,
     this.maxBlockWidthFactor = 1.0,

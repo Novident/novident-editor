@@ -6,7 +6,7 @@ void main() {
     group('kDefaultBaseStyle', () {
       test('always has a non-null fontFamily', () {
         expect(kDefaultBaseStyle.fontFamily, isNotNull);
-        expect(kDefaultBaseStyle.fontFamily, 'Roboto');
+        expect(kDefaultBaseStyle.fontFamily, getDefaultFont());
       });
 
       test('fontSize is 12', () {

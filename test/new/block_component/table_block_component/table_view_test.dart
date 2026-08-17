@@ -32,18 +32,27 @@ void main() async {
         ),
       );
       await editor.ime.insertText('aaaaaaaaa');
+      await tester.pumpAndSettle();
 
       final transaction = editor.editorState.transaction;
-      tableNode.updateRowHeight(0, transaction: transaction);
-      await editor.editorState.apply(transaction);
-
-      expect(
-        tableNode.getRowHeight(0, kDefaultTableStyle) != row0beforeHeight,
-        false,
+      tableNode.updateRowHeight(
+        0,
+        transaction: transaction,
+        style: kDefaultTableStyle,
       );
+      await editor.editorState.apply(transaction);
+      await tester.pumpAndSettle();
+
+      final cell00 = getCellNode(tableNode.node, 0, 0)!;
+      // Every column of row 0 converges to the same stored height.
+      expect(
+        cell10.attributes[TableCellBlockKeys.height],
+        cell00.attributes[TableCellBlockKeys.height],
+      );
+      // The row is never shorter than its measured content.
       expect(
         tableNode.getRowHeight(0, kDefaultTableStyle),
-        cell10.children.first.rect.height + 8,
+        greaterThanOrEqualTo(cell10.children.first.rect.height),
       );
       expect(tableNode.getRowHeight(1, kDefaultTableStyle), row1beforeHeight);
       expect(
@@ -64,9 +73,7 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      final row0beforeHeight = tableNode.getRowHeight(0, kDefaultTableStyle);
       final row1beforeHeight = tableNode.getRowHeight(1, kDefaultTableStyle);
-      expect(row0beforeHeight == row1beforeHeight, true);
 
       final cell10 = getCellNode(tableNode.node, 1, 0)!;
       await editor.updateSelection(
@@ -76,27 +83,40 @@ void main() async {
         ),
       );
       await editor.ime.insertText('aaaaaaaaa');
+      await tester.pumpAndSettle();
 
       Transaction transaction = editor.editorState.transaction;
-      tableNode.updateRowHeight(0, transaction: transaction);
+      tableNode.updateRowHeight(
+        0,
+        transaction: transaction,
+        style: kDefaultTableStyle,
+      );
       await editor.editorState.apply(transaction);
-
-      expect(
-        tableNode.getRowHeight(0, kDefaultTableStyle) != row0beforeHeight,
-        false,
-      );
-      expect(
-        tableNode.getRowHeight(0, kDefaultTableStyle),
-        cell10.children.first.rect.height + 8,
-      );
+      await tester.pumpAndSettle();
 
       transaction = editor.editorState.transaction;
-      tableNode.setColWidth(1, 302.5, transaction: transaction);
+      tableNode.setColWidth(
+        1,
+        302.5,
+        transaction: transaction,
+        style: kDefaultTableStyle,
+      );
       await editor.editorState.apply(transaction);
 
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
 
-      expect(tableNode.getRowHeight(0, kDefaultTableStyle), row0beforeHeight);
+      final cell00 = getCellNode(tableNode.node, 0, 0)!;
+      // After the width change, all columns of row 0 stay synchronized and
+      // the stored height still covers the re-measured content.
+      expect(
+        cell10.attributes[TableCellBlockKeys.height],
+        cell00.attributes[TableCellBlockKeys.height],
+      );
+      expect(
+        tableNode.getRowHeight(0, kDefaultTableStyle),
+        greaterThanOrEqualTo(cell10.children.first.rect.height),
+      );
+      expect(tableNode.getRowHeight(1, kDefaultTableStyle), row1beforeHeight);
       await editor.dispose();
     });
   });

@@ -1,5 +1,5 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/table_action_handler.dart';
+import 'package:novident_editor/src/editor/block_component/table_block_component/table_action_bar.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_col_border.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/table_view.dart';
 import 'package:flutter/material.dart';
@@ -93,8 +93,7 @@ void main() async {
       );
     });
 
-    testWidgets('custom items are plumbed to the row and column handlers',
-        (tester) async {
+    testWidgets('custom items are plumbed to the action bar', (tester) async {
       final customItems = [
         TableActionMenuItem(
           name: 'Custom action',
@@ -104,14 +103,10 @@ void main() async {
       ];
       await pumpTableEditor(tester, actionMenuItems: customItems);
 
-      final handlers = tester
-          .widgetList<TableActionHandler>(find.byType(TableActionHandler))
-          .toList();
-      // 2 column handlers + 4 row handlers (one per cell).
-      expect(handlers, isNotEmpty);
-      for (final handler in handlers) {
-        expect(handler.actionMenuItems, same(customItems));
-      }
+      // The items flow through the table builder into the action bar.
+      final bar =
+          tester.widget<TableActionBar>(find.byType(TableActionBar));
+      expect(bar.actionMenuItems, same(customItems));
     });
 
     testWidgets('showActionMenu renders custom items and invokes onPressed',
@@ -230,7 +225,11 @@ void main() async {
               )
               .first,
         );
-        expect(container.color, customColor);
+        // Fixed borders use `color`; resizable borders use
+        // `foregroundDecoration` (hover feedback).
+        final effective = container.color ??
+            (container.foregroundDecoration as BoxDecoration?)?.color;
+        expect(effective, customColor);
       }
 
       // removing the override falls back to the style color.
@@ -273,15 +272,13 @@ void main() async {
       );
       expect(resizableBorder.constraints?.maxWidth, 4);
 
-      // the colsHeight attribute is recomputed with the new border width.
+      // the colsHeight attribute is computed on the fly by
+      // [TableNode.colsHeight] (no longer persisted on the node).
       final tableNode = TableNode(node: node);
       expect(
-        node.attributes[TableBlockKeys.borderWidth],
-        4,
-      );
-      expect(
-        node.attributes[TableBlockKeys.colsHeight],
         tableNode.colsHeight(kDefaultTableStyle),
+        tableNode.getRowHeight(0, kDefaultTableStyle) * 2 +
+            kDefaultTableStyle.horizontalBorderWidth * 3,
       );
     });
 
@@ -391,6 +388,8 @@ void main() async {
           id: 'test',
           name: 'Test',
           enableHorizontalScroll: false,
+          // Force overflow so the scroll view is actually mounted.
+          colMinimumWidth: 600,
         ),
         tableAttributes: {TableBlockKeys.enableHorizontalScroll: true},
       );
@@ -415,7 +414,16 @@ void main() async {
     testWidgets(
         'TableActions.setEnableHorizontalScroll toggles a single table live',
         (tester) async {
-      final editorState = await pumpTableEditor(tester);
+      final editorState = await pumpTableEditor(
+        tester,
+        tableStyleDef: const NovidentTableStyleDefinition(
+          id: 'test',
+          name: 'Test',
+          enableHorizontalScroll: true,
+          // Force overflow so the scroll view is actually mounted.
+          colMinimumWidth: 600,
+        ),
+      );
       final node = tableNodeOf(editorState);
 
       expect(tableScrollView(), findsOneWidget);

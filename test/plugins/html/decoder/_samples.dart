@@ -298,7 +298,7 @@ const documentSample2 = {
               "colPosition": 0,
               "rowPosition": 0,
               "height": 40.0,
-              "width": 160.0,
+              "colWeight": 1.0,
             },
           },
           {
@@ -320,7 +320,7 @@ const documentSample2 = {
               "colPosition": 1,
               "rowPosition": 0,
               "height": 40.0,
-              "width": 160.0,
+              "colWeight": 1.0,
             },
           },
           {
@@ -342,7 +342,7 @@ const documentSample2 = {
               "colPosition": 0,
               "rowPosition": 1,
               "height": 40.0,
-              "width": 160.0,
+              "colWeight": 1.0,
             },
           },
           {
@@ -361,7 +361,7 @@ const documentSample2 = {
               "colPosition": 1,
               "rowPosition": 1,
               "height": 40.0,
-              "width": 160.0,
+              "colWeight": 1.0,
             },
           }
         ],
@@ -370,7 +370,7 @@ const documentSample2 = {
           "colsLen": 2,
           "colDefaultWidth": 160,
           "rowDefaultHeight": 40,
-          "colMinimumWidth": 40,
+          "colMinimumWidth": 20,
         },
       }
     ],

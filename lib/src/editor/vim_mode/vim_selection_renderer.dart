@@ -377,7 +377,7 @@ class VimBlockCursor extends StatefulWidget {
     super.key,
     required this.rect,
     required this.color,
-    this.shouldBlink = false,
+    this.shouldBlink = true,
     this.blinkingInterval = 500,
   });
 

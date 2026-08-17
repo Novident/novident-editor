@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import '../new/util/util.dart';
+import '../new/util/editor_text_finders.dart';
 
 void main() async {
   testWidgets('auto complete', (tester) async {
@@ -26,7 +27,7 @@ void main() async {
     await tester.pumpAndSettle();
 
     expect(
-      find.textContaining('world', findRichText: true),
+      findEditorRichTextContaining('world'),
       findsOneWidget,
     );
 
@@ -37,7 +38,7 @@ void main() async {
     await tester.pumpAndSettle();
 
     expect(
-      find.textContaining('world', findRichText: true),
+      findEditorRichTextContaining('world'),
       findsNothing,
     );
   });

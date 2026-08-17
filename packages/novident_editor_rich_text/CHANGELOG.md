@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.4
+
+* chore: update `novident_editor_selection` dependency to the latest version.
+
 ## 1.0.3
 
 * feat: replaceable span pipeline (`NovidentTextSpanPipeline`). All per-span logic — style resolution, text transforms, span emission, selection contrast, placeholder handling and span adjustments — moved out of `NovidentRichText` into a 6-phase pipeline with immutable contexts. `DefaultNovidentTextSpanPipeline` reproduces the previous behavior exactly (legacy callbacks kept in the constructor), and the pipeline can be plugged through `RichTextEditorConfig.spanPipeline` or `NovidentRichText.spanPipeline` — custom decorations (e.g. spell-check marks) no longer require forking the widget.

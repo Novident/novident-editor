@@ -18,7 +18,7 @@ Future<void> onInsert(
   }
 
   selection = editorState.selection?.normalized;
-  if (selection == null || !selection.isCollapsed) {
+  if (selection == null || !selection.isSingle) {
     return;
   }
 
@@ -49,7 +49,6 @@ Future<void> onInsert(
       offset: insertion.selection.extentOffset,
     ),
   );
-
   final transaction = editorState.transaction
     ..insertText(
       node,

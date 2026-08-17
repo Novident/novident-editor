@@ -107,8 +107,18 @@ CommandShortcutEventHandler _leftInTableCellHandler = (editorState) {
   final selection = editorState.selection;
   if (_hasSelectionAndTableCell(inTableNodes, selection) &&
       selection!.start.offset == 0) {
-    // Try previous cell (col - 1, same row). Does not wrap to previous row.
-    final nextNode = _getNextNode(inTableNodes, -1, 0);
+    final cell = inTableNodes.first.parent!;
+    final table = cell.parent;
+    if (table == null) {
+      return KeyEventResult.ignored;
+    }
+    final tableNode = TableNode(node: table);
+    final col = cell.attributes[TableCellBlockKeys.colPosition] as int;
+    final row = cell.attributes[TableCellBlockKeys.rowPosition] as int;
+
+    // Previous cell in the same row. Does NOT wrap around columns: the
+    // left edge of the table must not jump to the last column.
+    final nextNode = col > 0 ? tableNode.getCell(col - 1, row) : null;
     if (nextNode != null && _nodeHasTextChild(nextNode)) {
       final target = nextNode.childAtIndexOrNull(0)!;
       editorState.selectionService.updateSelection(
@@ -120,20 +130,17 @@ CommandShortcutEventHandler _leftInTableCellHandler = (editorState) {
       return KeyEventResult.handled;
     }
     // At the left edge — move to the end of the block before the table.
-    final table = inTableNodes.first.parent?.parent;
-    if (table != null) {
-      final previous = table.previousNodeWhere(
-        (n) => n.selectable != null && n.delta != null,
+    final previous = table.previousNodeWhere(
+      (n) => n.selectable != null && n.delta != null,
+    );
+    if (previous != null && previous.delta != null) {
+      editorState.selectionService.updateSelection(
+        Selection.single(
+          path: previous.path,
+          startOffset: previous.delta!.length,
+        ),
       );
-      if (previous != null && previous.delta != null) {
-        editorState.selectionService.updateSelection(
-          Selection.single(
-            path: previous.path,
-            startOffset: previous.delta!.length,
-          ),
-        );
-        return KeyEventResult.handled;
-      }
+      return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
   }
@@ -145,8 +152,19 @@ CommandShortcutEventHandler _rightInTableCellHandler = (editorState) {
   final selection = editorState.selection;
   if (_hasSelectionAndTableCell(inTableNodes, selection) &&
       selection!.start.offset == inTableNodes.first.delta!.length) {
-    // Try next cell (col + 1, same row). Does not wrap to next row.
-    final nextNode = _getNextNode(inTableNodes, 1, 0);
+    final cell = inTableNodes.first.parent!;
+    final table = cell.parent;
+    if (table == null) {
+      return KeyEventResult.ignored;
+    }
+    final tableNode = TableNode(node: table);
+    final col = cell.attributes[TableCellBlockKeys.colPosition] as int;
+    final row = cell.attributes[TableCellBlockKeys.rowPosition] as int;
+
+    // Next cell in the same row. Does NOT wrap to the next row.
+    final nextNode = col + 1 < tableNode.colsLen
+        ? tableNode.getCell(col + 1, row)
+        : null;
     if (nextNode != null && _nodeHasTextChild(nextNode)) {
       editorState.selectionService.updateSelection(
         Selection.single(
@@ -157,16 +175,18 @@ CommandShortcutEventHandler _rightInTableCellHandler = (editorState) {
       return KeyEventResult.handled;
     }
     // At the right edge — move to the start of the block after the table.
-    final table = inTableNodes.first.parent?.parent;
-    if (table != null) {
-      final after =
-          table.nextNodeWhere((n) => n.selectable != null && n.delta != null);
-      if (after != null && after.delta != null) {
-        editorState.selectionService.updateSelection(
-          Selection.single(path: after.path, startOffset: 0),
-        );
-        return KeyEventResult.handled;
-      }
+    // Walk the SIBLINGS: nextNodeWhere would dive into the table's own
+    // cells and wrap the cursor back into the first cell.
+    Node? after = table.next;
+    while (after != null &&
+        !(after.selectable != null && after.delta != null)) {
+      after = after.next;
+    }
+    if (after != null && after.delta != null) {
+      editorState.selectionService.updateSelection(
+        Selection.single(path: after.path, startOffset: 0),
+      );
+      return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
   }
@@ -224,10 +244,15 @@ CommandShortcutEventHandler _downInTableCellHandler = (editorState) {
       return KeyEventResult.handled;
     }
     // At the bottom of the table — move to the start of the block below.
+    // Walk the SIBLINGS: nextNodeWhere would dive into the table's own
+    // cells and wrap the cursor back into the first cell.
     final table = inTableNodes.first.parent?.parent;
     if (table != null) {
-      final below =
-          table.nextNodeWhere((n) => n.selectable != null && n.delta != null);
+      Node? below = table.next;
+      while (below != null &&
+          !(below.selectable != null && below.delta != null)) {
+        below = below.next;
+      }
       if (below != null && below.delta != null) {
         editorState.selectionService.updateSelection(
           Selection.single(path: below.path, startOffset: 0),

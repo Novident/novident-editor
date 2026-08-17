@@ -28,7 +28,15 @@ CommandShortcutEvent event(
           command.restrictToDefinedMode) {
         return KeyEventResult.ignored;
       }
-      if (command.rawCommand != null && command.rawCommand!.length > 1) {
+      if (command.rawCommand == null &&
+              controller.pendingCommandBuffer != null ||
+          command.rawCommand != null &&
+              controller.pendingCommandBuffer != null &&
+              !command.rawCommand!.startsWith(
+                '${controller.pendingCommandBuffer}$rawBinding',
+              )) {
+        controller.setPendingCommand(null, null);
+      } else if (command.rawCommand != null && command.rawCommand!.length > 1) {
         controller.setPendingCommand(rawBinding, command.rawCommand);
         if (controller.mode == command.mode &&
             command.rawCommand != null &&
@@ -40,6 +48,7 @@ CommandShortcutEvent event(
           return KeyEventResult.handled;
         }
         controller.setPendingCommand(null, null);
+        controller.clearPendingBuffer();
       }
       switch (controller.mode) {
         case VimMode.insert:

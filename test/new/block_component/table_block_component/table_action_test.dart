@@ -133,7 +133,7 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      TableActions.duplicate(
+      await TableActions.duplicate(
         tableNode.node,
         0,
         editor.editorState,
@@ -162,7 +162,7 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      TableActions.duplicate(
+      await TableActions.duplicate(
         tableNode.node,
         0,
         editor.editorState,
@@ -191,7 +191,7 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      TableActions.add(
+      await TableActions.add(
         tableNode.node,
         2,
         editor.editorState,
@@ -211,7 +211,7 @@ void main() async {
       );
       expect(
         tableNode.getColWidth(2, kDefaultTableStyle),
-        kDefaultTableStyle.colDefaultWeight,
+        kDefaultTableStyle.colDefaultWeight * TableDefaults.colWidth,
       );
       await editor.dispose();
     });
@@ -226,7 +226,7 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      TableActions.add(
+      await TableActions.add(
         tableNode.node,
         2,
         editor.editorState,
@@ -248,7 +248,8 @@ void main() async {
       final cell12 = getCellNode(tableNode.node, 1, 2)!;
       expect(
         tableNode.getRowHeight(2, kDefaultTableStyle),
-        cell12.children.first.rect.height + 8,
+        cell12.children.first.rect.height +
+            kDefaultTableStyle.cellVerticalPadding,
       );
       await editor.dispose();
     });
@@ -304,7 +305,7 @@ void main() async {
       );
       await tester.pumpAndSettle();
 
-      TableActions.add(
+      await TableActions.add(
         tableNode.node,
         2,
         editor.editorState,
@@ -344,7 +345,7 @@ void main() async {
       );
       await tester.pumpAndSettle();
 
-      TableActions.add(
+      await TableActions.add(
         tableNode.node,
         2,
         editor.editorState,

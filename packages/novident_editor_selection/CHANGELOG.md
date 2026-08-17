@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.5
+
+* fix: cursor never blinks even when is forced to.
+
 ## 1.0.4
 
 * fix: head for cursor is never being computed correctly by using `prevCursorRect` when the renderer shouldn't use it.

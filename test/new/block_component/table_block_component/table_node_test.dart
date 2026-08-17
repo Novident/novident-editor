@@ -108,7 +108,9 @@ void main() {
         50,
       );
 
-      expect(tableNode.getColWidth(0, style), 35);
+      // Legacy `width` is no longer used for layout: cells without an
+      // explicit colWeight are normalized to the default weight (1.0).
+      expect(tableNode.getColWidth(0, style), TableDefaults.colWidth);
       expect(
         tableNode.getColWidth(1, style),
         style.colDefaultWeight * TableDefaults.colWidth,
@@ -319,12 +321,18 @@ void main() {
         isNull,
       );
 
+      // Cells created by [TableNode.fromList] are normalized with the
+      // default weight; the custom style's colDefaultWeight is not
+      // resolved at construction time (no style registry is available).
       expect(
         tableNode.getColWidth(0, style),
-        style.colDefaultWeight * TableDefaults.colWidth,
+        TableDefaults.colWidth,
       );
 
-      expect(tableNode.getRowHeight(1, style), style.rowDefaultHeight);
+      expect(
+        tableNode.getRowHeight(1, style),
+        kDefaultTableStyle.rowDefaultHeight,
+      );
 
       expect(
         tableNode.getCell(1, 0).children.first.toJson(),
@@ -463,9 +471,12 @@ void main() {
 
         expect(
           tableNode.getColWidth(0, style),
-          style.colDefaultWeight * TableDefaults.colWidth,
+          TableDefaults.colWidth,
         );
-        expect(tableNode.getRowHeight(0, style), style.rowDefaultHeight);
+        expect(
+          tableNode.getRowHeight(0, style),
+          kDefaultTableStyle.rowDefaultHeight,
+        );
       });
 
       test('throws assertion error when rows have mismatched lengths', () {

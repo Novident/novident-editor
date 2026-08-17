@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../../../infra/testable_editor.dart';
+import '../../../../util/editor_text_finders.dart';
 
 void main() async {
   setUpAll(() {
@@ -61,7 +62,7 @@ void main() async {
       );
       await editor.startTesting();
 
-      final finder = find.text(link, findRichText: true);
+      final finder = findEditorRichText(link);
       expect(finder, findsOneWidget);
 
       // tap the link
@@ -70,7 +71,18 @@ void main() async {
       await tester.pumpAndSettle(const Duration(seconds: 1));
       final linkMenu = find.byType(LinkMenu);
       expect(linkMenu, findsOneWidget);
-      expect(find.text(link, findRichText: true), findsNWidgets(2));
+      // The editor keeps rendering the link, and the menu shows it again
+      // inside its text field.
+      expect(findEditorRichText(link), findsOneWidget);
+      final menuField = find.descendant(
+        of: linkMenu,
+        matching: find.byType(TextFormField),
+      );
+      expect(menuField, findsOneWidget);
+      expect(
+        tester.widget<TextFormField>(menuField).controller?.text,
+        link,
+      );
 
       await editor.dispose();
     });
@@ -87,7 +99,7 @@ void main() async {
       await editor.startTesting(editable: false);
       await tester.pumpAndSettle();
 
-      final finder = find.text(link, findRichText: true);
+      final finder = findEditorRichText(link);
       expect(finder, findsOneWidget);
 
       await tester.tap(finder);
@@ -96,7 +108,7 @@ void main() async {
       final linkMenu = find.byType(LinkMenu);
       expect(linkMenu, findsNothing);
 
-      expect(find.text(link, findRichText: true), findsOneWidget);
+      expect(findEditorRichText(link), findsOneWidget);
 
       await editor.dispose();
     });

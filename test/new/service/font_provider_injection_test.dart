@@ -62,7 +62,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(editorState.fontProvider, isNotNull);
-      expect(editorState.fontProvider!.defaultFontFamily, 'Roboto');
+      expect(editorState.fontProvider!.defaultFontFamily, getDefaultFont());
       expect(editorState.fontProvider!.availableFonts.length, greaterThan(3));
     });
 

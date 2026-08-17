@@ -117,7 +117,12 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   double autoScrollEdgeOffset = novidentEditorAutoScrollEdgeOffset;
 
   /// The style of the editor.
-  late EditorStyle editorStyle;
+  ///
+  /// Defaults to [EditorStyle.desktop] (same default as [NovidentEditor]) so
+  /// [EditorState] is usable without widget initialization (e.g. unit tests
+  /// calling [updateSelectionWithReason] directly). Overwritten by
+  /// [NovidentEditor] during init.
+  EditorStyle editorStyle = const EditorStyle.desktop();
 
   /// The styles configuration for the editor.
   ///
@@ -390,6 +395,8 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
     if (reason == SelectionUpdateReason.uiEvent) {
       _selectionType = customSelectionType ?? SelectionType.inline;
+      // Complete after the frame is rendered so listeners can re-measure
+      // the freshly painted selection.
       WidgetsBinding.instance.addPostFrameCallback(
         (timeStamp) => completer.complete(),
       );
@@ -400,14 +407,29 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     // broadcast to other users here
     selectionExtraInfo = extraInfo;
     _selectionUpdateReason = reason;
-    this.selection = (await selectionRenderer?.updateSelectionWithReason(
-          this,
-          selection,
-          reason: reason,
-          extraInfo: extraInfo,
-          customSelectionType: customSelectionType,
-        )) ??
-        selection;
+
+    // Assign synchronously when there is no custom renderer so callers
+    // (including unit tests) can read `selection` immediately after the
+    // call. With a custom renderer, wait for its normalized result.
+    final renderer = selectionRenderer;
+    if (renderer == null) {
+      this.selection = selection;
+    } else {
+      this.selection = (await renderer.updateSelectionWithReason(
+            this,
+            selection,
+            reason: reason,
+            extraInfo: extraInfo,
+            customSelectionType: customSelectionType,
+          )) ??
+          selection;
+    }
+
+    // The completer must always complete: non-UI-event callers get an
+    // already-completed future, UI-event callers resolve after the frame.
+    if (reason != SelectionUpdateReason.uiEvent) {
+      completer.complete();
+    }
 
     return completer.future;
   }

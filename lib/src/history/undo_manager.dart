@@ -13,7 +13,6 @@ import 'package:novident_editor/novident_editor.dart'
 /// If a [HistoryItem] is not sealed, operations can be added sequentially.
 /// Otherwise, the operations should be added to a new [HistoryItem].
 final class HistoryItem extends LinkedListEntry<HistoryItem> {
-
   HistoryItem();
   final List<Operation> operations = [];
   Selection? beforeSelection;
@@ -54,7 +53,6 @@ final class HistoryItem extends LinkedListEntry<HistoryItem> {
 }
 
 class FixedSizeStack {
-
   FixedSizeStack(this.maxSize);
   final _list = LinkedList<HistoryItem>();
   final int maxSize;
@@ -89,7 +87,6 @@ class FixedSizeStack {
 }
 
 class UndoManager {
-
   UndoManager([int stackSize = 20])
       : undoStack = FixedSizeStack(stackSize),
         redoStack = FixedSizeStack(stackSize);

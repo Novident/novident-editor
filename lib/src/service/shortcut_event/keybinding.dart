@@ -79,7 +79,6 @@ extension KeybindingsExtension on List<Keybinding> {
 }
 
 class Keybinding {
-
   factory Keybinding.fromMap(Map<String, dynamic> map) {
     return Keybinding(
       isAltPressed: map['isAltPressed'] ?? false,

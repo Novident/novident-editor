@@ -110,8 +110,7 @@ class _HeadingBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
-    final blockStyle =
-        NovidentBlockStyleResolver.resolve(context, widget.node);
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
 
     Widget child = Container(
       width: double.infinity,
@@ -127,9 +126,8 @@ class _HeadingBlockComponentWidgetState
               delegate: this,
               node: widget.node,
               editorConfig: editorState,
-              textAlign: blockStyle.alignment ??
-                  alignment?.toTextAlign ??
-                  textAlign,
+              textAlign:
+                  blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign,
               useFirstLineIndent: false,
               textSpanDecorator: (textSpan) {
                 var result = textSpan.updateTextStyle(

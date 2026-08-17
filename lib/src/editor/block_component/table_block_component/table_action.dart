@@ -173,7 +173,7 @@ void _addCol(
     node.insert(paragraphNode());
     final firstCellInRow = table.getCell(0, i);
     if (firstCellInRow.attributes
-            .containsKey(TableCellBlockKeys.rowBackgroundColor)) {
+        .containsKey(TableCellBlockKeys.rowBackgroundColor)) {
       node.updateAttributes({
         TableCellBlockKeys.rowBackgroundColor:
             firstCellInRow.attributes[TableCellBlockKeys.rowBackgroundColor],

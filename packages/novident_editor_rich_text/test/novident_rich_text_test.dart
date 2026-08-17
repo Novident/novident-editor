@@ -148,11 +148,11 @@ void main() {
           span.children?.forEach(walk);
         }
       }
+
       walk(textSpan);
 
       // 5. Collect spans that have text (skip WidgetSpan for indent).
-      final textSpans =
-          spans.where((s) => (s.text ?? '').isNotEmpty).toList();
+      final textSpans = spans.where((s) => (s.text ?? '').isNotEmpty).toList();
       expect(
         textSpans.length,
         greaterThanOrEqualTo(2),
@@ -266,6 +266,8 @@ class _StandaloneConfig implements RichTextEditorConfig {
   String? selectionDragModeValue() => null;
   @override
   SelectionRenderer? get selectionRenderer => DefaultSelectionRenderer();
+  @override
+  NovidentTextSpanPipeline? get spanPipeline => null;
 }
 
 /// Minimal [StatefulWidget] that hosts a [NovidentRichText] with itself as

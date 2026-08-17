@@ -42,7 +42,6 @@ CommandShortcutEventHandler _pageUpCommandHandler = (editorState) {
         renderParagraph: rp,
         textShift: selectable.textShift,
         delta: node.delta,
-        forward: false,
       );
       final custom = renderer.onPageUp(ctx);
       if (custom != null) {

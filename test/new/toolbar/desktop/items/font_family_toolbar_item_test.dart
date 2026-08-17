@@ -110,9 +110,11 @@ void main() {
       final editorState = editorWithText('Hello');
       addTearDown(() => editorState.dispose());
 
-      unawaited(editorState.updateSelectionWithReason(
-        Selection.single(path: [0], startOffset: 0, endOffset: 2),
-      ),);
+      unawaited(
+        editorState.updateSelectionWithReason(
+          Selection.single(path: [0], startOffset: 0, endOffset: 2),
+        ),
+      );
 
       await tester.pumpWidget(
         MaterialApp(

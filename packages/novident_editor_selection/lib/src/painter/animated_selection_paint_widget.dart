@@ -99,4 +99,3 @@ class _AnimatedSelectionAreaPaintState extends State<AnimatedSelectionAreaPaint>
     super.dispose();
   }
 }
-

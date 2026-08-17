@@ -70,8 +70,7 @@ void main() {
     expect(
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
-              (element) =>
-                  element.attributes?[RichTextKeys.textColor] == null,
+              (element) => element.attributes?[RichTextKeys.textColor] == null,
             );
       }),
       true,
@@ -106,8 +105,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[RichTextKeys.backgroundColor] ==
-                  null,
+                  element.attributes?[RichTextKeys.backgroundColor] == null,
             );
       }),
       true,

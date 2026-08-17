@@ -46,7 +46,6 @@ class _RegistryWidgetState extends State<RegistryWidget> {
 }
 
 class _InheritedRegistryWidget extends InheritedWidget {
-
   const _InheritedRegistryWidget({
     required this.state,
     required super.child,

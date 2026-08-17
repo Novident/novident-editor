@@ -86,7 +86,6 @@ class _ListMenuState extends State<_ListMenu> {
 }
 
 class ListUnit {
-
   ListUnit({
     required this.icon,
     required this.label,

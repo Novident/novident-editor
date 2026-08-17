@@ -25,7 +25,8 @@ Position? tryMoveHook({
   final currentRect = currentSelectable?.getCursorRectInPosition(fromPosition);
   if (currentSelectable == null || currentRect == null) return toPosition;
 
-  final targetSelectable = crossesBlock ? targetNode.selectable : currentSelectable;
+  final targetSelectable =
+      crossesBlock ? targetNode.selectable : currentSelectable;
   final targetRect = targetSelectable?.getCursorRectInPosition(toPosition);
   if (targetRect == null) return toPosition;
 
@@ -61,11 +62,13 @@ void moveCompletedHook({
 
   final node = editorState.getNodeAtPath(toPosition.path);
   if (node != null) {
-    renderer.onMoveCompleted(MoveCompletedContext(
-      node: node,
-      fromPosition: fromPosition,
-      toPosition: toPosition,
-      direction: direction,
-    ),);
+    renderer.onMoveCompleted(
+      MoveCompletedContext(
+        node: node,
+        fromPosition: fromPosition,
+        toPosition: toPosition,
+        direction: direction,
+      ),
+    );
   }
 }

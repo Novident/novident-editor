@@ -22,7 +22,7 @@ class SelectionAreaPainter extends CustomPainter {
   /// [selectionColor].
   ///
   /// Flutter only returns 1 [Rect] covering the exact positions
-  /// using `getBoxesForSelection`. So, the [head] need to be added 
+  /// using `getBoxesForSelection`. So, the [head] need to be added
   /// manually that specific [Rect]
   final int? headRectIndex;
 

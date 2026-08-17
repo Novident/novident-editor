@@ -131,7 +131,6 @@ class _BlocksMenuState extends State<_BlocksMenu> {
 }
 
 class _ListUnit {
-
   _ListUnit({
     required this.icon,
     required this.label,

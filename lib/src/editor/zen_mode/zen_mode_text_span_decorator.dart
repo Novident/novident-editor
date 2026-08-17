@@ -67,8 +67,7 @@ TextSpan _neutralizeColors(
       !isTransparent &&
       attributes[RichTextKeys.textColor] != null) {
     final editorState = context.read<EditorState>();
-    final baseColor =
-        DefaultTextStyle.of(context).style.color;
+    final baseColor = DefaultTextStyle.of(context).style.color;
     if (baseColor != null && style.color != baseColor) {
       style = style.copyWith(color: baseColor);
       changed = true;
@@ -77,8 +76,7 @@ TextSpan _neutralizeColors(
 
   // the find & replace highlight (find_bg_color) is never neutralized,
   // otherwise search matches would become invisible.
-  final hasFindHighlight =
-      attributes[RichTextKeys.findBackgroundColor] != null;
+  final hasFindHighlight = attributes[RichTextKeys.findBackgroundColor] != null;
   if (config.ignoreHighlightColor &&
       !hasFindHighlight &&
       attributes[RichTextKeys.backgroundColor] != null) {

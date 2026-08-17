@@ -12,10 +12,15 @@ void main() {
     EditorState editorWithText(String text) {
       final doc = Document.blank();
       final delta = Delta()..insert(text);
-      doc.insert([0], [
-        Node(type: 'paragraph', attributes: {
-          blockComponentDelta: delta.toJson(),
-        },),
+      doc.insert([
+        0,
+      ], [
+        Node(
+          type: 'paragraph',
+          attributes: {
+            blockComponentDelta: delta.toJson(),
+          },
+        ),
       ]);
       return EditorState(document: doc);
     }
@@ -31,8 +36,13 @@ void main() {
             body: Builder(
               builder: (context) {
                 final item = buildFontSizeItem();
-                return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null,);
+                return item.builder!(
+                  context,
+                  editorState,
+                  Colors.blue,
+                  Colors.grey,
+                  null,
+                );
               },
             ),
           ),
@@ -58,8 +68,13 @@ void main() {
             body: Builder(
               builder: (context) {
                 final item = buildFontSizeItem();
-                return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null,);
+                return item.builder!(
+                  context,
+                  editorState,
+                  Colors.blue,
+                  Colors.grey,
+                  null,
+                );
               },
             ),
           ),
@@ -90,8 +105,13 @@ void main() {
             body: Builder(
               builder: (context) {
                 final item = buildFontSizeItem();
-                return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null,);
+                return item.builder!(
+                  context,
+                  editorState,
+                  Colors.blue,
+                  Colors.grey,
+                  null,
+                );
               },
             ),
           ),
@@ -134,8 +154,13 @@ void main() {
               builder: (context) {
                 // Range 20-24: only 5 items.
                 final item = buildFontSizeItem(minSize: 20, maxSize: 24);
-                return item.builder!(context, editorState, Colors.blue,
-                    Colors.grey, null,);
+                return item.builder!(
+                  context,
+                  editorState,
+                  Colors.blue,
+                  Colors.grey,
+                  null,
+                );
               },
             ),
           ),

@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/editor_component/service/selection/mobile_selection_service.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

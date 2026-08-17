@@ -5,7 +5,6 @@ List<ToolbarItem> headingItems = [1, 2, 3]
     .toList(growable: false);
 
 class _HeadingToolbarItem extends ToolbarItem {
-
   _HeadingToolbarItem(this.level)
       : super(
           id: 'editor.h$level',

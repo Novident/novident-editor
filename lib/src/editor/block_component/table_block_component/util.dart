@@ -1,6 +1,8 @@
 import 'package:novident_editor/novident_editor.dart';
 
-@Deprecated('Use TableNode.getCell(col, row) instead — it is O(1) indexed lookup')
+@Deprecated(
+  'Use TableNode.getCell(col, row) instead — it is O(1) indexed lookup',
+)
 Node? getCellNode(Node tableNode, int col, int row) {
   final table = TableNode(node: tableNode);
   if (col < 0 || col >= table.colsLen || row < 0 || row >= table.rowsLen) {

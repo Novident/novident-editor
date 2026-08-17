@@ -10,8 +10,8 @@ class NovidentClipboardData {
   final String? html;
 }
 
-//TODO: @CatHood0 this class require more customization and 
-// a full refactor to work with html 
+//TODO: @CatHood0 this class require more customization and
+// a full refactor to work with html
 class NovidentClipboard {
   static NovidentClipboardData? _mockData;
 

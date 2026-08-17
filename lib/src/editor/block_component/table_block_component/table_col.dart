@@ -300,4 +300,3 @@ class _TableColState extends State<TableCol> {
     node.addListener(listeners[node.id]!);
   }
 }
-

@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart'
-    hide RichText, TextPainter;
+import 'package:flutter/material.dart' hide RichText, TextPainter;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:novident_editor/novident_editor.dart';
 
@@ -91,35 +90,44 @@ void main() {
       for (var i = 0; i < 15; i++) {
         final next = selectable.moveVerticallyInText(current, true);
         if (next == null) break;
-        expect(next.offset, lessThan(current),
-            reason: 'Step $i: must move upward ($current → ${next.offset})',);
+        expect(
+          next.offset,
+          lessThan(current),
+          reason: 'Step $i: must move upward ($current → ${next.offset})',
+        );
         current = next.offset;
         offsets.add(current);
       }
 
       // We should have walked multiple lines.
-      expect(offsets.length, greaterThan(3),
-          reason: 'Expected at least 4 lines, got ${offsets.length}',);
+      expect(
+        offsets.length,
+        greaterThan(3),
+        reason: 'Expected at least 4 lines, got ${offsets.length}',
+      );
 
       // No step should jump more than ~100 characters (one line).
       for (var i = 1; i < offsets.length; i++) {
         final diff = offsets[i - 1] - offsets[i];
-        expect(diff, lessThan(120),
-            reason:
-                'Step $i: jump of $diff chars is too large '
-                '(${offsets[i - 1]} → ${offsets[i]})',);
+        expect(
+          diff,
+          lessThan(120),
+          reason: 'Step $i: jump of $diff chars is too large '
+              '(${offsets[i - 1]} → ${offsets[i]})',
+        );
       }
 
       // Should reach the beginning.
-      expect(offsets.last, lessThanOrEqualTo(20),
-          reason:
-              'Should walk close to offset 0, got ${offsets.last}. '
-              'Full walk: $offsets',);
+      expect(
+        offsets.last,
+        lessThanOrEqualTo(20),
+        reason: 'Should walk close to offset 0, got ${offsets.last}. '
+            'Full walk: $offsets',
+      );
     });
 
     testWidgets('homogeneous font — walk up from end', (tester) async {
-      const text =
-          'The quick brown fox jumps over the lazy dog. '
+      const text = 'The quick brown fox jumps over the lazy dog. '
           'Pack my box with five dozen liquor jugs. '
           'How vexingly quick daft zebras jump! '
           'The five boxing wizards jump quickly. '
@@ -144,14 +152,16 @@ void main() {
       }
 
       // Should reach close to offset 0.
-      expect(current, lessThanOrEqualTo(80),
-          reason: 'Should walk close to start, stuck at $current',);
+      expect(
+        current,
+        lessThanOrEqualTo(80),
+        reason: 'Should walk close to start, stuck at $current',
+      );
       expect(steps, greaterThan(2));
     });
 
     testWidgets('walk down from start', (tester) async {
-      const text =
-          'The quick brown fox jumps over the lazy dog. '
+      const text = 'The quick brown fox jumps over the lazy dog. '
           'Pack my box with five dozen liquor jugs. '
           'How vexingly quick daft zebras jump! '
           'The five boxing wizards jump quickly. ';
@@ -165,15 +175,21 @@ void main() {
       while (current < textLen && steps < 30) {
         final next = selectable.moveVerticallyInText(current, false);
         if (next == null) break;
-        expect(next.offset, greaterThan(current),
-            reason: 'Step $steps: must move downward',);
+        expect(
+          next.offset,
+          greaterThan(current),
+          reason: 'Step $steps: must move downward',
+        );
         current = next.offset;
         steps++;
       }
 
       expect(steps, greaterThan(1));
-      expect(current, greaterThan(textLen ~/ 2),
-          reason: 'Should move past halfway, stuck at $current',);
+      expect(
+        current,
+        greaterThan(textLen ~/ 2),
+        reason: 'Should move past halfway, stuck at $current',
+      );
     });
 
     testWidgets('single-line paragraph — returns null at boundaries',
@@ -227,8 +243,11 @@ void main() {
       for (var i = 0; i < 20; i++) {
         final next = selectable.moveVerticallyInText(current, true);
         if (next == null) break;
-        expect(next.offset, lessThan(current),
-            reason: 'Step $i must decrease: $current → ${next.offset}',);
+        expect(
+          next.offset,
+          lessThan(current),
+          reason: 'Step $i must decrease: $current → ${next.offset}',
+        );
         current = next.offset;
         offsets.add(current);
       }

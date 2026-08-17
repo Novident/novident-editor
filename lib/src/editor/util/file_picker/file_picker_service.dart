@@ -21,19 +21,16 @@ abstract class FilePickerService {
     fp.FileType type = fp.FileType.any,
     List<String>? allowedExtensions,
     Function(fp.FilePickerStatus p1)? onFileLoading,
-    bool lockParentWindow = false,
   }) async =>
       throw UnimplementedError('pickFiles() has not been implemented.');
 
-  Future<String?> saveFile({
+  Future<Uri?> saveFile({
     required Uint8List bytes,
     required String fileName,
     String? dialogTitle,
     String? initialDirectory,
     fp.FileType type = fp.FileType.any,
     List<String>? allowedExtensions,
-    bool lockParentWindow = false,
-    dynamic Function(fp.FilePickerStatus)? onFileLoading,
   }) async =>
       throw UnimplementedError('saveFile() has not been implemented.');
 }

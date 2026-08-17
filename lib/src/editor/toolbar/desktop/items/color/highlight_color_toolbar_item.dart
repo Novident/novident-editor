@@ -43,8 +43,7 @@ ToolbarItem buildHighlightColorItem({List<ColorOption>? colorOptions}) {
             if (!showClearButton) {
               showClearButton = delta.whereType<TextInsert>().any(
                 (element) {
-                  return element
-                          .attributes?[RichTextKeys.backgroundColor] !=
+                  return element.attributes?[RichTextKeys.backgroundColor] !=
                       null;
                 },
               );

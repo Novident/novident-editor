@@ -19,7 +19,6 @@ typedef SelectionMenuItemNameBuilder = Widget Function(
 
 /// Selection Menu Item
 class SelectionMenuItem {
-
   /// Creates a selection menu entry for inserting a [Node].
   /// [getName] and [iconData] define the appearance within the selection menu.
   ///

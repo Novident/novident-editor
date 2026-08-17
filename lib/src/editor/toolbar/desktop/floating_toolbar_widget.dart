@@ -133,12 +133,10 @@ class _FloatingToolbarWidgetState extends State<FloatingToolbarWidget> {
   }
 
   Iterable<ToolbarItem> _computeActiveItems() {
-    final activeItems = widget.items
-        .where((e) {
-          if (widget.showWhenNoSelection) return true;
-          return e.isActive?.call(widget.editorState) ?? false;
-        })
-        .toList();
+    final activeItems = widget.items.where((e) {
+      if (widget.showWhenNoSelection) return true;
+      return e.isActive?.call(widget.editorState) ?? false;
+    }).toList();
     if (activeItems.isEmpty) {
       return [];
     }

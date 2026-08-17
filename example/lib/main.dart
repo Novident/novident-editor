@@ -8,9 +8,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:novident_editor/novident_editor.dart'
     show NovidentEditorLocalizations, UniversalPlatform;
 import 'package:novident_split_view/novident_split_view.dart';
+import 'spell_check/hunspell_spell_checker.dart';
 import 'widgets/views/desktop_view.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Loads and trains the en_US Hunspell dictionary (demo: the splash screen
+  // covers the load; the editor starts with spell checking ready).
+  await HunspellSpellChecker.load();
   runApp(const MyApp());
 }
 

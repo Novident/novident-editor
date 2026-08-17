@@ -168,7 +168,8 @@ class _NumberedListBlockComponentWidgetState
 
     child = Container(
       key: blockComponentKey,
-      decoration: blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
+      decoration:
+          blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
       padding: blockStyle.applyToPadding(padding),
       child: child,
     );

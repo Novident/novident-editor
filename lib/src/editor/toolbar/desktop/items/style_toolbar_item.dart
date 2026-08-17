@@ -98,8 +98,7 @@ class _StyleDropdownButtonState extends State<_StyleDropdownButton> {
   OverlayEntry _createOverlayEntry() {
     return OverlayEntry(
       builder: (overlayContext) {
-        final config =
-            NovidentEditorStyles.maybeOf(context)?.config;
+        final config = NovidentEditorStyles.maybeOf(context)?.config;
         final allStyles = config?.registry.styles.values.toList() ?? [];
 
         final editorState = widget.editorState;
@@ -180,8 +179,7 @@ class _StyleDropdownButtonState extends State<_StyleDropdownButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ConstrainedBox(
-                constraints:
-                    const BoxConstraints(minWidth: 70, maxWidth: 130),
+                constraints: const BoxConstraints(minWidth: 70, maxWidth: 130),
                 child: Text(
                   _currentLabel(),
                   maxLines: 1,

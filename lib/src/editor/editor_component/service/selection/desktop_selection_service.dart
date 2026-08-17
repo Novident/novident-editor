@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/editor_component/service/selection/mobile_selection_service.dart';
 import 'package:novident_editor/src/editor/editor_component/service/selection/shared.dart';
 import 'package:novident_editor/src/service/selection/selection_gesture.dart';
 import 'package:flutter/material.dart';
@@ -392,18 +391,21 @@ class _DesktopSelectionServiceWidgetState
 
     final renderer = editorState.selectionRenderer;
     if (renderer != null) {
-      final selection = currentSelection.value ??
-          Selection.collapsed(_panStartPosition!);
+      final selection =
+          currentSelection.value ?? Selection.collapsed(_panStartPosition!);
       final isCollapsed = selection.isCollapsed;
       final startNode = editorState.getNodeAtPath(selection.start.path);
-      final endNode =
-          isCollapsed ? startNode : editorState.getNodeAtPath(selection.end.path);
-      renderer.onSelectionStarted(SelectionLifecycleContext(
-        selection: selection,
-        startNode: startNode,
-        endNode: endNode,
-        isCollapsed: isCollapsed,
-      ),);
+      final endNode = isCollapsed
+          ? startNode
+          : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionStarted(
+        SelectionLifecycleContext(
+          selection: selection,
+          startNode: startNode,
+          endNode: endNode,
+          isCollapsed: isCollapsed,
+        ),
+      );
     }
   }
 
@@ -446,14 +448,17 @@ class _DesktopSelectionServiceWidgetState
     if (renderer != null && selection != null) {
       final isCollapsed = selection.isCollapsed;
       final startNode = editorState.getNodeAtPath(selection.start.path);
-      final endNode =
-          isCollapsed ? startNode : editorState.getNodeAtPath(selection.end.path);
-      renderer.onSelectionEnded(SelectionLifecycleContext(
-        selection: selection,
-        startNode: startNode,
-        endNode: endNode,
-        isCollapsed: isCollapsed,
-      ),);
+      final endNode = isCollapsed
+          ? startNode
+          : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionEnded(
+        SelectionLifecycleContext(
+          selection: selection,
+          startNode: startNode,
+          endNode: endNode,
+          isCollapsed: isCollapsed,
+        ),
+      );
     }
 
     _resetPanState();

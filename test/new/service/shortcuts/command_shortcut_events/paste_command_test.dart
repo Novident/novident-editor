@@ -82,8 +82,7 @@ void main() async {
         expect(delta.toPlainText(), textWithLink);
         expect(
           delta.everyAttributes(
-            (element) =>
-                element[RichTextKeys.href] == 'https://appflowy.io/',
+            (element) => element[RichTextKeys.href] == 'https://appflowy.io/',
           ),
           false,
         );

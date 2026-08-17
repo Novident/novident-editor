@@ -99,7 +99,6 @@ class _TextDecorationMenuState extends State<_TextDecorationMenu> {
 }
 
 class TextDecorationUnit {
-
   TextDecorationUnit({
     required this.icon,
     required this.label,

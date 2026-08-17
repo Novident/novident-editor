@@ -56,8 +56,7 @@ void main() {
     expect(
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
-              (element) =>
-                  element.attributes?[RichTextKeys.bold] == true,
+              (element) => element.attributes?[RichTextKeys.bold] == true,
             );
       }),
       true,
@@ -74,8 +73,7 @@ void main() {
     expect(
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
-              (element) =>
-                  element.attributes?[RichTextKeys.italic] == true,
+              (element) => element.attributes?[RichTextKeys.italic] == true,
             );
       }),
       true,
@@ -92,8 +90,7 @@ void main() {
     expect(
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
-              (element) =>
-                  element.attributes?[RichTextKeys.underline] == true,
+              (element) => element.attributes?[RichTextKeys.underline] == true,
             );
       }),
       true,
@@ -111,8 +108,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[RichTextKeys.strikethrough] ==
-                  true,
+                  element.attributes?[RichTextKeys.strikethrough] == true,
             );
       }),
       true,

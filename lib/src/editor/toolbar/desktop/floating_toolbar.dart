@@ -226,9 +226,7 @@ class _FloatingToolbarState extends State<FloatingToolbar>
     }
 
     // check the content is visible
-    final nodes = hasNoSelection
-        ? <Node>[]
-        : editorState.getSelectedNodes();
+    final nodes = hasNoSelection ? <Node>[] : editorState.getSelectedNodes();
     if (!hasNoSelection &&
         (nodes.isEmpty ||
             nodes.every((node) {
@@ -238,9 +236,7 @@ class _FloatingToolbarState extends State<FloatingToolbar>
       return;
     }
 
-    final rects = hasNoSelection
-        ? <Rect>[]
-        : editorState.selectionRects();
+    final rects = hasNoSelection ? <Rect>[] : editorState.selectionRects();
     if (!hasNoSelection && rects.isEmpty) {
       return;
     }

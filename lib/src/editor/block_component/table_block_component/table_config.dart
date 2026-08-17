@@ -28,4 +28,3 @@ class TableDefaults {
 
   static const Widget handlerIcon = Icon(Icons.drag_indicator);
 }
-

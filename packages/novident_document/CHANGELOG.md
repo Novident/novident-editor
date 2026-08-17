@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+* feat: `DeltaChange` / `DeltaChangeEvent` — centralized delta-change tracking.
+  Transactions capture the net change of every delta edit (`start`, `end`,
+  `shift`, `previousShift`, monotonic `order`) and `Document` emits them
+  post-apply through `listenDeltaChanges` / `emitChanges` /
+  `nextDeltaChangeOrder` — the foundation for out-of-band consumers such as
+  the spell-check service. Remote operations and full-text replacements
+  emit an empty change list with the ephemeral `extraInfos['required_revision']`
+  flag so consumers can request a full revision.
+* feat: `RichTextKeys.proofState` attribute key with `supportSliced`
+  inheritance. The document model only defines the key; its value semantics
+  belong to `novident_spell_check_interface` (`proofStateError`). The base
+  editor ignores the attribute entirely. Slicing keeps the mark: characters
+  typed inside a marked word inherit it until the engine re-analyzes the range.
+
 ## 1.0.5
 
 * docs: remove all `TextDocument` references from README and examples.

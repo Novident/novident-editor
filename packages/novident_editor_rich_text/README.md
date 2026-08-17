@@ -18,6 +18,9 @@ Paragraph rendering widget for the [Novident Editor](https://github.com/Novident
 - **RichTextAttributes** — extension on `Attributes` for reading delta formatting
   (bold, italic, underline, strikethrough, colour, background, href, font family,
   font size, code, auto-complete).
+- **Span pipeline** — every span is produced through a replaceable 6-phase
+  `NovidentTextSpanPipeline`; `DefaultNovidentTextSpanPipeline` reproduces the
+  built-in behavior and can be extended per phase (e.g. spell-check marks).
 - **Lightweight** — depends only on `novident_editor_document`, `novident_editor_core`,
   `novident_editor_styles`, `novident_editor_selection`, and Flutter. No editor
   services or infrastructure.
@@ -63,6 +66,70 @@ class MyConfig implements RichTextEditorConfig {
   @override TextStyleConfiguration get textStyleConfiguration => const TextStyleConfiguration();
 }
 ```
+
+### Custom span pipeline
+
+`NovidentRichText` delegates every per-span decision to a pipeline of six
+phases, each receiving an immutable context:
+
+```
+resolveStyle → transformText → emitSpans → paintSelectionContrast
+             → buildPlaceholder → adjustSpan
+```
+
+`DefaultNovidentTextSpanPipeline` implements all of them with the built-in
+behavior. Extend it to add decorations without forking the widget — for
+example, underlining delta ranges marked by an attribute (the pattern used
+for spell-check marks in the main editor):
+
+```dart
+class MarkedWordPipeline extends DefaultNovidentTextSpanPipeline {
+  MarkedWordPipeline({required this.markStyle});
+
+  final TextStyle markStyle; // e.g. red wavy underline
+
+  @override
+  List<InlineSpan> emitSpans(SpanEmitContext ctx) {
+    final marked = ctx.insert.attributes?['proofState'] == 'err';
+    if (!marked) {
+      return super.emitSpans(ctx);
+    }
+    // Split ctx into sub-segments and merge markStyle onto the marked ones.
+    // Keep the offsets/textShift intact so caret math is unaffected.
+    return emitWithStyle(ctx, markStyle);
+  }
+}
+```
+
+Plug it through the widget or the configuration:
+
+```dart
+NovidentRichText(
+  node: paragraphNode,
+  delegate: this,
+  editorConfig: myConfig,
+  spanPipeline: MarkedWordPipeline(
+    markStyle: const TextStyle(
+      decoration: TextDecoration.underline,
+      decorationStyle: TextDecorationStyle.wavy,
+      decorationColor: Colors.red,
+    ),
+  ),
+);
+
+// or globally:
+class MyConfig implements RichTextEditorConfig {
+  @override
+  NovidentTextSpanPipeline? get spanPipeline => MarkedWordPipeline(...);
+  // ...
+}
+```
+
+Resolution order: `NovidentRichText.spanPipeline` →
+`RichTextEditorConfig.spanPipeline` → `DefaultNovidentTextSpanPipeline`. The
+pipeline runs on every rebuild, so it must stay cheap: the recommended pattern
+is to read pre-computed attributes from the delta (as above) rather than
+calling external services from `build`.
 
 ### DefaultSelectableMixin
 

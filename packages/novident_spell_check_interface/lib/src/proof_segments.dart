@@ -79,10 +79,12 @@ List<ProofSegment> buildProofSegments(
     if (normalized.isNotEmpty) {
       final lastEnd = normalized.last.endOffset;
       if (start < lastEnd) {
+        // fully contained in the previous issue
         if (end <= lastEnd) {
-          continue; // fully contained in the previous issue
+          continue;
         }
-        start = lastEnd; // overlap: earliest issue wins, truncate this one
+        // overlap: earliest issue wins, truncate this one
+        start = lastEnd;
       }
     }
     normalized.add(

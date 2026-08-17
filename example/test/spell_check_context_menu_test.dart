@@ -68,8 +68,7 @@ Offset globalPositionOf(Node node, int offset) {
 }
 
 bool isMarked(Node node) => node.delta!.whereType<TextInsert>().any(
-    (insert) =>
-        insert.attributes?[RichTextKeys.proofState] == proofStateError);
+    (insert) => insert.attributes?[RichTextKeys.proofState] == proofStateError);
 
 Future<EditorState> pumpEditor(
   WidgetTester tester,
@@ -89,12 +88,12 @@ Future<EditorState> pumpEditor(
           contextMenuBuilder: contextMenuBuilder ??
               (context, position, editorState, onPressed) =>
                   buildSpellCheckContextMenu(
-                context: context,
-                position: position,
-                editorState: editorState,
-                onPressed: onPressed,
-                checker: checker,
-              ),
+                    context: context,
+                    position: position,
+                    editorState: editorState,
+                    onPressed: onPressed,
+                    checker: checker,
+                  ),
         ),
       ),
     ),
@@ -153,7 +152,8 @@ void main() {
     await teardownEditor(tester, state);
   });
 
-  testWidgets('right-click on a misspelled word shows suggestions and '
+  testWidgets(
+      'right-click on a misspelled word shows suggestions and '
       'applies the correction', (tester) async {
     final checker = _SuggestionChecker();
     final state = await pumpEditor(tester, checker);
@@ -274,7 +274,8 @@ void main() {
     await teardownEditor(tester, state);
   });
 
-  testWidgets('right-click on a marked word collapses an existing selection in '
+  testWidgets(
+      'right-click on a marked word collapses an existing selection in '
       'another node and shows suggestions', (tester) async {
     final checker = _SuggestionChecker();
     final state = await pumpEditor(tester, checker);
@@ -314,8 +315,7 @@ void main() {
     await teardownEditor(tester, state);
   });
 
-  testWidgets('cut and copy are offered with a real selection',
-      (tester) async {
+  testWidgets('cut and copy are offered with a real selection', (tester) async {
     final checker = _SuggestionChecker();
     final state = await pumpEditor(tester, checker);
     final node = state.document.first!;

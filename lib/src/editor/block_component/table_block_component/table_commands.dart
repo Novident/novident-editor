@@ -162,9 +162,8 @@ CommandShortcutEventHandler _rightInTableCellHandler = (editorState) {
     final row = cell.attributes[TableCellBlockKeys.rowPosition] as int;
 
     // Next cell in the same row. Does NOT wrap to the next row.
-    final nextNode = col + 1 < tableNode.colsLen
-        ? tableNode.getCell(col + 1, row)
-        : null;
+    final nextNode =
+        col + 1 < tableNode.colsLen ? tableNode.getCell(col + 1, row) : null;
     if (nextNode != null && _nodeHasTextChild(nextNode)) {
       editorState.selectionService.updateSelection(
         Selection.single(
@@ -178,8 +177,8 @@ CommandShortcutEventHandler _rightInTableCellHandler = (editorState) {
     // Walk the SIBLINGS: nextNodeWhere would dive into the table's own
     // cells and wrap the cursor back into the first cell.
     Node? after = table.next;
-    while (after != null &&
-        !(after.selectable != null && after.delta != null)) {
+    while (
+        after != null && !(after.selectable != null && after.delta != null)) {
       after = after.next;
     }
     if (after != null && after.delta != null) {
@@ -249,8 +248,8 @@ CommandShortcutEventHandler _downInTableCellHandler = (editorState) {
     final table = inTableNodes.first.parent?.parent;
     if (table != null) {
       Node? below = table.next;
-      while (below != null &&
-          !(below.selectable != null && below.delta != null)) {
+      while (
+          below != null && !(below.selectable != null && below.delta != null)) {
         below = below.next;
       }
       if (below != null && below.delta != null) {

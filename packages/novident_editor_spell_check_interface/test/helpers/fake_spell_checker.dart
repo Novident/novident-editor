@@ -26,8 +26,7 @@ class FakeSpellChecker implements NovidentSpellChecker {
     if (_forgotten.contains(normalized)) {
       return false;
     }
-    return _learned.contains(normalized) ||
-        dictionary.contains(normalized);
+    return _learned.contains(normalized) || dictionary.contains(normalized);
   }
 
   @override

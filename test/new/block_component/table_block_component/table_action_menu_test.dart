@@ -104,8 +104,7 @@ void main() async {
       await pumpTableEditor(tester, actionMenuItems: customItems);
 
       // The items flow through the table builder into the action bar.
-      final bar =
-          tester.widget<TableActionBar>(find.byType(TableActionBar));
+      final bar = tester.widget<TableActionBar>(find.byType(TableActionBar));
       expect(bar.actionMenuItems, same(customItems));
     });
 
@@ -419,7 +418,6 @@ void main() async {
         tableStyleDef: const NovidentTableStyleDefinition(
           id: 'test',
           name: 'Test',
-          enableHorizontalScroll: true,
           // Force overflow so the scroll view is actually mounted.
           colMinimumWidth: 600,
         ),

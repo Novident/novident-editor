@@ -337,9 +337,8 @@ class _DesktopSelectionServiceWidgetState
         !selection.isCollapsed &&
         editorState.getNodesInSelection(selection).any((n) => n == node);
 
-    final Selection newSelection = keepSelection
-        ? selection
-        : Selection.collapsed(position);
+    final Selection newSelection =
+        keepSelection ? selection : Selection.collapsed(position);
 
     // Apply the selection the same way a primary tap does: through
     // `updateSelectionWithReason` with `SelectionUpdateReason.uiEvent`.

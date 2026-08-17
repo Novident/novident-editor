@@ -40,8 +40,7 @@ abstract class NovidentSpellChecker {
   /// The default delegates to [suggest]; engines whose lookup is heavy
   /// (e.g. a SymSpell index living in a worker isolate) override it to
   /// query the worker and answer through a [Future].
-  Future<List<String>> suggestAsync(String word) =>
-      Future.value(suggest(word));
+  Future<List<String>> suggestAsync(String word) => Future.value(suggest(word));
 
   /// Learns [word] at runtime (personal dictionary): from now on it is
   /// considered valid. No-op by default.

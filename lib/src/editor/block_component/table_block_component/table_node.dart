@@ -320,8 +320,9 @@ class TableNode {
     bool noBorder = false,
     double? borderWidth,
   }) {
-    final totalBorders =
-        noBorder ? 0.0 : (borderWidth ?? style.verticalBorderWidth) * (colsLen + 1);
+    final totalBorders = noBorder
+        ? 0.0
+        : (borderWidth ?? style.verticalBorderWidth) * (colsLen + 1);
     final usableWidth =
         (availableWidth - totalBorders).clamp(0, double.infinity);
 

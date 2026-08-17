@@ -195,11 +195,11 @@ void main() {
           });
         });
 
-      // No inline font set — delta returns null.
-      expect(fromDelta, isNull);
-      // The fallback (kDefaultBaseStyle.fontFamily) is the platform
-      // default font (Roboto on Windows/Android, SF Pro on macOS, etc.).
-      expect(kDefaultBaseStyle.fontFamily, getDefaultFont());
+        // No inline font set — delta returns null.
+        expect(fromDelta, isNull);
+        // The fallback (kDefaultBaseStyle.fontFamily) is the platform
+        // default font (Roboto on Windows/Android, SF Pro on macOS, etc.).
+        expect(kDefaultBaseStyle.fontFamily, getDefaultFont());
       });
     });
   });

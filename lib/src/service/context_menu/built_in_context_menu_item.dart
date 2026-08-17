@@ -14,8 +14,7 @@ final standardContextMenuItems = [
       // Only applicable with a real (non-collapsed) selection: otherwise
       // the whole block would be cut.
       isApplicable: (editorState) =>
-          editorState.selection != null &&
-          !editorState.selection!.isCollapsed,
+          editorState.selection != null && !editorState.selection!.isCollapsed,
     ),
     // copy
     ContextMenuItem(
@@ -24,8 +23,7 @@ final standardContextMenuItems = [
         handleCopy(editorState);
       },
       isApplicable: (editorState) =>
-          editorState.selection != null &&
-          !editorState.selection!.isCollapsed,
+          editorState.selection != null && !editorState.selection!.isCollapsed,
     ),
     // Paste
     ContextMenuItem(

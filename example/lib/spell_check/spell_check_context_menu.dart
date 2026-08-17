@@ -49,10 +49,8 @@ MisspelledWord? findMisspelledWord({
     return null;
   }
   final slice = delta.slice(start, end);
-  final marked = slice
-      .whereType<TextInsert>()
-      .any((insert) =>
-          insert.attributes?[RichTextKeys.proofState] == proofStateError);
+  final marked = slice.whereType<TextInsert>().any((insert) =>
+      insert.attributes?[RichTextKeys.proofState] == proofStateError);
   if (!marked) {
     return null;
   }
@@ -103,8 +101,7 @@ class _SpellCheckContextMenu extends StatefulWidget {
   final List<ContextMenuItem> extraItems;
 
   @override
-  State<_SpellCheckContextMenu> createState() =>
-      _SpellCheckContextMenuState();
+  State<_SpellCheckContextMenu> createState() => _SpellCheckContextMenuState();
 }
 
 class _SpellCheckContextMenuState extends State<_SpellCheckContextMenu> {

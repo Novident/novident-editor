@@ -49,8 +49,6 @@ novident_editor_core                    (Position, Selection, SelectableMixin, t
   rendering.
 - `novident_editor_spell_check_interface` must stay pure Dart — no
   `flutter` import, ever.
-- New extractions may only depend on layers below them; keep them
-  dependency-light (mirror the published six).
 
 ### Versioning (independent, not lockstep)
 
@@ -102,14 +100,34 @@ Notes:
   `lib/src/l10n/intl/messages_*.dart` files (never hand-edit them):
   `flutter pub run intl_utils:generate`.
 
-## Test conventions
+## Tests are mandatory
 
-The `test/` directory mirrors the `lib/` structure (see
-[`documentation/testing.md`](documentation/testing.md)); `test/new/` is the
-current home for new tests. Use the existing helpers — `test/test_helper.dart`
-(`buildAndPump`), `test/new/infra/testable_editor.dart` (`TestableEditor`),
-`test/new/util/` — don't invent new harnesses. Add or update tests for any
-behaviour change.
+Every fix, modification, or feature **must** include tests. A PR whose change
+is not covered by tests will not be merged.
+
+- **Where the tests go** depends on what you touched:
+  - Root package (`lib/`): mirror the source path under `test/` (current
+    suite: `test/new/`).
+  - A package (`packages/<name>/`): add tests under `packages/<name>/test/`,
+    mirroring that package's `lib/` structure.
+- **What to cover:**
+  - The happy path of the change.
+  - **Edge cases** — empty input, boundary offsets (0 and length), collapsed
+    vs expanded selections, multi-node selections, absent/null attributes,
+    repeated operations (undo/redo), remote transactions.
+  - **Real-world cases** — the concrete user scenario that motivated the
+    change (a specific typing sequence, paste, IME composition, a particular
+    document shape).
+- **Regression tests**: a bug fix must include a test that fails on the old
+  code and passes on the new code.
+- **Use the existing helpers** — `test/test_helper.dart` (`buildAndPump`),
+  `test/new/infra/testable_editor.dart` (`TestableEditor`),
+  `test/new/util/` — don't invent new harnesses.
+- Run the suite for the touched layer before opening the PR:
+  `flutter test` (root) or `cd packages/<name> && flutter test`.
+
+See [`documentation/testing.md`](documentation/testing.md) for the test
+helpers used across the project.
 
 ## Conventions
 
@@ -143,7 +161,9 @@ behaviour change.
 1. Branch off `master`.
 2. Keep changes focused; one logical change per PR.
 3. Make sure `flutter analyze` and the relevant test suites pass (root and
-   any touched package), and that commits are Conventional Commits.
+   any touched package), that your change ships with tests covering edge
+   cases and the real-world scenario that motivated it, and that commits are
+   Conventional Commits.
 4. If you changed a package's source, note in the PR whether it requires a
    version bump + constraint update (see "Versioning" above).
 

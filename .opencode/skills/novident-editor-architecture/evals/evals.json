@@ -1,0 +1,23 @@
+{
+  "skill_name": "novident-editor-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Explain how text insertion flows through the Novident Editor — from a keypress to the document change. What are the key components involved?",
+      "expected_output": "Traces: IME/keyboard → Transaction.insertText (delta compose map) → EditorState.apply → operations applied to Document → delta changes emitted → selection updated → undo recorded. Mentions transactionStream and that all mutations go through apply().",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Why doesn't spell check run while the user is typing, and how are misspelled words marked in the document?",
+      "expected_output": "Out-of-band analysis: SpellCheckService listens to delta changes, a global inactivity timer (debounce ~600ms) restarts on each change, on expiry pending nodes are re-analyzed entirely and proofState:'error' marks are injected into the delta directly via node.updateAttributes — never through transactions or emitChanges, so it can't loop.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "How does undo work in this editor? What makes a burst of typing become a single undo step?",
+      "expected_output": "HistoryItem collects operations + before/after selection; sealing is debounced (minHistoryItemDuration ~50ms) so a typing burst is one undo step; undo() inverts operations in reverse order and applies with recordUndo:false, recordRedo:true; FixedSizeStack (200) backs both stacks.",
+      "files": []
+    }
+  ]
+}

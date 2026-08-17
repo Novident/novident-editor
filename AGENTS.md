@@ -120,7 +120,6 @@ novident_editor_core                    (Position, Selection, SelectableMixin, t
 - The root `novident_editor` is the **only** place for block components, editor services, plugins, toolbar, vim/zen, and find & replace.
 - `novident_editor_spell_check_interface` must stay pure Dart — no `flutter` import, ever.
 - Never let a lower layer import a higher one; a package must not import the root `novident_editor` or a sibling it doesn't already depend on.
-- New extractions may only depend on layers below them; keep them dependency-light (mirror the published six).
 
 ## Design conventions
 
@@ -161,7 +160,7 @@ cd example && flutter pub get && flutter analyze --no-fatal-infos --no-fatal-war
 ## CI (`.github/workflows/ci.yml` — what must pass)
 
 1. Root: `flutter analyze` + `flutter test`.
-2. Packages: for each `packages/*/` **with a pubspec.yaml**, `pub get` + `analyze` + `test` (only if `test/` exists). WIP dirs without pubspec are skipped.
+2. Packages: for each `packages/*/` **with a pubspec.yaml**, `pub get` + `analyze` + `test` (only if `test/` exists).
 3. Example: `pub get` + `analyze` only — **no tests** (intentional).
 4. `commitlint.yml`: Conventional Commits (`commitlint.config.mjs`).
 
@@ -172,12 +171,25 @@ cd example && flutter pub get && flutter analyze --no-fatal-infos --no-fatal-war
 - **Services** live under `lib/src/editor/editor_component/service/<domain>/`; keyboard handling is composable via `KeyboardStrategy` policies in `service/shortcuts/`.
 - **Plugins** (import/export formats) go under `lib/src/plugins/<format>/` with `decoder/` and `encoder/` subdirs and per-node parsers.
 - **Tests mirror the source path** under `test/` (or `test/new/` for the current suite). Use existing helpers — `test/test_helper.dart` (`buildAndPump`), `test/new/infra/testable_editor.dart` (`TestableEditor`), `test/new/util/` — don't invent new harnesses.
-- **Extracting a new layer** = new standalone package under `packages/` with its own pubspec, kept dependency-light; pure-Dart contracts (like `novident_editor_spell_check_interface`) must not depend on Flutter.
 - **Lint** (`analysis_options.yaml`): `require_trailing_commas`, `prefer_final_locals`, `prefer_final_fields`, `always_declare_return_types`, `unawaited_futures`, `sort_constructors_first`. Keep files `dart format`-clean.
 - **Legacy dirs** (`core/document/deprecated/`, `core/legacy/`) are AppFlowy leftovers — don't extend them; migrate callers off them.
+
+## Testing requirements (mandatory)
+
+Every fix, modification, or feature **must** ship with tests. A change without tests is incomplete — do not consider it done.
+
+- **Where the tests go depends on what you touched:**
+  - Root package (`lib/`): mirror the source path under `test/` (current suite: `test/new/`).
+  - A package (`packages/<name>/`): add tests under `packages/<name>/test/` mirroring that package's `lib/` structure.
+- **Coverage expectations:**
+  - The happy path of the change.
+  - **Edge cases**: empty input, boundary offsets (0 and length), collapsed vs expanded selections, multi-node selections, absent/null attributes, repeated operations (undo/redo), remote transactions.
+  - **Real-world cases**: the concrete user scenario that motivated the change (a specific typing sequence, paste, IME composition, a particular document shape).
+- **Regression tests**: a bug fix must include a test that fails on the old code and passes on the new code.
+- **Use the existing harnesses** — `test/test_helper.dart` (`buildAndPump`), `test/new/infra/testable_editor.dart` (`TestableEditor`), `test/new/util/` — don't invent new ones.
+- Run the suite for the touched layer before finishing: `flutter test` (root) or `cd packages/<name> && flutter test`.
 
 ## Roadmap context
 
 - **Done** (CHANGELOG): layered extraction (1.0.4), style system + font provider + static toolbar (1.0.3), vim emulation, zen mode, spell check, tables, named styles with `basedOn`, `keyboardStrategies` (1.0.5).
-- **In progress**: uncoupling remaining editor parts into standalone packages — the WIP dirs `packages/novident_editor_block_*`, `novident_editor_l10n`, `novident_editor_logger` (no pubspec yet; don't wire them into CI or the root).
 - **Next** (README roadmap): Zen mode performance, full customization of every default block, richer clipboard (currently plain text), translations, typewriter scrolling without Zen, uncouple keyboard/scroll services.

@@ -175,16 +175,13 @@ class _DesktopSelectionServiceWidgetState
     editorState.service.keyboardService?.enableShortcuts();
     editorState.service.keyboardService?.enable();
 
-    final selection = editorState.selectionNotifier.value;
-    if (selection != null) {
-      editorState.updateSelectionWithReason(
-        null,
-        reason: SelectionUpdateReason.uiEvent,
-      );
-      editorState.updateSelectionWithReason(
-        selection,
-        reason: SelectionUpdateReason.uiEvent,
-      );
+    // The selection value itself has not changed; the menu only needs the
+    // visual selection to be re-shown/refreshed after the shortcuts are
+    // restored. A single dedicated notification replaces the previous
+    // null->selection double update (two renderer calls, two post-frame
+    // completers and two listener waves).
+    if (editorState.selection != null) {
+      editorState.refreshSelection();
     }
   }
 

@@ -65,6 +65,11 @@ MisspelledWord? findMisspelledWord({
 /// suggestions, an "Add to dictionary" entry, and then [extraItems]
 /// (standard cut/copy/paste by default). Otherwise it falls back to
 /// [extraItems] alone.
+///
+/// Suggestions are resolved through [NovidentSpellChecker.suggestAsync], so
+/// heavy engines (e.g. a worker isolate) never block the frame: the menu
+/// opens immediately and fills the suggestion section when the future
+/// completes.
 Widget buildSpellCheckContextMenu({
   required BuildContext context,
   required Offset position,
@@ -73,25 +78,99 @@ Widget buildSpellCheckContextMenu({
   required NovidentSpellChecker checker,
   List<ContextMenuItem> extraItems = const [],
 }) {
-  final standardItems = extraItems.isEmpty
-      ? standardContextMenuItems.first
-      : extraItems;
-
-  final misspelled = findMisspelledWord(
+  return _SpellCheckContextMenu(
+    position: position,
     editorState: editorState,
+    onPressed: onPressed,
+    checker: checker,
+    extraItems: extraItems,
   );
-  if (misspelled == null) {
+}
+
+class _SpellCheckContextMenu extends StatefulWidget {
+  const _SpellCheckContextMenu({
+    required this.position,
+    required this.editorState,
+    required this.onPressed,
+    required this.checker,
+    required this.extraItems,
+  });
+
+  final Offset position;
+  final EditorState editorState;
+  final VoidCallback onPressed;
+  final NovidentSpellChecker checker;
+  final List<ContextMenuItem> extraItems;
+
+  @override
+  State<_SpellCheckContextMenu> createState() =>
+      _SpellCheckContextMenuState();
+}
+
+class _SpellCheckContextMenuState extends State<_SpellCheckContextMenu> {
+  late final MisspelledWord? _misspelled;
+
+  /// null = the async suggestion lookup has not completed yet.
+  List<String>? _suggestions;
+
+  @override
+  void initState() {
+    super.initState();
+    _misspelled = findMisspelledWord(editorState: widget.editorState);
+    final misspelled = _misspelled;
+    if (misspelled != null) {
+      widget.checker.suggestAsync(misspelled.word).then((suggestions) {
+        if (mounted) {
+          setState(() => _suggestions = suggestions);
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final standardItems = widget.extraItems.isEmpty
+        ? standardContextMenuItems.first
+        : widget.extraItems;
+
+    final misspelled = _misspelled;
+    if (misspelled == null) {
+      return ContextMenu(
+        position: widget.position,
+        editorState: widget.editorState,
+        items: [standardItems],
+        onPressed: widget.onPressed,
+      );
+    }
+
+    final items = <List<ContextMenuItem>>[
+      _buildCorrectionSection(misspelled),
+      if (standardItems.isNotEmpty) standardItems,
+    ];
+
     return ContextMenu(
-      position: position,
-      editorState: editorState,
-      items: [standardItems],
-      onPressed: onPressed,
+      position: widget.position,
+      editorState: widget.editorState,
+      items: items,
+      onPressed: widget.onPressed,
     );
   }
 
-  final suggestions = checker.suggest(misspelled.word);
-  final items = <List<ContextMenuItem>>[
-    [
+  List<ContextMenuItem> _buildCorrectionSection(MisspelledWord misspelled) {
+    final suggestions = _suggestions;
+    if (suggestions == null) {
+      return [
+        // The lookup is running on the checker's side; "Add to dictionary"
+        // is available right away, the suggestions fill in when ready.
+        ContextMenuItem(
+          getName: () => 'Loading suggestions…',
+          onPressed: (_) {},
+        ),
+        _addToDictionaryItem(misspelled),
+      ];
+    }
+
+    return [
       for (final suggestion in suggestions)
         ContextMenuItem(
           getName: () => suggestion,
@@ -112,22 +191,18 @@ Widget buildSpellCheckContextMenu({
           getName: () => 'No suggestions',
           onPressed: (_) {},
         ),
-      ContextMenuItem(
-        getName: () => 'Add to dictionary',
-        onPressed: (editorState) {
-          checker.addWord(misspelled.word);
-          // The word is now valid: re-analyze the node to clear its mark.
-          editorState.spellCheckService?.requestAnalysis(misspelled.node);
-        },
-      ),
-    ],
-    if (standardItems.isNotEmpty) standardItems,
-  ];
+      _addToDictionaryItem(misspelled),
+    ];
+  }
 
-  return ContextMenu(
-    position: position,
-    editorState: editorState,
-    items: items,
-    onPressed: onPressed,
-  );
+  ContextMenuItem _addToDictionaryItem(MisspelledWord misspelled) {
+    return ContextMenuItem(
+      getName: () => 'Add to dictionary',
+      onPressed: (editorState) {
+        widget.checker.addWord(misspelled.word);
+        // The word is now valid: re-analyze the node to clear its mark.
+        editorState.spellCheckService?.requestAnalysis(misspelled.node);
+      },
+    );
+  }
 }

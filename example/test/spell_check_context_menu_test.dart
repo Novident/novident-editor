@@ -5,6 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:novident_editor/novident_editor.dart';
 
 class _SuggestionChecker implements NovidentSpellChecker {
+  _SuggestionChecker({this.suggestDelay = Duration.zero});
+
+  /// Simulated engine latency for [suggestAsync] (fake clock friendly).
+  final Duration suggestDelay;
+
   final Set<String> dictionary = {'hola', 'world'};
   final Set<String> _learned = {};
 
@@ -32,6 +37,14 @@ class _SuggestionChecker implements NovidentSpellChecker {
 
   @override
   List<String> suggest(String word) => const ['world'];
+
+  @override
+  Future<List<String>> suggestAsync(String word) async {
+    if (suggestDelay > Duration.zero) {
+      await Future<void>.delayed(suggestDelay);
+    }
+    return suggest(word);
+  }
 
   @override
   void addWord(String word) => _learned.add(word.toLowerCase());
@@ -148,6 +161,7 @@ void main() {
     expect(isMarked(node), true);
 
     await rightClickAt(tester, globalPositionOf(node, 7));
+    await tester.pump(); // suggestions resolve through suggestAsync
 
     expect(find.text('world'), findsOneWidget);
     expect(find.text('Add to dictionary'), findsOneWidget);
@@ -210,6 +224,7 @@ void main() {
       Position(path: node.path, offset: 7),
     );
     await rightClickAt(tester, globalPositionOf(node, 7));
+    await tester.pump(); // suggestions resolve through suggestAsync
 
     expect(builderRuns, 1);
     expect(find.text('world'), findsOneWidget);
@@ -227,7 +242,33 @@ void main() {
     expect(find.byType(ContextMenu), findsNothing);
 
     await rightClickAt(tester, globalPositionOf(node, 7));
+    await tester.pump(); // suggestions resolve through suggestAsync
     expect(builderRuns, 2);
+    expect(find.text('world'), findsOneWidget);
+
+    await teardownEditor(tester, state);
+  });
+
+  testWidgets('suggestions load asynchronously without blocking the menu',
+      (tester) async {
+    final checker = _SuggestionChecker(
+      suggestDelay: const Duration(milliseconds: 200),
+    );
+    final state = await pumpEditor(tester, checker);
+    final node = state.document.first!;
+
+    await rightClickAt(tester, globalPositionOf(node, 7));
+    await tester.pump();
+
+    // The menu is open while the lookup is still running: the loading
+    // placeholder and the dictionary action are available right away.
+    expect(find.text('Loading suggestions…'), findsOneWidget);
+    expect(find.text('Add to dictionary'), findsOneWidget);
+    expect(find.text('world'), findsNothing);
+
+    // The suggestions fill in when the async lookup completes.
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Loading suggestions…'), findsNothing);
     expect(find.text('world'), findsOneWidget);
 
     await teardownEditor(tester, state);
@@ -259,6 +300,7 @@ void main() {
 
     // Right-click on the misspelled word of the SECOND paragraph.
     await rightClickAt(tester, globalPositionOf(secondNode, 7));
+    await tester.pump(); // suggestions resolve through suggestAsync
 
     // The selection must collapse at the click position in the second
     // node, and the suggestion menu must be shown.

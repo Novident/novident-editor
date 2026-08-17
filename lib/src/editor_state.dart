@@ -412,6 +412,23 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     return completer.future;
   }
 
+  /// Re-notifies every selection listener without changing the selection
+  /// value, the update reason, or the selection renderer.
+  ///
+  /// [updateSelectionWithReason] is the single entry point for REAL
+  /// selection changes; it goes through the renderer and completes an
+  /// awaitable future. Some flows only need to force the visual selection
+  /// to repaint after the value has already been set (e.g. re-showing the
+  /// selection when the context menu closes). In those cases the value
+  /// comparison inside the notifier would swallow the notification — this
+  /// method delivers it directly.
+  void refreshSelection() {
+    // PropertyValueNotifier notifies its listeners on every assignment,
+    // even for an equal value — re-assigning the current value is the
+    // supported way to deliver a pure notification wave.
+    selectionNotifier.value = selectionNotifier.value;
+  }
+
   Timer? _debouncedSealHistoryItemTimer;
   final bool _enableCheckIntegrity = false;
 

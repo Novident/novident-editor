@@ -29,7 +29,19 @@ abstract class NovidentSpellChecker {
   List<SpellCheckIssue> check(String text);
 
   /// Lazy suggestions for [word] (context menu). May be expensive.
+  ///
+  /// Synchronous by contract; implementations that run the heavy lookup
+  /// off-thread (isolates) may return a cached result here and should
+  /// prefer [suggestAsync] on the caller side.
   List<String> suggest(String word);
+
+  /// Asynchronous suggestions for [word].
+  ///
+  /// The default delegates to [suggest]; engines whose lookup is heavy
+  /// (e.g. a SymSpell index living in a worker isolate) override it to
+  /// query the worker and answer through a [Future].
+  Future<List<String>> suggestAsync(String word) =>
+      Future.value(suggest(word));
 
   /// Learns [word] at runtime (personal dictionary): from now on it is
   /// considered valid. No-op by default.

@@ -65,4 +65,11 @@ class FakeSpellChecker implements NovidentSpellChecker {
       .where((entry) => entry.startsWith(word.substring(0, 1)))
       .take(5)
       .toList();
+
+  @override
+  Future<List<String>> suggestAsync(String word) async {
+    // Simulates a tiny engine-side latency so async consumers are exercised.
+    await Future<void>.delayed(Duration.zero);
+    return suggest(word);
+  }
 }

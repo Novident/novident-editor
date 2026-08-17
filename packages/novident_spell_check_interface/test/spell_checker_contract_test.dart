@@ -3,6 +3,22 @@ import 'package:novident_spell_check_interface/novident_spell_check_interface.da
 
 import 'helpers/fake_spell_checker.dart';
 
+/// Implementation that only provides the synchronous contract, to prove the
+/// [NovidentSpellChecker.suggestAsync] default delegates to [suggest].
+class _SyncOnlyChecker extends NovidentSpellChecker {
+  @override
+  bool isValid(String word) => false;
+
+  @override
+  List<SpellCheckIssue> check(String text) => const [];
+
+  @override
+  List<String> suggest(String word) => const ['world'];
+
+  @override
+  String? get language => 'en';
+}
+
 void main() {
   group('SpellCheckIssue', () {
     test('length is the UTF-16 distance between offsets', () {
@@ -65,6 +81,20 @@ void main() {
       // 'world' shares the first letter with 'wrld'.
       expect(checker.suggest('wrld'), contains('world'));
       expect(checker.suggest('albrt'), contains('albert'));
+    });
+
+    test('suggestAsync defaults to the synchronous suggest', () async {
+      final checker = _SyncOnlyChecker();
+      expect(
+        await checker.suggestAsync('wrld'),
+        equals(checker.suggest('wrld')),
+      );
+    });
+
+    test('suggestAsync can be overridden by async engines', () async {
+      final checker = FakeSpellChecker();
+      final suggestions = await checker.suggestAsync('wrld');
+      expect(suggestions, contains('world'));
     });
 
     test('language is exposed', () {

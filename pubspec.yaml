@@ -24,8 +24,8 @@ dependencies:
     path: ./packages/novident_editor_selection
   novident_editor_rich_text:
     path: ./packages/novident_editor_rich_text
-  novident_spell_check_interface:
-    path: ./packages/novident_spell_check_interface
+  novident_editor_spell_check_interface:
+    path: ./packages/novident_editor_spell_check_interface
   novident_editor_styles: 
     path: ./packages/novident_editor_styles
   novident_editor_document:

@@ -365,7 +365,7 @@ you need one piece without the full editor:
 | [`novident_editor_styles`](https://pub.dev/packages/novident_editor_styles) | Style definitions and resolution | Custom style engines |
 | [`novident_editor_selection`](https://pub.dev/packages/novident_editor_selection) | Selection model, renderers, painters | Custom selection UIs |
 | [`novident_editor_rich_text`](https://pub.dev/packages/novident_editor_rich_text) | `NovidentRichText` + the 6-phase span pipeline | Paragraph rendering, custom decorations |
-| [`novident_spell_check_interface`](https://pub.dev/packages/novident_spell_check_interface) | The spell-checker contract (`NovidentSpellChecker`) | Building or swapping spell-check engines |
+| [`novident_editor_spell_check_interface`](https://pub.dev/packages/novident_editor_spell_check_interface) | The spell-checker contract (`NovidentSpellChecker`) | Building or swapping spell-check engines |
 
 ## Documentation
 

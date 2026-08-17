@@ -1,4 +1,4 @@
-import 'package:novident_spell_check_interface/novident_spell_check_interface.dart';
+import 'package:novident_editor_spell_check_interface/novident_editor_spell_check_interface.dart';
 
 /// Minimal deterministic checker for tests.
 ///

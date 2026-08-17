@@ -1,4 +1,4 @@
-name: novident_spell_check_interface
+name: novident_editor_spell_check_interface
 version: 1.0.0
 description: >-
   Pure-Dart contract for spell-check integration in the Novident suite.

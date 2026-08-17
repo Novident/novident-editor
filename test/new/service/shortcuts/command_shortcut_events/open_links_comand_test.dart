@@ -76,7 +76,9 @@ const exampleJson = {
             {"insert": " Repos - "},
             {
               "insert": "Novident",
-              "attributes": {"href": "https://github.com/Novident/novident-editor"},
+              "attributes": {
+                "href": "https://github.com/Novident/novident-editor",
+              },
             },
             {"insert": ", "},
             {

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart' hide RichText, TextPainter;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:novident_editor/novident_editor.dart';
@@ -303,9 +301,11 @@ void main() {
       // last included character offset (end-1 for zero-based indexing).
       final expectedEnd = secondLine.end - textShift;
       expect(
-          result!.offset, inClosedOpenRange(expectedEnd - 1, expectedEnd + 1),
-          reason: 'Should be near the end of second line '
-              '(expected ~$expectedEnd, got ${result.offset})');
+        result!.offset,
+        inClosedOpenRange(expectedEnd - 1, expectedEnd + 1),
+        reason: 'Should be near the end of second line '
+            '(expected ~$expectedEnd, got ${result.offset})',
+      );
     });
 
     // ── Vertical move + preferred column ──────────────────────────

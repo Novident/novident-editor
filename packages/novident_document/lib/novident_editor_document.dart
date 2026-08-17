@@ -5,3 +5,4 @@ export 'src/path.dart';
 export 'src/document.dart';
 export 'src/delta/text_delta.dart';
 export 'src/delta/rich_text_keys.dart';
+export 'src/delta_change.dart';

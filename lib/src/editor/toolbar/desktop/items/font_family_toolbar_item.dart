@@ -367,7 +367,6 @@ class _FontFamilyMenuPanel extends StatelessWidget {
 }
 
 class _FontFamilyEntry {
-
   const _FontFamilyEntry({
     required this.family,
     required this.label,

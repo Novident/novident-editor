@@ -6,7 +6,6 @@ import '../infra/testable_editor.dart';
 import './typedef_util.dart';
 
 class ArrowTest {
-
   ArrowTest({
     required this.text,
     required this.initialSel,

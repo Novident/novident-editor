@@ -10,7 +10,6 @@ import 'custom_syntaxes/formula_syntax.dart';
 
 class DeltaMarkdownDecoder extends Converter<String, Delta>
     implements md.NodeVisitor {
-
   DeltaMarkdownDecoder({
     this.customInlineSyntaxes = const [],
   });

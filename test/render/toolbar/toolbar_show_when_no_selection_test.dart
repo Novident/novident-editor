@@ -11,10 +11,15 @@ void main() {
     EditorState createEditor() {
       final doc = Document.blank();
       final delta = Delta()..insert('Hello');
-      doc.insert([0], [
-        Node(type: 'paragraph', attributes: {
-          blockComponentDelta: delta.toJson(),
-        },),
+      doc.insert([
+        0,
+      ], [
+        Node(
+          type: 'paragraph',
+          attributes: {
+            blockComponentDelta: delta.toJson(),
+          },
+        ),
       ]);
       return EditorState(document: doc);
     }

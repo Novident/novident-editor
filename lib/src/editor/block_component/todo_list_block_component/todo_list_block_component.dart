@@ -159,7 +159,8 @@ class _TodoListBlockComponentWidgetState
               delegate: this,
               node: widget.node,
               editorConfig: editorState,
-              textAlign: alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
+              textAlign:
+                  alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
               placeholderText: placeholderText,
               useFirstLineIndent: false,
               textDirection: textDirection,
@@ -183,7 +184,8 @@ class _TodoListBlockComponentWidgetState
     );
 
     child = Container(
-      decoration: blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
+      decoration:
+          blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
       key: blockComponentKey,
       padding: blockStyle.applyToPadding(padding),
       child: child,

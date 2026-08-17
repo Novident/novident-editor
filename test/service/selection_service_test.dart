@@ -99,6 +99,7 @@ void main() async {
           buttons: kSecondaryButton,
         );
         await tester.pump();
+        await tester.pump();
 
         expect(editor.selection, isNotNull);
         expect(editor.selection!.isCollapsed, isTrue);
@@ -112,7 +113,7 @@ void main() async {
     );
 
     testWidgets(
-      'Test secondary tap - collapsed selection remains unchanged',
+      'Test secondary tap - collapsed selection moves to the click position',
       (tester) async {
         const text = 'Welcome to Novident 😁';
         final editor = tester.editor..addParagraphs(3, initialText: text);
@@ -135,8 +136,14 @@ void main() async {
           buttons: kSecondaryButton,
         );
         await tester.pump();
+        await tester.pump();
 
-        expect(editor.selection, equals(originalSelection));
+        // Like a primary tap, the secondary tap moves the cursor to the
+        // click position even when the previous selection was collapsed.
+        expect(editor.selection, isNotNull);
+        expect(editor.selection!.isCollapsed, isTrue);
+        expect(editor.selection!.start.path, [1]);
+        expect(editor.selection, isNot(equals(originalSelection)));
 
         final contextMenu = find.byType(ContextMenu);
         expect(contextMenu, findsOneWidget);
@@ -213,6 +220,7 @@ void main() async {
           buttons: kSecondaryButton,
         );
         await tester.pump();
+        await tester.pump();
 
         expect(editor.selection, equals(originalSelection));
 
@@ -256,6 +264,7 @@ void main() async {
           thirdRect.centerLeft + const Offset(30.0, 0.0),
           buttons: kSecondaryButton,
         );
+        await tester.pump();
         await tester.pump();
 
         expect(editor.selection, isNotNull);

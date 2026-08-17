@@ -523,7 +523,7 @@ Position? _charBefore(Position position, EditorState editorState) {
   if (position.offset > 0) {
     return Position(path: position.path, offset: position.offset - 1);
   }
-  final previous = position.moveHorizontal(editorState, forward: true);
+  final previous = position.moveHorizontal(editorState);
   return previous == null ? null : _onChar(previous, editorState);
 }
 

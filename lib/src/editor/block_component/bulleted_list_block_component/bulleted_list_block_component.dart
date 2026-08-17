@@ -132,7 +132,8 @@ class _BulletedListBlockComponentWidgetState
               delegate: this,
               node: widget.node,
               editorConfig: editorState,
-              textAlign: alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
+              textAlign:
+                  alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
               placeholderText: placeholderText,
               useFirstLineIndent: false,
               textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
@@ -153,7 +154,8 @@ class _BulletedListBlockComponentWidgetState
     );
 
     child = Container(
-      decoration: blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
+      decoration:
+          blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
       key: blockComponentKey,
       padding: blockStyle.applyToPadding(padding),
       child: child,

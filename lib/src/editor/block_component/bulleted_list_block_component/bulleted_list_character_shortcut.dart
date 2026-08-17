@@ -10,8 +10,7 @@ import 'package:novident_editor/novident_editor.dart';
 CharacterShortcutEvent formatAsteriskToBulletedList = CharacterShortcutEvent(
   key: 'format asterisk to bulleted list',
   character: ' ',
-  handler: (editorState) async =>
-      _formatSymbolToBulletedList(editorState, '*'),
+  handler: (editorState) async => _formatSymbolToBulletedList(editorState, '*'),
 );
 
 /// Convert '- ' to bulleted list
@@ -24,8 +23,7 @@ CharacterShortcutEvent formatAsteriskToBulletedList = CharacterShortcutEvent(
 CharacterShortcutEvent formatMinusToBulletedList = CharacterShortcutEvent(
   key: 'format minus to bulleted list',
   character: ' ',
-  handler: (editorState) async =>
-      _formatSymbolToBulletedList(editorState, '-'),
+  handler: (editorState) async => _formatSymbolToBulletedList(editorState, '-'),
 );
 
 /// Insert a new block after the bulleted list block.

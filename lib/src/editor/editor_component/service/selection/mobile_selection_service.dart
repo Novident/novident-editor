@@ -531,14 +531,17 @@ class _MobileSelectionServiceWidgetState
     if (renderer != null && selection != null) {
       final isCollapsed = selection.isCollapsed;
       final startNode = editorState.getNodeAtPath(selection.start.path);
-      final endNode =
-          isCollapsed ? startNode : editorState.getNodeAtPath(selection.end.path);
-      renderer.onSelectionStarted(SelectionLifecycleContext(
-        selection: selection,
-        startNode: startNode,
-        endNode: endNode,
-        isCollapsed: isCollapsed,
-      ),);
+      final endNode = isCollapsed
+          ? startNode
+          : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionStarted(
+        SelectionLifecycleContext(
+          selection: selection,
+          startNode: startNode,
+          endNode: endNode,
+          isCollapsed: isCollapsed,
+        ),
+      );
     }
 
     return selection;
@@ -603,14 +606,17 @@ class _MobileSelectionServiceWidgetState
     if (renderer != null && selection != null) {
       final isCollapsed = selection.isCollapsed;
       final startNode = editorState.getNodeAtPath(selection.start.path);
-      final endNode =
-          isCollapsed ? startNode : editorState.getNodeAtPath(selection.end.path);
-      renderer.onSelectionEnded(SelectionLifecycleContext(
-        selection: selection,
-        startNode: startNode,
-        endNode: endNode,
-        isCollapsed: isCollapsed,
-      ),);
+      final endNode = isCollapsed
+          ? startNode
+          : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionEnded(
+        SelectionLifecycleContext(
+          selection: selection,
+          startNode: startNode,
+          endNode: endNode,
+          isCollapsed: isCollapsed,
+        ),
+      );
     }
 
     _clearPanVariables();

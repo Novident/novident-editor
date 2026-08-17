@@ -1,13 +1,14 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
+const Duration _defaultSpellCheckDebounce = Duration(milliseconds: 600);
+
 /// The style of the editor.
 ///
 /// You can customize the style of the editor by passing the [EditorStyle] to
 ///  the [NovidentEditor].
 ///
 class EditorStyle {
-
   const EditorStyle.desktop({
     EdgeInsets? padding,
     Color? cursorColor,
@@ -22,6 +23,9 @@ class EditorStyle {
     this.firstLineIndent,
     this.selectionRenderer,
     this.showTableActionBar = true,
+    this.spellChecker,
+    this.spellCheckMisspelledStyle,
+    this.spellCheckDebounce = _defaultSpellCheckDebounce,
   })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 100),
         cursorColor = cursorColor ?? const Color(0xFF00BCF0),
         selectionColor =
@@ -65,6 +69,9 @@ class EditorStyle {
     this.firstLineIndent,
     this.selectionRenderer,
     this.showTableActionBar = true,
+    this.spellChecker,
+    this.spellCheckMisspelledStyle,
+    this.spellCheckDebounce = _defaultSpellCheckDebounce,
   })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 20),
         cursorColor = cursorColor ?? const Color(0xFF00BCF0),
         dragHandleColor = dragHandleColor ?? const Color(0xFF00BCF0),
@@ -98,6 +105,9 @@ class EditorStyle {
     this.firstLineIndent,
     this.selectionRenderer,
     this.showTableActionBar = true,
+    this.spellChecker,
+    this.spellCheckMisspelledStyle,
+    this.spellCheckDebounce = _defaultSpellCheckDebounce,
   });
 
   // The padding of the editor.
@@ -189,6 +199,22 @@ class EditorStyle {
   /// is hidden for all tables. Defaults to `true`.
   final bool showTableActionBar;
 
+  /// Spell-check engine provided by the user.
+  ///
+  /// When non-null, the editor builds a [SpellCheckSpanPipeline] that
+  /// renders the `proofState` marks written into the delta by the
+  /// spell-check service. The engine itself is consumed by the service
+  /// (analysis), never by the rendering pipeline.
+  final NovidentSpellChecker? spellChecker;
+
+  /// Style merged over misspelled words. When null, the classic red wavy
+  /// underline ([SpellCheckSpanPipeline.defaultMisspelledStyle]) is used.
+  final TextStyle? spellCheckMisspelledStyle;
+
+  /// Inactivity debounce used by the spell-check service before analyzing
+  /// pending nodes (Word-like). Only used when [spellChecker] is set.
+  final Duration spellCheckDebounce;
+
   EditorStyle copyWith({
     EdgeInsets? padding,
     Color? cursorColor,
@@ -213,6 +239,9 @@ class EditorStyle {
     double? firstLineIndent,
     SelectionRenderer? selectionRenderer,
     bool? showTableActionBar,
+    NovidentSpellChecker? spellChecker,
+    TextStyle? spellCheckMisspelledStyle,
+    Duration? spellCheckDebounce,
   }) {
     return EditorStyle(
       padding: padding ?? this.padding,
@@ -248,6 +277,10 @@ class EditorStyle {
       firstLineIndent: firstLineIndent ?? this.firstLineIndent,
       selectionRenderer: selectionRenderer ?? this.selectionRenderer,
       showTableActionBar: showTableActionBar ?? this.showTableActionBar,
+      spellChecker: spellChecker ?? this.spellChecker,
+      spellCheckMisspelledStyle:
+          spellCheckMisspelledStyle ?? this.spellCheckMisspelledStyle,
+      spellCheckDebounce: spellCheckDebounce ?? this.spellCheckDebounce,
     );
   }
 }

@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/editor_component/service/selection/mobile_selection_service.dart';
 import 'package:novident_editor/src/editor/editor_component/service/selection/shared.dart';
 import 'package:novident_editor/src/service/selection/selection_gesture.dart';
 import 'package:flutter/material.dart';
@@ -176,16 +175,13 @@ class _DesktopSelectionServiceWidgetState
     editorState.service.keyboardService?.enableShortcuts();
     editorState.service.keyboardService?.enable();
 
-    final selection = editorState.selectionNotifier.value;
-    if (selection != null) {
-      editorState.updateSelectionWithReason(
-        null,
-        reason: SelectionUpdateReason.uiEvent,
-      );
-      editorState.updateSelectionWithReason(
-        selection,
-        reason: SelectionUpdateReason.uiEvent,
-      );
+    // The selection value itself has not changed; the menu only needs the
+    // visual selection to be re-shown/refreshed after the shortcuts are
+    // restored. A single dedicated notification replaces the previous
+    // null->selection double update (two renderer calls, two post-frame
+    // completers and two listener waves).
+    if (editorState.selection != null) {
+      editorState.refreshSelection();
     }
   }
 
@@ -331,38 +327,41 @@ class _DesktopSelectionServiceWidgetState
     }
 
     final position = selectable.getPositionInOffset(offset);
-    final Selection? newSelection;
 
-    // cases
-    // 1. if the selection is null, then select the current position as a collapsed selection
-    // 2. if the selection is collapsed, then keep it without changes
-    // 3. if the selection is not collapsed, then check if tap is within a selected node
-    // 4. if tap is within the selected nodes, then keep current selection
-    // 5. if tap is outside the selected nodes, then create a collapsed selection at tap point
+    // Like a primary tap, the cursor always moves to the click position.
+    // The ONLY exception is a non-collapsed selection with the click inside
+    // one of the selected nodes: keep it so cut/copy actions make sense.
+    // A collapsed selection sitting elsewhere must NOT prevent the cursor
+    // from jumping to the click point.
+    final keepSelection = selection != null &&
+        !selection.isCollapsed &&
+        editorState.getNodesInSelection(selection).any((n) => n == node);
 
-    if (selection == null) {
-      newSelection = Selection.collapsed(position);
-    } else if (selection.isCollapsed) {
-      newSelection = selection;
-    } else {
-      final selectedNodes = editorState.getNodesInSelection(selection);
-      final isTapInSelectedNode = selectedNodes.any((n) => n == node);
+    final Selection newSelection = keepSelection
+        ? selection
+        : Selection.collapsed(position);
 
-      if (isTapInSelectedNode) {
-        newSelection = selection;
-      } else {
-        newSelection = Selection.collapsed(position);
-      }
-    }
-
+    // Apply the selection the same way a primary tap does: through
+    // `updateSelectionWithReason` with `SelectionUpdateReason.uiEvent`.
+    // Custom renderers (e.g. vim) only honor selection updates that come
+    // from an UI event, so a direct assignment (or a transaction reason)
+    // would be ignored or reverted by the renderer.
+    currentSelection.value = newSelection;
     editorState.updateSelectionWithReason(
       newSelection,
+      reason: SelectionUpdateReason.uiEvent,
       extraInfo: {
         selectionExtraInfoDisableToolbar: true,
       },
     );
 
-    _showContextMenu(details);
+    // Show the menu after the selection update has landed: the context
+    // menu is only shown around an existing selection area, so showing it
+    // before the update would silently drop the menu on the very first
+    // right-click.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showContextMenu(details);
+    });
   }
 
   void _onPanStart(DragStartDetails details) {
@@ -392,18 +391,21 @@ class _DesktopSelectionServiceWidgetState
 
     final renderer = editorState.selectionRenderer;
     if (renderer != null) {
-      final selection = currentSelection.value ??
-          Selection.collapsed(_panStartPosition!);
+      final selection =
+          currentSelection.value ?? Selection.collapsed(_panStartPosition!);
       final isCollapsed = selection.isCollapsed;
       final startNode = editorState.getNodeAtPath(selection.start.path);
-      final endNode =
-          isCollapsed ? startNode : editorState.getNodeAtPath(selection.end.path);
-      renderer.onSelectionStarted(SelectionLifecycleContext(
-        selection: selection,
-        startNode: startNode,
-        endNode: endNode,
-        isCollapsed: isCollapsed,
-      ),);
+      final endNode = isCollapsed
+          ? startNode
+          : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionStarted(
+        SelectionLifecycleContext(
+          selection: selection,
+          startNode: startNode,
+          endNode: endNode,
+          isCollapsed: isCollapsed,
+        ),
+      );
     }
   }
 
@@ -446,14 +448,17 @@ class _DesktopSelectionServiceWidgetState
     if (renderer != null && selection != null) {
       final isCollapsed = selection.isCollapsed;
       final startNode = editorState.getNodeAtPath(selection.start.path);
-      final endNode =
-          isCollapsed ? startNode : editorState.getNodeAtPath(selection.end.path);
-      renderer.onSelectionEnded(SelectionLifecycleContext(
-        selection: selection,
-        startNode: startNode,
-        endNode: endNode,
-        isCollapsed: isCollapsed,
-      ),);
+      final endNode = isCollapsed
+          ? startNode
+          : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionEnded(
+        SelectionLifecycleContext(
+          selection: selection,
+          startNode: startNode,
+          endNode: endNode,
+          isCollapsed: isCollapsed,
+        ),
+      );
     }
 
     _resetPanState();
@@ -528,13 +533,18 @@ class _DesktopSelectionServiceWidgetState
       return;
     }
 
-    // only shows around the selection area.
-    if (selectionRects.isEmpty) {
+    // Cheap guards instead of `selectionRects`: the menu is anchored to the
+    // click position, so it only needs to know that a selection exists and
+    // that every selected node has a text delta. Computing every selection
+    // rect (or deep-copying nodes through `getSelectedNodes`) here would
+    // block the frame for large multi-node selections.
+    final selection = editorState.selection;
+    if (selection == null) {
       return;
     }
-
-    // For now, only support the text node.
-    if (!currentSelectedNodes.every((element) => element.delta != null)) {
+    final selectedNodes = editorState.getNodesInSelection(selection);
+    if (selectedNodes.isEmpty ||
+        selectedNodes.any((node) => node.delta == null)) {
       return;
     }
 
@@ -552,15 +562,23 @@ class _DesktopSelectionServiceWidgetState
     final baseOffset =
         editorState.renderBox?.localToGlobal(Offset.zero) ?? Offset.zero;
     final offset = details.localPosition + const Offset(10, 10) + baseOffset;
+
+    // Build the menu widget ONCE per show: the overlay entry builder runs
+    // again on every overlay rebuild, and re-running the user's builder
+    // (word lookup + suggestion generation) each time would block those
+    // frames. The widget is built with the service's context, which is the
+    // editor's tree, so it resolves the same inherited widgets the menu
+    // builder already relies on.
+    final menuWidget = widget.contextMenuBuilder?.call(
+          context,
+          offset,
+          editorState,
+          () => _clearContextMenu(),
+        ) ??
+        const SizedBox.shrink();
+
     final contextMenu = OverlayEntry(
-      builder: (_) =>
-          widget.contextMenuBuilder?.call(
-            context,
-            offset,
-            editorState,
-            () => _clearContextMenu(),
-          ) ??
-          SizedBox.shrink(),
+      builder: (_) => menuWidget,
     );
 
     _contextMenuAreas.add(contextMenu);

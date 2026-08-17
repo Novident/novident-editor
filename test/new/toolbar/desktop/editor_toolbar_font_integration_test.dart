@@ -17,10 +17,15 @@ void main() {
       // 1 — Create document with text and editor state.
       final doc = Document.blank();
       final delta = Delta()..insert('Hello World');
-      doc.insert([0], [
-        Node(type: 'paragraph', attributes: {
-          blockComponentDelta: delta.toJson(),
-        },),
+      doc.insert([
+        0,
+      ], [
+        Node(
+          type: 'paragraph',
+          attributes: {
+            blockComponentDelta: delta.toJson(),
+          },
+        ),
       ]);
       final editorState = EditorState(document: doc);
       addTearDown(() => editorState.dispose());
@@ -73,15 +78,15 @@ void main() {
       final sel = editorState.selection!;
       var hasSize = false;
       editorState.getNodesInSelection(sel).allSatisfyInSelection(
-        sel,
-        (d) => d.everyAttributes((attr) {
-          if (attr[RichTextKeys.fontSize] == 14.0) {
-            hasSize = true;
-            return false;
-          }
-          return true;
-        }),
-      );
+            sel,
+            (d) => d.everyAttributes((attr) {
+              if (attr[RichTextKeys.fontSize] == 14.0) {
+                hasSize = true;
+                return false;
+              }
+              return true;
+            }),
+          );
       expect(hasSize, isTrue);
 
       // 8 — Toolbar now shows 14 as the effective size.
@@ -93,10 +98,15 @@ void main() {
         (WidgetTester tester) async {
       final doc = Document.blank();
       final delta = Delta()..insert('Hello');
-      doc.insert([0], [
-        Node(type: 'paragraph', attributes: {
-          blockComponentDelta: delta.toJson(),
-        },),
+      doc.insert([
+        0,
+      ], [
+        Node(
+          type: 'paragraph',
+          attributes: {
+            blockComponentDelta: delta.toJson(),
+          },
+        ),
       ]);
       final editorState = EditorState(document: doc);
       addTearDown(() => editorState.dispose());
@@ -114,7 +124,8 @@ void main() {
                 NovidentStaticToolbar(
                   items: [
                     buildFontFamilyItem(
-                        fontFamilies: ['Arial', 'Georgia', 'Verdana'],),
+                      fontFamilies: ['Arial', 'Georgia', 'Verdana'],
+                    ),
                   ],
                   editorState: editorState,
                   showWhenNoSelection: true,
@@ -161,10 +172,15 @@ void main() {
         (WidgetTester tester) async {
       final doc = Document.blank();
       final delta = Delta()..insert('Hello');
-      doc.insert([0], [
-        Node(type: 'paragraph', attributes: {
-          blockComponentDelta: delta.toJson(),
-        },),
+      doc.insert([
+        0,
+      ], [
+        Node(
+          type: 'paragraph',
+          attributes: {
+            blockComponentDelta: delta.toJson(),
+          },
+        ),
       ]);
       final editorState = EditorState(document: doc);
       addTearDown(() => editorState.dispose());

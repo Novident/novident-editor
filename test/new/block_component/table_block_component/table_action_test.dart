@@ -209,7 +209,10 @@ void main() async {
           "data": {"delta": []},
         },
       );
-      expect(tableNode.getColWidth(2, kDefaultTableStyle), kDefaultTableStyle.colDefaultWeight);
+      expect(
+        tableNode.getColWidth(2, kDefaultTableStyle),
+        kDefaultTableStyle.colDefaultWeight,
+      );
       await editor.dispose();
     });
 
@@ -243,7 +246,10 @@ void main() async {
       );
 
       final cell12 = getCellNode(tableNode.node, 1, 2)!;
-      expect(tableNode.getRowHeight(2, kDefaultTableStyle), cell12.children.first.rect.height + 8);
+      expect(
+        tableNode.getRowHeight(2, kDefaultTableStyle),
+        cell12.children.first.rect.height + 8,
+      );
       await editor.dispose();
     });
 

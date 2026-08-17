@@ -3,6 +3,8 @@ import 'package:novident_editor_core/novident_editor_core.dart';
 import 'package:novident_editor_document/novident_editor_document.dart';
 import 'package:novident_editor_selection/novident_editor_selection.dart';
 
+import '../pipeline/text_span_pipeline.dart';
+
 /// Configuration provided by the editor host for rich text rendering.
 ///
 /// [NovidentRichText] depends on this interface instead of [EditorState]
@@ -33,6 +35,12 @@ abstract class RichTextEditorConfig implements BlockSelectionHost {
   /// Custom selection/cursor renderer. When null, [DefaultSelectionRenderer] is used.
   @override
   SelectionRenderer? get selectionRenderer;
+
+  /// Text-span pipeline used to build the content of [NovidentRichText].
+  ///
+  /// Null (default) → [DefaultNovidentTextSpanPipeline]. The widget-level
+  /// `spanPipeline` parameter takes priority over this value.
+  NovidentTextSpanPipeline? get spanPipeline => null;
 }
 
 /// Decorates an [InlineSpan] for a custom attribute.

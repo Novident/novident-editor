@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class MockClipboard {
-
   const MockClipboard({required this.text, required this.html});
   final String? text;
   final String? html;
@@ -61,8 +60,7 @@ void main() {
           home: Column(
             children: [
               TextButton(
-                onPressed: () async =>
-                    NovidentClipboard.setData(text: rawText),
+                onPressed: () async => NovidentClipboard.setData(text: rawText),
                 child: const Text('setData'),
               ),
               TextButton(

@@ -129,6 +129,10 @@ class EditorSessionController extends ChangeNotifier {
     _disposed = true;
     final DocumentSession session = _session;
     if (session.isReady && toolbarNotifier.value == session.editorState) {
+      // Synchronous on purpose: a post-frame callback would run after the
+      // owning view (and its toolbar notifier) has been disposed, touching
+      // a dead notifier. The pane disposes before its ancestor view, so
+      // the notifier is still alive here.
       toolbarNotifier.value = null;
     }
     session.dispose();

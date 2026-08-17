@@ -101,7 +101,8 @@ class TableCellBlockComponentBuilder extends BlockComponentBuilder {
   BlockComponentWidget build(BlockComponentContext blockComponentContext) {
     final node = blockComponentContext.node;
     final context = blockComponentContext.buildContext;
-    final tableStyle = NovidentTableStyleScope.of(context) ?? kDefaultTableStyle;
+    final tableStyle =
+        NovidentTableStyleScope.of(context) ?? kDefaultTableStyle;
     return TableCelBlockWidget(
       key: node.key,
       node: node,
@@ -173,11 +174,9 @@ class _TableCeBlockWidgetState extends State<TableCelBlockWidget> {
       color: context.select(
         (Node n) =>
             widget.colorBuilder?.call(context, n) ??
-            (n.attributes[TableCellBlockKeys.colBackgroundColor]
-                    as String?)
+            (n.attributes[TableCellBlockKeys.colBackgroundColor] as String?)
                 ?.tryToColor() ??
-            (n.attributes[TableCellBlockKeys.rowBackgroundColor]
-                    as String?)
+            (n.attributes[TableCellBlockKeys.rowBackgroundColor] as String?)
                 ?.tryToColor(),
       ),
       child: Column(
@@ -200,8 +199,8 @@ class _TableCeBlockWidgetState extends State<TableCelBlockWidget> {
     EdgeInsets builderPadding,
     NovidentTableStyleDefinition style,
   ) {
-    final map =
-        node.attributes[TableCellBlockKeys.cellPadding] as Map<String, dynamic>?;
+    final map = node.attributes[TableCellBlockKeys.cellPadding]
+        as Map<String, dynamic>?;
     if (map != null) {
       return EdgeInsets.fromLTRB(
         (map['left'] as num?)?.toDouble() ?? 0,

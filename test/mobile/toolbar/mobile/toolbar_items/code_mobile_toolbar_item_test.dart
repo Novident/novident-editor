@@ -37,8 +37,7 @@ void main() {
     expect(
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
-              (element) =>
-                  element.attributes?[RichTextKeys.code] == true,
+              (element) => element.attributes?[RichTextKeys.code] == true,
             );
       }),
       true,

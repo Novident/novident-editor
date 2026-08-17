@@ -100,10 +100,19 @@ class ContextMenu extends StatelessWidget {
           borderRadius: BorderRadius.circular(6.0),
         ),
         child: IntrinsicWidth(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
+          // Long menus (many suggestions) must scroll instead of being
+          // clipped by the screen edge.
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: children,
+              ),
+            ),
           ),
         ),
       ),

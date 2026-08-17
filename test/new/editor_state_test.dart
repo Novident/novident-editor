@@ -52,4 +52,39 @@ void main() {
       editor.dispose();
     });
   });
+
+  group('EditorState.refreshSelection', () {
+    EditorState buildEditor() {
+      final document = Document.blank()
+        ..insert(
+          [0],
+          [paragraphNode(text: 'refresh me')],
+        );
+      return EditorState(document: document)
+        ..editorStyle = const EditorStyle.desktop();
+    }
+
+    test('notifies selection listeners without changing the selection', () {
+      final editor = buildEditor();
+      final selection = Selection.collapsed(
+        Position(path: [0], offset: 2),
+      );
+      editor.selection = selection;
+
+      var notifications = 0;
+      editor.selectionNotifier.addListener(() => notifications++);
+
+      // refreshSelection delivers a notification wave without touching the
+      // value, the renderer or the update pipeline.
+      editor.refreshSelection();
+      expect(notifications, 1);
+      editor.refreshSelection();
+      expect(notifications, 2);
+
+      // The value itself is untouched.
+      expect(editor.selection, equals(selection));
+
+      editor.dispose();
+    });
+  });
 }

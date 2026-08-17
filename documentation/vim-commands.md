@@ -63,10 +63,18 @@ NovidentEditor(
       controller: vimController,
     ),
   ),
-  commandShortcutEvents: [
-    // vim shortcuts must come first so they take precedence.
-    ...vimController.commandShortcutEvents,
-    ...standardCommandShortcutEvents,
+  keyboardStrategies: [
+    VimStrategy(
+      session.vimController,
+    ),
+    DefaultEditorStrategy(
+      commandShortcutEvents: [
+        ...session.vimController.commandShortcutEvents,
+        ...tableCommands,
+        ...standardCommandShortcutEvents,
+      ],
+      characterShortcutEvents: standardCharacterShortcutEvents,
+    ),
   ],
 );
 

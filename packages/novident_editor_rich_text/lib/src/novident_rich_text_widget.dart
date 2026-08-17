@@ -10,9 +10,6 @@ import 'package:novident_editor_rich_text/src/utils/text_selection_from_node_sel
 import 'package:novident_editor_selection/novident_editor_selection.dart';
 import 'package:novident_editor_styles/novident_editor_styles.dart';
 
-final Map<Color, double> _cachedResolvedLuminanceColor = {};
-
-//TODO: rich text needs to allow more customization
 class NovidentRichText extends StatefulWidget {
   const NovidentRichText({
     super.key,
@@ -29,6 +26,7 @@ class NovidentRichText extends StatefulWidget {
     this.selectionColor = const Color.fromARGB(255, 111, 201, 231),
     this.autoCompleteTextProvider,
     this.useFirstLineIndent = true,
+    this.spanPipeline,
     required this.delegate,
     required this.node,
     required this.editorConfig,
@@ -89,6 +87,15 @@ class NovidentRichText extends StatefulWidget {
   /// the indent applied.
   final bool useFirstLineIndent;
 
+  /// Pipeline that builds the text content (style resolution, span
+  /// emission, selection contrast, placeholder, final adjustment).
+  ///
+  /// Priority: this value → [editorConfig]'s `spanPipeline` →
+  /// [DefaultNovidentTextSpanPipeline]. A custom pipeline replaces the
+  /// whole content pipeline; the legacy decorator callbacks are consumed
+  /// only by the default pipeline.
+  final NovidentTextSpanPipeline? spanPipeline;
+
   @override
   State<NovidentRichText> createState() => _NovidentRichTextState();
 }
@@ -142,6 +149,19 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
   NovidentStyleDefinition? get defaultStyle =>
       NovidentEditorStyles.maybeOf(context)?.config.defaultStyle;
+
+  /// The effective pipeline: widget-level parameter wins, then the editor
+  /// config, then the default pipeline seeded with the legacy callbacks.
+  NovidentTextSpanPipeline get _pipeline {
+    final custom = widget.spanPipeline ?? widget.editorConfig.spanPipeline;
+    if (custom != null) {
+      return custom;
+    }
+    return DefaultNovidentTextSpanPipeline(
+      textSpanDecorator: widget.textSpanDecorator,
+      textSpanDecoratorForAttribute: textSpanDecoratorForAttribute,
+    );
+  }
 
   @override
   void initState() {
@@ -387,7 +407,13 @@ class _NovidentRichTextState extends State<NovidentRichText>
     if (widget.placeholderTextSpanDecorator != null) {
       textSpan = widget.placeholderTextSpanDecorator!(textSpan);
     }
-    textSpan = adjustTextSpan(textSpan);
+    textSpan = _pipeline.adjustSpan(
+      AdjustSpanContext(
+        node: widget.node,
+        span: textSpan,
+        baseTextStyle: _baseTextStyle,
+      ),
+    );
     final delta = widget.node.delta;
     if (delta != null && delta.isNotEmpty) {
       // Preserve WidgetSpans for indent layout, clear visible text.
@@ -427,7 +453,13 @@ class _NovidentRichTextState extends State<NovidentRichText>
     if (widget.textSpanDecorator != null) {
       textSpan = widget.textSpanDecorator!(textSpan);
     }
-    textSpan = adjustTextSpan(textSpan);
+    textSpan = _pipeline.adjustSpan(
+      AdjustSpanContext(
+        node: widget.node,
+        span: textSpan,
+        baseTextStyle: _baseTextStyle,
+      ),
+    );
     return RichText(
       key: textKey,
       textAlign: _effectiveTextAlign,
@@ -465,7 +497,13 @@ class _NovidentRichTextState extends State<NovidentRichText>
     if (widget.textSpanDecorator != null) {
       textSpan = widget.textSpanDecorator!(textSpan);
     }
-    textSpan = adjustTextSpan(textSpan);
+    textSpan = _pipeline.adjustSpan(
+      AdjustSpanContext(
+        node: widget.node,
+        span: textSpan,
+        baseTextStyle: _baseTextStyle,
+      ),
+    );
     return ValueListenableBuilder(
       valueListenable: widget.editorConfig.selectionNotifier,
       builder: (_, __, ___) {
@@ -512,42 +550,6 @@ class _NovidentRichTextState extends State<NovidentRichText>
     );
   }
 
-  // https://github.com/flutter/flutter/pull/143954
-  // https://github.com/AppFlowy-IO/appflowy-editor/issues/819#issuecomment-2177833413
-  // This is a workaround for the issue that
-  //  the caret height of the text is not calculated correctly if the parent style is null.
-  TextSpan adjustTextSpan(TextSpan textSpan) {
-    if (textSpan.style == null && textSpan.children != null) {
-      double height = 0.0;
-      double fontSize = 0.0;
-      textSpan.visitChildren((span) {
-        final style = span.style;
-        if (style != null) {
-          if (style.height != null) {
-            height = max(height, style.height!);
-          }
-          if (style.fontSize != null) {
-            fontSize = max(fontSize, style.fontSize!);
-          }
-        }
-        return true;
-      });
-      if (height == 0.0 || fontSize == 0.0) {
-        return textSpan;
-      }
-      textSpan = textSpan.copyWith(
-        // used to maintain legacy compatibility
-        style: widget.node.type == HeadingBlockKeys.type
-            ? TextStyle(
-                height: height,
-                fontSize: fontSize,
-              )
-            : _baseTextStyle,
-      );
-    }
-    return textSpan;
-  }
-
   List<Widget> _buildRichTextOverlay(BuildContext context) {
     if (textKey.currentContext == null) return [];
     return textSpanOverlayBuilder?.call(
@@ -559,16 +561,15 @@ class _NovidentRichTextState extends State<NovidentRichText>
   }
 
   TextSpan getPlaceholderTextSpan() {
-    final children = <InlineSpan>[
-      if (textShift > 0)
-        WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
-      TextSpan(
-        text: widget.placeholderText,
-        style: _baseTextStyle.copyWith(
-            color: _baseTextStyle.color?.withAlpha(150)),
+    return _pipeline.buildPlaceholder(
+      PlaceholderContext(
+        node: widget.node,
+        placeholderText: widget.placeholderText,
+        baseTextStyle: _baseTextStyle,
+        textShift: textShift,
+        firstLineIndentWidth: _firstLineIndentWidth,
       ),
-    ];
-    return TextSpan(children: children);
+    );
   }
 
   /// Resolved base [TextStyle] from the effective style.
@@ -620,8 +621,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
   TextSpan getTextSpan({
     required Iterable<TextInsert> textInserts,
   }) {
-    int offset = 0;
-    List<InlineSpan> textSpans = [];
+    final pipeline = _pipeline;
+    final textSpans = <InlineSpan>[];
     if (textShift > 0) {
       textSpans.add(
         WidgetSpan(child: SizedBox(width: _firstLineIndentWidth)),
@@ -630,252 +631,60 @@ class _NovidentRichTextState extends State<NovidentRichText>
 
     final selStart = _selectionRange?.$1 ?? 0;
     final selEnd = _selectionRange?.$2 ?? 0;
+    final style = resolvedStyle;
+    var offset = 0;
     for (final textInsert in textInserts) {
-      final textStyle =
-          _attributesToStyle(textInsert.attributes, _baseTextStyle);
-      String displayText = textInsert.text;
-      if (resolvedStyle?.caps == true) {
-        displayText = displayText.toUpperCase();
-        // by now we set small caps just as lowercase
-      } else if (resolvedStyle?.smallCaps == true) {
-        displayText = displayText.toLowerCase();
-      }
-
-      final textLen = displayText.length;
-
-      final inserted = paintContrastColorForSelection(
-        context,
-        widget.node,
+      // Phase 1: attributes → TextStyle.
+      final textStyle = pipeline.resolveStyle(
+        textInsert.attributes,
+        _baseTextStyle,
+        textStyleConfiguration,
+      );
+      // Phase 2: caps/smallCaps transformation (length preserved).
+      final displayText = pipeline.transformText(
         textInsert,
-        offset,
-        textLen,
-        selStart,
-        selEnd,
-        textSpans,
-        displayText,
-        selectionRenderer: widget.editorConfig.selectionRenderer,
-        textSpanDecoratorForAttribute: textSpanDecoratorForAttribute,
-        textSpanDecorator: widget.textSpanDecorator,
-        hasSelection: _hasSelection,
-        textStyle: textStyle,
-        textStyleConfiguration: textStyleConfiguration,
-        selectionColor: widget.selectionColor,
+        textInsert.text,
+        caps: style?.caps == true,
+        smallCaps: style?.smallCaps == true,
       );
 
-      if (inserted) {
-        offset += textLen;
-        continue;
-      }
+      // Phase 3: emit spans (spell-check splitting lives here).
+      var spans = pipeline.emitSpans(
+        SpanEmitContext(
+          buildContext: context,
+          node: widget.node,
+          insert: textInsert,
+          displayText: displayText,
+          style: textStyle,
+          offset: offset,
+          textStyleConfiguration: textStyleConfiguration,
+          textSpanDecoratorForAttribute: textSpanDecoratorForAttribute,
+          textSpanDecorator: widget.textSpanDecorator,
+        ),
+      );
 
-      // Default: no selection intersection — emit the full span as-is.
-      textSpans.add(emitSpan(
-        textInsert,
-        displayText,
-        textStyle,
-        offset,
-        context,
-        widget.node,
-        textSpanDecoratorForAttribute,
-        widget.textSpanDecorator,
-      ));
-      offset += textLen;
+      // Phase 4: selection contrast over the emitted spans.
+      spans = pipeline.paintSelectionContrast(
+        SelectionContrastContext(
+          node: widget.node,
+          insert: textInsert,
+          spans: spans,
+          insertOffset: offset,
+          selStart: selStart,
+          selEnd: selEnd,
+          textStyle: textStyle,
+          textStyleConfiguration: textStyleConfiguration,
+          selectionColor: widget.selectionColor,
+          hasSelection: _hasSelection,
+        ),
+      );
+
+      textSpans.addAll(spans);
+      offset += displayText.length;
     }
     return TextSpan(
       children: textSpans,
     );
-  }
-
-  TextStyle _attributesToStyle(Attributes? attributes, TextStyle textStyle) {
-    if (attributes == null) {
-      return textStyle;
-    }
-
-    if (attributes.bold == true) {
-      textStyle =
-          textStyle.combine(const TextStyle(fontWeight: FontWeight.bold));
-    }
-    if (attributes.italic == true) {
-      textStyle =
-          textStyle.combine(const TextStyle(fontStyle: FontStyle.italic));
-    }
-    if (attributes.underline == true) {
-      textStyle = textStyle.combine(const TextStyle(
-        decoration: TextDecoration.underline,
-      ));
-    }
-    if (attributes.strikethrough == true) {
-      textStyle = textStyle.combine(const TextStyle(
-        decoration: TextDecoration.lineThrough,
-      ));
-    }
-    if (attributes.href != null) {
-      textStyle = textStyle.combine(textStyleConfiguration.href);
-    }
-    if (attributes.code == true) {
-      textStyle = textStyle.combine(textStyleConfiguration.code);
-    }
-    if (attributes.backgroundColor != null) {
-      textStyle = textStyle.combine(
-        TextStyle(backgroundColor: attributes.backgroundColor),
-      );
-    }
-    if (attributes.findBackgroundColor != null) {
-      textStyle = textStyle.combine(
-        TextStyle(backgroundColor: attributes.findBackgroundColor),
-      );
-    }
-    if (attributes.color != null) {
-      textStyle = textStyle.combine(
-        TextStyle(color: attributes.color),
-      );
-    }
-    if (attributes.fontFamily != null) {
-      textStyle = textStyle.combine(
-        TextStyle(fontFamily: attributes.fontFamily),
-      );
-    }
-    if (attributes.fontSize != null) {
-      textStyle = textStyle.combine(
-        TextStyle(fontSize: attributes.fontSize),
-      );
-    }
-    if (attributes.autoComplete == true) {
-      textStyle = textStyle.combine(textStyleConfiguration.autoComplete);
-    }
-    if (attributes.transparent == true) {
-      textStyle = textStyle.combine(
-        const TextStyle(color: Colors.transparent),
-      );
-    }
-    return textStyle;
-  }
-
-  static InlineSpan emitSpan(
-    TextInsert insert,
-    String text,
-    TextStyle style,
-    int spanOffset,
-    BuildContext context,
-    Node node,
-    TextSpanDecoratorForAttribute? textSpanDecoratorForAttribute,
-    NovidentTextSpanDecorator? textSpanDecorator,
-  ) {
-    final span = TextSpan(text: text, style: style);
-    if (textSpanDecoratorForAttribute != null) {
-      return textSpanDecoratorForAttribute(
-        context,
-        node,
-        spanOffset,
-        insert,
-        span,
-        textSpanDecorator?.call(span) ?? span,
-      );
-    }
-    return span;
-  }
-
-  static bool paintContrastColorForSelection(
-    BuildContext context,
-    Node node,
-    TextInsert textInsert,
-    int offset,
-    int textLen,
-    int selStart,
-    int selEnd,
-    List<InlineSpan> textSpans,
-    String displayText, {
-    SelectionRenderer? selectionRenderer,
-    TextSpanDecoratorForAttribute? textSpanDecoratorForAttribute,
-    NovidentTextSpanDecorator? textSpanDecorator,
-    required bool hasSelection,
-    required TextStyle textStyle,
-    required TextStyleConfiguration textStyleConfiguration,
-    required Color selectionColor,
-  }) {
-    if (!hasSelection) {
-      return false;
-    }
-    final blockBg = textStyle.backgroundColor ?? Colors.white;
-    final decorationColor = textStyle.decorationColor ??
-        textStyleConfiguration.href.decorationColor ??
-        textStyleConfiguration.href.color;
-    final effectiveBg = Color.alphaBlend(
-      selectionColor,
-      blockBg,
-    );
-    final effectiveDecorationColor = decorationColor == null
-        ? null
-        : Color.alphaBlend(
-            selectionColor,
-            decorationColor,
-          );
-    final contrastColor = (_cachedResolvedLuminanceColor[effectiveBg] ??=
-                effectiveBg.computeLuminance()) >
-            0.5
-        ? Colors.black
-        : Colors.white;
-    final decorationContrastColor = effectiveDecorationColor == null
-        ? null
-        : (_cachedResolvedLuminanceColor[effectiveDecorationColor] ??=
-                    effectiveDecorationColor.computeLuminance()) >
-                0.5
-            ? Colors.black
-            : Colors.white;
-    final int textStart = offset;
-    final int textEnd = offset + textLen;
-    final int intersectStart = max(textStart, selStart);
-    final int intersectEnd = min(textEnd, selEnd);
-    if (intersectStart < intersectEnd) {
-      // Before selection — normal color.
-      if (textStart < intersectStart) {
-        final beforeLen = intersectStart - textStart;
-        final beforeText = displayText.substring(0, beforeLen);
-        textSpans.add(emitSpan(
-          TextInsert(beforeText, attributes: textInsert.attributes),
-          beforeText,
-          textStyle,
-          offset,
-          context,
-          node,
-          textSpanDecoratorForAttribute,
-          textSpanDecorator,
-        ));
-      }
-      // Inside selection — contrast color.
-      final selPieceStart = intersectStart - textStart;
-      final selPieceEnd = intersectEnd - textStart;
-      final selText = displayText.substring(selPieceStart, selPieceEnd);
-      textSpans.add(emitSpan(
-        TextInsert(selText, attributes: textInsert.attributes),
-        selText,
-        textStyle.copyWith(
-          color: contrastColor,
-          decorationColor: decorationContrastColor,
-        ),
-        offset + selPieceStart,
-        context,
-        node,
-        textSpanDecoratorForAttribute,
-        textSpanDecorator,
-      ));
-      // After selection — normal color.
-      if (intersectEnd < textEnd) {
-        final afterStart = intersectEnd - textStart;
-        final afterText = displayText.substring(afterStart);
-        textSpans.add(emitSpan(
-          TextInsert(afterText, attributes: textInsert.attributes),
-          afterText,
-          textStyle,
-          offset + afterStart,
-          context,
-          node,
-          textSpanDecoratorForAttribute,
-          textSpanDecorator,
-        ));
-      }
-      return true;
-    }
-    return false;
   }
 
   @override

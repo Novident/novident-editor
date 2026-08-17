@@ -40,7 +40,7 @@ NovidentStyleDefinition resolveEffectiveToolbarStyle(
     'NovidentStylesConfig.defaultStyle must have a value major than zero for fontSize.',
   );
   assert(
-    config.defaultStyle.textColor!= null,
+    config.defaultStyle.textColor != null,
     'NovidentStylesConfig.defaultStyle must have a non-null textColor.',
   );
   return config.defaultStyle;

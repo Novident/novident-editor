@@ -113,7 +113,6 @@ class _HeadingMenuState extends State<_HeadingMenu> {
 }
 
 class HeadingUnit {
-
   HeadingUnit({
     required this.icon,
     required this.label,

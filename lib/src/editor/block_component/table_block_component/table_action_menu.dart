@@ -603,12 +603,10 @@ void showActionMenu(
     overlay = null;
   }
 
-  final visibleItems = (items ?? defaultTableActionMenuItems)
-      .where((item) {
-        if (item.direction != null && item.direction != dir) return false;
-        return item.visible?.call(node, position) ?? true;
-      })
-      .toList(growable: false);
+  final visibleItems = (items ?? defaultTableActionMenuItems).where((item) {
+    if (item.direction != null && item.direction != dir) return false;
+    return item.visible?.call(node, position) ?? true;
+  }).toList(growable: false);
   if (visibleItems.isEmpty) {
     return;
   }
@@ -634,16 +632,16 @@ void showActionMenu(
         width: 200,
         // 36 per entry + the vertical padding of the overlay container.
         height: visibleItems.length * 36.0 + 12,
-          children: visibleItems
-              .map(
-                (item) => _menuItem(
-                  context,
-                  item.name,
-                  item.icon,
-                  () => item.onPressed(menuContext),
-                ),
-              )
-              .toList(growable: false),
+        children: visibleItems
+            .map(
+              (item) => _menuItem(
+                context,
+                item.name,
+                item.icon,
+                () => item.onPressed(menuContext),
+              ),
+            )
+            .toList(growable: false),
       );
     },
   ).build();

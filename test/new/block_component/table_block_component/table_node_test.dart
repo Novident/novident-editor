@@ -314,7 +314,10 @@ void main() {
 
       expect(tableNode.node.attributes[TableBlockKeys.colMinimumWidth], isNull);
       expect(tableNode.node.attributes[TableBlockKeys.colDefaultWidth], isNull);
-      expect(tableNode.node.attributes[TableBlockKeys.rowDefaultHeight], isNull);
+      expect(
+        tableNode.node.attributes[TableBlockKeys.rowDefaultHeight],
+        isNull,
+      );
 
       expect(
         tableNode.getColWidth(0, style),
@@ -363,7 +366,9 @@ void main() {
           {
             'type': 'paragraph',
             'data': {
-              'delta': [{'insert': 'A1'}],
+              'delta': [
+                {'insert': 'A1'},
+              ],
             },
           },
         );
@@ -372,7 +377,9 @@ void main() {
           {
             'type': 'paragraph',
             'data': {
-              'delta': [{'insert': 'A2'}],
+              'delta': [
+                {'insert': 'A2'},
+              ],
             },
           },
         );
@@ -398,7 +405,9 @@ void main() {
             'type': 'heading',
             'data': {
               'level': 2,
-              'delta': [{'insert': 'Header'}],
+              'delta': [
+                {'insert': 'Header'},
+              ],
             },
           },
         );
@@ -524,7 +533,9 @@ void main() {
           {
             'type': 'paragraph',
             'data': {
-              'delta': [{'insert': 'Cell 00'}],
+              'delta': [
+                {'insert': 'Cell 00'},
+              ],
             },
           },
         );
@@ -560,7 +571,9 @@ void main() {
           {
             'type': 'paragraph',
             'data': {
-              'delta': [{'insert': 'Plain cell'}],
+              'delta': [
+                {'insert': 'Plain cell'},
+              ],
             },
           },
         );

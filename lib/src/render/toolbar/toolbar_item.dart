@@ -10,7 +10,6 @@ typedef ToolbarItemValidator = bool Function(EditorState editorState);
 typedef ToolbarItemHighlightCallback = bool Function(EditorState editorState);
 
 class ToolbarItem {
-
   factory ToolbarItem.divider() {
     return ToolbarItem(
       id: 'divider',

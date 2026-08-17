@@ -274,4 +274,3 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
     );
   }
 }
-

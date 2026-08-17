@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:novident_editor/novident_editor.dart';
 
 /// A [Transaction] has a list of [Operation] objects that will be applied
@@ -46,6 +48,21 @@ class Transaction {
 
   // mark needs to be composed
   bool markNeedsComposing = false;
+
+  /// Deltas waiting to be composed, per node. Was a `static` in the text
+  /// extension; now per-transaction so abandoned transactions can't leak
+  /// state into later ones.
+  final Map<Node, List<Delta>> _composeMap = {};
+
+  /// Delta changes captured while building this transaction, per node.
+  /// Consumed by the editor after the transaction is applied.
+  final Map<Node, List<DeltaChange>> _deltaChanges = {};
+
+  /// Delta changes captured by this transaction, per node.
+  Map<Node, List<DeltaChange>> get deltaChanges => _deltaChanges;
+
+  /// Clears the captured delta changes (called after they are emitted).
+  void clearDeltaChanges() => _deltaChanges.clear();
 
   /// Inserts the [Node] at the given [Path].
   void insertNode(
@@ -187,12 +204,6 @@ class Transaction {
 }
 
 extension TextTransaction on Transaction {
-  /// We use this map to cache the delta waiting to be composed.
-  ///
-  /// This is for make calling the below function as chained.
-  /// For example, transaction..deleteText(..)..insertText(..);
-  static final Map<Node, List<Delta>> _composeMap = {};
-
   /// Inserts the [text] at the given [index].
   ///
   /// If the [attributes] is null, the attributes of the previous character will be used.
@@ -440,6 +451,74 @@ extension TextTransaction on Transaction {
   void addDeltaToComposeMap(Node node, Delta delta) {
     markNeedsComposing = true;
     _composeMap.putIfAbsent(node, () => []).add(delta);
+
+    // Capture the DeltaChange at the exact point where the index is known.
+    final previousShift = _deltaChanges[node]
+            ?.fold<int>(0, (sum, change) => sum + change.shift) ??
+        0;
+    final (start, end, shift) = _describeDeltaChange(delta);
+    _deltaChanges.putIfAbsent(node, () => []).add(
+          DeltaChange(
+            delta: delta,
+            start: start,
+            end: end,
+            shift: shift,
+            previousShift: previousShift,
+            order: document.nextDeltaChangeOrder(),
+          ),
+        );
+  }
+
+  /// Derives `(start, end, shift)` from a net change delta.
+  ///
+  /// Order-independent: [Delta] may reorder insert/delete operations, so
+  /// offsets cannot be derived by walking the operations in sequence.
+  ///
+  /// - insert: start = end = insertion point, shift = +length
+  /// - delete: start..end = deleted range, shift = −length
+  /// - format (retain with attributes): start..end = formatted range
+  /// - mixed (replace): start = first modification point, end = start +
+  ///   deleted length
+  static (int, int, int) _describeDeltaChange(Delta delta) {
+    var shift = 0;
+    var deleted = 0;
+    var formatted = 0;
+    var start = -1;
+    var offset = 0;
+    for (final op in delta) {
+      if (op is TextInsert) {
+        if (start < 0) {
+          start = offset;
+        }
+        shift += op.length;
+        offset += op.length;
+      } else if (op is TextDelete) {
+        if (start < 0) {
+          start = offset;
+        }
+        deleted += op.length;
+        offset += op.length;
+      } else if (op is TextRetain) {
+        final before = offset;
+        offset += op.length;
+        if (op.attributes != null) {
+          if (start < 0) {
+            start = before;
+          }
+          formatted = math.max(formatted, op.length);
+        }
+      }
+    }
+    if (start < 0) {
+      start = 0;
+    }
+    shift -= deleted;
+    final end = deleted > 0
+        ? start + deleted
+        : formatted > 0
+            ? start + formatted
+            : start;
+    return (start, end, shift);
   }
 
   void replaceTextsWithEqualNodes(

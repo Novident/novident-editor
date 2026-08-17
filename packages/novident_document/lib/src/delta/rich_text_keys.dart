@@ -19,6 +19,13 @@ class RichTextKeys {
   static String autoComplete = 'auto_complete';
   static String transparent = 'transparent';
 
+  /// Spell-check marker written exclusively by the spell-check engine.
+  ///
+  /// Value semantics are defined by the `novident_spell_check_interface`
+  /// contract (`proofStateError`); the document model only defines the key.
+  /// The base editor ignores this attribute entirely.
+  static String proofState = 'proofState';
+
   /// The attributes supported sliced.
   static List<String> supportSliced = [
     bold,
@@ -28,6 +35,10 @@ class RichTextKeys {
     textColor,
     backgroundColor,
     code,
+    // Inherited on purpose: characters typed inside a marked word remain
+    // part of the same word and keep the mark until the spell-check
+    // engine re-analyzes the affected range.
+    proofState,
   ];
 
   /// The attributes is partially supported sliced.

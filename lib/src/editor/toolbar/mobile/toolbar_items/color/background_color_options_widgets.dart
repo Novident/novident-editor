@@ -29,8 +29,7 @@ class _BackgroundColorOptionsWidgetsState
     final nodes = widget.editorState.getNodesInSelection(selection);
     final hasTextColor = nodes.allSatisfyInSelection(selection, (delta) {
       return delta.everyAttributes(
-        (attributes) =>
-            attributes[RichTextKeys.backgroundColor] != null,
+        (attributes) => attributes[RichTextKeys.backgroundColor] != null,
       );
     });
 
@@ -61,8 +60,7 @@ class _BackgroundColorOptionsWidgetsState
             final isSelected = nodes.allSatisfyInSelection(selection, (delta) {
               return delta.everyAttributes(
                 (attributes) =>
-                    attributes[RichTextKeys.backgroundColor] ==
-                    e.colorHex,
+                    attributes[RichTextKeys.backgroundColor] == e.colorHex,
               );
             });
             return ColorButton(

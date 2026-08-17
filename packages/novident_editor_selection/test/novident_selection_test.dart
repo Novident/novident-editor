@@ -60,10 +60,12 @@ class _TestHost implements BlockSelectionHost {
   SelectionRenderer? get selectionRenderer => null;
 
   @override
-  ValueListenable<List<RemoteSelection>> get remoteSelections => throw UnimplementedError();
+  ValueListenable<List<RemoteSelection>> get remoteSelections =>
+      throw UnimplementedError();
 
   @override
-  ValueListenable<Selection?> get selectionNotifier => throw UnimplementedError();
+  ValueListenable<Selection?> get selectionNotifier =>
+      throw UnimplementedError();
 }
 
 Node _makeNode() => Node(type: 'paragraph');

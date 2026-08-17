@@ -125,7 +125,8 @@ void main() {
       expect(state.sliceUpcomingAttributes, true);
     });
 
-    testWidgets('onReplace single dispatches on replacementText', (tester) async {
+    testWidgets('onReplace single dispatches on replacementText',
+        (tester) async {
       final calls = <String>[];
       final strategy = DefaultEditorStrategy(
         commandShortcutEvents: const [],
@@ -189,7 +190,10 @@ void main() {
       final strategy = _StubStrategy();
       final state = EditorState.blank();
 
-      expect(await strategy.onInsert(_insertion('a'), state), ImeDeltaResult.ignored);
+      expect(
+        await strategy.onInsert(_insertion('a'), state),
+        ImeDeltaResult.ignored,
+      );
       expect(
         await strategy.onReplace(_replacement('a'), state),
         ImeDeltaResult.ignored,

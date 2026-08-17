@@ -1,5 +1,9 @@
 library;
 
+// Spell-check contract, re-exported so editor consumers can implement
+// NovidentSpellChecker without depending on the interface package directly.
+export 'package:novident_editor_spell_check_interface/novident_editor_spell_check_interface.dart';
+
 // Re-export the document model from the standalone package
 export 'package:novident_editor_document/novident_editor_document.dart';
 
@@ -14,6 +18,9 @@ export 'src/editor/editor.dart';
 export 'src/editor/find_replace_menu/find_and_replace.dart';
 export 'src/editor/l10n/novident_editor_l10n.dart';
 export 'src/editor/selection_menu/selection_menu.dart';
+// spell check
+export 'src/editor/spell_check/spell_check_service.dart';
+export 'src/editor/spell_check/spell_check_span_pipeline.dart';
 // editor state
 export 'src/editor_state.dart';
 // extension

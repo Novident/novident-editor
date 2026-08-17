@@ -78,8 +78,7 @@ mixin DefaultSelectableMixin {
         shiftWithBaseOffset: shiftWithBaseOffset,
       );
 
-  RenderParagraph? getRenderParagraph() =>
-      forward.getRenderParagraph();
+  RenderParagraph? getRenderParagraph() => forward.getRenderParagraph();
 
   Selection? getWordEdgeInOffset(Offset offset) =>
       forward.getWordEdgeInOffset(offset);
@@ -104,5 +103,6 @@ mixin DefaultSelectableMixin {
   double? getCaretLocalDx(int offset) => forward.getCaretLocalDx(offset);
 
   int get textShift => forward.textShift;
-  bool get skipSortingChildrenWhenSelecting => forward.skipSortingChildrenWhenSelecting;
+  bool get skipSortingChildrenWhenSelecting =>
+      forward.skipSortingChildrenWhenSelecting;
 }

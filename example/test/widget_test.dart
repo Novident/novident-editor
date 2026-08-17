@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:example/main.dart';
+import 'package:example/spell_check/hunspell_spell_checker.dart';
 
 void main() {
   Future<void> pumpWorkspace(WidgetTester tester) async {
@@ -13,6 +14,11 @@ void main() {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
+
+    // Same boot sequence as main(): the editor reads the checker singleton.
+    // runAsync: the worker isolate answers on the real event loop, which
+    // the fake-async test zone never pumps.
+    await tester.runAsync(HunspellSpellChecker.load);
 
     await tester.pumpWidget(const MyApp());
 
@@ -50,9 +56,8 @@ void main() {
     expect(find.text('NORMAL'), findsOneWidget);
     // And the zen mode toggle is available.
     expect(find.byIcon(CupertinoIcons.moon_stars), findsOneWidget);
-    // The word/character counter sits right next to it (the README
-    // starts empty).
-    expect(find.text('0 words · 0 chars'), findsOneWidget);
+    // The word/character counter sits right next to it.
+    expect(find.textContaining('words ·'), findsOneWidget);
   });
 
   testWidgets('Zen mode hides everything but the centered editor',

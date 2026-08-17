@@ -64,8 +64,7 @@ class _NovidentStaticToolbarState extends State<NovidentStaticToolbar> {
     if (widget.editorState != oldWidget.editorState) {
       oldWidget.editorState?.selectionNotifier
           .removeListener(_onSelectionChanged);
-      widget.editorState?.selectionNotifier
-          .addListener(_onSelectionChanged);
+      widget.editorState?.selectionNotifier.addListener(_onSelectionChanged);
     }
   }
 

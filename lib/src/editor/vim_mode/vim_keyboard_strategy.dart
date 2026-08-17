@@ -34,8 +34,7 @@ class VimStrategy extends KeyboardStrategy {
 
   /// Like the historical `VimModeKeyboardInterceptor`: blocked outside
   /// insert mode (or when the emulation is disabled).
-  bool get _blocked =>
-      controller.enabled && controller.mode != VimMode.insert;
+  bool get _blocked => controller.enabled && controller.mode != VimMode.insert;
 
   @override
   KeyEventResult onKeyEvent(KeyEvent event, EditorState editorState) {

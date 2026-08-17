@@ -16,6 +16,13 @@ editor in any Dart or Flutter project.
 - **Position paths** — `Path` (list of ints) with comparison operators, parent/child
   navigation, and ancestor checks.
 - **Node iterator** — depth-first traversal in visual order.
+- **Delta-change tracking** — transactions capture the net change of every
+  edit (`DeltaChange`: `start`, `end`, `shift`, `previousShift`, `order`) and
+  `Document` emits them post-apply via `listenDeltaChanges` — the event
+  channel for out-of-band consumers (spell check, indexing, autosave).
+- **Spell-check marker** — `RichTextKeys.proofState` attribute key with
+  slice inheritance; the document model only defines the key, value semantics
+  belong to the spell-check engine (`novident_spell_check_interface`).
 - **JSON serialization** — full `toJson()`/`fromJson()` round-trip for documents,
   nodes, and deltas.
 - **Minimal Flutter dependency** — only `package:flutter/foundation.dart` for
@@ -108,6 +115,31 @@ print(result.toPlainText()); // "Gandalf the White"
 final json = delta.toJson();
 final restored = Delta.fromJson(json);
 ```
+
+### Observe delta changes
+
+Every edit applied through a transaction is reported after it lands, with the
+net delta and its exact affected range:
+
+```dart
+doc.listenDeltaChanges((event) {
+  for (final change in event.changes) {
+    print('${event.node.path}: start=${change.start} '
+        'end=${change.end} shift=${change.shift}');
+  }
+});
+
+// Remote operations and full-text replacements emit an EMPTY change list
+// and mark the node with an ephemeral flag instead:
+final required = event.changes.isEmpty &&
+    event.node.extraInfos?['required_revision'] == true;
+// Consumers must capture the flag synchronously inside the listener:
+// `extraInfos` is cleared after rendering.
+```
+
+The spell-check service in the main editor is the reference consumer: it
+accumulates affected nodes, restarts a global idle timer on every event, and
+re-analyzes only the reported ranges once typing stops.
 
 ### Attributes helpers
 

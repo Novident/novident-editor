@@ -1,5 +1,5 @@
 name: novident_editor_document
-version: 1.0.5
+version: 1.0.6
 description: >-
   Core document model for Novident Editor — tree nodes, rich-text delta,
   paths, and attributes. Reusable independently of the full editor.

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.6 
 
 * feat: `DeltaChange` / `DeltaChangeEvent` — centralized delta-change tracking.
   Transactions capture the net change of every delta edit (`start`, `end`,

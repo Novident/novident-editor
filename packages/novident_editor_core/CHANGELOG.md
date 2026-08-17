@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3
+
+* chore: update depedencies to their latest versions. 
+
 ## 1.0.2
 
 * chore: bumped `novident_editor_document` dependency to ^1.0.4 after TextDocument revert.

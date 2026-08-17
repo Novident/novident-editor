@@ -1,3 +1,5 @@
+# Changelog
+
 ## 1.0.0
 
 * Initial release: the spell-check engine contract for Novident Editor.

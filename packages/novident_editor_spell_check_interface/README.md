@@ -23,7 +23,7 @@ Pure Dart — no Flutter dependency — so checkers can be built, tested, and re
 
 ```yaml
 dependencies:
-  novident_spell_check_interface: <latest>
+  novident_editor_spell_check_interface: <latest>
 ```
 
 ## Usage
@@ -31,7 +31,7 @@ dependencies:
 ### Implement a checker
 
 ```dart
-import 'package:novident_spell_check_interface/novident_spell_check_interface.dart';
+import 'package:novident_editor_spell_check_interface/novident_editor_spell_check_interface.dart';
 
 class DictionaryChecker extends NovidentSpellChecker {
   DictionaryChecker(this.dictionary);

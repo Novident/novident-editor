@@ -3,6 +3,7 @@
 ## 1.0.3
 
 * chore(breaking changes): renamed `resolveStyle` to `resolveStyleForNode`.
+* chore: update dependencies to their latest versions.
 * fix: replace `resolveStyle` now for use direct styles.
 
 ## 1.0.2

@@ -15,10 +15,8 @@ dependencies:
   flutter:
     sdk: flutter
   collection: ^1.18.0
-  novident_editor_document:
-    path: ../novident_document
-  novident_editor_core:
-    path: ../novident_editor_core
+  novident_editor_document: ^1.0.6
+  novident_editor_core: ^1.0.3
 
 dev_dependencies:
   flutter_lints: ^6.0.0

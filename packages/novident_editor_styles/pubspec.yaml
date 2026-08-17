@@ -1,5 +1,5 @@
 name: novident_editor_styles
-version: 1.0.2
+version: 1.0.3
 description: >-
   Style system for Novident Editor — reusable style definitions,
   table styles, registry, and font provider.
@@ -14,10 +14,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  novident_editor_document:
-    path: ../novident_document
-  novident_editor_core:
-    path: ../novident_editor_core
+  novident_editor_document: ^1.0.6
+  novident_editor_core: ^1.0.3
   logging: ^1.2.0
 
 dev_dependencies:

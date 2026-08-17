@@ -10,6 +10,7 @@
 * chore(breaking changes): moved `selectionNotifier` and `remoteSelections` from `RichTextEditorConfig` to `BlockSelectionHost`. 
 * chore: moved `SelectionUpdateReason` and `SelectionType` to this package.
 * chore: deprecated from `SelectionRenderer` these methods: `buildExpandedHeadCursor`, `paintExpandedHeadCursor` (replaced by `shouldPaintHeadRect`) and `expandedHeadPosition` since we recommend  computing the head and injecting it directly to the rects into `onSelectionRectsMeasured` (like I did with `VimSelectionRenderer`)
+* chore: updated dependencies to their latest versions.
 
 ## 1.0.3
 

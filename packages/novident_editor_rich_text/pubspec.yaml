@@ -15,14 +15,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  novident_editor_document:
-    path: ../novident_document
-  novident_editor_core:
-    path: ../novident_editor_core
-  novident_editor_styles: 
-    path: ../novident_editor_styles
-  novident_editor_selection: 
-    path: ../novident_editor_selection
+  novident_editor_document: ^1.0.6
+  novident_editor_core: ^1.0.3
+  novident_editor_styles: ^1.0.3
+  novident_editor_selection: ^1.0.4
 
 dev_dependencies:
   flutter_lints: ^6.0.0

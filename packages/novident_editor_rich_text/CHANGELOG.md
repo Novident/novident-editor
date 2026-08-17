@@ -1,19 +1,8 @@
 # Changelog
 
-## Unreleased
-
-* feat: replaceable span pipeline (`NovidentTextSpanPipeline`). All per-span
-  logic — style resolution, text transforms, span emission, selection
-  contrast, placeholder handling and span adjustments — moved out of
-  `NovidentRichText` into a 6-phase pipeline with immutable contexts.
-  `DefaultNovidentTextSpanPipeline` reproduces the previous behavior exactly
-  (legacy callbacks kept in the constructor), and the pipeline can be plugged
-  through `RichTextEditorConfig.spanPipeline` or
-  `NovidentRichText.spanPipeline` — custom decorations (e.g. spell-check
-  marks) no longer require forking the widget.
-
 ## 1.0.3
 
+* feat: replaceable span pipeline (`NovidentTextSpanPipeline`). All per-span logic — style resolution, text transforms, span emission, selection contrast, placeholder handling and span adjustments — moved out of `NovidentRichText` into a 6-phase pipeline with immutable contexts. `DefaultNovidentTextSpanPipeline` reproduces the previous behavior exactly (legacy callbacks kept in the constructor), and the pipeline can be plugged through `RichTextEditorConfig.spanPipeline` or `NovidentRichText.spanPipeline` — custom decorations (e.g. spell-check marks) no longer require forking the widget.
 * fix: use `resolveStyleForNode` instead the changed `resolveStyle`.
 * fix: `moveVerticallyInText` return `null` on empty paragraphs or empty nodes. `_renderParagraph` was the only used, and `_placeholderRenderParagraph` was ignored, causing the error
 * fix: when the caret wraps the current character selection, the constrast color is never used.

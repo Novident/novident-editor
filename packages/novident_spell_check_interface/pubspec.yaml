@@ -1,0 +1,17 @@
+name: novident_spell_check_interface
+version: 1.0.0
+description: >-
+  Pure-Dart contract for spell-check integration in the Novident suite.
+  Defines NovidentSpellChecker, SpellCheckIssue and proof-segment helpers.
+  Independent of Flutter and of the editor.
+homepage: https://github.com/Novident/
+repository: https://github.com/Novident/novident-editor/
+issue_tracker: https://github.com/Novident/novident-editor/issues
+
+environment:
+  sdk: ">=3.4.3 <4.0.0"
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter

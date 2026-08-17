@@ -165,8 +165,7 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
   /// @override from BlockSelectionHost
   @override
-  dynamic selectionDragModeValue() =>
-      selectionExtraInfo?[selectionDragModeKey];
+  dynamic selectionDragModeValue() => selectionExtraInfo?[selectionDragModeKey];
 
   // ---- RichTextEditorConfig overrides ----
 
@@ -187,6 +186,21 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   @override
   TextStyleConfiguration get textStyleConfiguration =>
       editorStyle.textStyleConfiguration;
+
+  @override
+  NovidentTextSpanPipeline? get spanPipeline {
+    if (editorStyle.spellChecker == null) {
+      return null;
+    }
+    return SpellCheckSpanPipeline(
+      misspelledStyle: editorStyle.spellCheckMisspelledStyle ??
+          SpellCheckSpanPipeline.defaultMisspelledStyle,
+    );
+  }
+
+  /// The spell-check analysis service, created and attached by the editor
+  /// widget when [EditorStyle.spellChecker] is set.
+  SpellCheckService? spellCheckService;
 
   /// The selection notifier of the editor.
   /// The selection notifier of the editor.
@@ -408,6 +422,8 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
   void dispose() {
     isDisposed = true;
+    spellCheckService?.dispose();
+    spellCheckService = null;
     _observer.close();
     _asyncObserver.close();
     _debouncedSealHistoryItemTimer?.cancel();
@@ -751,32 +767,87 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   }
 
   void _applyTransactionInLocal(Transaction transaction) {
+    final changedNodes = <Node>[];
     for (final op in transaction.operations) {
       NovidentEditorLog.editor.debug('apply op (local): ${op.toJson()}');
 
       if (op is InsertOperation) {
         document.insert(op.path, op.nodes);
+        // Pasted/inserted nodes with text: emit so consumers (spell check)
+        // analyze their deltas.
+        for (final node in op.nodes) {
+          if (node.delta != null && node.delta!.isNotEmpty) {
+            changedNodes.add(node);
+          }
+        }
       } else if (op is UpdateOperation) {
         // ignore the update operation if the attributes are the same.
         if (!mapEquals(op.attributes, op.oldAttributes)) {
           document.update(op.path, op.attributes);
+          // Delta updates without compose-map metadata (undo/redo and any
+          // direct delta replacement): emit an empty change for the node.
+          if (op.attributes.containsKey('delta') ||
+              op.oldAttributes.containsKey('delta')) {
+            final node = document.nodeAtPath(op.path);
+            if (node != null) {
+              changedNodes.add(node);
+            }
+          }
         }
       } else if (op is DeleteOperation) {
         document.delete(op.path, op.nodes.length);
       } else if (op is UpdateTextOperation) {
+        // Pure full-text replacement: emit an empty change for the node.
         document.updateText(op.path, op.delta);
+        final node = document.nodeAtPath(op.path);
+        if (node != null) {
+          changedNodes.add(node);
+        }
       }
+    }
+
+    _emitDeltaChanges(transaction, changedNodes);
+  }
+
+  /// Emits the captured delta changes to the document listeners, after the
+  /// transaction has been fully applied (the nodes already hold the final
+  /// deltas). Nodes whose delta changed without local metadata
+  /// (undo/redo, paste, full-text replacements, remote updates) get an
+  /// empty changes list.
+  void _emitDeltaChanges(
+    Transaction transaction,
+    List<Node> changedNodes,
+  ) {
+    final emitted = <Node>{};
+    for (final entry in transaction.deltaChanges.entries) {
+      document.emitChanges(entry.key, entry.value);
+      emitted.add(entry.key);
+    }
+    transaction.clearDeltaChanges();
+
+    for (final node in changedNodes) {
+      // Nodes already covered by captured delta changes emit once.
+      if (emitted.contains(node)) {
+        continue;
+      }
+      document.emitChanges(node, const []);
     }
   }
 
   Selection? _applyTransactionFromRemote(Transaction transaction) {
     var selection = this.selection;
+    final changedNodes = <Node>[];
 
     for (final op in transaction.operations) {
       NovidentEditorLog.editor.debug('apply op (remote): ${op.toJson()}');
 
       if (op is InsertOperation) {
         document.insert(op.path, op.nodes);
+        for (final node in op.nodes) {
+          if (node.delta != null && node.delta!.isNotEmpty) {
+            changedNodes.add(node);
+          }
+        }
         if (selection != null) {
           if (op.path <= selection.start.path) {
             selection = Selection(
@@ -791,6 +862,13 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
         }
       } else if (op is UpdateOperation) {
         document.update(op.path, op.attributes);
+        if (op.attributes.containsKey('delta') ||
+            op.oldAttributes.containsKey('delta')) {
+          final node = document.nodeAtPath(op.path);
+          if (node != null) {
+            changedNodes.add(node);
+          }
+        }
       } else if (op is DeleteOperation) {
         document.delete(op.path, op.nodes.length);
         if (selection != null) {
@@ -807,7 +885,17 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
         }
       } else if (op is UpdateTextOperation) {
         document.updateText(op.path, op.delta);
+        final node = document.nodeAtPath(op.path);
+        if (node != null) {
+          changedNodes.add(node);
+        }
       }
+    }
+
+    // Remote text updates have no local metadata: emit an empty changes
+    // list so consumers re-analyze the affected nodes entirely.
+    for (final node in changedNodes) {
+      document.emitChanges(node, const []);
     }
 
     return selection;

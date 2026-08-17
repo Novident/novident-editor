@@ -24,10 +24,12 @@ class NovidentEditor extends StatefulWidget {
     required this.editorState,
     Map<String, BlockComponentBuilder>? blockComponentBuilders,
     @Deprecated(
-        "Use keyboardStrategies and define DefaultEditorStrategy instead")
+      "Use keyboardStrategies and define DefaultEditorStrategy instead",
+    )
     List<CharacterShortcutEvent>? characterShortcutEvents,
     @Deprecated(
-        "Use keyboardStrategies and define DefaultEditorStrategy instead")
+      "Use keyboardStrategies and define DefaultEditorStrategy instead",
+    )
     List<CommandShortcutEvent>? commandShortcutEvents,
     this.keyboardStrategies = const [],
     this.contextMenuBuilder,
@@ -413,6 +415,26 @@ class _NovidentEditorState extends State<NovidentEditor> {
     editorState.editorStyles = widget.styles;
     editorState.fontProvider =
         widget.fontProvider ?? NovidentFontProvider.fallback();
+
+    // Spell-check service lifecycle: created/attached when a checker is
+    // provided, rebuilt when the checker or the debounce changes.
+    final checker = widget.editorStyle.spellChecker;
+    if (checker != null) {
+      final current = editorState.spellCheckService;
+      if (current == null ||
+          current.checker != checker ||
+          current.debounce != widget.editorStyle.spellCheckDebounce) {
+        current?.dispose();
+        editorState.spellCheckService = SpellCheckService(
+          document: editorState.document,
+          checker: checker,
+          debounce: widget.editorStyle.spellCheckDebounce,
+        )..attach();
+      }
+    } else if (editorState.spellCheckService != null) {
+      editorState.spellCheckService!.dispose();
+      editorState.spellCheckService = null;
+    }
 
     assert(
       widget.styles == null || widget.styles!.defaultStyle.fontFamily != null,

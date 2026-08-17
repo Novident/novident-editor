@@ -129,7 +129,9 @@ class EditorSessionController extends ChangeNotifier {
     _disposed = true;
     final DocumentSession session = _session;
     if (session.isReady && toolbarNotifier.value == session.editorState) {
-      toolbarNotifier.value = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        toolbarNotifier.value = null;
+      });
     }
     session.dispose();
     super.dispose();

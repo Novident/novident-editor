@@ -5,6 +5,7 @@ import 'node_iterator.dart';
 import 'path.dart';
 import 'attributes.dart';
 import 'delta/text_delta.dart';
+import 'delta_change.dart';
 
 /// [Document] represents an Novident Editor document structure.
 ///
@@ -168,8 +169,7 @@ class Document {
     if (target == null || targetDelta == null) {
       return false;
     }
-    target.updateAttributes(
-        {'delta': (targetDelta.compose(delta)).toJson()});
+    target.updateAttributes({'delta': (targetDelta.compose(delta)).toJson()});
     return true;
   }
 
@@ -192,6 +192,39 @@ class Document {
     }
 
     return false;
+  }
+
+  final List<void Function(DeltaChangeEvent)> _deltaChangeListeners = [];
+
+  /// Subscribes to delta changes emitted by transactions.
+  ///
+  /// The callback receives one event per changed node, after the change has
+  /// been applied to the document. An empty [DeltaChangeEvent.changes] list
+  /// means the change arrived without local metadata (remote updates or
+  /// full-text replacements).
+  void listenDeltaChanges(void Function(DeltaChangeEvent) listener) =>
+      _deltaChangeListeners.add(listener);
+
+  /// Removes a listener registered with [listenDeltaChanges].
+  void removeDeltaChangesListener(void Function(DeltaChangeEvent) listener) =>
+      _deltaChangeListeners.remove(listener);
+
+  int _deltaChangeOrder = 0;
+
+  /// Issues the next monotonic order number for a [DeltaChange].
+  int nextDeltaChangeOrder() => _deltaChangeOrder++;
+
+  /// Emits [changes] for [node] to all delta-change listeners.
+  ///
+  /// Called by transactions after they are applied; never by the document's
+  /// own mutation methods, so direct attribute writes (e.g. the spell-check
+  /// service injecting its marks) never emit.
+  void emitChanges(Node node, List<DeltaChange> changes) {
+    final event = DeltaChangeEvent(node, List.unmodifiable(changes));
+    // Copy: allows add/remove during a callback.
+    for (final listener in List.of(_deltaChangeListeners)) {
+      listener(event);
+    }
   }
 
   /// Encodes the [Document] into a JSON structure.

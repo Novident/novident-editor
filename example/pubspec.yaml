@@ -18,19 +18,22 @@ dependencies:
   novident_split_view: ^1.0.1
   novident_tree_view: ^1.1.0
   novident_nodes: ^1.2.4
-  novident_editor_core: ^1.0.2
+  novident_editor_core:
+    path: ../packages/novident_editor_core
   novident_editor_selection:
     path: ../packages/novident_editor_selection
   novident_editor_rich_text:  
     path: ../packages/novident_editor_rich_text
   novident_editor_styles: 
     path: ../packages/novident_editor_styles
-  novident_editor_document: ^1.0.5
+  novident_editor_document:
+    path: ../packages/novident_document
   cupertino_icons: ^1.0.8
   collection: ^1.19.1
   equatable: ^2.0.7
   flutter_hooks: ^0.21.2
   vector_math: ^2.2.0
+  novident_spell_checker: ^1.0.1
 
 dev_dependencies:
   flutter_test:
@@ -38,5 +41,9 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
 
+  fake_async: any
 flutter:
   uses-material-design: true
+  assets:
+    - assets/dictionaries/en_US.dic
+    - assets/dictionaries/en_US.aff

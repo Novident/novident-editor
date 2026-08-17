@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
+import '../../spell_check/hunspell_spell_checker.dart';
 import 'document_session.dart';
 
 /// The Novident Editor surface shared by every view of the app (split
@@ -67,6 +68,7 @@ class MyEditor extends StatelessWidget {
               firstLineIndent: 30,
               cursorColor: Colors.blue.withAlpha(255),
               selectionColor: Colors.blue.withAlpha(140),
+              spellChecker: HunspellSpellChecker.instance,
             )
           : EditorStyle.desktop(
               padding: padding,
@@ -77,6 +79,7 @@ class MyEditor extends StatelessWidget {
               selectionRenderer: VimSelectionRenderer(
                 controller: session.vimController,
               ),
+              spellChecker: HunspellSpellChecker.instance,
             ),
       blockWrapper: zenController?.blockWrapper,
       footer: footer,

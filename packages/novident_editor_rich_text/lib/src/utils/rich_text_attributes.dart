@@ -20,8 +20,7 @@ extension NovidentRichTextAttributes on Attributes {
   }
 
   Color? get backgroundColor {
-    final highlightColor =
-        this[RichTextKeys.backgroundColor] as String?;
+    final highlightColor = this[RichTextKeys.backgroundColor] as String?;
     return highlightColor?.tryToColor();
   }
 

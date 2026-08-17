@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:novident_editor_document/novident_editor_document.dart';
-import 'package:novident_editor_rich_text/novident_editor_rich_text.dart';
-import 'package:novident_spell_check_interface/novident_spell_check_interface.dart';
+import 'package:novident_editor/novident_editor.dart';
 
 /// Pipeline that renders the spell-check mark stored in the delta.
 ///

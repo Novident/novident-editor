@@ -15,6 +15,12 @@ class _FakeChecker implements NovidentSpellChecker {
   List<String> suggest(String word) => const [];
 
   @override
+  void addWord(String word) {}
+
+  @override
+  void forgetWord(String word) {}
+
+  @override
   String? get language => 'es';
 }
 

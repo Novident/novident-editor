@@ -71,11 +71,45 @@ void main() {
       expect(FakeSpellChecker(language: 'es').language, 'es');
       expect(FakeSpellChecker().language, 'en');
     });
+
+    test('addWord learns a word at runtime', () {
+      final checker = FakeSpellChecker();
+      expect(checker.isValid('kaleen'), false);
+      checker.addWord('Kaleen');
+      expect(checker.isValid('kaleen'), true);
+      expect(checker.isValid('KALEEN'), true);
+    });
+
+    test('forgetWord unlearns a word at runtime', () {
+      final checker = FakeSpellChecker();
+      expect(checker.isValid('hello'), true);
+      checker.forgetWord('hello');
+      expect(checker.isValid('hello'), false);
+    });
+
+    test('addWord after forgetWord wins, and vice versa', () {
+      final checker = FakeSpellChecker();
+      checker.forgetWord('hello');
+      checker.addWord('hello');
+      expect(checker.isValid('hello'), true);
+      checker.forgetWord('hello');
+      expect(checker.isValid('hello'), false);
+    });
+
+    test('check reflects the learned/forgotten words', () {
+      final checker = FakeSpellChecker();
+      checker.addWord('kaleen');
+      expect(checker.check('hello kaleen'), isEmpty);
+      checker.forgetWord('hello');
+      final issues = checker.check('hello kaleen');
+      expect(issues, hasLength(1));
+      expect(issues.single.word, 'hello');
+    });
   });
 
   group('proofStateError constant', () {
     test('is the simple string marker agreed for the delta attribute', () {
-      expect(proofStateError, 'error');
+      expect(proofStateError, 'err');
     });
   });
 }

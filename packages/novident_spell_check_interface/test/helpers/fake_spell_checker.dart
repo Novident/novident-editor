@@ -15,10 +15,34 @@ class FakeSpellChecker implements NovidentSpellChecker {
   @override
   final String? language;
 
+  final Set<String> _learned = {};
+  final Set<String> _forgotten = {};
+
   static final RegExp _wordPattern = RegExp(r"[A-Za-zÀ-ÿ']+");
 
   @override
-  bool isValid(String word) => dictionary.contains(word.toLowerCase());
+  bool isValid(String word) {
+    final normalized = word.toLowerCase();
+    if (_forgotten.contains(normalized)) {
+      return false;
+    }
+    return _learned.contains(normalized) ||
+        dictionary.contains(normalized);
+  }
+
+  @override
+  void addWord(String word) {
+    final normalized = word.toLowerCase();
+    _forgotten.remove(normalized);
+    _learned.add(normalized);
+  }
+
+  @override
+  void forgetWord(String word) {
+    final normalized = word.toLowerCase();
+    _learned.remove(normalized);
+    _forgotten.add(normalized);
+  }
 
   @override
   List<SpellCheckIssue> check(String text) {

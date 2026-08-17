@@ -70,6 +70,14 @@ class SpellCheckService {
     _scheduleIdleTimerIfNeeded();
   }
 
+  /// Encodes [node] for immediate re-analysis — used when the validity of
+  /// its words changed outside the delta (e.g. a word was learned or
+  /// forgotten in the personal dictionary).
+  void requestAnalysis(Node node) {
+    _pending.add(node);
+    _scheduleIdleTimerIfNeeded();
+  }
+
   void _onDeltaChanges(DeltaChangeEvent event) {
     // Any delta change → re-analyze the whole node.
     _pending.add(event.node);

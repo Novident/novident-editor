@@ -30,8 +30,38 @@ class HunspellSpellChecker implements NovidentSpellChecker {
   final SymSpellEx suggester;
   final CoreTokenizer _tokenizer = CoreTokenizer();
 
+  /// Runtime personal dictionary: learned words and forgotten words.
+  final Set<String> _learned = {};
+  final Set<String> _forgotten = {};
+
   @override
   String? get language => Languages.english;
+
+  @override
+  bool isValid(String word) {
+    final normalized = word.toLowerCase();
+    if (_forgotten.contains(normalized)) {
+      return false;
+    }
+    return _learned.contains(normalized) || vocabulary.contains(normalized);
+  }
+
+  @override
+  void addWord(String word) {
+    final normalized = word.toLowerCase().trim();
+    _forgotten.remove(normalized);
+    if (_learned.add(normalized)) {
+      vocabulary.insert(normalized);
+      suggester.add(normalized, 1, Languages.english);
+    }
+  }
+
+  @override
+  void forgetWord(String word) {
+    final normalized = word.toLowerCase().trim();
+    _learned.remove(normalized);
+    _forgotten.add(normalized);
+  }
 
   /// Loads, expands and trains the bundled en_US dictionary.
   static Future<HunspellSpellChecker> load() async {
@@ -50,9 +80,6 @@ class HunspellSpellChecker implements NovidentSpellChecker {
     );
     return _instance!;
   }
-
-  @override
-  bool isValid(String word) => vocabulary.contains(word.toLowerCase());
 
   @override
   List<SpellCheckIssue> check(String text) {

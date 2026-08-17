@@ -44,6 +44,12 @@ class _CountingChecker implements NovidentSpellChecker {
   List<String> suggest(String word) => const [];
 
   @override
+  void addWord(String word) => dictionary.add(word.toLowerCase());
+
+  @override
+  void forgetWord(String word) => dictionary.remove(word.toLowerCase());
+
+  @override
   String? get language => 'es';
 }
 
@@ -317,6 +323,33 @@ void main() {
         async.elapse(debounce);
         expect(checker.checkCalls, callsAfterInitial + 1);
         expect(markedText(node), 'wrld');
+        service.dispose();
+      });
+    });
+
+    test('requestAnalysis re-analyzes a node on demand', () {
+      fakeAsync((async) {
+        final doc = Document.blank(withInitialText: true);
+        final node = doc.first!;
+        seedText(node, 'hola wrld');
+        final checker = _CountingChecker();
+        final service = SpellCheckService(
+          document: doc,
+          checker: checker,
+          debounce: debounce,
+        )..attach();
+        async.elapse(debounce);
+        expect(markedText(node), 'wrld');
+        final callsAfterInitial = checker.checkCalls;
+
+        // The checker learned 'wrld': request the re-analysis directly
+        // (no delta change involved).
+        checker.addWord('wrld');
+        service.requestAnalysis(node);
+        async.elapse(debounce);
+
+        expect(checker.checkCalls, callsAfterInitial + 1);
+        expect(markedText(node), isEmpty);
         service.dispose();
       });
     });

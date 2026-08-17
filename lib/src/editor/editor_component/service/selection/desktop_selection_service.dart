@@ -330,38 +330,41 @@ class _DesktopSelectionServiceWidgetState
     }
 
     final position = selectable.getPositionInOffset(offset);
-    final Selection? newSelection;
 
-    // cases
-    // 1. if the selection is null, then select the current position as a collapsed selection
-    // 2. if the selection is collapsed, then keep it without changes
-    // 3. if the selection is not collapsed, then check if tap is within a selected node
-    // 4. if tap is within the selected nodes, then keep current selection
-    // 5. if tap is outside the selected nodes, then create a collapsed selection at tap point
+    // Like a primary tap, the cursor always moves to the click position.
+    // The ONLY exception is a non-collapsed selection with the click inside
+    // one of the selected nodes: keep it so cut/copy actions make sense.
+    // A collapsed selection sitting elsewhere must NOT prevent the cursor
+    // from jumping to the click point.
+    final keepSelection = selection != null &&
+        !selection.isCollapsed &&
+        editorState.getNodesInSelection(selection).any((n) => n == node);
 
-    if (selection == null) {
-      newSelection = Selection.collapsed(position);
-    } else if (selection.isCollapsed) {
-      newSelection = selection;
-    } else {
-      final selectedNodes = editorState.getNodesInSelection(selection);
-      final isTapInSelectedNode = selectedNodes.any((n) => n == node);
+    final Selection newSelection = keepSelection
+        ? selection
+        : Selection.collapsed(position);
 
-      if (isTapInSelectedNode) {
-        newSelection = selection;
-      } else {
-        newSelection = Selection.collapsed(position);
-      }
-    }
-
+    // Apply the selection the same way a primary tap does: through
+    // `updateSelectionWithReason` with `SelectionUpdateReason.uiEvent`.
+    // Custom renderers (e.g. vim) only honor selection updates that come
+    // from an UI event, so a direct assignment (or a transaction reason)
+    // would be ignored or reverted by the renderer.
+    currentSelection.value = newSelection;
     editorState.updateSelectionWithReason(
       newSelection,
+      reason: SelectionUpdateReason.uiEvent,
       extraInfo: {
         selectionExtraInfoDisableToolbar: true,
       },
     );
 
-    _showContextMenu(details);
+    // Show the menu after the selection update has landed: the context
+    // menu is only shown around an existing selection area, so showing it
+    // before the update would silently drop the menu on the very first
+    // right-click.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showContextMenu(details);
+    });
   }
 
   void _onPanStart(DragStartDetails details) {

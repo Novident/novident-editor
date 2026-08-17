@@ -31,6 +31,14 @@ abstract class NovidentSpellChecker {
   /// Lazy suggestions for [word] (context menu). May be expensive.
   List<String> suggest(String word);
 
+  /// Learns [word] at runtime (personal dictionary): from now on it is
+  /// considered valid. No-op by default.
+  void addWord(String word) {}
+
+  /// Forgets a previously learned [word]: it is considered misspelled
+  /// again (runtime personal dictionary). No-op by default.
+  void forgetWord(String word) {}
+
   /// Active language code (e.g. 'en', 'es'), or null when unset.
   String? get language;
 }

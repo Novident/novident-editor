@@ -36,6 +36,12 @@ class _FakeChecker implements NovidentSpellChecker {
   List<String> suggest(String word) => const [];
 
   @override
+  void addWord(String word) => dictionary.add(word.toLowerCase());
+
+  @override
+  void forgetWord(String word) => dictionary.remove(word.toLowerCase());
+
+  @override
   String? get language => 'es';
 }
 

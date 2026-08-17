@@ -536,13 +536,18 @@ class _DesktopSelectionServiceWidgetState
       return;
     }
 
-    // only shows around the selection area.
-    if (selectionRects.isEmpty) {
+    // Cheap guards instead of `selectionRects`: the menu is anchored to the
+    // click position, so it only needs to know that a selection exists and
+    // that every selected node has a text delta. Computing every selection
+    // rect (or deep-copying nodes through `getSelectedNodes`) here would
+    // block the frame for large multi-node selections.
+    final selection = editorState.selection;
+    if (selection == null) {
       return;
     }
-
-    // For now, only support the text node.
-    if (!currentSelectedNodes.every((element) => element.delta != null)) {
+    final selectedNodes = editorState.getNodesInSelection(selection);
+    if (selectedNodes.isEmpty ||
+        selectedNodes.any((node) => node.delta == null)) {
       return;
     }
 
@@ -560,15 +565,23 @@ class _DesktopSelectionServiceWidgetState
     final baseOffset =
         editorState.renderBox?.localToGlobal(Offset.zero) ?? Offset.zero;
     final offset = details.localPosition + const Offset(10, 10) + baseOffset;
+
+    // Build the menu widget ONCE per show: the overlay entry builder runs
+    // again on every overlay rebuild, and re-running the user's builder
+    // (word lookup + suggestion generation) each time would block those
+    // frames. The widget is built with the service's context, which is the
+    // editor's tree, so it resolves the same inherited widgets the menu
+    // builder already relies on.
+    final menuWidget = widget.contextMenuBuilder?.call(
+          context,
+          offset,
+          editorState,
+          () => _clearContextMenu(),
+        ) ??
+        const SizedBox.shrink();
+
     final contextMenu = OverlayEntry(
-      builder: (_) =>
-          widget.contextMenuBuilder?.call(
-            context,
-            offset,
-            editorState,
-            () => _clearContextMenu(),
-          ) ??
-          SizedBox.shrink(),
+      builder: (_) => menuWidget,
     );
 
     _contextMenuAreas.add(contextMenu);

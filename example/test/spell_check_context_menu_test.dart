@@ -60,8 +60,9 @@ bool isMarked(Node node) => node.delta!.whereType<TextInsert>().any(
 
 Future<EditorState> pumpEditor(
   WidgetTester tester,
-  NovidentSpellChecker checker,
-) async {
+  NovidentSpellChecker checker, {
+  ContextMenuWidgetBuilder? contextMenuBuilder,
+}) async {
   final state = EditorState.blank();
   final node = state.document.first!;
   node.updateAttributes({'delta': (Delta()..insert('hola wrld')).toJson()});
@@ -72,14 +73,15 @@ Future<EditorState> pumpEditor(
         body: NovidentEditor(
           editorState: state,
           editorStyle: EditorStyle.desktop(spellChecker: checker),
-          contextMenuBuilder: (context, position, editorState, onPressed) =>
-              buildSpellCheckContextMenu(
-            context: context,
-            position: position,
-            editorState: editorState,
-            onPressed: onPressed,
-            checker: checker,
-          ),
+          contextMenuBuilder: contextMenuBuilder ??
+              (context, position, editorState, onPressed) =>
+                  buildSpellCheckContextMenu(
+                context: context,
+                position: position,
+                editorState: editorState,
+                onPressed: onPressed,
+                checker: checker,
+              ),
         ),
       ),
     ),
@@ -185,8 +187,53 @@ void main() {
     await teardownEditor(tester, state);
   });
 
-  testWidgets(
-      'right-click on a marked word collapses an existing selection in '
+  testWidgets('the context menu builder runs once per show', (tester) async {
+    final checker = _SuggestionChecker();
+    var builderRuns = 0;
+    final state = await pumpEditor(
+      tester,
+      checker,
+      contextMenuBuilder: (context, position, editorState, onPressed) {
+        builderRuns++;
+        return buildSpellCheckContextMenu(
+          context: context,
+          position: position,
+          editorState: editorState,
+          onPressed: onPressed,
+          checker: checker,
+        );
+      },
+    );
+    final node = state.document.first!;
+
+    state.selection = Selection.collapsed(
+      Position(path: node.path, offset: 7),
+    );
+    await rightClickAt(tester, globalPositionOf(node, 7));
+
+    expect(builderRuns, 1);
+    expect(find.text('world'), findsOneWidget);
+
+    // Frame activity (cursor blink, overlay churn) must not re-run the
+    // user's builder: the menu widget is built once per show.
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(builderRuns, 1);
+    expect(find.text('world'), findsOneWidget);
+
+    // Dismiss the menu (mask) and re-open on the same word: one more run.
+    await tester.tapAt(const Offset(10.0, 10.0));
+    await tester.pumpAndSettle();
+    expect(find.byType(ContextMenu), findsNothing);
+
+    await rightClickAt(tester, globalPositionOf(node, 7));
+    expect(builderRuns, 2);
+    expect(find.text('world'), findsOneWidget);
+
+    await teardownEditor(tester, state);
+  });
+
+  testWidgets('right-click on a marked word collapses an existing selection in '
       'another node and shows suggestions', (tester) async {
     final checker = _SuggestionChecker();
     final state = await pumpEditor(tester, checker);

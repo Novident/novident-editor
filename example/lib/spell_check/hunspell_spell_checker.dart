@@ -34,6 +34,15 @@ class HunspellSpellChecker implements NovidentSpellChecker {
   final Set<String> _learned = {};
   final Set<String> _forgotten = {};
 
+  /// LRU-ish cache for [suggest]: the context menu suggests the same word on
+  /// repeated right-clicks, and each SymSpell lookup is not free.
+  final Map<String, List<String>> _suggestCache = {};
+  static const int _suggestCacheCapacity = 64;
+
+  /// Remembers a suggestion list. Public so the demo app and its tests can
+  /// inspect the cache.
+  List<String>? cachedSuggestions(String word) => _suggestCache[word];
+
   @override
   String? get language => Languages.english;
 
@@ -53,6 +62,7 @@ class HunspellSpellChecker implements NovidentSpellChecker {
     if (_learned.add(normalized)) {
       vocabulary.insert(normalized);
       suggester.add(normalized, 1, Languages.english);
+      _suggestCache.clear();
     }
   }
 
@@ -61,6 +71,7 @@ class HunspellSpellChecker implements NovidentSpellChecker {
     final normalized = word.toLowerCase().trim();
     _learned.remove(normalized);
     _forgotten.add(normalized);
+    _suggestCache.clear();
   }
 
   /// Loads, expands and trains the bundled en_US dictionary.
@@ -102,8 +113,23 @@ class HunspellSpellChecker implements NovidentSpellChecker {
   }
 
   @override
-  List<String> suggest(String word) => suggester
-      .lookup(word, language: Languages.english, maxSuggestions: 7)
-      .map((suggestion) => suggestion.suggestion ?? suggestion.term)
-      .toList();
+  List<String> suggest(String word) {
+    // Touch for LRU recency.
+    final cached = _suggestCache.remove(word);
+    if (cached != null) {
+      _suggestCache[word] = cached;
+      return cached;
+    }
+    final suggestions = suggester
+        .lookup(word, language: Languages.english, maxSuggestions: 7)
+        .map((suggestion) => suggestion.suggestion ?? suggestion.term)
+        .toList();
+    _suggestCache[word] = suggestions;
+    if (_suggestCache.length > _suggestCacheCapacity) {
+      for (final key in _suggestCache.keys.take(8)) {
+        _suggestCache.remove(key);
+      }
+    }
+    return suggestions;
+  }
 }

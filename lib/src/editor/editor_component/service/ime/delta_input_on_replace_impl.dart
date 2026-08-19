@@ -10,14 +10,17 @@ Future<void> onReplace(
   TextEditingDeltaReplacement replacement,
   EditorState editorState,
 ) async {
-  NovidentEditorLog.input.debug('onReplace: $replacement');
+  assert(() {
+    NovidentEditorLog.input.debug('onReplace: $replacement');
+    return true;
+  }());
 
   final selection = editorState.selection;
   if (selection == null || !selection.isSingle) {
     return;
   }
 
-  if (PlatformExtension.isIOS) {
+  if (EditorPlatform.isIOS) {
     // remove the trailing '\n' when pressing the return key
     if (replacement.replacementText.endsWith('\n')) {
       replacement = TextEditingDeltaReplacement(

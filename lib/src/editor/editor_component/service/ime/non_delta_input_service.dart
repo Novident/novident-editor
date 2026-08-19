@@ -77,7 +77,7 @@ class NonDeltaTextInputService extends TextInputService with TextInputClient {
     // already attached at this point, so we simply skip re-attaching while a
     // composition is in progress and let the IME drive the state.
     final composing = composingTextRange;
-    if (PlatformExtension.isWindows &&
+    if (EditorPlatform.isWindows &&
         composing != null &&
         composing.isValid &&
         !composing.isCollapsed) {
@@ -125,7 +125,7 @@ class NonDeltaTextInputService extends TextInputService with TextInputClient {
       return;
     }
 
-    if (PlatformExtension.isIOS && _isFloatingCursorVisible) {
+    if (EditorPlatform.isIOS && _isFloatingCursorVisible) {
       // on iOS, when using gesture to move cursor, this function will be called
       // which may cause the unneeded delta being applied
       // so we ignore the updateEditingValue event when the floating cursor is visible
@@ -140,7 +140,7 @@ class NonDeltaTextInputService extends TextInputService with TextInputClient {
     // need to debounce it to combine them together.
     Debounce.debounce(
       debounceKey,
-      PlatformExtension.isMobile
+      EditorPlatform.isMobile
           ? const Duration(milliseconds: 10)
           : Duration.zero,
       () async {
@@ -279,7 +279,7 @@ class NonDeltaTextInputService extends TextInputService with TextInputClient {
   // during composition; move it to the end so the rest of the pipeline (which
   // assumes caret-at-end) inserts the composing text in the correct position.
   TextEditingValue _normalizeComposingSelection(TextEditingValue value) {
-    if (!PlatformExtension.isWindows) {
+    if (!EditorPlatform.isWindows) {
       return value;
     }
     final composing = value.composing;
@@ -310,7 +310,7 @@ class NonDeltaTextInputService extends TextInputService with TextInputClient {
     }
 
     // solve the issue where the Chinese IME doesn't continue deleting after the input content has been deleted.
-    if (PlatformExtension.isMacOS &&
+    if (EditorPlatform.isMacOS &&
         (composingTextRange?.isCollapsed ?? false)) {
       composingTextRange = TextRange.empty;
     }

@@ -6,7 +6,10 @@ Future<void> onDelete(
   TextEditingDeltaDeletion deletion,
   EditorState editorState,
 ) async {
-  NovidentEditorLog.input.debug('onDelete: $deletion');
+  assert(() {
+    NovidentEditorLog.input.debug('onDelete: $deletion');
+    return true;
+  }());
 
   final selection = editorState.selection;
   if (selection == null) {

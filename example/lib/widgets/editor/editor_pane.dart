@@ -42,6 +42,7 @@ class _EditorPaneState extends State<EditorPane> {
   @override
   void initState() {
     super.initState();
+
     _sessionController = EditorSessionController(
       nodeId: widget.file.id,
       toolbarNotifier: widget.toolbarNotifier,

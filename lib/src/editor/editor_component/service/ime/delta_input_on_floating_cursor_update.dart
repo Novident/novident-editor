@@ -15,7 +15,7 @@ Future<void> onFloatingCursorUpdate(
   );
 
   // support updating the cursor position via the space bar on iOS/Android.
-  if (PlatformExtension.isDesktopOrWeb) {
+  if (EditorPlatform.isDesktopOrWeb) {
     return;
   }
 

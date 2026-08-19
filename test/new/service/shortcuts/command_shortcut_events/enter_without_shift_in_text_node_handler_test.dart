@@ -150,7 +150,6 @@ void main() async {
         Selection.single(path: [0], startOffset: 0),
       );
       await editor.pressKey(character: '\n');
-      print(editor.document.toJson());
       expect(editor.documentRootLen, 2);
       expect(editor.nodeAtPath([1])?.delta?.toPlainText(), text);
 

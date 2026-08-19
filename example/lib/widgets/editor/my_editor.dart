@@ -38,6 +38,9 @@ class MyEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    NovidentLogConfiguration()
+      ..handler = debugPrint
+      ..level = NovidentEditorLogLevel.all;
     return NovidentEditor(
       editorState: session.editorState,
       editorScrollController: session.scrollController,
@@ -85,14 +88,23 @@ class MyEditor extends StatelessWidget {
       blockWrapper: zenController?.blockWrapper,
       footer: footer,
       styles: styles,
-      contextMenuBuilder: (context, position, editorState, onPressed) =>
-          buildSpellCheckContextMenu(
-        context: context,
-        position: position,
-        editorState: editorState,
-        onPressed: onPressed,
-        checker: HunspellSpellChecker.instance,
-      ),
+      contextMenuBuilder: (context, position, editorState, onPressed) {
+        if (EditorPlatform.isMobile) {
+          return ContextMenu(
+            position: position,
+            editorState: editorState,
+            items: standardContextMenuItems,
+            onPressed: onPressed,
+          );
+        }
+        return buildSpellCheckContextMenu(
+          context: context,
+          position: position,
+          editorState: editorState,
+          onPressed: onPressed,
+          checker: HunspellSpellChecker.instance,
+        );
+      },
     );
   }
 }

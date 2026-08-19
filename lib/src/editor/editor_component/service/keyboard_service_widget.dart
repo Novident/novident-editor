@@ -261,9 +261,6 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
 
   void _attachTextInputService(Selection selection) {
     final textEditingValue = _getCurrentTextEditingValue(selection);
-    NovidentEditorLog.editor.debug(
-      'keyboard service - attach text input service: $textEditingValue',
-    );
     if (textEditingValue != null) {
       textInputService.attach(
         textEditingValue,
@@ -273,6 +270,9 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
           textCapitalization: TextCapitalization.sentences,
           inputAction: TextInputAction.newline,
           keyboardAppearance: Theme.of(context).brightness,
+          enableSuggestions:
+              UniversalPlatform.isMobile || UniversalPlatform.isMacOS,
+          enableDeltaModel: true,
           allowedMimeTypes:
               widget.contentInsertionConfiguration?.allowedMimeTypes ?? [],
         ),
@@ -294,8 +294,7 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
   // based on the given selection.
   TextEditingValue? _getCurrentTextEditingValue(Selection selection) {
     // Get all the editable nodes in the selection.
-    final editableNodes = editorState
-        .getNodesInSelection(selection)
+    final editableNodes = editorState.document.root.children
         .where((element) => element.delta != null);
 
     // if the selection is inline and the selection is updated by ui event,
@@ -424,8 +423,8 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
     }
   }
 
-  NonDeltaTextInputService buildTextInputService() {
-    return NonDeltaTextInputService(
+  DeltaTextInputService buildTextInputService() {
+    return DeltaTextInputService(
       onInsert: (insertion) async {
         for (final interceptor in interceptors) {
           final result = await interceptor.interceptInsert(
@@ -434,9 +433,12 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             widget.characterShortcutEvents,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onInsert - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onInsert - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
             return false;
           }
         }
@@ -466,9 +468,12 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             editorState,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onDelete - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onDelete - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
             return false;
           }
         }
@@ -499,9 +504,12 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             widget.characterShortcutEvents,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onReplace - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onReplace - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
             return false;
           }
         }
@@ -557,9 +565,12 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             widget.characterShortcutEvents,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onNonTextUpdate - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onNonTextUpdate - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
             return false;
           }
         }
@@ -590,9 +601,12 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             editorState,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onPerformAction - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onPerformAction - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
             return;
           }
         }
@@ -616,9 +630,12 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             editorState,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onFloatingCursor - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onFloatingCursor - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
             return;
           }
         }

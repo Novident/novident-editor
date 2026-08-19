@@ -141,8 +141,8 @@ class _SpellCheckContextMenuState extends State<_SpellCheckContextMenu> {
     }
 
     final items = <List<ContextMenuItem>>[
-      _buildCorrectionSection(misspelled),
       if (standardItems.isNotEmpty) standardItems,
+      _buildCorrectionSection(misspelled),
     ];
 
     return ContextMenu(
@@ -163,7 +163,6 @@ class _SpellCheckContextMenuState extends State<_SpellCheckContextMenu> {
           getName: () => 'Loading suggestions…',
           onPressed: (_) {},
         ),
-        _addToDictionaryItem(misspelled),
       ];
     }
 

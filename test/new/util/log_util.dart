@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart';
 import 'package:novident_editor/novident_editor.dart';
-import 'package:flutter/material.dart';
 
 const bool _enableLog = false;
 

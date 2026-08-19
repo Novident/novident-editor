@@ -577,7 +577,7 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
         endNode: endNode,
       ).toList();
 
-      return selection.isForward ? nodes.reversed.toList() : nodes;
+      return nodes;
     }
 
     // If we don't have both nodes, we can't find the nodes in the selection.

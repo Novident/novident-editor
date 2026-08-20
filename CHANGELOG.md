@@ -2,6 +2,7 @@
 
 ## 1.0.5
 
+* fix: internal `ScrollablePositionedList` perfomance was improved to avoid traversing multiples times the rendered tree when no required. Useful for `getVisibleNodes` that uses it.
 * fix: `moveVerticallyInText` return `null` on empty paragraphs or empty nodes. `_renderParagraph` was the only used, and `_placeholderRenderParagraph` was ignored, causing the error.
 * fix: `getRectsInSelection` always gets a height of `0.0` since is not checking the `_placeholderRenderParagraph` first (always null when there's content). 
 * fix: head for the selection is never painted as expected on `VimSelectionRenderer`.
@@ -13,6 +14,7 @@
 * chore: deprecated from `SelectionRenderer` these methods: `buildExpandedHeadCursor`, `paintExpandedHeadCursor` (replaced by `shouldPaintHeadRect`) and `expandedHeadPosition` since we recommend  computing the head and injecting it directly to the rects into `onSelectionRectsMeasured` (like I did with `VimSelectionRenderer`)
 * chore: bumped all internal package dependencies to latest.
 * chore(breaking changes): deprecated `characterShortcutEvents` and `commandShortcutEvents` and replaced for `keyboardStrategies`.
+* chore(example): added ~18k of words for example, to allow testing how behaves the editor with a large document.
     
 
 

@@ -3,8 +3,14 @@ import 'package:novident_editor/novident_editor.dart';
 /// Content for `Manuscript ▸ Chapter 1 ▸ Awakening`.
 final Document awakeningDocument = Document(
   root: pageNode(
-    children: <Node>[
-      headingNode(level: 2, text: 'Awakening'),
+    children: repeat(110),
+  ),
+);
+
+List<Node> repeat(int times) {
+  final List<List<Node>> nodes = List.generate(times, (time) {
+    return [
+      headingNode(level: 2, text: 'Awakening $time'),
       paragraphNode(
         text: 'The first thing Elara noticed was the silence. Not the '
             'comfortable hush of a sleeping house, but a silence so complete '
@@ -48,6 +54,11 @@ final Document awakeningDocument = Document(
             'village would have told her not to do.',
       ),
       paragraphNode(text: 'She went outside.'),
-    ],
-  ),
-);
+    ];
+  });
+  final common = <Node>[];
+  for (final nodes in nodes) {
+    common.addAll(nodes);
+  }
+  return common;
+}

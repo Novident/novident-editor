@@ -135,6 +135,12 @@ class CustomRenderShrinkWrappingViewport extends CustomRenderViewport {
 
   double lastMainAxisExtent = -1;
 
+  /// Upper bound on the number of layout cycles, mirroring
+  /// [RenderViewport._maxLayoutCycles]. Without it the shrink-wrapping loop
+  /// below is `while (true)`, so a pathological sliver/offset interaction that
+  /// never converges would hang the frame indefinitely instead of failing fast.
+  static const int _maxLayoutCycles = 10;
+
   @override
   set anchor(double value) {
     if (value == _anchor) return;
@@ -210,7 +216,8 @@ class CustomRenderShrinkWrappingViewport extends CustomRenderViewport {
     final centerOffsetAdjustment = center!.centerOffsetAdjustment;
 
     double correction;
-    double effectiveExtent;
+    double effectiveExtent = mainAxisExtent;
+    var count = 0;
     do {
       correction = _attemptLayout(
         mainAxisExtent,
@@ -243,7 +250,8 @@ class CustomRenderShrinkWrappingViewport extends CustomRenderViewport {
           break;
         }
       }
-    } while (true);
+      count += 1;
+    } while (count < _maxLayoutCycles);
     switch (axis) {
       case Axis.vertical:
         size =

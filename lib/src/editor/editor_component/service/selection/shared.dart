@@ -14,9 +14,10 @@ extension EditorStateSelection on EditorState {
       return sortedNodes;
     }
 
-    for (int index = (min - 1).clamp(0, double.infinity).toInt();
-        index <= max;
-        index++) {
+    // `min` already includes the "one node before the visible range" buffer
+    // (it is `$1 - 1`), so the loop starts at `min` — not `min - 1`, which
+    // would apply the buffer twice and return one extra node.
+    for (int index = min; index <= max; index++) {
       sortedNodes.add(document.root.children[index]);
     }
     return sortedNodes;

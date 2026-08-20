@@ -695,21 +695,27 @@ class _ScrollablePositionedListState extends State<ScrollablePositionedList>
   }
 
   void _updatePositions() {
-    final itemPositions =
-        primary.itemPositionsNotifier.itemPositions.value.where(
-      (ItemPosition position) =>
-          position.itemLeadingEdge < 1 && position.itemTrailingEdge > 0,
-    );
-    if (itemPositions.isNotEmpty) {
-      PageStorage.maybeOf(context)?.writeState(
-        context,
-        itemPositions.reduce(
-          (value, element) =>
-              value.itemLeadingEdge < element.itemLeadingEdge ? value : element,
-        ),
-      );
+    // Single pass: filter to the visible items AND find the leading one in
+    // one iteration, materializing the result into a concrete list. The
+    // previous version assigned a lazy `.where(...)` iterable to the notifier,
+    // so every consumer re-evaluated the filter on each iteration (and the
+    // editor's visible-range computation iterates it twice per frame).
+    final all = primary.itemPositionsNotifier.itemPositions.value;
+    final visible = <ItemPosition>[];
+    ItemPosition? leading;
+    for (final position in all) {
+      if (position.itemLeadingEdge < 1 && position.itemTrailingEdge > 0) {
+        visible.add(position);
+        if (leading == null ||
+            position.itemLeadingEdge < leading.itemLeadingEdge) {
+          leading = position;
+        }
+      }
     }
-    widget.itemPositionsNotifier?.itemPositions.value = itemPositions;
+    if (leading != null) {
+      PageStorage.maybeOf(context)?.writeState(context, leading);
+    }
+    widget.itemPositionsNotifier?.itemPositions.value = visible;
   }
 }
 

@@ -11,13 +11,22 @@ const _kLinkItemId = 'editor.link';
 final linkItem = ToolbarItem(
   id: _kLinkItemId,
   group: 4,
-  isActive: onlyShowInSingleSelectionAndTextType,
+  isActive: showInSingleSelectionEvenWithoutSelection,
   builder: (context, editorState, highlightColor, iconColor, tooltipBuilder) {
-    final selection = editorState.selection!;
+    final selection = editorState.selection;
+    if (selection == null) {
+      return SVGIconItemWidget(
+        iconName: 'toolbar/link',
+        isHighlight: false,
+        highlightColor: highlightColor,
+        iconColor: iconColor,
+        onPressed: () {},
+      );
+    }
     final nodes = editorState.getNodesInSelection(selection);
     final isHref = nodes.allSatisfyInSelection(selection, (delta) {
       return delta.everyAttributes(
-        (attributes) => attributes[NovidentRichTextKeys.href] != null,
+        (attributes) => attributes[RichTextKeys.href] != null,
       );
     });
 

@@ -3,22 +3,11 @@ import 'package:novident_editor/src/editor/block_component/base_component/block_
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class QuoteBlockKeys {
-  const QuoteBlockKeys._();
-
-  static const String type = 'quote';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node quoteNode({
   Delta? delta,
   String? textDirection,
   Attributes? attributes,
+  String? styleRef,
   Iterable<Node>? children,
 }) {
   attributes ??= {'delta': (delta ?? Delta()).toJson()};
@@ -26,6 +15,7 @@ Node quoteNode({
     type: QuoteBlockKeys.type,
     attributes: {
       ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null) QuoteBlockKeys.textDirection: textDirection,
     },
     children: children ?? [],
@@ -129,13 +119,13 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
       child: IntrinsicHeight(
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           textDirection: textDirection,
           children: [
@@ -147,9 +137,11 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
                 key: forwardKey,
                 delegate: this,
                 node: widget.node,
-                editorState: editorState,
-                textAlign: alignment?.toTextAlign ?? textAlign,
+                editorConfig: editorState,
+                textAlign:
+                    alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
                 placeholderText: placeholderText,
+                useFirstLineIndent: false,
                 textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
                   textStyleWithTextSpan(textSpan: textSpan),
                 ),
@@ -169,9 +161,9 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
     );
 
     child = Container(
-      decoration: decoration,
+      decoration: blockStyle.applyToDecoration(decoration),
       key: blockComponentKey,
-      padding: padding,
+      padding: blockStyle.applyToPadding(padding),
       child: child,
     );
 
@@ -179,6 +171,8 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

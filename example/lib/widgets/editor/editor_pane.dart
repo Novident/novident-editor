@@ -2,28 +2,33 @@ import 'package:example/common/nodes/file.dart';
 import 'package:example/common/store/document_content_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_split_view/novident_split_view.dart';
 
-import 'document_session.dart';
 import 'my_editor.dart';
+import 'session_controller.dart';
 import 'vim_mode_chip.dart';
 import 'word_count_chip.dart';
 import 'zen_editor_view.dart';
 
 /// A self-contained editor pane for the split view.
 ///
-/// Every pane owns its own [DocumentSession] (editor, scroll, focus and
-/// vim state), but the document content lives in the
-/// [DocumentContentStore] (keyed by node id): edits are written there,
-/// the store notifies, and every pane showing the same document re-reads
+/// Every pane owns an [EditorSessionController] (editor, scroll, focus
+/// and vim state), but the document content lives in the
+/// [DocumentContentProvider] (keyed by node id): edits are written there,
+/// the provider notifies, and every pane showing the same document re-reads
 /// it — duplicated panes stay in sync for free, with no extra wiring.
 class EditorPane extends StatefulWidget {
   final File file;
   final bool isFocused;
+  final FocusedEditorNotifier toolbarNotifier;
+  final NovidentStylesConfig? styles;
 
   const EditorPane({
     required this.file,
     required this.isFocused,
+    required this.toolbarNotifier,
+    this.styles,
     super.key,
   });
 
@@ -32,51 +37,45 @@ class EditorPane extends StatefulWidget {
 }
 
 class _EditorPaneState extends State<EditorPane> {
-  late DocumentSession _session;
+  late EditorSessionController _sessionController;
 
   @override
   void initState() {
     super.initState();
-    _session = _createSession();
-  }
 
-  DocumentSession _createSession() {
-    // vim mode is enabled by default across the whole app.
-    return DocumentSession(nodeId: widget.file.id)
-      ..addListener(_onSessionChanged);
+    _sessionController = EditorSessionController(
+      nodeId: widget.file.id,
+      toolbarNotifier: widget.toolbarNotifier,
+    )
+      ..addListener(_onSessionChanged)
+      ..isFocused = widget.isFocused;
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Registers the dependency: every store change re-runs this and
-    // lets the pane pick up external edits of its document.
-    _session.syncFromStore(DocumentContentProvider.of(context));
+    _sessionController.syncFromStore(DocumentContentProvider.of(context));
   }
 
   @override
   void didUpdateWidget(covariant EditorPane oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // The pane key includes the node id, so a different id normally
-    // recreates the whole state. This is just a safety net.
     if (oldWidget.file.id != widget.file.id) {
-      _session.dispose();
-      _session = _createSession()
-        ..syncFromStore(DocumentContentProvider.of(context));
+      _sessionController.replace(widget.file.id);
+    }
+    if (oldWidget.isFocused != widget.isFocused) {
+      _sessionController.isFocused = widget.isFocused;
     }
   }
 
   @override
   void dispose() {
-    _session.dispose();
+    _sessionController.dispose();
     super.dispose();
   }
 
-  /// The session replaced its editor (external store change): remount.
   void _onSessionChanged() {
-    if (mounted) {
-      setState(() {});
-    }
+    if (mounted) setState(() {});
   }
 
   /// Leading icon of the library's [PaneHeader]: the title, the close
@@ -108,9 +107,9 @@ class _EditorPaneState extends State<EditorPane> {
       ),
       child: Row(
         children: <Widget>[
-          VimModeChip(controller: _session.vimController),
+          VimModeChip(controller: _sessionController.session.vimController),
           const Spacer(),
-          WordCountChip(service: _session.wordCounter),
+          WordCountChip(service: _sessionController.session.wordCounter),
           const SizedBox(width: 10),
           IconButton(
             padding: EdgeInsets.zero,
@@ -152,7 +151,7 @@ class _EditorPaneState extends State<EditorPane> {
               ),
             ],
           ),
-          child: !_session.isReady
+          child: !_sessionController.isReady
               ? const SizedBox.expand()
               : Column(
                   children: <Widget>[
@@ -160,7 +159,8 @@ class _EditorPaneState extends State<EditorPane> {
                       child: Padding(
                         padding: const EdgeInsets.only(top: 15),
                         child: MyEditor(
-                          session: _session,
+                          session: _sessionController.session,
+                          styles: widget.styles,
                         ),
                       ),
                     ),

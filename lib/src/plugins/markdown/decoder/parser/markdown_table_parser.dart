@@ -72,7 +72,7 @@ class MarkdownTableListParserV2 extends CustomMarkdownParser {
       cells.add(row);
     }
 
-    final tableNode = TableNode.fromList(cells);
+    final tableNode = TableNode.fromNodes(cells);
 
     return [
       tableNode.node,

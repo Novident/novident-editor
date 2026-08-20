@@ -13,7 +13,7 @@ void main() {
       const pattern = 'Novident';
       const text = 'Welcome to Novident 😁';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, [11]);
     });
@@ -22,17 +22,16 @@ void main() {
         () {
       const pattern = 'Novident';
       const text = '''
-Welcome to Novident 😁. Novident is an open-source alternative to Notion. 
-With Novident, you can build detailed lists of to-do for different 
-projects while tracking the status of each one. With Novident, you can 
-visualize items in a database moving through stages of a process, or 
-grouped by property. Design and modify Novident your way with an 
-open core codebase. Novident is built with Flutter and Rust.
+Welcome to Novident 😁. Novident is an open source writing suite designed to be a free, 
+cross-platform alternative that offers a familiar experience for writers who rely on 
+project-based composition tools. Built with modularity and freedom in mind, 
+Novident provides authors, researchers, and storytellers with powerful organizational 
+features without the cost or limitations of closed source code.
       ''';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
-      expect(result, [11, 24, 80, 196, 324, 371]);
+      expect(result, [11, 24, 252]);
     });
 
     test('search algorithm returns empty list if pattern is not found', () {
@@ -48,7 +47,7 @@ open core codebase. Novident is built with Flutter and Rust.
       const pattern = '😁';
       const text = 'Welcome to Novident 😁';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, [20]);
     });
@@ -56,41 +55,41 @@ open core codebase. Novident is built with Flutter and Rust.
     test(
         'search algorithm returns pattern index if pattern is not separate word',
         () {
-      const pattern = 'App';
+      const pattern = 'Nov';
       const text = 'Welcome to Novident 😁';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, [11]);
     });
 
     test('search algorithm returns empty list bcz it is case sensitive', () {
-      const pattern = 'APPFLOWY';
+      const pattern = 'NOVIDENT';
       const text = 'Welcome to Novident 😁';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, []);
     });
 
     test('case insensitive search', () async {
-      final pattern = RegExp('APPFLOWY', caseSensitive: false);
+      final pattern = RegExp('NOVIDENT', caseSensitive: false);
       const text = 'Welcome to Novident 😁';
 
-      List<int> result =
+      final List<int> result =
           algorithm.searchMethod(pattern, text).map((e) => e.start).toList();
       expect(result, [11]);
     });
 
     test('regex search', () async {
-      final pattern = RegExp('a[a-z]p', caseSensitive: false);
+      final pattern = RegExp('N[a-z]v', caseSensitive: false);
       const text = 'Welcome to Novident example app 😁';
 
-      Iterable<Match> result = algorithm.searchMethod(pattern, text);
+      final Iterable<Match> result = algorithm.searchMethod(pattern, text);
       final starts = result.map((e) => e.start).toList();
       final ends = result.map((e) => e.end).toList();
-      expect(starts, [11, 22, 28]);
-      expect(ends, [14, 25, 31]);
+      expect(starts, [11]);
+      expect(ends, [14]);
     });
   });
 }

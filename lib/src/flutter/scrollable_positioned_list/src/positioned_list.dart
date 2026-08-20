@@ -182,7 +182,9 @@ class _PositionedListState extends State<PositionedList> {
           controller: scrollController,
           scrollDirection: widget.scrollDirection,
           reverse: widget.reverse,
-          cacheExtent: widget.cacheExtent,
+          scrollCacheExtent: widget.cacheExtent == null
+              ? null
+              : ScrollCacheExtent.pixels(widget.cacheExtent!),
           physics: widget.physics,
           shrinkWrap: widget.shrinkWrap,
           semanticChildCount: widget.semanticChildCount ?? widget.itemCount,
@@ -339,7 +341,7 @@ class _PositionedListState extends State<PositionedList> {
         }
         final positions = <ItemPosition>[];
         RenderViewportBase? viewport;
-        for (var element in elements) {
+        for (final element in elements) {
           final RenderBox box = element.renderObject as RenderBox;
           viewport ??= RenderAbstractViewport.of(box) as RenderViewportBase?;
           var anchor = 0.0;

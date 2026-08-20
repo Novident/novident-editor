@@ -10,6 +10,17 @@ typedef ToolbarItemValidator = bool Function(EditorState editorState);
 typedef ToolbarItemHighlightCallback = bool Function(EditorState editorState);
 
 class ToolbarItem {
+  factory ToolbarItem.divider() {
+    return ToolbarItem(
+      id: 'divider',
+      type: -1,
+      group: -1,
+      iconBuilder: (_) => const EditorSvg(name: 'toolbar/divider'),
+      validator: (editorState) => true,
+      handler: (editorState, context) {},
+      highlightCallback: (editorState) => false,
+    );
+  }
   ToolbarItem({
     required this.id,
     required this.group,
@@ -48,18 +59,6 @@ class ToolbarItem {
   final Widget Function(BuildContext context, EditorState editorState)?
       itemBuilder;
 
-  factory ToolbarItem.divider() {
-    return ToolbarItem(
-      id: 'divider',
-      type: -1,
-      group: -1,
-      iconBuilder: (_) => const EditorSvg(name: 'toolbar/divider'),
-      validator: (editorState) => true,
-      handler: (editorState, context) {},
-      highlightCallback: (editorState) => false,
-    );
-  }
-
   @override
   bool operator ==(Object other) {
     if (other is! ToolbarItem) {
@@ -84,6 +83,10 @@ final Set<String> toolbarItemWhiteList = {
   HeadingBlockKeys.type,
 };
 
+bool showAlways(EditorState editorState) {
+  return true;
+}
+
 bool onlyShowInSingleSelectionAndTextType(EditorState editorState) {
   final selection = editorState.selection;
   if (selection == null || !selection.isSingle) {
@@ -105,4 +108,20 @@ bool onlyShowInTextType(EditorState editorState) {
   return nodes.every(
     (node) => node.delta != null && toolbarItemWhiteList.contains(node.type),
   );
+}
+
+/// Like [onlyShowInTextType] but also returns `true` when there is no
+/// selection — allowing toolbar items to render even without a selection.
+bool showInTextTypeEvenWithoutSelection(EditorState editorState) {
+  final selection = editorState.selection;
+  if (selection == null) return true;
+  return onlyShowInTextType(editorState);
+}
+
+/// Like [onlyShowInSingleSelectionAndTextType] but also returns `true` when
+/// there is no selection — allowing toolbar items to render even without one.
+bool showInSingleSelectionEvenWithoutSelection(EditorState editorState) {
+  final selection = editorState.selection;
+  if (selection == null) return true;
+  return onlyShowInSingleSelectionAndTextType(editorState);
 }

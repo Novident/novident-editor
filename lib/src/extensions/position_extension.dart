@@ -1,7 +1,34 @@
-import 'dart:math' as math;
-
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
+
+Position? _horizontalCellNavigate(
+  EditorState editorState,
+  Node cell, {
+  required bool forwards,
+  required bool atStart,
+}) {
+  final table = cell.parent;
+  if (table?.type != TableBlockKeys.type) return null;
+  final t = TableNode(node: table!);
+  final col = cell.attributes[TableCellBlockKeys.colPosition] as int?;
+  final row = cell.attributes[TableCellBlockKeys.rowPosition] as int?;
+  if (col == null || row == null) return null;
+  final nextCell = t.adjacentCellRowMajor(col, row, forward: forwards);
+  if (nextCell != null &&
+      nextCell.children.isNotEmpty &&
+      nextCell.children.first.delta != null) {
+    final child = nextCell.children.first;
+    return Position(
+      path: child.path,
+      offset: atStart ? 0 : child.delta!.length,
+    );
+  }
+  final outNode = t.nodeOutside(forwards);
+  if (outNode == null) return null;
+  final sel = outNode.selectable;
+  if (sel == null) return null;
+  return atStart ? sel.start() : sel.end();
+}
 
 enum SelectionRange {
   character,
@@ -15,19 +42,35 @@ extension PositionExtension on Position {
     SelectionRange selectionRange = SelectionRange.character,
   }) {
     final node = editorState.document.nodeAtPath(path);
-    if (node == null) {
-      return null;
-    }
+    if (node == null) return null;
+
+    final cellParent = node.parent;
+    final insideCell =
+        cellParent?.type == TableCellBlockKeys.type ? cellParent : null;
 
     if (forward && offset == 0) {
-      final previousEnd = node.previous?.selectable?.end();
-      if (previousEnd != null) {
-        return previousEnd;
+      if (insideCell != null) {
+        return _horizontalCellNavigate(
+          editorState,
+          insideCell,
+          forwards: false,
+          atStart: false,
+        );
       }
+      final previousEnd = node.previous?.selectable?.end();
+      if (previousEnd != null) return previousEnd;
       return null;
     } else if (!forward) {
       final end = node.selectable?.end();
       if (end != null && offset >= end.offset) {
+        if (insideCell != null) {
+          return _horizontalCellNavigate(
+            editorState,
+            insideCell,
+            forwards: true,
+            atStart: true,
+          );
+        }
         return node.next?.selectable?.start();
       }
     }
@@ -36,31 +79,41 @@ extension PositionExtension on Position {
       case SelectionRange.character:
         final delta = node.delta;
         if (delta != null) {
-          return Position(
-            path: path,
-            offset: forward
-                ? delta.prevRunePosition(offset)
-                : delta.nextRunePosition(offset),
-          );
+          final newOffset = forward
+              ? delta.prevRunePosition(offset)
+              : delta.nextRunePosition(offset);
+          if (newOffset == offset && insideCell != null) {
+            return _horizontalCellNavigate(
+              editorState,
+              insideCell,
+              forwards: forward,
+              atStart: forward,
+            );
+          }
+          return Position(path: path, offset: newOffset);
         }
-
         return Position(path: path, offset: offset);
       case SelectionRange.word:
         final delta = node.delta;
         if (delta != null) {
           final result = forward
               ? node.selectable?.getWordBoundaryInPosition(
-                  Position(
-                    path: path,
-                    offset: delta.prevRunePosition(offset),
-                  ),
+                  Position(path: path, offset: delta.prevRunePosition(offset)),
                 )
               : node.selectable?.getWordBoundaryInPosition(this);
           if (result != null) {
-            return forward ? result.start : result.end;
+            final target = forward ? result.start : result.end;
+            if (insideCell != null && target.offset == offset) {
+              return _horizontalCellNavigate(
+                editorState,
+                insideCell,
+                forwards: forward,
+                atStart: forward,
+              );
+            }
+            return target;
           }
         }
-
         return Position(path: path, offset: offset);
     }
   }
@@ -69,6 +122,58 @@ extension PositionExtension on Position {
     EditorState editorState, {
     bool upwards = true,
   }) {
+    /// Returns a text position inside [node] when [node] is a non-text
+    /// block (e.g. a table). Falls back to [node]'s selectable start/end
+    /// when the block has no text children.
+    Position? textEntry(Node node, bool atStart) {
+      if (node.type == TableBlockKeys.type && node.children.isNotEmpty) {
+        final cell = atStart ? node.children.first : node.children.last;
+        if (cell.children.isNotEmpty && cell.children.first.delta != null) {
+          final child = cell.children.first;
+          return Position(
+            path: child.path,
+            offset: atStart ? 0 : child.delta!.length,
+          );
+        }
+      }
+      return null;
+    }
+
+    /// Navigate to the cell at (sameCol, nextRow). Delegates to
+    /// [TableCellNavigation.adjacentCellColumnMajor].
+    Position? navigateToCell(Node cell, Node table, bool upwards) {
+      final t = TableNode(node: table);
+      final col = cell.attributes[TableCellBlockKeys.colPosition] as int?;
+      final row = cell.attributes[TableCellBlockKeys.rowPosition] as int?;
+      if (col == null || row == null) return null;
+      final nextCell = t.adjacentCellColumnMajor(col, row, upwards);
+      if (nextCell == null ||
+          nextCell.children.isEmpty ||
+          nextCell.children.first.delta == null) {
+        return null;
+      }
+      final child = nextCell.children.first;
+      return Position(
+        path: child.path,
+        offset: upwards ? child.delta!.length : 0,
+      );
+    }
+
+    /// Navigate out of the table to the adjacent block. Delegates to
+    /// [TableExitNavigation.nodeOutside].
+    Position? navigateOutOfTable(Node table, bool upwards, bool atStart) {
+      final t = TableNode(node: table);
+      final outNode = t.nodeOutside(upwards);
+      if (outNode == null) return null;
+      final entry = textEntry(outNode, atStart);
+      if (entry != null) return entry;
+      final sel = outNode.selectable!;
+      return Position(
+        path: outNode.path,
+        offset: atStart ? sel.start().offset : sel.end().offset,
+      );
+    }
+
     final node = editorState.document.nodeAtPath(path);
     final nodeRenderBox = node?.renderBox;
     final nodeSelectable = node?.selectable;
@@ -76,6 +181,12 @@ extension PositionExtension on Position {
       return this;
     }
 
+    // ── Fast path: intra-node using local coords (scroll-independent) ──
+    final withinNode = nodeSelectable.moveVerticallyInText(offset, upwards);
+    if (withinNode != null) return withinNode;
+
+    // ── Fallback: pixel-based scan (tables, images, dividers, and nodes
+    //    whose RenderParagraph is unavailable) ──
     final editorSelection = editorState.selection;
     final rects = editorState.selectionRects();
     if (rects.isEmpty || editorSelection == null) {
@@ -119,7 +230,7 @@ extension PositionExtension on Position {
 
     // If the current node is not multiline, this will be ~= 0
     // so the loop will be skipped.
-    final remainingMultilineHeight = (textHeight - caretHeight);
+    final remainingMultilineHeight = textHeight - caretHeight;
 
     // Linearly search for a new position.
     // It's acceptable to use a linear search because the starting point is
@@ -145,105 +256,125 @@ extension PositionExtension on Position {
       newPosition =
           editorState.service.selectionService.getPositionInOffset(newOffset);
 
-      // If a position different from the current one is found, return it.
       if (newPosition != null && newPosition != this) {
+        final currentCell = node.parent;
+
+        // Fast path: same cell — no tree lookup needed.
+        //   For paragraphs inside a cell, newPosition.path is [tableIdx, cellIdx, 0]
+        //   and node.parent.path is [tableIdx, cellIdx].
+        if (currentCell != null &&
+            currentCell.type == TableCellBlockKeys.type &&
+            currentCell.path.equals(newPosition.path.parent)) {
+          return newPosition;
+        }
+
+        // Not in a table cell — no table-specific guards needed.
+        if (currentCell?.type != TableCellBlockKeys.type) {
+          final hitNode = editorState.document.nodeAtPath(newPosition.path);
+          if (hitNode != null) {
+            final entry = textEntry(hitNode, !upwards);
+            if (entry != null) return entry;
+          }
+          return newPosition;
+        }
+
+        // Inside a table cell, different cell — need full lookup.
+        final hitNode = editorState.document.nodeAtPath(newPosition.path);
+
+        // Route through proper vertical navigation when both nodes
+        // are inside table cells — the pixel search may wrap columns.
+        if (hitNode?.parent?.type == TableCellBlockKeys.type) {
+          final table = currentCell!.parent;
+          if (table != null) {
+            final cellPos = navigateToCell(currentCell, table, upwards);
+            if (cellPos != null) return cellPos;
+          }
+        }
+        // If we're inside a table cell and the pixel search hit the table
+        // itself instead of another cell, navigate within or out.
+        if (hitNode?.type == TableBlockKeys.type) {
+          final tableNode = currentCell!.parent!;
+          // Try adjacent row first — we may just be between cells.
+          final cellPos = navigateToCell(currentCell, tableNode, upwards);
+          if (cellPos != null) return cellPos;
+          // At the edge — navigate out.
+          final outPos = navigateOutOfTable(tableNode, upwards, !upwards);
+          if (outPos != null) return outPos;
+        }
+        // Navigate into non-text blocks (tables) instead of selecting
+        // the block itself at offset 0/1 (which has no visible cursor).
+        if (hitNode != null) {
+          final entry = textEntry(hitNode, !upwards);
+          if (entry != null) return entry;
+        }
         return newPosition;
       }
     }
 
-    // If a new position has not been found, it means that the current node
-    // is not multiline (or the caret is in the last line of a multiline and
-    // the bottom padding is very large).
-    // In this case, we can manually skip to the previous/next node position
-    // by translating the new offset by the padding slice to skip.
-    // Note that the padding slice to skip can exceed the node's bounds.
+    // ── Pixel scan exhausted (or skipped) — use document tree ──
+    // When the pixel scan found nothing, or when moveVerticallyInText
+    // returned null (visual boundary), navigate to the adjacent node
+    // via the document tree instead of guessing with padding math.
 
-    // The skip is calculated as the sum of:
-    // - the top/bottom padding of the current node to skip to the edge of
-    //    the node content rect
-    // - the top/bottom editorStyle's padding to skip the current node's
-    //    padding
-    // - the bottom/top editorStyle's padding to skip the previous/next node's
-    //    padding
-
-    // Note that editorStyle's top and bottom padding does not change by the
-    // node, so we can shorten the calculation by using the editorStyle's
-    // vertical padding.
-    final globalVerticalPadding = editorState.editorStyle.padding.vertical;
-
-    final maxSkip = upwards
-        ? padding.top + globalVerticalPadding
-        : padding.bottom + globalVerticalPadding;
-
-    // Translate the new offset by the padding slice to skip.
-    newOffset = newOffset.translate(0, upwards ? -maxSkip : maxSkip);
-
-    // Determine node's global position.
-    final nodeHeightOffset = nodeRenderBox.localToGlobal(Offset(0, nodeHeight));
-
-    // Clamp the new offset to the node's bounds.
-    newOffset = Offset(
-      newOffset.dx,
-      math.min(newOffset.dy, nodeHeightOffset.dy),
-    );
-
-    newPosition =
-        editorState.service.selectionService.getPositionInOffset(newOffset);
-
-    if (newPosition != null && newPosition != this) {
-      // The pixel-based search correctly identified the destination node,
-      // but the character offset may be wrong when the source and target
-      // nodes have different font sizes (e.g. heading → paragraph).
-      // Use the current character offset clamped to the destination node's
-      // range — same logic as the fallback_neighbour path below.
-      if (!newPosition.path.equals(path)) {
-        final destNode = editorState.document.nodeAtPath(newPosition.path);
-        final destSelectable = destNode?.selectable;
-        if (destSelectable != null) {
-          final clampedOffset = editorSelection.end.offset.clamp(
-            destSelectable.start().offset,
-            destSelectable.end().offset,
-          );
-          return Position(path: newPosition.path, offset: clampedOffset);
+    final adjacent = upwards ? node.previous : node.next;
+    if (adjacent != null) {
+      final adjSelectable = adjacent.selectable;
+      if (adjSelectable != null) {
+        // Try to preserve the caret's visual column (dx) across nodes
+        // using local→global→local coordinate transforms.
+        final caretLocalDx = nodeSelectable.getCaretLocalDx(offset);
+        if (caretLocalDx != null) {
+          final dstRenderBox = adjacent.renderBox;
+          if (dstRenderBox != null && dstRenderBox.hasSize) {
+            final srcGlobal =
+                nodeRenderBox.localToGlobal(Offset(caretLocalDx, 0));
+            final dstLocal = dstRenderBox.globalToLocal(srcGlobal);
+            final targetLocalY = upwards ? dstRenderBox.size.height : 0.0;
+            final targetGlobal = dstRenderBox.localToGlobal(
+              Offset(dstLocal.dx, targetLocalY),
+            );
+            final entry = textEntry(adjacent, !upwards);
+            if (entry != null) return entry;
+            final adjPos = adjSelectable.getPositionInOffset(targetGlobal);
+            return adjPos;
+          }
+        }
+        // Check non-text blocks (tables).
+        final entry = textEntry(adjacent, !upwards);
+        if (entry != null) return entry;
+        // Fallback: clamp to destination node's valid range.
+        final adjStart = adjSelectable.start();
+        final adjEnd = adjSelectable.end();
+        if (adjStart.path.equals(adjacent.path) &&
+            adjEnd.path.equals(adjacent.path)) {
+          final clampedOffset = offset.clamp(adjStart.offset, adjEnd.offset);
+          return Position(path: adjacent.path, offset: clampedOffset);
         }
       }
-      return newPosition;
     }
 
-    // If a new position has not been found, it means that the current node
-    // is not visible on the screen. It seems happens only if upwards is true (?)
-    // In this case, we can manually get the previous/next node position.
-    int offset = editorSelection.end.offset;
-    final Path nodePath = editorSelection.end.path;
-    Path neighbourPath = upwards ? nodePath.previous : nodePath.next;
-    if (neighbourPath.equals(nodePath)) {
-      final last = neighbourPath.removeLast();
-      neighbourPath = upwards ? neighbourPath : (neighbourPath..add(last + 1));
-    }
-    if (neighbourPath.isNotEmpty && !neighbourPath.equals(nodePath)) {
-      final neighbour = editorState.document.nodeAtPath(neighbourPath);
-      final selectable = neighbour?.selectable;
-      if (selectable != null) {
-        offset = offset.clamp(
-          selectable.start().offset,
-          selectable.end().offset,
-        );
-        return Position(path: neighbourPath, offset: offset);
+    // Check if we're inside a table cell — navigate to adjacent cell.
+    final cellParent = node.parent;
+    if (cellParent != null && cellParent.type == TableCellBlockKeys.type) {
+      final table = cellParent.parent;
+      if (table != null && table.type == TableBlockKeys.type) {
+        final cellPos = navigateToCell(cellParent, table, upwards);
+        if (cellPos != null) return cellPos;
+        final outPos = navigateOutOfTable(table, upwards, !upwards);
+        if (outPos != null) return outPos;
       }
     }
 
     final delta = node.delta;
     if (delta != null) {
       if (upwards) {
-        return Position(path: path, offset: 0);
+        return Position(path: path);
       } else {
         final length = delta.length;
-        // move the cursor to the end of the node
         return Position(path: path, offset: length);
       }
     }
 
-    // The cursor is already at the top or bottom of the document.
     return this;
   }
 }

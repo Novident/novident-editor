@@ -27,7 +27,8 @@ final Document placeHollowForestDocument = Document(
       ),
       headingNode(level: 3, text: 'Open questions'),
       bulletedListNode(text: 'Who set the original eleven stones?'),
-      bulletedListNode(text: 'Why does the forest never cross the garden walls?'),
+      bulletedListNode(
+          text: 'Why does the forest never cross the garden walls?'),
       bulletedListNode(text: 'What did it take from the innkeeper?'),
     ],
   ),

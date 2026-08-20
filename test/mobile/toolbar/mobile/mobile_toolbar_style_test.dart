@@ -24,22 +24,8 @@ void main() {
 
     await tester.pumpWidget(
       const MobileToolbarTheme(
-        backgroundColor: backgroundColor,
         foregroundColor: foregroundColor,
-        clearDiagonalLineColor: clearDiagonalLineColor,
-        itemHighlightColor: itemHighlightColor,
-        itemOutlineColor: itemOutlineColor,
-        tabBarSelectedBackgroundColor: tabbarSelectedBackgroundColor,
-        tabBarSelectedForegroundColor: tabbarSelectedForegroundColor,
-        primaryColor: primaryColor,
-        onPrimaryColor: onPrimaryColor,
-        outlineColor: outlineColor,
         toolbarHeight: toolbarHeight,
-        borderRadius: borderRadius,
-        buttonHeight: buttonHeight,
-        buttonSpacing: buttonSpacing,
-        buttonBorderWidth: buttonBorderWidth,
-        buttonSelectedBorderWidth: buttonSelectedBorderWidth,
         child: SizedBox(),
       ),
     );

@@ -16,18 +16,39 @@ CommandShortcutEvent event(
   final String? name = controller.configuration.commandOf(command);
   final String rawBinding = controller.configuration.keybindings[command] ?? '';
   return CommandShortcutEvent(
-    key: 'vim mode: ${name ?? 'command code ${command.code}'}',
+    key: 'vim mode: ${controller.mode}, command code: ${command.code}',
     getDescription: () => 'Vim mode: $name',
     command: rawBinding,
     handler: (editorState) {
       if (!controller.enabled) {
         return KeyEventResult.ignored;
       }
-      // any vim command other than the delete operator disarms a pending
-      // `dd` sequence.
-      if (command != VimCommand.deleteLine &&
-          controller.mode != VimMode.insert) {
-        controller.setPendingCommand(null);
+      if (command.mode != null &&
+          command.mode != controller.mode &&
+          command.restrictToDefinedMode) {
+        return KeyEventResult.ignored;
+      }
+      if (command.rawCommand == null &&
+              controller.pendingCommandBuffer != null ||
+          command.rawCommand != null &&
+              controller.pendingCommandBuffer != null &&
+              !command.rawCommand!.startsWith(
+                '${controller.pendingCommandBuffer}$rawBinding',
+              )) {
+        controller.setPendingCommand(null, null);
+      } else if (command.rawCommand != null && command.rawCommand!.length > 1) {
+        controller.setPendingCommand(rawBinding, command.rawCommand);
+        if (controller.mode == command.mode &&
+            command.rawCommand != null &&
+            controller.needsRepeatKeyAgain(
+              command,
+              rawBinding,
+              command.rawCommand!,
+            )) {
+          return KeyEventResult.handled;
+        }
+        controller.setPendingCommand(null, null);
+        controller.clearPendingBuffer();
       }
       switch (controller.mode) {
         case VimMode.insert:
@@ -36,7 +57,9 @@ CommandShortcutEvent event(
         case VimMode.normal:
           return onNormal(editorState, controller);
         case VimMode.visual:
-          return (onVisual ?? onNormal)(editorState, controller);
+          controller.suppressSelectionSync();
+          return onVisual?.call(editorState, controller) ??
+              KeyEventResult.ignored;
       }
     },
   );

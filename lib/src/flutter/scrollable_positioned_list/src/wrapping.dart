@@ -44,9 +44,8 @@ class CustomShrinkWrappingViewport extends CustomViewport {
     super.crossAxisDirection,
     double anchor = 0.0,
     required super.offset,
-    List<RenderSliver>? children,
     super.center,
-    super.cacheExtent,
+    super.scrollCacheExtent,
     super.slivers,
   }) : _anchor = anchor;
 
@@ -65,7 +64,7 @@ class CustomShrinkWrappingViewport extends CustomViewport {
           Viewport.getDefaultCrossAxisDirection(context, axisDirection),
       offset: offset,
       anchor: anchor,
-      cacheExtent: cacheExtent,
+      scrollCacheExtent: scrollCacheExtent,
     );
   }
 
@@ -80,8 +79,7 @@ class CustomShrinkWrappingViewport extends CustomViewport {
           Viewport.getDefaultCrossAxisDirection(context, axisDirection)
       ..anchor = anchor
       ..offset = offset
-      ..cacheExtent = cacheExtent
-      ..cacheExtentStyle = cacheExtentStyle
+      ..scrollCacheExtent = scrollCacheExtent
       ..clipBehavior = clipBehavior;
   }
 }
@@ -124,7 +122,7 @@ class CustomRenderShrinkWrappingViewport extends CustomRenderViewport {
     double anchor = 0.0,
     super.children,
     super.center,
-    super.cacheExtent,
+    super.scrollCacheExtent,
   }) : _anchor = anchor;
 
   double _anchor;
@@ -282,12 +280,14 @@ class CustomRenderShrinkWrappingViewport extends CustomRenderViewport {
     final forwardDirectionRemainingPaintExtent =
         (mainAxisExtent - centerOffset).clamp(0.0, mainAxisExtent);
 
-    switch (cacheExtentStyle) {
+    switch (scrollCacheExtent.style) {
       case CacheExtentStyle.pixel:
-        _calculatedCacheExtent = cacheExtent;
+        _calculatedCacheExtent =
+            scrollCacheExtent.value < 0 ? null : scrollCacheExtent.value;
         break;
       case CacheExtentStyle.viewport:
-        _calculatedCacheExtent = mainAxisExtent * cacheExtent!;
+        _calculatedCacheExtent =
+            mainAxisExtent * scrollCacheExtent.value.clamp(0, double.infinity);
         break;
     }
 
@@ -402,7 +402,7 @@ abstract class CustomViewport extends MultiChildRenderObjectWidget {
   ///
   /// The [offset] argument must not be null.
   ///
-  /// The [cacheExtent] must be specified if the [cacheExtentStyle] is
+  /// The [scrollCacheExtent] must be specified if the [cacheExtentStyle] is
   /// not [CacheExtentStyle.pixel].
   CustomViewport({
     super.key,
@@ -411,8 +411,7 @@ abstract class CustomViewport extends MultiChildRenderObjectWidget {
     this.anchor = 0.0,
     required this.offset,
     this.center,
-    this.cacheExtent,
-    this.cacheExtentStyle = CacheExtentStyle.pixel,
+    this.scrollCacheExtent = const ScrollCacheExtent.pixels(-1),
     this.clipBehavior = Clip.hardEdge,
     List<Widget> slivers = const <Widget>[],
   })  : assert(
@@ -420,7 +419,8 @@ abstract class CustomViewport extends MultiChildRenderObjectWidget {
               slivers.where((Widget child) => child.key == center).length == 1,
         ),
         assert(
-          cacheExtentStyle != CacheExtentStyle.viewport || cacheExtent != null,
+          scrollCacheExtent?.style != CacheExtentStyle.viewport ||
+              scrollCacheExtent?.value != null,
         ),
         super(children: slivers);
 
@@ -474,11 +474,8 @@ abstract class CustomViewport extends MultiChildRenderObjectWidget {
   ///
   /// See also:
   ///
-  ///  * [cacheExtentStyle], which controls the units of the [cacheExtent].
-  final double? cacheExtent;
-
-  /// {@macro flutter.rendering.RenderViewportBase.cacheExtentStyle}
-  final CacheExtentStyle cacheExtentStyle;
+  ///  * [cacheExtentStyle], which controls the units of the [scrollCacheExtent].
+  final ScrollCacheExtent? scrollCacheExtent;
 
   /// {@macro flutter.material.Material.clipBehavior}
   ///
@@ -554,11 +551,10 @@ abstract class CustomViewport extends MultiChildRenderObjectWidget {
         ),
       );
     }
-    properties.add(DiagnosticsProperty<double>('cacheExtent', cacheExtent));
     properties.add(
-      DiagnosticsProperty<CacheExtentStyle>(
-        'cacheExtentStyle',
-        cacheExtentStyle,
+      DiagnosticsProperty<ScrollCacheExtent>(
+        'scrollCacheExtent',
+        scrollCacheExtent,
       ),
     );
   }
@@ -672,12 +668,12 @@ abstract class CustomRenderViewport
     double anchor = 0.0,
     List<RenderSliver>? children,
     RenderSliver? center,
-    super.cacheExtent,
-    super.cacheExtentStyle,
+    super.scrollCacheExtent,
     super.clipBehavior,
   })  : assert(anchor >= 0.0 && anchor <= 1.0),
         assert(
-          cacheExtentStyle != CacheExtentStyle.viewport || cacheExtent != null,
+          scrollCacheExtent?.style != CacheExtentStyle.viewport ||
+              scrollCacheExtent?.value != null,
         ),
         _center = center {
     addAll(children);

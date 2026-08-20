@@ -3,23 +3,12 @@ import 'package:novident_editor/src/editor/block_component/base_component/block_
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class BulletedListBlockKeys {
-  const BulletedListBlockKeys._();
-
-  static const String type = 'bulleted_list';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node bulletedListNode({
   String? text,
   Delta? delta,
   String? textDirection,
   Attributes? attributes,
+  String? styleRef,
   Iterable<Node>? children,
 }) {
   return Node(
@@ -28,6 +17,7 @@ Node bulletedListNode({
       BulletedListBlockKeys.delta:
           (delta ?? (Delta()..insert(text ?? ''))).toJson(),
       if (attributes != null) ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null)
         BulletedListBlockKeys.textDirection: textDirection,
     },
@@ -136,12 +126,12 @@ class _BulletedListBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         textDirection: textDirection,
         children: [
@@ -156,9 +146,11 @@ class _BulletedListBlockComponentWidgetState
               key: forwardKey,
               delegate: this,
               node: widget.node,
-              editorState: editorState,
-              textAlign: alignment?.toTextAlign ?? textAlign,
+              editorConfig: editorState,
+              textAlign:
+                  alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
               placeholderText: placeholderText,
+              useFirstLineIndent: false,
               textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
                 textStyleWithTextSpan(textSpan: textSpan),
               ),
@@ -177,9 +169,10 @@ class _BulletedListBlockComponentWidgetState
     );
 
     child = Container(
-      decoration: withBackgroundColor ? decoration : null,
+      decoration:
+          blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
       key: blockComponentKey,
-      padding: padding,
+      padding: blockStyle.applyToPadding(padding),
       child: child,
     );
 
@@ -187,6 +180,8 @@ class _BulletedListBlockComponentWidgetState
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

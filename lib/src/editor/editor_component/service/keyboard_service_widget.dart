@@ -1,6 +1,5 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/ime/delta_input_on_floating_cursor_update.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,7 +12,14 @@ class KeyboardServiceWidget extends StatefulWidget {
   const KeyboardServiceWidget({
     super.key,
     this.commandShortcutEvents = const [],
+    @Deprecated(
+      "Use keyboardStrategies and define DefaultEditorStrategy instead",
+    )
     this.characterShortcutEvents = const [],
+    @Deprecated(
+      "Use keyboardStrategies and define DefaultEditorStrategy instead",
+    )
+    this.keyboardStrategies = const [],
     this.focusNode,
     this.contentInsertionConfiguration,
     required this.child,
@@ -21,8 +27,19 @@ class KeyboardServiceWidget extends StatefulWidget {
 
   final ContentInsertionConfiguration? contentInsertionConfiguration;
   final FocusNode? focusNode;
+
+  @Deprecated("Use keyboardStrategies and define DefaultEditorStrategy instead")
   final List<CommandShortcutEvent> commandShortcutEvents;
+  @Deprecated("Use keyboardStrategies and define DefaultEditorStrategy instead")
   final List<CharacterShortcutEvent> characterShortcutEvents;
+
+  /// Physical keyboard interpretation policies, consulted in order (the
+  /// first one that does not return `ignored` wins).
+  ///
+  /// When empty (default), a [DefaultEditorStrategy] is used over
+  /// [commandShortcutEvents].
+  final List<KeyboardStrategy> keyboardStrategies;
+
   final Widget child;
 
   @override
@@ -39,6 +56,9 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
 
   final List<NovidentKeyboardServiceInterceptor> interceptors = [];
 
+  /// Effective keyboard strategies, derived from the widget's parameters.
+  late List<KeyboardStrategy> _strategies;
+
   // previous selection
   Selection? previousSelection;
 
@@ -51,6 +71,8 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
   @override
   void initState() {
     super.initState();
+
+    _strategies = _buildStrategies();
 
     editorState = Provider.of<EditorState>(context, listen: false);
     editorState.selectionNotifier.addListener(_onSelectionChanged);
@@ -74,6 +96,31 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
 
     keepEditorFocusNotifier.addListener(_onKeepEditorFocusChanged);
   }
+
+  @override
+  void didUpdateWidget(covariant KeyboardServiceWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(
+          oldWidget.commandShortcutEvents,
+          widget.commandShortcutEvents,
+        ) ||
+        !identical(
+          oldWidget.characterShortcutEvents,
+          widget.characterShortcutEvents,
+        ) ||
+        !identical(oldWidget.keyboardStrategies, widget.keyboardStrategies)) {
+      _strategies = _buildStrategies();
+    }
+  }
+
+  List<KeyboardStrategy> _buildStrategies() => widget.keyboardStrategies.isEmpty
+      ? [
+          DefaultEditorStrategy(
+            commandShortcutEvents: widget.commandShortcutEvents,
+            characterShortcutEvents: widget.characterShortcutEvents,
+          ),
+        ]
+      : widget.keyboardStrategies;
 
   @override
   void dispose() {
@@ -129,7 +176,8 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
     Widget child = widget.child;
     // if there is no command shortcut event, we don't need to handle hardware keyboard.
     // like in read-only mode.
-    if (widget.commandShortcutEvents.isNotEmpty) {
+    if (widget.commandShortcutEvents.isNotEmpty ||
+        widget.keyboardStrategies.isNotEmpty) {
       // the Focus widget is used to handle hardware keyboard.
       child = Focus(
         focusNode: focusNode,
@@ -176,26 +224,7 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
       return KeyEventResult.ignored;
     }
 
-    for (final shortcutEvent in widget.commandShortcutEvents) {
-      // check if the shortcut event can respond to the raw key event
-      if (shortcutEvent.canRespondToRawKeyEvent(event)) {
-        final result = shortcutEvent.handler(editorState);
-        if (result == KeyEventResult.handled) {
-          NovidentEditorLog.keyboard.debug(
-            'keyboard service - handled by command shortcut event: $shortcutEvent',
-          );
-          return KeyEventResult.handled;
-        } else if (result == KeyEventResult.skipRemainingHandlers) {
-          NovidentEditorLog.keyboard.debug(
-            'keyboard service - skip by command shortcut event: $shortcutEvent',
-          );
-          return KeyEventResult.skipRemainingHandlers;
-        }
-        continue;
-      }
-    }
-
-    return KeyEventResult.ignored;
+    return dispatchKeyEvent(_strategies, event, editorState);
   }
 
   void _onSelectionChanged() {
@@ -232,19 +261,18 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
 
   void _attachTextInputService(Selection selection) {
     final textEditingValue = _getCurrentTextEditingValue(selection);
-    NovidentEditorLog.editor.debug(
-      'keyboard service - attach text input service: $textEditingValue',
-    );
     if (textEditingValue != null) {
       textInputService.attach(
         textEditingValue,
         TextInputConfiguration(
           viewId: View.of(context).viewId,
-          enableDeltaModel: false,
           inputType: TextInputType.multiline,
           textCapitalization: TextCapitalization.sentences,
           inputAction: TextInputAction.newline,
           keyboardAppearance: Theme.of(context).brightness,
+          enableSuggestions:
+              UniversalPlatform.isMobile || UniversalPlatform.isMacOS,
+          enableDeltaModel: true,
           allowedMimeTypes:
               widget.contentInsertionConfiguration?.allowedMimeTypes ?? [],
         ),
@@ -266,8 +294,7 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
   // based on the given selection.
   TextEditingValue? _getCurrentTextEditingValue(Selection selection) {
     // Get all the editable nodes in the selection.
-    final editableNodes = editorState
-        .getNodesInSelection(selection)
+    final editableNodes = editorState.document.root.children
         .where((element) => element.delta != null);
 
     // if the selection is inline and the selection is updated by ui event,
@@ -297,8 +324,11 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         _cachedPlainTextNodes = editableNodes;
         _cachedPlainText = buffer.toString();
       }
-      var text = _cachedPlainText!
-          .substring(0, _cachedPlainText!.length - 1); // strip trailing \n
+      // strip trailing \n
+      final text = _cachedPlainText!.substring(
+        0,
+        _cachedPlainText!.length - 1,
+      );
 
       return TextEditingValue(
         text: text,
@@ -317,13 +347,35 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
       'keyboard service - focus changed: ${focusNode.hasFocus}}',
     );
 
-    /// On web, we don't need to close the keyboard when the focus is lost.
-    if (kIsWeb) {
-      return;
-    }
+    final renderer = editorState.selectionRenderer;
+    final selection = editorState.selection;
+    final focusedNode = selection != null
+        ? editorState.getNodeAtPath(selection.end.path)
+        : null;
 
-    // clear the selection when the focus is lost.
-    if (!focusNode.hasFocus) {
+    if (focusNode.hasFocus) {
+      renderer?.onFocusGained(
+        FocusLifecycleContext(
+          focusedNode: focusedNode,
+          hasSelection: selection != null,
+          selection: selection,
+        ),
+      );
+    } else {
+      renderer?.onFocusLost(
+        FocusLifecycleContext(
+          focusedNode: focusedNode,
+          hasSelection: selection != null,
+          selection: selection,
+        ),
+      );
+
+      /// On web, we don't need to close the keyboard when the focus is lost.
+      if (kIsWeb) {
+        return;
+      }
+
+      // clear the selection when the focus is lost.
       if (keepEditorFocusNotifier.shouldKeepFocus) {
         return;
       }
@@ -371,8 +423,8 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
     }
   }
 
-  NonDeltaTextInputService buildTextInputService() {
-    return NonDeltaTextInputService(
+  DeltaTextInputService buildTextInputService() {
+    return DeltaTextInputService(
       onInsert: (insertion) async {
         for (final interceptor in interceptors) {
           final result = await interceptor.interceptInsert(
@@ -381,17 +433,31 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             widget.characterShortcutEvents,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onInsert - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onInsert - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
             return false;
+          }
+        }
+
+        for (final strategy in _strategies) {
+          final result = await strategy.onInsert(insertion, editorState);
+          switch (result) {
+            case ImeDeltaResult.handled:
+              return true;
+            case ImeDeltaResult.swallowed:
+              return false;
+            case ImeDeltaResult.ignored:
+              break;
           }
         }
 
         await onInsert(
           insertion,
           editorState,
-          widget.characterShortcutEvents,
         );
         return true;
       },
@@ -402,10 +468,25 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             editorState,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onDelete - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onDelete - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
             return false;
+          }
+        }
+
+        for (final strategy in _strategies) {
+          final result = await strategy.onDelete(deletion, editorState);
+          switch (result) {
+            case ImeDeltaResult.handled:
+              return true;
+            case ImeDeltaResult.swallowed:
+              return false;
+            case ImeDeltaResult.ignored:
+              break;
           }
         }
 
@@ -423,17 +504,56 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             widget.characterShortcutEvents,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onReplace - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onReplace - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
             return false;
           }
+        }
+
+        for (final strategy in _strategies) {
+          final result = await strategy.onReplace(replacement, editorState);
+          switch (result) {
+            case ImeDeltaResult.handled:
+              return true;
+            case ImeDeltaResult.swallowed:
+              return false;
+            case ImeDeltaResult.ignored:
+              break;
+          }
+        }
+
+        final selection = editorState.selection;
+        if (selection != null && !selection.isSingle) {
+          // Multi-node: preserve the historical order (delete → dispatch →
+          // insert) — the selection is deleted BEFORE consulting the
+          // strategies about the converted insertion.
+          await editorState.deleteSelection(selection);
+          final insertion = replacement.toInsertion();
+          for (final strategy in _strategies) {
+            final result = await strategy.onInsert(insertion, editorState);
+            switch (result) {
+              case ImeDeltaResult.handled:
+                return true;
+              case ImeDeltaResult.swallowed:
+                return false;
+              case ImeDeltaResult.ignored:
+                break;
+            }
+          }
+          await onInsert(
+            insertion,
+            editorState,
+          );
+          return true;
         }
 
         await onReplace(
           replacement,
           editorState,
-          widget.characterShortcutEvents,
         );
         return true;
       },
@@ -445,17 +565,32 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             widget.characterShortcutEvents,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onNonTextUpdate - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onNonTextUpdate - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
             return false;
+          }
+        }
+
+        for (final strategy in _strategies) {
+          final result =
+              await strategy.onNonTextUpdate(nonTextUpdate, editorState);
+          switch (result) {
+            case ImeDeltaResult.handled:
+              return true;
+            case ImeDeltaResult.swallowed:
+              return false;
+            case ImeDeltaResult.ignored:
+              break;
           }
         }
 
         await onNonTextUpdate(
           nonTextUpdate,
           editorState,
-          widget.characterShortcutEvents,
         );
         return true;
       },
@@ -466,9 +601,19 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             editorState,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onPerformAction - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onPerformAction - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
+            return;
+          }
+        }
+
+        for (final strategy in _strategies) {
+          final result = await strategy.onPerformAction(action, editorState);
+          if (result != ImeDeltaResult.ignored) {
             return;
           }
         }
@@ -485,9 +630,19 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
             editorState,
           );
           if (result) {
-            NovidentEditorLog.input.info(
-              'keyboard service onFloatingCursor - intercepted by interceptor: $interceptor',
-            );
+            assert(() {
+              NovidentEditorLog.input.info(
+                'keyboard service onFloatingCursor - intercepted by interceptor: $interceptor',
+              );
+              return true;
+            }());
+            return;
+          }
+        }
+
+        for (final strategy in _strategies) {
+          final result = await strategy.onFloatingCursor(point, editorState);
+          if (result != ImeDeltaResult.ignored) {
             return;
           }
         }

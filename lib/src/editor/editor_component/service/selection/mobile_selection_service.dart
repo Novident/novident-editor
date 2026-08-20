@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/selection/mobile_magnifier.dart';
 import 'package:novident_editor/src/editor/editor_component/service/selection/shared.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:novident_editor/src/render/selection/mobile_basic_handle.dart';
 import 'package:novident_editor/src/render/selection/mobile_collapsed_handle.dart';
 import 'package:novident_editor/src/render/selection/mobile_selection_handle.dart';
@@ -18,21 +17,6 @@ import 'package:provider/provider.dart';
 StreamController<int> novidentEditorOnTapSelectionArea =
     StreamController<int>.broadcast();
 
-enum MobileSelectionDragMode {
-  none,
-  leftSelectionHandle,
-  rightSelectionHandle,
-  cursor;
-}
-
-enum MobileSelectionHandlerType {
-  leftHandle,
-  rightHandle,
-  cursorHandle,
-}
-
-// the value type is MobileSelectionDragMode
-const String selectionDragModeKey = 'selection_drag_mode';
 bool disableIOSSelectWordEdgeOnTap = false;
 bool disableMagnifier = false;
 
@@ -212,7 +196,7 @@ class _MobileSelectionServiceWidgetState
 
         final node = editorState.getNodeAtPath(selection.start.path);
         final selectable = node?.selectable;
-        var rect = selectable?.getCursorRectInPosition(
+        final rect = selectable?.getCursorRectInPosition(
           selection.start,
           shiftWithBaseOffset: true,
         );
@@ -338,7 +322,6 @@ class _MobileSelectionServiceWidgetState
         if (isCollapsedHandleVisible) {
           editorState.updateSelectionWithReason(
             editorState.selection,
-            reason: SelectionUpdateReason.transaction,
           );
         }
       },
@@ -544,6 +527,23 @@ class _MobileSelectionServiceWidgetState
 
     dragMode = mode;
 
+    final renderer = editorState.selectionRenderer;
+    if (renderer != null && selection != null) {
+      final isCollapsed = selection.isCollapsed;
+      final startNode = editorState.getNodeAtPath(selection.start.path);
+      final endNode = isCollapsed
+          ? startNode
+          : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionStarted(
+        SelectionLifecycleContext(
+          selection: selection,
+          startNode: startNode,
+          endNode: endNode,
+          isCollapsed: isCollapsed,
+        ),
+      );
+    }
+
     return selection;
   }
 
@@ -601,6 +601,24 @@ class _MobileSelectionServiceWidgetState
 
   @override
   void onPanEnd(DragEndDetails details, MobileSelectionDragMode mode) {
+    final renderer = editorState.selectionRenderer;
+    final selection = editorState.selection;
+    if (renderer != null && selection != null) {
+      final isCollapsed = selection.isCollapsed;
+      final startNode = editorState.getNodeAtPath(selection.start.path);
+      final endNode = isCollapsed
+          ? startNode
+          : editorState.getNodeAtPath(selection.end.path);
+      renderer.onSelectionEnded(
+        SelectionLifecycleContext(
+          selection: selection,
+          startNode: startNode,
+          endNode: endNode,
+          isCollapsed: isCollapsed,
+        ),
+      );
+    }
+
     _clearPanVariables();
     dragMode = MobileSelectionDragMode.none;
 
@@ -644,7 +662,6 @@ class _MobileSelectionServiceWidgetState
       selection,
       reason: SelectionUpdateReason.uiEvent,
       customSelectionType: SelectionType.inline,
-      extraInfo: null,
     );
   }
 
@@ -669,7 +686,7 @@ class _MobileSelectionServiceWidgetState
       clearSelection();
       return;
     }
-    Selection selection = Selection(
+    final Selection selection = Selection(
       start: selectable.start(),
       end: selectable.end(),
     );
@@ -739,7 +756,6 @@ class _MobileSelectionServiceWidgetState
       Selection.collapsed(position),
       reason: SelectionUpdateReason.uiEvent,
       customSelectionType: SelectionType.inline,
-      extraInfo: null,
     );
   }
 

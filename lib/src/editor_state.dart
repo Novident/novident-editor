@@ -3,7 +3,6 @@ import 'dart:collection';
 
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/auto_scroller.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:novident_editor/src/history/undo_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +29,6 @@ class EditorStateDebugInfo {
 /// set true to this key to prevent attaching the text service when selection is changed.
 const selectionExtraInfoDoNotAttachTextService =
     'selectionExtraInfoDoNotAttachTextService';
-const _selectionDragModeKey = 'selection_drag_mode';
 
 class ApplyOptions {
   const ApplyOptions({
@@ -47,25 +45,6 @@ class ApplyOptions {
 
   /// This flag used to determine whether the transaction is in-memory update.
   final bool inMemoryUpdate;
-}
-
-@Deprecated('use SelectionUpdateReason instead')
-enum CursorUpdateReason {
-  uiEvent,
-  others,
-}
-
-enum SelectionUpdateReason {
-  uiEvent, // like mouse click, keyboard event
-  transaction, // like insert, delete, format
-  remote, // like remote selection
-  selectAll,
-  searchHighlight, // Highlighting search results
-}
-
-enum SelectionType {
-  inline,
-  block,
 }
 
 enum TransactionTime {
@@ -90,7 +69,7 @@ enum TransactionTime {
 /// all the mutations should be applied through [Transaction].
 ///
 /// Mutating the document with document's API is not recommended.
-class EditorState {
+class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   EditorState({
     required this.document,
     this.minHistoryItemDuration = const Duration(milliseconds: 50),
@@ -138,7 +117,24 @@ class EditorState {
   double autoScrollEdgeOffset = novidentEditorAutoScrollEdgeOffset;
 
   /// The style of the editor.
-  late EditorStyle editorStyle;
+  ///
+  /// Defaults to [EditorStyle.desktop] (same default as [NovidentEditor]) so
+  /// [EditorState] is usable without widget initialization (e.g. unit tests
+  /// calling [updateSelectionWithReason] directly). Overwritten by
+  /// [NovidentEditor] during init.
+  EditorStyle editorStyle = const EditorStyle.desktop();
+
+  /// The styles configuration for the editor.
+  ///
+  /// Set by [NovidentEditor] during init. Used by [insertNewLine] to resolve
+  /// [NovidentStyleDefinition.next] when creating consecutive paragraphs.
+  NovidentStylesConfig? editorStyles;
+
+  /// The font provider for the editor.
+  ///
+  /// Supplies the list of available font families and a guaranteed non-null
+  /// default. Set by [NovidentEditor] during init.
+  NovidentFontProvider? fontProvider;
 
   /// Customizes how the caret is painted by the selection areas.
   ///
@@ -148,7 +144,72 @@ class EditorState {
   /// painting.
   CursorAppearanceBuilder? cursorAppearanceBuilder;
 
+  @override
+  SelectionRenderer? get selectionRenderer => editorStyle.selectionRenderer;
+
+  /// @override from BlockSelectionHost
+  @override
+  bool isBlockSelectionMode() => selectionType == SelectionType.block;
+
+  /// @override from BlockSelectionHost
+  @override
+  CursorAppearance? customizeCursor({
+    required Node node,
+    required Selection? selection,
+    required Position position,
+  }) {
+    return cursorAppearanceBuilder?.call(node, selection!, position);
+  }
+
+  /// @override from BlockSelectionHost
+  @override
+  EdgeInsets? blockSelectionMargin(Node node) {
+    final builder = service.rendererService.blockComponentBuilder(node.type);
+    return builder?.configuration.blockSelectionAreaMargin(node);
+  }
+
+  /// @override from BlockSelectionHost
+  @override
+  dynamic selectionDragModeValue() => selectionExtraInfo?[selectionDragModeKey];
+
+  // ---- RichTextEditorConfig overrides ----
+
+  @override
+  double get textScaleFactor => editorStyle.textScaleFactor;
+
+  @override
+  double? get firstLineIndentFallback => editorStyle.firstLineIndent;
+
+  @override
+  TextSpanDecoratorForAttribute? get textSpanDecorator =>
+      editorStyle.textSpanDecorator;
+
+  @override
+  NovidentTextSpanOverlayBuilder? get textSpanOverlayBuilder =>
+      editorStyle.textSpanOverlayBuilder;
+
+  @override
+  TextStyleConfiguration get textStyleConfiguration =>
+      editorStyle.textStyleConfiguration;
+
+  @override
+  NovidentTextSpanPipeline? get spanPipeline {
+    if (editorStyle.spellChecker == null) {
+      return null;
+    }
+    return SpellCheckSpanPipeline(
+      misspelledStyle: editorStyle.spellCheckMisspelledStyle ??
+          SpellCheckSpanPipeline.defaultMisspelledStyle,
+    );
+  }
+
+  /// The spell-check analysis service, created and attached by the editor
+  /// widget when [EditorStyle.spellChecker] is set.
+  SpellCheckService? spellCheckService;
+
   /// The selection notifier of the editor.
+  /// The selection notifier of the editor.
+  @override
   final PropertyValueNotifier<Selection?> selectionNotifier =
       PropertyValueNotifier<Selection?>(null);
 
@@ -156,6 +217,7 @@ class EditorState {
   Selection? get selection => selectionNotifier.value;
 
   /// Remote selection is the selection from other users.
+  @override
   final PropertyValueNotifier<List<RemoteSelection>> remoteSelections =
       PropertyValueNotifier<List<RemoteSelection>>([]);
 
@@ -234,7 +296,7 @@ class EditorState {
       StreamController.broadcast();
 
   /// Store the toggled format style, like bold, italic, etc.
-  /// All the values must be the key from [NovidentRichTextKeys.supportToggled].
+  /// All the values must be the key from [RichTextKeys.supportToggled].
   ///
   /// Use the method [updateToggledStyle] to update key-value pairs
   ///
@@ -277,7 +339,9 @@ class EditorState {
   bool showHeader = false;
   bool showFooter = false;
 
+  @override
   bool enableAutoComplete = false;
+  @override
   NovidentAutoCompleteTextProvider? autoCompleteTextProvider;
 
   // only used for testing
@@ -300,14 +364,6 @@ class EditorState {
   }
 
   StreamSubscription? _subscription;
-
-  @Deprecated('use editorState.selection instead')
-  Selection? _cursorSelection;
-
-  @Deprecated('use editorState.selection instead')
-  Selection? get cursorSelection {
-    return _cursorSelection;
-  }
 
   final Set<VoidCallback> _onScrollViewScrolledListeners = {};
 
@@ -342,6 +398,8 @@ class EditorState {
 
     if (reason == SelectionUpdateReason.uiEvent) {
       _selectionType = customSelectionType ?? SelectionType.inline;
+      // Complete after the frame is rendered so listeners can re-measure
+      // the freshly painted selection.
       WidgetsBinding.instance.addPostFrameCallback(
         (timeStamp) => completer.complete(),
       );
@@ -353,31 +411,47 @@ class EditorState {
     selectionExtraInfo = extraInfo;
     _selectionUpdateReason = reason;
 
-    this.selection = selection;
-    // new selection → invalidate the per-frame rect cache so the scroll
-    // service and toolbar recompute on their next read.
-    _cachedSelectionRectKey = null;
+    // Assign synchronously when there is no custom renderer so callers
+    // (including unit tests) can read `selection` immediately after the
+    // call. With a custom renderer, wait for its normalized result.
+    final renderer = selectionRenderer;
+    if (renderer == null) {
+      this.selection = selection;
+    } else {
+      this.selection = (await renderer.updateSelectionWithReason(
+            this,
+            selection,
+            reason: reason,
+            extraInfo: extraInfo,
+            customSelectionType: customSelectionType,
+          )) ??
+          selection;
+    }
+
+    // The completer must always complete: non-UI-event callers get an
+    // already-completed future, UI-event callers resolve after the frame.
+    if (reason != SelectionUpdateReason.uiEvent) {
+      completer.complete();
+    }
 
     return completer.future;
   }
 
-  @Deprecated('use updateSelectionWithReason or editorState.selection instead')
-  Future<void> updateCursorSelection(
-    Selection? cursorSelection, [
-    CursorUpdateReason reason = CursorUpdateReason.others,
-  ]) {
-    final completer = Completer<void>();
-
-    // broadcast to other users here
-    if (reason != CursorUpdateReason.uiEvent) {
-      service.selectionService.updateSelection(cursorSelection);
-    }
-    _cursorSelection = cursorSelection;
-    selection = cursorSelection;
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      completer.complete();
-    });
-    return completer.future;
+  /// Re-notifies every selection listener without changing the selection
+  /// value, the update reason, or the selection renderer.
+  ///
+  /// [updateSelectionWithReason] is the single entry point for REAL
+  /// selection changes; it goes through the renderer and completes an
+  /// awaitable future. Some flows only need to force the visual selection
+  /// to repaint after the value has already been set (e.g. re-showing the
+  /// selection when the context menu closes). In those cases the value
+  /// comparison inside the notifier would swallow the notification — this
+  /// method delivers it directly.
+  void refreshSelection() {
+    // PropertyValueNotifier notifies its listeners on every assignment,
+    // even for an equal value — re-assigning the current value is the
+    // supported way to deliver a pure notification wave.
+    selectionNotifier.value = selectionNotifier.value;
   }
 
   Timer? _debouncedSealHistoryItemTimer;
@@ -390,6 +464,8 @@ class EditorState {
 
   void dispose() {
     isDisposed = true;
+    spellCheckService?.dispose();
+    spellCheckService = null;
     _observer.close();
     _asyncObserver.close();
     _debouncedSealHistoryItemTimer?.cancel();
@@ -413,7 +489,7 @@ class EditorState {
   Future<void> apply(
     Transaction transaction, {
     bool isRemote = false,
-    ApplyOptions options = const ApplyOptions(recordUndo: true),
+    ApplyOptions options = const ApplyOptions(),
     bool withUpdateSelection = true,
     bool skipHistoryDebounce = false,
   }) async {
@@ -477,6 +553,14 @@ class EditorState {
     document.root.notify();
   }
 
+  void applyCharacterCommand(CharacterShortcutEvent command) {
+    command.handler(this);
+  }
+
+  void applyCommand(CommandShortcutEvent command) {
+    command.handler(this);
+  }
+
   /// get nodes in selection
   ///
   /// if selection is backward, return nodes in order
@@ -498,7 +582,7 @@ class EditorState {
         endNode: endNode,
       ).toList();
 
-      return selection.isForward ? nodes.reversed.toList() : nodes;
+      return nodes;
     }
 
     // If we don't have both nodes, we can't find the nodes in the selection.
@@ -588,28 +672,14 @@ class EditorState {
 
   /// The current selection areas's rect in editor.
   ///
-  /// The result is cached per-frame (both the scroll service and the
-  /// floating toolbar call this on the same selection update). The cache
-  /// is invalidated by [updateSelectionWithReason] when the selection
-  /// actually changes.
+  /// Computed fresh on every call. Global coordinates depend on the
+  /// current scroll offset, so caching across frames would return
+  /// stale positions during scroll animations.
   List<Rect> selectionRects() {
     final sel = selection;
-    if (sel == null) {
-      _cachedSelectionRects = null;
-      _cachedSelectionRectKey = null;
-      return [];
-    }
-    final key = (sel.start, sel.end);
-    if (_cachedSelectionRectKey == key && _cachedSelectionRects != null) {
-      return _cachedSelectionRects!;
-    }
-    _cachedSelectionRectKey = key;
-    _cachedSelectionRects = _computeSelectionRects(sel);
-    return _cachedSelectionRects!;
+    if (sel == null) return [];
+    return _computeSelectionRects(sel);
   }
-
-  List<Rect>? _cachedSelectionRects;
-  (Position, Position)? _cachedSelectionRectKey;
 
   List<Rect> _computeSelectionRects(Selection selection) {
     final nodes = getNodesInSelection(selection);
@@ -671,14 +741,14 @@ class EditorState {
       late AutoScroller scroller;
       scroller = AutoScroller(
         scrollableState,
-        velocityScalar: 0.15,
+        velocityScalar: 0.5,
         minimumAutoScrollDelta: 0.07,
-        maxAutoScrollDelta: 3.5,
+        maxAutoScrollDelta: 15.0,
         animationDuration: Duration.zero,
         onScrollViewScrolled: () {
           _notifyScrollViewScrolledListeners();
           if (!isDesktopOrWeb) {
-            final dynamic dragMode = selectionExtraInfo?[_selectionDragModeKey];
+            final dynamic dragMode = selectionExtraInfo?[selectionDragModeKey];
             final bool isDraggingSelection = dragMode != null &&
                 dragMode.toString() != 'MobileSelectionDragMode.none';
             if (!isDraggingSelection) {
@@ -741,21 +811,70 @@ class EditorState {
   }
 
   void _applyTransactionInLocal(Transaction transaction) {
+    final changedNodes = <Node>[];
     for (final op in transaction.operations) {
       NovidentEditorLog.editor.debug('apply op (local): ${op.toJson()}');
 
       if (op is InsertOperation) {
         document.insert(op.path, op.nodes);
+        // Pasted/inserted nodes with text: emit so consumers (spell check)
+        // analyze their deltas.
+        for (final node in op.nodes) {
+          if (node.delta != null && node.delta!.isNotEmpty) {
+            changedNodes.add(node);
+          }
+        }
       } else if (op is UpdateOperation) {
         // ignore the update operation if the attributes are the same.
         if (!mapEquals(op.attributes, op.oldAttributes)) {
           document.update(op.path, op.attributes);
+          // Delta updates without compose-map metadata (undo/redo and any
+          // direct delta replacement): emit an empty change for the node.
+          if (op.attributes.containsKey('delta') ||
+              op.oldAttributes.containsKey('delta')) {
+            final node = document.nodeAtPath(op.path);
+            if (node != null) {
+              changedNodes.add(node);
+            }
+          }
         }
       } else if (op is DeleteOperation) {
         document.delete(op.path, op.nodes.length);
       } else if (op is UpdateTextOperation) {
+        // Pure full-text replacement: emit an empty change for the node.
         document.updateText(op.path, op.delta);
+        final node = document.nodeAtPath(op.path);
+        if (node != null) {
+          changedNodes.add(node);
+        }
       }
+    }
+
+    _emitDeltaChanges(transaction, changedNodes);
+  }
+
+  /// Emits the captured delta changes to the document listeners, after the
+  /// transaction has been fully applied (the nodes already hold the final
+  /// deltas). Nodes whose delta changed without local metadata
+  /// (undo/redo, paste, full-text replacements, remote updates) get an
+  /// empty changes list.
+  void _emitDeltaChanges(
+    Transaction transaction,
+    List<Node> changedNodes,
+  ) {
+    final emitted = <Node>{};
+    for (final entry in transaction.deltaChanges.entries) {
+      document.emitChanges(entry.key, entry.value);
+      emitted.add(entry.key);
+    }
+    transaction.clearDeltaChanges();
+
+    for (final node in changedNodes) {
+      // Nodes already covered by captured delta changes emit once.
+      if (emitted.contains(node)) {
+        continue;
+      }
+      document.emitChanges(node, const []);
     }
   }
 
@@ -791,12 +910,18 @@ class EditorState {
 
   Selection? _applyTransactionFromRemote(Transaction transaction) {
     var selection = this.selection;
+    final changedNodes = <Node>[];
 
     for (final op in transaction.operations) {
       NovidentEditorLog.editor.debug('apply op (remote): ${op.toJson()}');
 
       if (op is InsertOperation) {
         document.insert(op.path, op.nodes);
+        for (final node in op.nodes) {
+          if (node.delta != null && node.delta!.isNotEmpty) {
+            changedNodes.add(node);
+          }
+        }
         if (selection != null) {
           if (op.path <= selection.start.path) {
             selection = Selection(
@@ -811,6 +936,13 @@ class EditorState {
         }
       } else if (op is UpdateOperation) {
         document.update(op.path, op.attributes);
+        if (op.attributes.containsKey('delta') ||
+            op.oldAttributes.containsKey('delta')) {
+          final node = document.nodeAtPath(op.path);
+          if (node != null) {
+            changedNodes.add(node);
+          }
+        }
       } else if (op is DeleteOperation) {
         document.delete(op.path, op.nodes.length);
         if (selection != null) {
@@ -827,7 +959,17 @@ class EditorState {
         }
       } else if (op is UpdateTextOperation) {
         document.updateText(op.path, op.delta);
+        final node = document.nodeAtPath(op.path);
+        if (node != null) {
+          changedNodes.add(node);
+        }
       }
+    }
+
+    // Remote text updates have no local metadata: emit an empty changes
+    // list so consumers re-analyze the affected nodes entirely.
+    for (final node in changedNodes) {
+      document.emitChanges(node, const []);
     }
 
     return selection;

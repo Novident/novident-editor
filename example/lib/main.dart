@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:example/common/controller/tree_controller.dart';
 import 'package:example/common/constants/default_files_nodes.dart';
 import 'package:example/common/nodes/root.dart';
@@ -7,11 +6,16 @@ import 'package:example/widgets/views/android_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:novident_editor/novident_editor.dart'
-    show NovidentEditorLocalizations;
+    show NovidentEditorLocalizations, UniversalPlatform;
 import 'package:novident_split_view/novident_split_view.dart';
+import 'spell_check/hunspell_spell_checker.dart';
 import 'widgets/views/desktop_view.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Loads and trains the en_US Hunspell dictionary (demo: the splash screen
+  // covers the load; the editor starts with spell checking ready).
+  await HunspellSpellChecker.load();
   runApp(const MyApp());
 }
 
@@ -23,10 +27,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final TreeController _controller = TreeController(
-    root: Root(
-      children: defaultNodes,
-    ),
+  /// Fresh per-instance workspace (structure + contents): each MyApp boot
+  /// owns its nodes, so tests can boot several workspaces safely.
+  late final _workspace = buildDefaultWorkspace();
+
+  late final TreeController _controller = TreeController(
+    root: Root(children: _workspace.nodes),
   );
 
   /// Split view weights (pane sizes) live above the MaterialApp so they
@@ -37,8 +43,8 @@ class _MyAppState extends State<MyApp> {
   /// Single source of truth for every document's content (node id →
   /// content). Panes sharing a document read/write here and stay in
   /// sync automatically.
-  final DocumentContentStore _documentContents = DocumentContentStore(
-    initialContents: defaultDocumentContents,
+  late final DocumentContentStore _documentContents = DocumentContentStore(
+    initialContents: _workspace.contents,
   );
 
   @override
@@ -77,7 +83,7 @@ class MiddlewareView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid || Platform.isIOS || Platform.isFuchsia) {
+    if (UniversalPlatform.isMobile) {
       return AndroidTreeViewExample(controller: controller);
     }
     return DesktopTreeViewExample(controller: controller);

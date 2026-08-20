@@ -72,8 +72,7 @@ void main() {
       expectConsistentTree(document);
     });
 
-    test('moving a block (delete + insert) keeps every lookup consistent',
-        () {
+    test('moving a block (delete + insert) keeps every lookup consistent', () {
       // exactly what a transaction-based move (drag to reorder, cut +
       // paste of a block) does through editor_state.apply.
       final document = buildDocument(5);
@@ -92,8 +91,7 @@ void main() {
       expectConsistentTree(document);
     });
 
-    test('mass paste in the middle (multi-node insert) stays consistent',
-        () {
+    test('mass paste in the middle (multi-node insert) stays consistent', () {
       final document = buildDocument(3);
       warmCaches(document);
 

@@ -23,7 +23,6 @@ void main() async {
             expect(after.type, 'todo_list');
             expect(after.attributes['checked'], false);
           },
-          text: text,
         );
       });
 
@@ -43,7 +42,6 @@ void main() async {
             expect(after.type, 'todo_list');
             expect(after.attributes['checked'], false);
           },
-          text: text,
         );
       });
 
@@ -63,7 +61,6 @@ void main() async {
             expect(after.type, 'todo_list');
             expect(after.attributes['checked'], true);
           },
-          text: text,
         );
       });
 
@@ -83,7 +80,6 @@ void main() async {
             expect(after.type, 'todo_list');
             expect(after.attributes['checked'], true);
           },
-          text: text,
         );
       });
 
@@ -102,7 +98,6 @@ void main() async {
             expect(after.children[0].delta!.toPlainText(), '1 $text');
             expect(after.children[1].delta!.toPlainText(), '2 $text');
           },
-          text: text,
           node: bulletedListNode(
             text: '$syntax$text',
             children: [

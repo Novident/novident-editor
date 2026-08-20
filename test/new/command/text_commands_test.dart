@@ -237,7 +237,7 @@ void main() async {
             },
           );
       final selection = Selection.collapsed(
-        Position(path: [0], offset: 0),
+        Position(path: [0]),
       );
       final editorState = EditorState(document: document);
       editorState.selection = selection;

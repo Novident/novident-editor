@@ -332,20 +332,20 @@ class _UploadImageMenuState extends State<UploadImageMenu> {
           onTap: () async {
             final result = await _filePicker.pickFiles(
               dialogTitle: '',
-              allowMultiple: false,
               type: kIsWeb ? fp.FileType.custom : fp.FileType.image,
               allowedExtensions: kIsWeb ? allowedExtensions : null,
-              withData: kIsWeb,
             );
             if (result != null && result.files.isNotEmpty) {
-              setState(() {
-                final bytes = result.files.first.bytes;
-                if (kIsWeb && bytes != null) {
-                  _imagePathOrContent = base64String(bytes);
-                } else {
-                  _imagePathOrContent = result.files.first.path;
-                }
-              });
+              if (result.files.firstOrNull == null) return;
+              final String? path = result.files.firstOrNull!.path;
+              if (path == null) return;
+              if (kIsWeb) {
+                _imagePathOrContent =
+                    base64String(await result.files.firstOrNull!.readAsBytes());
+              } else {
+                _imagePathOrContent = result.files.first.path;
+              }
+              setState(() async {});
             }
           },
           child: Container(
@@ -357,7 +357,6 @@ class _UploadImageMenuState extends State<UploadImageMenu> {
             ),
             child: _imagePathOrContent != null
                 ? Align(
-                    alignment: Alignment.center,
                     child: kIsWeb
                         ? Image.memory(
                             dataFromBase64String(_imagePathOrContent!),
@@ -436,7 +435,6 @@ extension InsertImage on EditorState {
     transaction.afterSelection = Selection.collapsed(
       Position(
         path: node.path.next,
-        offset: 0,
       ),
     );
 

@@ -2,16 +2,15 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class DividerBlockKeys {
-  const DividerBlockKeys._();
-
-  static const String type = 'divider';
-}
-
 // creating a new callout node
-Node dividerNode() {
+Node dividerNode({
+  String? styleRef,
+}) {
   return Node(
     type: DividerBlockKeys.type,
+    attributes: {
+      if (styleRef != null) blockComponentStyleRef: styleRef,
+    },
   );
 }
 
@@ -128,6 +127,8 @@ class _DividerBlockComponentWidgetState
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       cursorColor: editorState.editorStyle.cursorColor,
@@ -157,7 +158,7 @@ class _DividerBlockComponentWidgetState
   }
 
   @override
-  Position start() => Position(path: widget.node.path, offset: 0);
+  Position start() => Position(path: widget.node.path);
 
   @override
   Position end() => Position(path: widget.node.path, offset: 1);

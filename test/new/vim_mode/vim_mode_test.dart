@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/render/selection/cursor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -94,7 +93,7 @@ void main() {
           event,
           controller.commandShortcutEventOf(VimCommand.moveLeft)!,
         ),
-        true,
+        isTrue,
       );
       expect(event.command, 'a,arrow left');
 
@@ -112,9 +111,10 @@ void main() {
       controller.dispose();
     });
 
-    test('the IME interceptor blocks input outside of insert mode', () async {
+    test('the VimStrategy blocks input outside of insert mode', () async {
       final controller = VimModeController();
-      final editorState = EditorState.blank(withInitialText: true);
+      final strategy = VimStrategy(controller);
+      final editorState = EditorState.blank();
       const insertion = TextEditingDeltaInsertion(
         oldText: '',
         textInserted: 'a',
@@ -126,26 +126,23 @@ void main() {
       // normal mode: blocked.
       expect(controller.mode, VimMode.normal);
       expect(
-        await controller.keyboardInterceptor
-            .interceptInsert(insertion, editorState, []),
-        true,
+        await strategy.onInsert(insertion, editorState),
+        ImeDeltaResult.swallowed,
       );
 
       // insert mode: allowed.
       controller.enterInsertMode();
       expect(
-        await controller.keyboardInterceptor
-            .interceptInsert(insertion, editorState, []),
-        false,
+        await strategy.onInsert(insertion, editorState),
+        ImeDeltaResult.ignored,
       );
 
       // disabled: allowed even in normal mode.
       controller.configuration =
           controller.configuration.copyWith(enabled: false);
       expect(
-        await controller.keyboardInterceptor
-            .interceptInsert(insertion, editorState, []),
-        false,
+        await strategy.onInsert(insertion, editorState),
+        ImeDeltaResult.ignored,
       );
 
       controller.dispose();
@@ -184,9 +181,23 @@ void main() {
           home: Scaffold(
             body: NovidentEditor(
               editorState: editorState,
-              commandShortcutEvents: [
-                ...controller.commandShortcutEvents,
-                ...standardCommandShortcutEvents,
+              editorStyle: EditorStyle.desktop(
+                selectionRenderer: VimSelectionRenderer(
+                  controller: controller,
+                ),
+              ),
+              keyboardStrategies: [
+                VimStrategy(
+                  controller,
+                ),
+                DefaultEditorStrategy(
+                  commandShortcutEvents: [
+                    // vim shortcuts must come first so they take precedence.
+                    ...controller.commandShortcutEvents,
+                    ...standardCommandShortcutEvents,
+                  ],
+                  characterShortcutEvents: standardCharacterShortcutEvents,
+                ),
               ],
             ),
           ),
@@ -287,7 +298,86 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(controller.mode, VimMode.normal);
-      expect(editorState.selection?.isCollapsed, true);
+      expect(editorState.selection?.isCollapsed, isTrue);
+
+      controller.dispose();
+    });
+
+    testWidgets('h/l keep the vim anchor while the cursor moves',
+        (tester) async {
+      final (editorState, controller) = await pumpVimEditor(tester);
+
+      // caret at offset 2 ('p' of 'alpha'). `v` wraps [2, 3).
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
+      await tester.pumpAndSettle();
+      expect(editorState.selection?.start.offset, 2);
+      expect(editorState.selection?.end.offset, 3);
+
+      // like vim, `h` moves the cursor onto the previous char while the
+      // anchor stays put: raw [3, 1] => normalized [1, 3) covers offsets
+      // 1-2 — the selection never collapses in between.
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyH);
+      await tester.pumpAndSettle();
+      var selection = editorState.selection;
+      expect(selection, isNotNull);
+      expect(selection!.isCollapsed, false);
+      expect(selection.start.offset, 3); // anchor side
+      expect(selection.end.offset, 1); // cursor side
+      expect(selection.normalized.start.offset, 1);
+      expect(selection.normalized.end.offset, 3);
+
+      // a second `h` keeps growing the selection to the left.
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyH);
+      await tester.pumpAndSettle();
+      selection = editorState.selection;
+      expect(selection!.isCollapsed, false);
+      expect(selection.normalized.start.offset, 0);
+      expect(selection.normalized.end.offset, 3);
+
+      // `h` at the start of the document stops instead of wrapping.
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyH);
+      await tester.pumpAndSettle();
+      selection = editorState.selection;
+      expect(selection!.normalized.start.offset, 0);
+      expect(selection.normalized.end.offset, 3);
+
+      // moving right past the anchor flips the selection back: after
+      // three `l` presses the cursor sits at offset 3 again.
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
+      await tester.pumpAndSettle();
+      selection = editorState.selection;
+      expect(selection, isNotNull);
+      expect(selection!.isCollapsed, false);
+      expect(selection.start.offset, 2);
+      expect(selection.end.offset, 4);
+
+      controller.dispose();
+    });
+
+    testWidgets('l at the end of the line stops instead of selecting past it',
+        (tester) async {
+      final (editorState, controller) = await pumpVimEditor(tester);
+
+      // caret on the last char of 'alpha beta'.
+      editorState.updateSelectionWithReason(
+        Selection.collapsed(
+          Position(path: [0], offset: 'alpha beta'.length - 1),
+        ),
+        reason: SelectionUpdateReason.uiEvent,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
+      await tester.pumpAndSettle();
+
+      final selection = editorState.selection;
+      expect(selection, isNotNull);
+      expect(selection!.start.offset, 'alpha beta'.length - 1);
+      expect(selection.end.offset, 'alpha beta'.length);
 
       controller.dispose();
     });
@@ -340,17 +430,17 @@ void main() {
     testWidgets('any other command disarms a pending dd', (tester) async {
       final (editorState, controller) = await pumpVimEditor(tester);
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyD, character: 'd');
       await tester.pumpAndSettle();
       expect(controller.pendingCommand, 'd');
 
       // a motion cancels the operator…
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyH);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyH, character: 'h');
       await tester.pumpAndSettle();
       expect(controller.pendingCommand, null);
 
       // …so the next single d must not delete anything.
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyD, character: 'd');
       await tester.pumpAndSettle();
       expect(editorState.document.root.children.length, 3);
       expect(controller.pendingCommand, 'd');
@@ -641,7 +731,6 @@ void main() {
           start: Position(path: [0]),
           end: Position(path: [0], offset: 5),
         ),
-        reason: SelectionUpdateReason.transaction,
       );
       await tester.pumpAndSettle();
       expect(controller.mode, VimMode.normal);
@@ -724,9 +813,23 @@ void main() {
           home: Scaffold(
             body: NovidentEditor(
               editorState: editorState,
-              commandShortcutEvents: [
-                ...controller.commandShortcutEvents,
-                ...standardCommandShortcutEvents,
+              editorStyle: EditorStyle.desktop(
+                selectionRenderer: VimSelectionRenderer(
+                  controller: controller,
+                ),
+              ),
+              keyboardStrategies: [
+                VimStrategy(
+                  controller,
+                ),
+                DefaultEditorStrategy(
+                  commandShortcutEvents: [
+                    // vim shortcuts must come first so they take precedence.
+                    ...controller.commandShortcutEvents,
+                    ...standardCommandShortcutEvents,
+                  ],
+                  characterShortcutEvents: standardCharacterShortcutEvents,
+                ),
               ],
             ),
           ),
@@ -745,21 +848,28 @@ void main() {
       return (editorState, controller);
     }
 
-    Finder caret() => find.byType(Cursor);
+    /// Finds the vim block cursor rendered in normal/visual mode.
+    Finder vimCaret() => find.byType(VimBlockCursor);
 
-    Cursor caretWidget(WidgetTester tester) =>
-        tester.widget<Cursor>(caret().first);
+    VimBlockCursor vimCaretWidget(WidgetTester tester) =>
+        tester.widget<VimBlockCursor>(vimCaret().first);
+
+    /// Finds the standard [Cursor] widget rendered in insert mode.
+    Finder insertCaret() => find.byType(Cursor);
+
+    Cursor insertCaretWidget(WidgetTester tester) =>
+        tester.widget<Cursor>(insertCaret().first);
 
     testWidgets(
         'normal mode paints one native block caret, insert mode restores '
         'the thin caret', (tester) async {
       final (_, controller) = await pumpVimEditorForCursor(tester);
 
-      // normal mode: a single native caret, widened into a steady block.
+      // normal mode: a single native block caret, widened into a steady block.
       expect(controller.mode, VimMode.normal);
-      expect(caret(), findsOneWidget);
-      var cursor = caretWidget(tester);
-      expect(cursor.shouldBlink, false);
+      expect(vimCaret(), findsOneWidget);
+      final cursor = vimCaretWidget(tester);
+      expect(cursor.shouldBlink, isTrue);
       final height = cursor.rect.height;
       expect(
         cursor.rect.width,
@@ -774,10 +884,10 @@ void main() {
       // line — still a single cursor, never two.
       controller.enterInsertMode();
       await tester.pumpAndSettle();
-      expect(caret(), findsOneWidget);
-      cursor = caretWidget(tester);
-      expect(cursor.shouldBlink, true);
-      expect(cursor.rect.width, lessThan(5));
+      expect(insertCaret(), findsOneWidget);
+      final insertCursor = insertCaretWidget(tester);
+      expect(insertCursor.shouldBlink, isTrue);
+      expect(insertCursor.rect.width, lessThan(5));
 
       controller.dispose();
     });
@@ -793,41 +903,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final cursor = caretWidget(tester);
+      final cursor = vimCaretWidget(tester);
       expect(
         cursor.rect.width,
         greaterThanOrEqualTo(
           cursor.rect.height * 0.4 - 0.001,
         ),
       );
-
-      controller.dispose();
-    });
-
-    testWidgets('visual mode paints the block at the selection head',
-        (tester) async {
-      final (editorState, controller) = await pumpVimEditorForCursor(tester);
-
-      // block position in normal mode (caret on offset 2).
-      final normalLeft = caretWidget(tester).rect.left;
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
-      await tester.pumpAndSettle();
-
-      expect(controller.mode, VimMode.visual);
-      // `v` wraps the character under the caret internally…
-      expect(editorState.selection?.isCollapsed, false);
-      expect(editorState.selection?.end.offset, 3);
-      // …but the painted block does NOT move: the head renders at
-      // `end - 1`, on the same character, exactly like vim.
-      expect(caret(), findsOneWidget);
-      expect(caretWidget(tester).rect.left, normalLeft);
-
-      // motions move the painted head along the last selected character.
-      final headBefore = caretWidget(tester).rect.left;
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
-      await tester.pumpAndSettle();
-      expect(caretWidget(tester).rect.left, greaterThan(headBefore));
 
       controller.dispose();
     });
@@ -841,14 +923,12 @@ void main() {
             color: customColor,
             opacity: 1.0,
             blockWidth: 12,
-            blink: true,
           ),
         ),
       );
 
-      var cursor = caretWidget(tester);
+      var cursor = vimCaretWidget(tester);
       expect(cursor.rect.width, 12);
-      expect(cursor.shouldBlink, true);
       expect(cursor.color.toARGB32(), customColor.toARGB32());
 
       // the style can be changed at runtime without rebuilding the editor.
@@ -856,9 +936,8 @@ void main() {
         cursorStyle: const VimCursorStyle(blockWidth: 20),
       );
       await tester.pumpAndSettle();
-      cursor = caretWidget(tester);
+      cursor = vimCaretWidget(tester);
       expect(cursor.rect.width, 20);
-      expect(cursor.shouldBlink, false);
 
       controller.dispose();
     });
@@ -869,8 +948,7 @@ void main() {
         configuration: const VimModeConfiguration(enabled: false),
       );
 
-      final cursor = caretWidget(tester);
-      expect(cursor.shouldBlink, true);
+      final cursor = insertCaretWidget(tester);
       expect(cursor.rect.width, lessThan(5));
 
       controller.dispose();

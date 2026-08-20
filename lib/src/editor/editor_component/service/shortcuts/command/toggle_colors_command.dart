@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/material.dart';
 
 /// Toggle Color Commands
@@ -67,14 +66,14 @@ KeyEventResult _toggleHighlight(
   final nodes = editorState.getNodesInSelection(selection);
   final isHighlighted = nodes.allSatisfyInSelection(selection, (delta) {
     return delta.everyAttributes(
-      (attributes) => attributes[NovidentRichTextKeys.backgroundColor] != null,
+      (attributes) => attributes[RichTextKeys.backgroundColor] != null,
     );
   });
 
   editorState.formatDelta(
     selection,
     {
-      NovidentRichTextKeys.backgroundColor:
+      RichTextKeys.backgroundColor:
           isHighlighted ? null : style.highlightColor.toHex(),
     },
   );

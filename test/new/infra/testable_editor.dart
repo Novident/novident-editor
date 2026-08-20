@@ -55,6 +55,7 @@ class TestableEditor {
     TargetPlatform? platform,
     String? defaultTextDirection,
     TextDirection textDirection = TextDirection.ltr,
+    List<KeyboardStrategy> keyboardStrategies = const [],
   }) async {
     await NovidentEditorLocalizations.load(locale);
 
@@ -81,6 +82,7 @@ class TestableEditor {
             ...TestableFindAndReplaceCommands(context: context)
                 .testableFindAndReplaceCommands,
           ],
+          keyboardStrategies: keyboardStrategies,
           characterShortcutEvents: [
             ...standardCharacterShortcutEvents,
             formatGreaterHyphen,

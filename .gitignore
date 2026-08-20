@@ -15,12 +15,12 @@
 *.ipr
 *.iws
 .idea/
-
 # Visual Studio Code related
 .classpath
 .project
 .settings/
 .vscode/
+.plans/
 
 # Flutter repo-specific
 /bin/cache/
@@ -58,7 +58,7 @@ flutter_*.png
 linked_*.ds
 unlinked.ds
 unlinked_spec.ds
-AGENTS.md
+.plans/
 
 # Android related
 **/android/**/gradle-wrapper.jar

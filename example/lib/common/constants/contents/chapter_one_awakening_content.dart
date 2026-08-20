@@ -20,7 +20,7 @@ final Document awakeningDocument = Document(
         delta: Delta()
           ..insert(
             'Something is wrong with the woods tonight.',
-            attributes: <String, dynamic>{NovidentRichTextKeys.italic: true},
+            attributes: <String, dynamic>{RichTextKeys.italic: true},
           ),
       ),
       paragraphNode(
@@ -30,7 +30,7 @@ final Document awakeningDocument = Document(
               'garden wall, the treeline of the ')
           ..insert(
             'Hollow Forest',
-            attributes: <String, dynamic>{NovidentRichTextKeys.bold: true},
+            attributes: <String, dynamic>{RichTextKeys.bold: true},
           )
           ..insert(' stood darker than the sky behind it, and no owl called, '
               'no branch creaked.'),

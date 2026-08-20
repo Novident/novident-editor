@@ -11,15 +11,9 @@ export 'base_component/insert_newline_in_type_command.dart';
 export 'base_component/markdown_format_helper.dart';
 export 'base_component/outdent_command.dart';
 // selection
-export 'base_component/selection/block_selection_area.dart';
-export 'base_component/selection/block_selection_container.dart';
-export 'base_component/selection/remote_block_selection_area.dart';
-export 'base_component/selection/remote_selection.dart';
 export 'base_component/text_direction_mixin.dart';
-export 'base_component/text_style_configuration.dart';
 export 'base_component/widget/full_screen_overlay_entry.dart';
 export 'base_component/widget/nested_list_widget.dart';
-export 'base_component_keys.dart';
 // bulleted list
 export 'bulleted_list_block_component/bulleted_list_block_component.dart';
 export 'bulleted_list_block_component/bulleted_list_character_shortcut.dart';
@@ -41,10 +35,6 @@ export 'paragraph_block_component/paragraph_block_component.dart';
 // quote
 export 'quote_block_component/quote_block_component.dart';
 export 'quote_block_component/quote_character_shortcut.dart';
-export 'rich_text/novident_rich_text.dart';
-export 'rich_text/novident_rich_text_keys.dart';
-// rich text
-export 'rich_text/default_selectable_mixin.dart';
 export 'standard_block_components.dart';
 export 'table_block_component/table_action.dart';
 export 'table_block_component/table_action_menu.dart';

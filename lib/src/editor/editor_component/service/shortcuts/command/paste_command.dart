@@ -128,14 +128,14 @@ extension on EditorState {
             ..trimRight(),
         )
         .map((paragraph) {
-          Delta delta = Delta();
+          final Delta delta = Delta();
           if (_hrefRegex.hasMatch(paragraph) ||
               _phoneRegex.hasMatch(paragraph)) {
             final match = _hrefRegex.firstMatch(paragraph) ??
                 _phoneRegex.firstMatch(paragraph);
             if (match != null) {
-              int startPos = match.start;
-              int endPos = match.end;
+              final int startPos = match.start;
+              final int endPos = match.end;
               final String? entity = match.group(0);
               if (entity != null) {
                 /// insert the text before the link or phone
@@ -147,7 +147,7 @@ extension on EditorState {
                 delta.insert(
                   paragraph.substring(startPos, endPos),
                   attributes: {
-                    NovidentRichTextKeys.href:
+                    RichTextKeys.href:
                         _phoneRegex.hasMatch(entity) ? 'tel:$entity' : entity,
                   },
                 );
@@ -193,7 +193,7 @@ extension on EditorState {
     final transaction = this.transaction;
     final isPhone = _phoneRegex.hasMatch(plainText);
     transaction.formatText(node, selection.startIndex, selection.length, {
-      NovidentRichTextKeys.href: isPhone ? 'tel:$plainText' : plainText,
+      RichTextKeys.href: isPhone ? 'tel:$plainText' : plainText,
     });
     await apply(transaction);
     return true;

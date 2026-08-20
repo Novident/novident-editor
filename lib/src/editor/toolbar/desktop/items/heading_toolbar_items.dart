@@ -5,13 +5,11 @@ List<ToolbarItem> headingItems = [1, 2, 3]
     .toList(growable: false);
 
 class _HeadingToolbarItem extends ToolbarItem {
-  final int level;
-
   _HeadingToolbarItem(this.level)
       : super(
           id: 'editor.h$level',
           group: 1,
-          isActive: onlyShowInSingleSelectionAndTextType,
+          isActive: showInSingleSelectionEvenWithoutSelection,
           builder: (
             context,
             editorState,
@@ -19,7 +17,16 @@ class _HeadingToolbarItem extends ToolbarItem {
             iconColor,
             tooltipBuilder,
           ) {
-            final selection = editorState.selection!;
+            final selection = editorState.selection;
+            if (selection == null) {
+              return SVGIconItemWidget(
+                iconName: 'toolbar/h$level',
+                isHighlight: false,
+                highlightColor: highlightColor,
+                iconColor: iconColor,
+                onPressed: () {},
+              );
+            }
             final node = editorState.getNodeAtPath(selection.start.path)!;
             final isHighlight =
                 node.type == 'heading' && node.attributes['level'] == level;
@@ -59,6 +66,7 @@ class _HeadingToolbarItem extends ToolbarItem {
             return child;
           },
         );
+  final int level;
 
   static String levelToTooltips(int level) {
     if (level == 1) {

@@ -21,7 +21,7 @@ class VimModeChip extends StatelessWidget {
           VimMode.insert => ('INSERT', const Color(0xFF448AFF)),
           VimMode.visual => ('VISUAL', Colors.orange.shade700),
         };
-        final String? pending = controller.pendingCommand;
+        final String? pending = controller.pendingCommandBuffer;
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[

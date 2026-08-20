@@ -13,8 +13,6 @@ import 'viewport.dart';
 /// A version of [CustomScrollView] that allows does not constrict the extents
 /// to be within 0 and 1. See [CustomScrollView] for more information.
 class UnboundedCustomScrollView extends CustomScrollView {
-  final bool _shrinkWrap;
-
   const UnboundedCustomScrollView({
     super.key,
     super.scrollDirection,
@@ -25,7 +23,8 @@ class UnboundedCustomScrollView extends CustomScrollView {
     bool shrinkWrap = false,
     super.center,
     double anchor = 0.0,
-    super.cacheExtent,
+    super.scrollCacheExtent,
+    super.scrollBehavior,
     super.slivers,
     super.semanticChildCount,
     super.dragStartBehavior,
@@ -34,6 +33,7 @@ class UnboundedCustomScrollView extends CustomScrollView {
         super(
           shrinkWrap: false,
         );
+  final bool _shrinkWrap;
 
   // [CustomScrollView] enforces constraints on [CustomScrollView.anchor], so
   // we need our own version.
@@ -56,18 +56,18 @@ class UnboundedCustomScrollView extends CustomScrollView {
         axisDirection: axisDirection,
         offset: offset,
         slivers: slivers,
-        cacheExtent: cacheExtent,
         center: center,
         anchor: anchor,
+        scrollCacheExtent: scrollCacheExtent,
       );
     }
     return UnboundedViewport(
       axisDirection: axisDirection,
       offset: offset,
       slivers: slivers,
-      cacheExtent: cacheExtent,
       center: center,
       anchor: anchor,
+      scrollCacheExtent: scrollCacheExtent,
     );
   }
 }

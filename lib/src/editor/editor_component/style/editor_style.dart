@@ -1,12 +1,86 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
+const Duration _defaultSpellCheckDebounce = Duration(milliseconds: 600);
+
 /// The style of the editor.
 ///
 /// You can customize the style of the editor by passing the [EditorStyle] to
 ///  the [NovidentEditor].
 ///
 class EditorStyle {
+  const EditorStyle.desktop({
+    EdgeInsets? padding,
+    Color? cursorColor,
+    Color? selectionColor,
+    TextStyleConfiguration? textStyleConfiguration,
+    TextSpanDecoratorForAttribute? textSpanDecorator,
+    this.textSpanOverlayBuilder,
+    this.defaultTextDirection,
+    this.cursorWidth = 2.0,
+    this.textScaleFactor = 1.0,
+    this.maxWidth,
+    this.firstLineIndent,
+    this.selectionRenderer,
+    this.showTableActionBar = true,
+    this.spellChecker,
+    this.spellCheckMisspelledStyle,
+    this.spellCheckDebounce = _defaultSpellCheckDebounce,
+  })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 100),
+        cursorColor = cursorColor ?? const Color(0xFF00BCF0),
+        selectionColor =
+            selectionColor ?? const Color.fromARGB(200, 111, 201, 231),
+        textStyleConfiguration =
+            textStyleConfiguration ?? const TextStyleConfiguration(),
+        textSpanDecorator =
+            textSpanDecorator ?? defaultTextSpanDecoratorForAttribute,
+        magnifierSize = Size.zero,
+        mobileDragHandleBallSize = Size.zero,
+        mobileDragHandleWidth = 0.0,
+        enableHapticFeedbackOnAndroid = false,
+        dragHandleColor = Colors.transparent,
+        mobileDragHandleTopExtend = null,
+        mobileDragHandleWidthExtend = null,
+        mobileDragHandleLeftExtend = null,
+        mobileDragHandleHeightExtend = null,
+        autoDismissCollapsedHandleDuration = const Duration();
+
+  const EditorStyle.mobile({
+    EdgeInsets? padding,
+    Color? cursorColor,
+    Color? dragHandleColor,
+    Color? selectionColor,
+    TextStyleConfiguration? textStyleConfiguration,
+    TextSpanDecoratorForAttribute? textSpanDecorator,
+    this.textSpanOverlayBuilder,
+    this.defaultTextDirection,
+    this.magnifierSize = const Size(72, 48),
+    this.mobileDragHandleBallSize = const Size(8, 8),
+    this.mobileDragHandleWidth = 2.0,
+    this.cursorWidth = 2.0,
+    this.enableHapticFeedbackOnAndroid = true,
+    this.textScaleFactor = 1.0,
+    this.maxWidth,
+    this.mobileDragHandleTopExtend,
+    this.mobileDragHandleWidthExtend,
+    this.mobileDragHandleLeftExtend,
+    this.mobileDragHandleHeightExtend,
+    this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
+    this.firstLineIndent,
+    this.selectionRenderer,
+    this.showTableActionBar = true,
+    this.spellChecker,
+    this.spellCheckMisspelledStyle,
+    this.spellCheckDebounce = _defaultSpellCheckDebounce,
+  })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 20),
+        cursorColor = cursorColor ?? const Color(0xFF00BCF0),
+        dragHandleColor = dragHandleColor ?? const Color(0xFF00BCF0),
+        selectionColor =
+            selectionColor ?? const Color.fromARGB(53, 111, 201, 231),
+        textStyleConfiguration =
+            textStyleConfiguration ?? const TextStyleConfiguration(),
+        textSpanDecorator =
+            textSpanDecorator ?? mobileTextSpanDecoratorForAttribute;
   const EditorStyle({
     required this.padding,
     required this.cursorColor,
@@ -28,6 +102,12 @@ class EditorStyle {
     this.mobileDragHandleLeftExtend,
     this.mobileDragHandleHeightExtend,
     this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
+    this.firstLineIndent,
+    this.selectionRenderer,
+    this.showTableActionBar = true,
+    this.spellChecker,
+    this.spellCheckMisspelledStyle,
+    this.spellCheckDebounce = _defaultSpellCheckDebounce,
   });
 
   // The padding of the editor.
@@ -105,70 +185,35 @@ class EditorStyle {
 
   final double textScaleFactor;
 
-  const EditorStyle.desktop({
-    EdgeInsets? padding,
-    Color? cursorColor,
-    Color? selectionColor,
-    TextStyleConfiguration? textStyleConfiguration,
-    TextSpanDecoratorForAttribute? textSpanDecorator,
-    this.textSpanOverlayBuilder,
-    this.defaultTextDirection,
-    this.cursorWidth = 2.0,
-    this.textScaleFactor = 1.0,
-    this.maxWidth,
-  })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 100),
-        cursorColor = cursorColor ?? const Color(0xFF00BCF0),
-        selectionColor =
-            selectionColor ?? const Color.fromARGB(53, 111, 201, 231),
-        textStyleConfiguration = textStyleConfiguration ??
-            const TextStyleConfiguration(
-              text: TextStyle(fontSize: 16, color: Colors.black),
-            ),
-        textSpanDecorator =
-            textSpanDecorator ?? defaultTextSpanDecoratorForAttribute,
-        magnifierSize = Size.zero,
-        mobileDragHandleBallSize = Size.zero,
-        mobileDragHandleWidth = 0.0,
-        enableHapticFeedbackOnAndroid = false,
-        dragHandleColor = Colors.transparent,
-        mobileDragHandleTopExtend = null,
-        mobileDragHandleWidthExtend = null,
-        mobileDragHandleLeftExtend = null,
-        mobileDragHandleHeightExtend = null,
-        autoDismissCollapsedHandleDuration = const Duration(seconds: 0);
+  /// Global first-line indent width applied to paragraphs whose style
+  /// has [NovidentStyleDefinition.allowGlobalFirstLineIndent] enabled
+  /// and does not define its own [NovidentStyleIndent.firstLineIndent].
+  final double? firstLineIndent;
 
-  const EditorStyle.mobile({
-    EdgeInsets? padding,
-    Color? cursorColor,
-    Color? dragHandleColor,
-    Color? selectionColor,
-    TextStyleConfiguration? textStyleConfiguration,
-    TextSpanDecoratorForAttribute? textSpanDecorator,
-    this.textSpanOverlayBuilder,
-    this.defaultTextDirection,
-    this.magnifierSize = const Size(72, 48),
-    this.mobileDragHandleBallSize = const Size(8, 8),
-    this.mobileDragHandleWidth = 2.0,
-    this.cursorWidth = 2.0,
-    this.enableHapticFeedbackOnAndroid = true,
-    this.textScaleFactor = 1.0,
-    this.maxWidth,
-    this.mobileDragHandleTopExtend,
-    this.mobileDragHandleWidthExtend,
-    this.mobileDragHandleLeftExtend,
-    this.mobileDragHandleHeightExtend,
-    this.autoDismissCollapsedHandleDuration = const Duration(seconds: 3),
-  })  : padding = padding ?? const EdgeInsets.symmetric(horizontal: 20),
-        cursorColor = cursorColor ?? const Color(0xFF00BCF0),
-        dragHandleColor = dragHandleColor ?? const Color(0xFF00BCF0),
-        selectionColor =
-            selectionColor ?? const Color.fromARGB(53, 111, 201, 231),
-        textStyleConfiguration = textStyleConfiguration ??
-            const TextStyleConfiguration(
-              text: TextStyle(fontSize: 16, color: Colors.black),
-            ),
-        textSpanDecorator =
-            textSpanDecorator ?? mobileTextSpanDecoratorForAttribute;
+  /// Custom selection/cursor renderer. When null, [DefaultSelectionRenderer] is used.
+  final SelectionRenderer? selectionRenderer;
+
+  /// Whether to show the [TableActionBar] above table blocks.
+  ///
+  /// When `false`, the floating action bar (add column/row, delete, colors)
+  /// is hidden for all tables. Defaults to `true`.
+  final bool showTableActionBar;
+
+  /// Spell-check engine provided by the user.
+  ///
+  /// When non-null, the editor builds a [SpellCheckSpanPipeline] that
+  /// renders the `proofState` marks written into the delta by the
+  /// spell-check service. The engine itself is consumed by the service
+  /// (analysis), never by the rendering pipeline.
+  final NovidentSpellChecker? spellChecker;
+
+  /// Style merged over misspelled words. When null, the classic red wavy
+  /// underline ([SpellCheckSpanPipeline.defaultMisspelledStyle]) is used.
+  final TextStyle? spellCheckMisspelledStyle;
+
+  /// Inactivity debounce used by the spell-check service before analyzing
+  /// pending nodes (Word-like). Only used when [spellChecker] is set.
+  final Duration spellCheckDebounce;
 
   EditorStyle copyWith({
     EdgeInsets? padding,
@@ -191,6 +236,12 @@ class EditorStyle {
     double? mobileDragHandleLeftExtend,
     double? mobileDragHandleHeightExtend,
     Duration? autoDismissCollapsedHandleDuration,
+    double? firstLineIndent,
+    SelectionRenderer? selectionRenderer,
+    bool? showTableActionBar,
+    NovidentSpellChecker? spellChecker,
+    TextStyle? spellCheckMisspelledStyle,
+    Duration? spellCheckDebounce,
   }) {
     return EditorStyle(
       padding: padding ?? this.padding,
@@ -223,6 +274,13 @@ class EditorStyle {
           mobileDragHandleHeightExtend ?? this.mobileDragHandleHeightExtend,
       autoDismissCollapsedHandleDuration: autoDismissCollapsedHandleDuration ??
           this.autoDismissCollapsedHandleDuration,
+      firstLineIndent: firstLineIndent ?? this.firstLineIndent,
+      selectionRenderer: selectionRenderer ?? this.selectionRenderer,
+      showTableActionBar: showTableActionBar ?? this.showTableActionBar,
+      spellChecker: spellChecker ?? this.spellChecker,
+      spellCheckMisspelledStyle:
+          spellCheckMisspelledStyle ?? this.spellCheckMisspelledStyle,
+      spellCheckDebounce: spellCheckDebounce ?? this.spellCheckDebounce,
     );
   }
 }

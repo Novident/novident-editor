@@ -23,8 +23,15 @@ class NovidentEditor extends StatefulWidget {
     super.key,
     required this.editorState,
     Map<String, BlockComponentBuilder>? blockComponentBuilders,
+    @Deprecated(
+      "Use keyboardStrategies and define DefaultEditorStrategy instead",
+    )
     List<CharacterShortcutEvent>? characterShortcutEvents,
+    @Deprecated(
+      "Use keyboardStrategies and define DefaultEditorStrategy instead",
+    )
     List<CommandShortcutEvent>? commandShortcutEvents,
+    this.keyboardStrategies = const [],
     this.contextMenuBuilder,
     this.contentInsertionConfiguration,
     this.editable = true,
@@ -49,6 +56,8 @@ class NovidentEditor extends StatefulWidget {
     this.blockWrapper,
     this.dynamicHeightConfig,
     this.dynamicHeightController,
+    this.styles,
+    this.fontProvider,
   })  : blockComponentBuilders =
             blockComponentBuilders ?? standardBlockComponentBuilderMap,
         characterShortcutEvents =
@@ -103,6 +112,7 @@ class NovidentEditor extends StatefulWidget {
   ///  ],
   /// );
   /// ```
+  @Deprecated("Use keyboardStrategies and define DefaultEditorStrategy instead")
   final List<CharacterShortcutEvent> characterShortcutEvents;
 
   /// Command event handlers
@@ -120,7 +130,15 @@ class NovidentEditor extends StatefulWidget {
   ///   ],
   /// );
   /// ```
+  @Deprecated("Use keyboardStrategies and define DefaultEditorStrategy instead")
   final List<CommandShortcutEvent> commandShortcutEvents;
+
+  /// Physical keyboard interpretation policies, consulted in order (the
+  /// first one that does not return `ignored` wins).
+  ///
+  /// When empty (default), a [DefaultEditorStrategy] is used over
+  /// [commandShortcutEvents].
+  final List<KeyboardStrategy> keyboardStrategies;
 
   /// The context menu builder.
   ///
@@ -236,6 +254,18 @@ class NovidentEditor extends StatefulWidget {
   final DynamicHeightConfig? dynamicHeightConfig;
   final DynamicHeightController? dynamicHeightController;
 
+  /// Styles configuration for the editor.
+  ///
+  /// Provides [NovidentEditorStyles] to the widget tree via [InheritedWidget].
+  final NovidentStylesConfig? styles;
+
+  /// Font provider for the editor.
+  ///
+  /// Supplies the list of available font families and a guaranteed non-null
+  /// default font. When omitted, [NovidentFontProvider.fallback] is used
+  /// (a small universal set safe on every platform).
+  final NovidentFontProvider? fontProvider;
+
   @override
   State<NovidentEditor> createState() => _NovidentEditorState();
 }
@@ -303,7 +333,6 @@ class _NovidentEditorState extends State<NovidentEditor> {
   @override
   Widget build(BuildContext context) {
     services ??= _buildServices(context);
-
     // Lazily connect to the dynamic height controller so we
     // rebuild when cache measurements change.
     final controller = editorState.dynamicHeightController;
@@ -340,6 +369,13 @@ class _NovidentEditorState extends State<NovidentEditor> {
       } else {
         child = IntrinsicHeight(child: child);
       }
+    }
+
+    if (widget.styles != null) {
+      child = NovidentEditorStyles(
+        config: widget.styles!,
+        child: child,
+      );
     }
 
     return child;
@@ -388,6 +424,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
             widget.editable ? widget.characterShortcutEvents : [],
         // only allow copy and select all when the editor is not editable
         commandShortcutEvents: widget.commandShortcutEvents,
+        keyboardStrategies: widget.keyboardStrategies,
         focusNode: widget.focusNode,
         contentInsertionConfiguration: widget.contentInsertionConfiguration,
         child: child,
@@ -432,6 +469,35 @@ class _NovidentEditorState extends State<NovidentEditor> {
 
   void _updateValues() {
     editorState.editorStyle = widget.editorStyle;
+    editorState.editorStyles = widget.styles;
+    editorState.fontProvider =
+        widget.fontProvider ?? NovidentFontProvider.fallback();
+
+    // Spell-check service lifecycle: created/attached when a checker is
+    // provided, rebuilt when the checker or the debounce changes.
+    final checker = widget.editorStyle.spellChecker;
+    if (checker != null) {
+      final current = editorState.spellCheckService;
+      if (current == null ||
+          current.checker != checker ||
+          current.debounce != widget.editorStyle.spellCheckDebounce) {
+        current?.dispose();
+        editorState.spellCheckService = SpellCheckService(
+          document: editorState.document,
+          checker: checker,
+          debounce: widget.editorStyle.spellCheckDebounce,
+        )..attach();
+      }
+    } else if (editorState.spellCheckService != null) {
+      editorState.spellCheckService!.dispose();
+      editorState.spellCheckService = null;
+    }
+
+    assert(
+      widget.styles == null || widget.styles!.defaultStyle.fontFamily != null,
+      'NovidentStylesConfig.defaultStyle must have a non-null fontFamily. '
+      'Set fontFamily on your default style or use kDefaultBaseStyle.',
+    );
     editorState.editable = widget.editable;
     editorState.showHeader = widget.header != null;
     editorState.showFooter = widget.footer != null;

@@ -1,21 +1,23 @@
 import 'dart:collection';
 
-import 'package:novident_editor/src/core/location/selection.dart';
-import 'package:novident_editor/src/core/transform/operation.dart';
-import 'package:novident_editor/src/core/transform/transaction.dart';
-import 'package:novident_editor/src/editor_state.dart';
-import 'package:novident_editor/src/infra/log.dart';
+import 'package:novident_editor/novident_editor.dart'
+    show
+        ApplyOptions,
+        EditorState,
+        NovidentEditorLog,
+        Operation,
+        Selection,
+        Transaction;
 
 /// A [HistoryItem] contains list of operations committed by users.
 /// If a [HistoryItem] is not sealed, operations can be added sequentially.
 /// Otherwise, the operations should be added to a new [HistoryItem].
 final class HistoryItem extends LinkedListEntry<HistoryItem> {
+  HistoryItem();
   final List<Operation> operations = [];
   Selection? beforeSelection;
   Selection? afterSelection;
   bool _sealed = false;
-
-  HistoryItem();
 
   /// Seal the history item.
   /// When an item is sealed, no more operations can be added
@@ -51,10 +53,9 @@ final class HistoryItem extends LinkedListEntry<HistoryItem> {
 }
 
 class FixedSizeStack {
+  FixedSizeStack(this.maxSize);
   final _list = LinkedList<HistoryItem>();
   final int maxSize;
-
-  FixedSizeStack(this.maxSize);
 
   void push(HistoryItem stackItem) {
     if (_list.length >= maxSize) {
@@ -86,13 +87,12 @@ class FixedSizeStack {
 }
 
 class UndoManager {
-  final FixedSizeStack undoStack;
-  final FixedSizeStack redoStack;
-  EditorState? state;
-
   UndoManager([int stackSize = 20])
       : undoStack = FixedSizeStack(stackSize),
         redoStack = FixedSizeStack(stackSize);
+  final FixedSizeStack undoStack;
+  final FixedSizeStack redoStack;
+  EditorState? state;
 
   HistoryItem getUndoHistoryItem() {
     if (undoStack.isEmpty) {
@@ -143,10 +143,6 @@ class UndoManager {
     final transaction = historyItem.toTransaction(s);
     s.apply(
       transaction,
-      options: const ApplyOptions(
-        recordUndo: true,
-        recordRedo: false,
-      ),
     );
   }
 

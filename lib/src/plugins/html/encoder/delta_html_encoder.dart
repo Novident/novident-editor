@@ -54,11 +54,11 @@ class DeltaHTMLEncoder extends Converter<Delta, List<dom.Node>> {
     }
 
     final keyToTag = {
-      NovidentRichTextKeys.bold: HTMLTags.strong,
-      NovidentRichTextKeys.italic: HTMLTags.italic,
-      NovidentRichTextKeys.underline: HTMLTags.underline,
-      NovidentRichTextKeys.strikethrough: HTMLTags.del,
-      NovidentRichTextKeys.code: HTMLTags.code,
+      RichTextKeys.bold: HTMLTags.strong,
+      RichTextKeys.italic: HTMLTags.italic,
+      RichTextKeys.underline: HTMLTags.underline,
+      RichTextKeys.strikethrough: HTMLTags.del,
+      RichTextKeys.code: HTMLTags.code,
       null: HTMLTags.paragraph,
     };
 
@@ -88,7 +88,7 @@ class DeltaHTMLEncoder extends Converter<Delta, List<dom.Node>> {
     String text,
     Attributes attributes,
   ) {
-    final href = attributes[NovidentRichTextKeys.href];
+    final href = attributes[RichTextKeys.href];
     if (href == null) {
       return null;
     }
@@ -100,7 +100,7 @@ class DeltaHTMLEncoder extends Converter<Delta, List<dom.Node>> {
       final key = entry.key;
       final value = entry.value;
 
-      if (key == NovidentRichTextKeys.href) {
+      if (key == RichTextKeys.href) {
         continue;
       }
 

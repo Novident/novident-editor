@@ -24,8 +24,25 @@ enum VimMode {
 /// `modifier+key` combinations (e.g. `'h'`, `'shift+g'`, `'ctrl+d'`,
 /// `'h,arrow left'`).
 class VimCommand {
+  const VimCommand(
+    this.code, {
+    this.mode = VimMode.normal,
+    this.restrictToDefinedMode = false,
+    this.rawCommand,
+  });
+
   final int code;
-  const VimCommand(this.code);
+
+  /// The mode required to execute this command. Set to null to allow any mode
+  final VimMode? mode;
+
+  /// The raw version of the full command
+  ///
+  /// Useful for multi-key commands that requires
+  final String? rawCommand;
+
+  /// Whether the command will ignore the command if the mode is not the specified
+  final bool restrictToDefinedMode;
 
   /// Returns to [VimMode.normal] (default: `escape`).
   static const VimCommand enterNormalMode = VimCommand(0);
@@ -83,11 +100,11 @@ class VimCommand {
   /// Default: `shift+digit 4` (`$` on a US layout).
   static const VimCommand moveLineEnd = VimCommand(16);
 
-  /// Default: `g`.
-  ///
-  /// Note: this deviates from vim's `gg` — multi-key sequences are not
-  /// supported yet.
-  static const VimCommand moveDocumentStart = VimCommand(17);
+  /// Default: `gg`.
+  static const VimCommand moveDocumentStart = VimCommand(
+    17,
+    rawCommand: 'gg',
+  );
 
   /// Default: `shift+g`.
   static const VimCommand moveDocumentEnd = VimCommand(18);
@@ -119,11 +136,18 @@ class VimCommand {
   ///   removed. A single press only arms the operator
   ///   (see `VimModeController.pendingCommand`).
   /// * In visual mode a single press cuts the selection.
-  static const VimCommand deleteLine = VimCommand(24);
+  static const VimCommand deleteLine = VimCommand(
+    24,
+    rawCommand: 'dd',
+  );
 
   /// Copies the selection and returns to normal mode. Only effective in
   /// visual mode (default: `y`).
-  static const VimCommand yank = VimCommand(25);
+  static const VimCommand yank = VimCommand(
+    25,
+    mode: VimMode.visual,
+    restrictToDefinedMode: true,
+  );
 
   /// Pastes the clipboard content (default: `p`).
   static const VimCommand paste = VimCommand(26);
@@ -133,6 +157,21 @@ class VimCommand {
 
   /// Default: `ctrl+r`.
   static const VimCommand redo = VimCommand(28);
+
+  VimCommand copyWith({
+    int? code,
+    VimMode? mode,
+    String? rawCommand,
+    bool? restrictToDefinedMode,
+  }) {
+    return VimCommand(
+      code ?? this.code,
+      mode: mode ?? this.mode,
+      rawCommand: rawCommand ?? this.rawCommand,
+      restrictToDefinedMode:
+          restrictToDefinedMode ?? this.restrictToDefinedMode,
+    );
+  }
 
   @override
   bool operator ==(Object other) {
@@ -159,7 +198,7 @@ class VimCursorStyle {
   const VimCursorStyle({
     this.color,
     this.opacity = 0.55,
-    this.blink = false,
+    this.blink = true,
     this.blockWidth,
     this.minBlockWidthFactor = 0.4,
     this.maxBlockWidthFactor = 1.0,
@@ -185,10 +224,6 @@ class VimCursorStyle {
   final double? blockWidth;
 
   /// Lower bound of the measured width, as a fraction of the caret height.
-  ///
-  /// Also used when there is nothing to measure (end of line, empty
-  /// paragraph). With the default line height, `0.4 × height` is roughly
-  /// `0.6em` — close to a terminal cell.
   final double minBlockWidthFactor;
 
   /// Upper bound of the measured width, as a fraction of the caret height,
@@ -368,11 +403,26 @@ class VimModeConfiguration {
 
   /// Returns a copy with [command] bound to [keys], keeping the other
   /// overrides.
-  VimModeConfiguration rebind(VimCommand command, String keys) {
+  VimModeConfiguration rebind(
+    VimCommand command,
+    String keys, {
+    String? rawCommand,
+  }) {
+    VimCommand effectiveCommand = command;
+    if (rawCommand != null && command.rawCommand != rawCommand) {
+      assert(rawCommand.isNotEmpty, 'rawCommand must no be empty');
+      assert(
+        keys.split(',').any(
+              (e) => rawCommand[0] == e[0],
+            ),
+        'At least one of the keys in $keys should contain the first character of $rawCommand',
+      );
+      effectiveCommand = command.copyWith(rawCommand: rawCommand);
+    }
     return copyWith(
       keybindings: <VimCommand, String>{
         ..._rawKeybindings,
-        command: keys,
+        effectiveCommand: keys,
       },
     );
   }

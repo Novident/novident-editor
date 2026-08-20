@@ -61,15 +61,13 @@ TextSpan _neutralizeColors(
 
   // the transparent attribute is used internally (e.g. for auto-complete
   // ghost text), don't override it.
-  final isTransparent = attributes[NovidentRichTextKeys.transparent] == true;
+  final isTransparent = attributes[RichTextKeys.transparent] == true;
 
   if (config.ignoreTextColor &&
       !isTransparent &&
-      attributes[NovidentRichTextKeys.textColor] != null) {
+      attributes[RichTextKeys.textColor] != null) {
     final editorState = context.read<EditorState>();
-    final baseColor =
-        editorState.editorStyle.textStyleConfiguration.text.color ??
-            DefaultTextStyle.of(context).style.color;
+    final baseColor = DefaultTextStyle.of(context).style.color;
     if (baseColor != null && style.color != baseColor) {
       style = style.copyWith(color: baseColor);
       changed = true;
@@ -78,11 +76,10 @@ TextSpan _neutralizeColors(
 
   // the find & replace highlight (find_bg_color) is never neutralized,
   // otherwise search matches would become invisible.
-  final hasFindHighlight =
-      attributes[NovidentRichTextKeys.findBackgroundColor] != null;
+  final hasFindHighlight = attributes[RichTextKeys.findBackgroundColor] != null;
   if (config.ignoreHighlightColor &&
       !hasFindHighlight &&
-      attributes[NovidentRichTextKeys.backgroundColor] != null) {
+      attributes[RichTextKeys.backgroundColor] != null) {
     style = style.copyWith(backgroundColor: Colors.transparent);
     changed = true;
   }

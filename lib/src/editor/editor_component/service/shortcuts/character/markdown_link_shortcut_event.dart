@@ -55,7 +55,7 @@ bool handleFormatMarkdownLinkToLink({
       lastMatch.start,
       title!,
       attributes: {
-        NovidentRichTextKeys.href: link,
+        RichTextKeys.href: link,
       },
     );
   editorState.apply(transaction);

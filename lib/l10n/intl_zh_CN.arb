@@ -153,5 +153,6 @@
   "slashPlaceHolder": "单击 / 以插入内容，或开始输入",
   "textAlignLeft": "靠左对齐",
   "textAlignCenter": "居中对齐",
-  "textAlignRight": "靠右对齐"
+  "textAlignRight": "靠右对齐",
+  "noStyle": "No Style"
 }

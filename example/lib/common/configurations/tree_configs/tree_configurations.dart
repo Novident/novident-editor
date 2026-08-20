@@ -28,7 +28,8 @@ TreeConfiguration treeConfigurationBuilder(
         indentation: 14,
       ),
       dragConfig: DraggableConfigurations.simple(
-        longPressOnMobile: Platform.isAndroid || Platform.isIOS || Platform.isFuchsia,
+        longPressOnMobile:
+            Platform.isAndroid || Platform.isIOS || Platform.isFuchsia,
         expandOnHover: true,
         feedback: (Node node, BuildContext context) {
           return NodeDragCard(

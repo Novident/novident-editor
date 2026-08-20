@@ -70,11 +70,9 @@ KeyEventResult _toggleAttribute(
   }
 
   final node = editorState.getNodeAtPath(selection.start.path)!;
-  bool isHeading = isBody ??
+  final bool isHeading = isBody ??
       node.type == HeadingBlockKeys.type &&
           node.attributes[HeadingBlockKeys.level] == level;
-
-  final delta = (node.delta ?? Delta()).toJson();
 
   editorState.formatNode(
     selection,
@@ -86,7 +84,7 @@ KeyEventResult _toggleAttribute(
             node.attributes[blockComponentBackgroundColor],
         blockComponentTextDirection:
             node.attributes[blockComponentTextDirection],
-        blockComponentDelta: delta,
+        blockComponentDelta: (node.delta ?? Delta()).toJson(),
       },
     ),
   );

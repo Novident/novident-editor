@@ -55,10 +55,26 @@ final vimController = VimModeController();
 
 NovidentEditor(
   editorState: editorState,
-  commandShortcutEvents: [
-    // vim shortcuts must come first so they take precedence.
-    ...vimController.commandShortcutEvents,
-    ...standardCommandShortcutEvents,
+  editorStyle: EditorStyle.desktop(
+    // Pass the vim renderer so the block cursor is painted in
+    // normal/visual mode. The renderer delegates to the standard
+    // caret in insert mode automatically.
+    selectionRenderer: VimSelectionRenderer(
+      controller: vimController,
+    ),
+  ),
+  keyboardStrategies: [
+    VimStrategy(
+      session.vimController,
+    ),
+    DefaultEditorStrategy(
+      commandShortcutEvents: [
+        ...session.vimController.commandShortcutEvents,
+        ...tableCommands,
+        ...standardCommandShortcutEvents,
+      ],
+      characterShortcutEvents: standardCharacterShortcutEvents,
+    ),
   ],
 );
 
@@ -66,8 +82,8 @@ NovidentEditor(
 vimController.attach(editorState);
 
 // Remap any built-in command at runtime:
-vimController.configuration =
-    vimController.configuration.rebind(VimCommand.moveLeft, 'a');
+vimController.configuration = vimController.configuration
+    .rebind(VimCommand.moveLeft, 'a', rawCommand: null);
 ```
 
 Key points:
@@ -172,6 +188,46 @@ that command is automatically unbound.  For example, rebinding `moveLeft` to
 Built-in commands use codes 0–28.  Pick any integer ≥ **100** for your own
 commands to avoid future collisions:
 
+### `mode`
+
+This is the required mode that this command needs to be executed successfully. Let `null` to disable check that avoids executing it when condition `currentMode != command.mode` returns `true`.
+Normally if you want to be strict you use this together with `restrictToDefinedMode` flag to true.
+
+### `rawCommand`
+
+This is the way that allow us supporting multi-key feature. It lets to the vim controller to wait in a "pending" mode, where the controller is waiting until you finishes the expected full command
+passed.   
+
+For example, this is the definition of `VimCommand.deleteLine` and how we register it in the configs:
+
+```dart
+/// Vim's `d` operator (default: `d`).
+///
+/// * In normal mode it is a pending operator: pressing it twice (`dd`)
+///   cuts the current line — the line is copied to the clipboard and
+///   removed. A single press only arms the operator
+///   (see `VimModeController.pendingCommand`).
+/// * In visual mode a single press cuts the selection.
+static const VimCommand deleteLine = VimCommand(
+  24,
+  mode: VimMode.normal,
+  rawCommand: 'dd',
+);
+
+/// You can set here the initial key that needs to start the pending state
+static final Map<VimCommand, String> defaultKeybindings = Map.unmodifiable({
+  VimCommand.deleteLine: 'd',
+});
+```
+
+
+
+The `mode` defined with the `rawCommand` property, will do that the controller filters any command until the mode is the appropiate, and the key matched with the expected by `rawCommand`. In simple words, in visual mode `VimCommand.deleteLine` ignores the `rawCommand` because its `mode` is defined to be `VimMode.normal`. So, only in `normal` mode, you can use `dd` command
+
+Take in account that there's no timer that disables this interaction. Only when the `rawCommand` ends (matched or not), the pending state is removed. 
+
+### Example
+
 ### 1. Define the command
 
 ```dart
@@ -180,13 +236,14 @@ class MyVimCommands {
   MyVimCommands._();
 
   /// Indents the current node by one level (vim's `>`).
+
   static const indent = VimCommand(101);
 
   /// Outdents the current node by one level (vim's `<`).
   static const outdent = VimCommand(102);
 
   /// Inserts a horizontal divider below the current line.
-  static const insertDivider = VimCommand(103);
+  static const insertDivider = VimCommand(103, mode: VimMode.normal, rawCommand: 'dw');
 }
 ```
 
@@ -267,6 +324,84 @@ exactly like the built-in ones.
 
 ---
 
+## Cursor styling
+
+The vim emulation uses a **block cursor** in normal and visual mode, rendered
+through a `VimSelectionRenderer` that is passed to `EditorStyle.desktop()`.
+The insert-mode caret is never altered — the standard thin blinking line is
+preserved.
+
+### Configuring the block cursor
+
+The block cursor is styled through `VimCursorStyle`, accessible from
+`VimModeConfiguration.cursorStyle`:
+
+```dart
+final vimController = VimModeController(
+  configuration: VimModeConfiguration(
+    cursorStyle: VimCursorStyle(
+      color: Colors.purple,      // defaults to EditorStyle.cursorColor
+      opacity: 0.55,             // 0.0 – 1.0, keep text readable underneath
+      blink: false,              // steady block (default), set true to blink
+      blockWidth: null,          // null = auto-measure the character width
+      minBlockWidthFactor: 0.4,  // lower clamp × caret height
+      maxBlockWidthFactor: 1.0,  // upper clamp × caret height
+    ),
+  ),
+);
+
+NovidentEditor(
+  editorState: editorState,
+  editorStyle: EditorStyle.desktop(
+    cursorColor: Colors.black87,  // insert-mode caret color
+    selectionRenderer: VimSelectionRenderer(
+      controller: vimController,
+    ),
+  ),
+  commandShortcutEvents: [
+    ...vimController.commandShortcutEvents,
+    ...standardCommandShortcutEvents,
+  ],
+);
+```
+
+### Width policy
+
+When `blockWidth` is null (default), the renderer measures the character
+under the caret from the text layout and clamps the result between
+`minBlockWidthFactor` and `maxBlockWidthFactor` (both relative to the caret
+height). This keeps the block usable on whitespace (too narrow) and on
+ligatures / tabs / wide glyphs (too wide).
+
+Set `blockWidth` to a fixed value to override the measurement entirely.
+
+### Changing the style at runtime
+
+The cursor style can be changed at runtime **without rebuilding the editor** —
+the `SelectionRenderer` reads the current `VimCursorStyle` from the controller
+on every frame:
+
+```dart
+vimController.configuration = vimController.configuration.copyWith(
+  cursorStyle: const VimCursorStyle(
+    color: Colors.red,
+    blockWidth: 20,
+    blink: true,
+  ),
+);
+```
+
+### How it works
+
+The `VimSelectionRenderer` implements the `SelectionRenderer` interface from
+`novident_selection`. In normal/visual mode it paints a `VimBlockCursor`
+(a semi-transparent `Container` that covers the character at the caret),
+while in insert mode every call delegates to the fallback `DefaultSelectionRenderer`
+(the standard thin caret). The mode switch triggers a repaint automatically
+via the editor's selection notifier — no manual rebuild required.
+
+---
+
 ## Observing state
 
 `VimModeController` extends `ChangeNotifier`.  Subscribe to react to mode
@@ -303,10 +438,24 @@ all key events are forwarded to the standard editor shortcuts.
 
 ```dart
 class VimCommand {
-  final int code;
-  const VimCommand(this.code);
+  const VimCommand(
+    this.code, {
+    this.mode = VimMode.normal,
+    this.restrictToDefinedMode = false,
+    this.rawCommand,
+  });
 
-  // Two commands are equal when their codes match.
+  /// The mode required to execute this command. Set to null to allow any mode
+  final VimMode? mode;
+
+  /// The raw version of the full command
+  ///
+  /// Useful for multi-key commands that requires
+  final String? rawCommand;
+
+  /// Whether the command will ignore the command if the mode is not the specified
+  final bool restrictToDefinedMode;
+
   // Built-in codes: 0–28.  Use ≥ 100 for custom commands.
 }
 ```
@@ -319,7 +468,7 @@ class VimCommand {
 | `VimModeConfiguration.defaultBindings({...})` | Non-const; spreads defaults under user overrides. |
 | `keybindings` → `Map<VimCommand, String>` | **Resolved** map: defaults + conflict resolution + overrides. |
 | `commandOf(VimCommand) → String?` | Effective binding for one command (falls back to defaults). |
-| `rebind(VimCommand, String keys) → VimModeConfiguration` | Returns a copy with the command rebound. |
+| `rebind(VimCommand, String keys, {String? rawCommand}) → VimModeConfiguration` | Returns a copy with the command rebound. |
 | `copyWith({enabled, initialMode, …, keybindings})` | Standard immutable copy. |
 
 ### `VimModeController`
@@ -331,7 +480,9 @@ class VimCommand {
 | `attach(EditorState)` / `detach()` | Bind / unbind to the editor. |
 | `configuration` (get/set) | Read or replace the resolved configuration.  Setter updates bindings in-place. |
 | `mode → VimMode` | Current mode (`normal`, `insert`, `visual`). |
-| `pendingCommand → String?` | Armed operator (e.g. `'d'` for `dd`). |
+| `pendingCommand → String?` | Armed operator (e.g `d`, `g`). |
+| `pendingCommandBuffer → String?` | String containing the keys that starts like the `rawCommand` defined for command (e.g. `d` to times will be stored like `dd`). |
+| `pendingCommandTimes → String?` | Zero-index based that stores the times `key` matches with a `rawCommand`. |
 | `enabled → bool` | Whether the emulation is active. |
 | `toggleEnabled()` | Toggles the emulation. |
 | `enterNormalMode()` / `enterInsertMode()` / `enterVisualMode()` | Mode transitions. |

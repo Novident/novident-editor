@@ -23,7 +23,6 @@ void main() async {
           expect(after.delta!.toPlainText(), text);
           expect(after.type, BulletedListBlockKeys.type);
         },
-        text: text,
       );
     });
 
@@ -41,7 +40,6 @@ void main() async {
           expect(result, false);
           expect(before.toJson(), after.toJson());
         },
-        text: text,
       );
     });
 

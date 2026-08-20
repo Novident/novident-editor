@@ -3,29 +3,13 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class HeadingBlockKeys {
-  const HeadingBlockKeys._();
-
-  static const String type = 'heading';
-
-  /// The level data of a heading block.
-  ///
-  /// The value is a int.
-  static const String level = 'level';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node headingNode({
   required int level,
   String? text,
   Delta? delta,
   String? textDirection,
   Attributes? attributes,
+  String? styleRef,
 }) {
   assert(level >= 1 && level <= 6);
   return Node(
@@ -34,6 +18,7 @@ Node headingNode({
       HeadingBlockKeys.delta: (delta ?? (Delta()..insert(text ?? ''))).toJson(),
       HeadingBlockKeys.level: level.clamp(1, 6),
       if (attributes != null) ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null) HeadingBlockKeys.textDirection: textDirection,
     },
   );
@@ -138,15 +123,14 @@ class _HeadingBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
-      // Related issue: https://github.com/AppFlowy-IO/appflowy-editor/issues/3175
-      // make the width of the rich text as small as possible to avoid
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
         textDirection: textDirection,
         children: [
           Flexible(
@@ -154,8 +138,10 @@ class _HeadingBlockComponentWidgetState
               key: forwardKey,
               delegate: this,
               node: widget.node,
-              editorState: editorState,
-              textAlign: alignment?.toTextAlign ?? textAlign,
+              editorConfig: editorState,
+              textAlign:
+                  blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign,
+              useFirstLineIndent: false,
               textSpanDecorator: (textSpan) {
                 var result = textSpan.updateTextStyle(
                   textStyleWithTextSpan(textSpan: textSpan),
@@ -190,6 +176,8 @@ class _HeadingBlockComponentWidgetState
       key: blockComponentKey,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [
@@ -198,9 +186,12 @@ class _HeadingBlockComponentWidgetState
       child: child,
     );
 
+    final effectivePadding = blockStyle.applyToPadding(padding);
+    final effectiveDecoration = blockStyle.applyToDecoration(decoration);
+
     child = Container(
-      padding: padding,
-      decoration: decoration,
+      padding: effectivePadding,
+      decoration: effectiveDecoration,
       child: child,
     );
 

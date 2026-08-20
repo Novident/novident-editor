@@ -1,6 +1,8 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
+import '../editor_component/service/shortcuts/command/move_hooks.dart';
+
 /// Builds one [CommandShortcutEvent] per [VimCommand], bound to the
 /// keybindings of the controller's configuration.
 ///
@@ -28,10 +30,13 @@ Map<VimCommand, CommandShortcutEvent> buildVimModeCommandShortcutEvents(
       // in normal mode `escape` is a handled no-op, so the built-in
       // exitEditing command doesn't clear the selection.
       onNormal: (editorState, controller) {
-        controller.enterNormalMode(editorState: editorState);
         return KeyEventResult.handled;
       },
       onInsert: (editorState, controller) {
+        controller.enterNormalMode(editorState: editorState);
+        return KeyEventResult.handled;
+      },
+      onVisual: (editorState, controller) {
         controller.enterNormalMode(editorState: editorState);
         return KeyEventResult.handled;
       },
@@ -79,14 +84,20 @@ Map<VimCommand, CommandShortcutEvent> buildVimModeCommandShortcutEvents(
     VimCommand.openLineBelow: event(
       VimCommand.openLineBelow,
       controller: controller,
-      onNormal: (editorState, controller) =>
-          _openLine(editorState, controller, below: true),
+      onNormal: (editorState, controller) => _openLine(
+        editorState,
+        controller,
+        below: true,
+      ),
     ),
     VimCommand.openLineAbove: event(
       VimCommand.openLineAbove,
       controller: controller,
-      onNormal: (editorState, controller) =>
-          _openLine(editorState, controller, below: false),
+      onNormal: (editorState, controller) => _openLine(
+        editorState,
+        controller,
+        below: false,
+      ),
     ),
     VimCommand.enterVisualMode: event(
       VimCommand.enterVisualMode,
@@ -118,7 +129,8 @@ Map<VimCommand, CommandShortcutEvent> buildVimModeCommandShortcutEvents(
       VimCommand.moveLeft,
       controller: controller,
       onNormal: delegate(moveCursorLeftCommand),
-      onVisual: delegate(moveCursorLeftSelectCommand),
+      onVisual: (editorState, controller) =>
+          _moveVisualHorizontal(editorState, toLeft: true),
     ),
     VimCommand.moveDown: event(
       VimCommand.moveDown,
@@ -136,7 +148,8 @@ Map<VimCommand, CommandShortcutEvent> buildVimModeCommandShortcutEvents(
       VimCommand.moveRight,
       controller: controller,
       onNormal: delegate(moveCursorRightCommand),
-      onVisual: delegate(moveCursorRightSelectCommand),
+      onVisual: (editorState, controller) =>
+          _moveVisualHorizontal(editorState, toLeft: false),
     ),
     VimCommand.moveWordForward: event(
       VimCommand.moveWordForward,
@@ -209,16 +222,7 @@ Map<VimCommand, CommandShortcutEvent> buildVimModeCommandShortcutEvents(
     VimCommand.deleteLine: event(
       VimCommand.deleteLine,
       controller: controller,
-      // vim's `d` operator: the first press arms it, the second (`dd`)
-      // cuts the current line.
-      onNormal: (editorState, controller) {
-        if (controller.pendingCommand == 'd') {
-          controller.setPendingCommand(null);
-          return _cutLine(editorState, controller);
-        }
-        controller.setPendingCommand('d');
-        return KeyEventResult.handled;
-      },
+      onNormal: _cutLine,
       onVisual: _cutSelectionAndExitVisual,
     ),
     VimCommand.yank: event(
@@ -404,4 +408,142 @@ Node? _firstTextNode(Node node) {
     }
   }
   return null;
+}
+
+// Vim charwise visual selections keep the anchor (where `v` was pressed)
+// fixed and move only the cursor. The shared shift+arrow select commands
+// cannot express this: they pin `Selection.start` and only replace `end`
+// with the `onHorizontalMove` result, so moving the cursor past the anchor
+// collapses the selection instead of flipping it. These helpers compute
+// the whole selection with vim semantics.
+//
+// Invariant: with the cursor C and the anchor A (character offsets), the
+// raw selection is
+//   * `[A, C + 1)` when C >= A (head renders on the last selected char)
+//   * `[A + 1, C]` when C <  A (head renders on the first selected char)
+/// Moves the visual selection one character left/right like vim's `h`/`l`.
+KeyEventResult _moveVisualHorizontal(
+  EditorState editorState, {
+  required bool toLeft,
+}) {
+  final selection = editorState.selection;
+  if (selection == null || selection.isCollapsed) {
+    // No character under the caret to anchor on (e.g. empty line): let
+    // the standard shift+arrow behavior take over.
+    return KeyEventResult.ignored;
+  }
+
+  final norm = selection.normalized;
+  final headAtRight = selection.end == norm.end;
+
+  // Vim anchor: the character where the visual mode started.
+  // Vim cursor: the character under the moving head.
+  final Position? anchor;
+  final Position? cursor;
+  if (headAtRight) {
+    anchor = norm.start;
+    cursor = _charBefore(norm.end, editorState);
+  } else {
+    anchor = _charBefore(norm.end, editorState);
+    cursor = norm.start;
+  }
+  if (anchor == null || cursor == null) {
+    return KeyEventResult.handled;
+  }
+
+  final node = editorState.getNodeAtPath(cursor.path);
+  final isRtl = node?.selectable?.textDirection() == TextDirection.rtl;
+  // `moveHorizontal(forward:)` walks the text: `forward` is the visual
+  // left in LTR and the visual right in RTL.
+  final forward = toLeft ? !isRtl : isRtl;
+  var newCursor = cursor.moveHorizontal(editorState, forward: forward);
+  if (newCursor == null || newCursor == cursor) {
+    return KeyEventResult.handled;
+  }
+
+  // vim's `l` stops at the last character of the line — it never selects
+  // a caret-only offset past the text.
+  if (!toLeft && newCursor.offset >= _deltaLength(editorState, newCursor)) {
+    return KeyEventResult.handled;
+  }
+  // Crossing nodes through `moveHorizontal` yields a caret past the last
+  // character — vim cursors sit on characters instead.
+  newCursor = _onChar(newCursor, editorState);
+
+  final renderer = editorState.selectionRenderer;
+  final from = cursor;
+  final hookResult = tryMoveHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: newCursor,
+    direction: toLeft ? MoveDirection.left : MoveDirection.right,
+  );
+  if (hookResult == null) return KeyEventResult.handled;
+
+  final Selection newSelection;
+  if (_positionAtOrAfter(hookResult, anchor)) {
+    // Cursor at/right of the anchor: select [anchor, cursor + 1).
+    newSelection = Selection(
+      start: anchor,
+      end: Position(
+        path: hookResult.path,
+        offset: (hookResult.offset + 1)
+            .clamp(0, _deltaLength(editorState, hookResult)),
+      ),
+    );
+  } else {
+    // Cursor left of the anchor: select [cursor, anchor + 1).
+    newSelection = Selection(
+      start: Position(
+        path: anchor.path,
+        offset: (anchor.offset + 1).clamp(0, _deltaLength(editorState, anchor)),
+      ),
+      end: hookResult,
+    );
+  }
+
+  editorState.updateSelectionWithReason(
+    newSelection,
+    reason: SelectionUpdateReason.uiEvent,
+  );
+  moveCompletedHook(
+    renderer: renderer,
+    editorState: editorState,
+    fromPosition: from,
+    toPosition: hookResult,
+    direction: toLeft ? MoveDirection.left : MoveDirection.right,
+  );
+  return KeyEventResult.handled;
+}
+
+/// The character immediately before [position] in document order, or null
+/// when there is none (start of the document).
+Position? _charBefore(Position position, EditorState editorState) {
+  if (position.offset > 0) {
+    return Position(path: position.path, offset: position.offset - 1);
+  }
+  final previous = position.moveHorizontal(editorState);
+  return previous == null ? null : _onChar(previous, editorState);
+}
+
+/// Normalizes a caret position into a character position: vim cursors sit
+/// ON characters, while [PositionExtension.moveHorizontal] returns
+/// caret-only offsets (node length) when crossing nodes.
+Position _onChar(Position position, EditorState editorState) {
+  final length = _deltaLength(editorState, position);
+  if (length > 0 && position.offset >= length) {
+    return Position(path: position.path, offset: length - 1);
+  }
+  return position;
+}
+
+int _deltaLength(EditorState editorState, Position position) =>
+    editorState.getNodeAtPath(position.path)?.delta?.length ?? 0;
+
+bool _positionAtOrAfter(Position position, Position reference) {
+  if (position.path.equals(reference.path)) {
+    return position.offset >= reference.offset;
+  }
+  return position.path > reference.path;
 }

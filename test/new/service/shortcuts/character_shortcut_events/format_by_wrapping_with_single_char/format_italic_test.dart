@@ -225,7 +225,7 @@ void main() async {
           ..insert(
             text,
             attributes: {
-              NovidentRichTextKeys.code: true,
+              RichTextKeys.code: true,
             },
           ),
       );
@@ -240,7 +240,7 @@ void main() async {
       final after = editorState.getNodeAtPath([0])!;
       expect(after.delta!.toPlainText(), text);
       final isItalic = after.delta!.any(
-        (element) => element.attributes?[NovidentRichTextKeys.italic] == true,
+        (element) => element.attributes?[RichTextKeys.italic] == true,
       );
       expect(isItalic, false);
     });

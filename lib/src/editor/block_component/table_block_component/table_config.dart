@@ -1,45 +1,30 @@
+import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
-class TableConfig {
-  TableConfig({
-    double? colDefaultWidth,
-    double? rowDefaultHeight,
-    double? colMinimumWidth,
-    double? borderWidth,
-  }) {
-    this.colDefaultWidth = colDefaultWidth ?? TableDefaults.colWidth;
-    this.rowDefaultHeight = rowDefaultHeight ?? TableDefaults.rowHeight;
-    this.colMinimumWidth = colMinimumWidth ?? TableDefaults.colMinimumWidth;
-    this.borderWidth = borderWidth ?? TableDefaults.borderWidth;
-  }
+class TableDefaults {
+  const TableDefaults._();
 
-  static TableConfig fromJson(Map<String, dynamic> json) {
-    double func(String key, double defaultVal) => json.containsKey(key)
-        ? double.tryParse(json[key].toString())!
-        : defaultVal;
+  static double colDefaultWeight = kDefaultTableStyle.colDefaultWeight;
 
-    return TableConfig(
-      colDefaultWidth:
-          func(TableBlockKeys.colDefaultWidth, TableDefaults.colWidth),
-      rowDefaultHeight:
-          func(TableBlockKeys.rowDefaultHeight, TableDefaults.rowHeight),
-      colMinimumWidth:
-          func(TableBlockKeys.colMinimumWidth, TableDefaults.colMinimumWidth),
-      borderWidth: func(TableBlockKeys.borderWidth, TableDefaults.borderWidth),
-    );
-  }
+  @Deprecated('Use colDefaultWeight instead')
+  static double colWidth = 160.0;
 
-  Map<String, Object> toJson() {
-    return {
-      TableBlockKeys.colDefaultWidth: colDefaultWidth,
-      TableBlockKeys.rowDefaultHeight: rowDefaultHeight,
-      TableBlockKeys.colMinimumWidth: colMinimumWidth,
-      TableBlockKeys.borderWidth: borderWidth,
-    };
-  }
+  static double rowHeight = kDefaultTableStyle.rowDefaultHeight;
 
-  late final double colDefaultWidth,
-      rowDefaultHeight,
-      colMinimumWidth,
-      borderWidth;
+  static double colMinimumWidth = kDefaultTableStyle.colMinimumWidth;
+
+  static double borderWidth = kDefaultTableStyle.borderWidth;
+
+  /// See [TableStyle.cellVerticalPadding].
+  static double cellVerticalPadding = kDefaultTableStyle.cellVerticalPadding;
+
+  static final Color borderColor =
+      kDefaultTableStyle.borderColor ?? Colors.grey;
+
+  static final Color borderHoverColor =
+      kDefaultTableStyle.borderColor ?? Colors.blue;
+
+  static const Widget addIcon = Icon(Icons.add, size: 20);
+
+  static const Widget handlerIcon = Icon(Icons.drag_indicator);
 }

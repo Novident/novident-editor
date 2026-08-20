@@ -30,7 +30,9 @@ CharacterShortcutEventHandler _insertNewLineHandler = (editorState) async {
   }
 
   // delete the selection
-  await editorState.deleteSelection(selection);
+  if (!selection.isCollapsed) {
+    await editorState.deleteSelection(selection);
+  }
   // insert a new line
   await editorState.insertNewLine(position: selection.start);
 

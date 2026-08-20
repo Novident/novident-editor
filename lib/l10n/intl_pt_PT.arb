@@ -47,5 +47,6 @@
   "cmdMoveToDownCellAtSameOffset": "Mover para a célula abaixo na mesma posição",
   "cmdNavigateAroundTheCellsAtSameOffset": "Navegar pelas células na mesma posição",
   "cmdNavigateAroundTheCellsAtSameOffsetInReverse": "Navegar pelas células na mesma posição (reverso)",
-  "cmdStopAtTheBeginningOfTheCell": "Parar no início da célula"
+  "cmdStopAtTheBeginningOfTheCell": "Parar no início da célula",
+  "noStyle": "No Style"
 }

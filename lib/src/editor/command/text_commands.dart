@@ -53,6 +53,11 @@ extension TextTransforms on EditorState {
       'delta': slicedDelta.toJson(),
     };
 
+    final nextStyleRef = _resolveNextStyleRef(node);
+    if (nextStyleRef != null) {
+      attributes[blockComponentStyleRef] = nextStyleRef;
+    }
+
     // Copy the text direction from the current node.
     final textDirection =
         node.attributes[blockComponentTextDirection] as String?;
@@ -70,14 +75,12 @@ extension TextTransforms on EditorState {
     transaction.insertNode(
       next,
       nodeBuilder(insertedNode),
-      deepCopy: true,
     );
 
     // Set the selection to be at the beginning of the new paragraph.
     transaction.afterSelection = Selection.collapsed(
       Position(
         path: next,
-        offset: 0,
       ),
     );
     transaction.selectionExtraInfo = {};
@@ -136,6 +139,7 @@ extension TextTransforms on EditorState {
   /// format the delta at the given selection.
   ///
   /// If the [Selection] is not passed in, use the current selection.
+  //TODO: @Cathood0 some of these methods does not take in account vim mode
   Future<void> formatDelta(
     Selection? selection,
     Attributes attributes, {
@@ -341,7 +345,7 @@ extension TextTransforms on EditorState {
   List<String> getTextInSelection([
     Selection? selection,
   ]) {
-    List<String> res = [];
+    final List<String> res = [];
     selection ??= this.selection;
     if (selection == null || selection.isCollapsed) {
       return res;
@@ -432,5 +436,27 @@ extension TextTransforms on EditorState {
     }
 
     return null;
+  }
+
+  /// Resolves the [NovidentStyleDefinition.next] style ID for [node].
+  ///
+  /// Returns `null` when no styles are configured, the node has no style,
+  /// or the resolved style has no [next] defined.
+  String? _resolveNextStyleRef(Node node) {
+    final config = editorStyles;
+    if (config == null) return null;
+    final styleRef = node.attributes[blockComponentStyleRef] as String?;
+    if (styleRef != null && styleRef.isNotEmpty) {
+      final resolved = config.registry.resolve(
+        styleRef,
+        baseStyle: config.defaultStyle,
+        byTypes: config.defaultStylesByType,
+        forType: node.type,
+      );
+      return resolved?.next;
+    }
+    final typeDefault = config.defaultStylesByType[node.type];
+    if (typeDefault != null) return typeDefault.next;
+    return config.defaultStyle.next;
   }
 }

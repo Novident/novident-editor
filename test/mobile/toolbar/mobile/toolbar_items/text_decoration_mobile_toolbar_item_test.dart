@@ -13,7 +13,7 @@ void main() {
       withFloatingToolbar: true,
     );
 
-    var selection = Selection.single(
+    final selection = Selection.single(
       path: [1],
       startOffset: 2,
       endOffset: text.length - 2,
@@ -56,8 +56,7 @@ void main() {
     expect(
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
-              (element) =>
-                  element.attributes?[NovidentRichTextKeys.bold] == true,
+              (element) => element.attributes?[RichTextKeys.bold] == true,
             );
       }),
       true,
@@ -74,8 +73,7 @@ void main() {
     expect(
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
-              (element) =>
-                  element.attributes?[NovidentRichTextKeys.italic] == true,
+              (element) => element.attributes?[RichTextKeys.italic] == true,
             );
       }),
       true,
@@ -92,8 +90,7 @@ void main() {
     expect(
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
-              (element) =>
-                  element.attributes?[NovidentRichTextKeys.underline] == true,
+              (element) => element.attributes?[RichTextKeys.underline] == true,
             );
       }),
       true,
@@ -111,8 +108,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.strikethrough] ==
-                  true,
+                  element.attributes?[RichTextKeys.strikethrough] == true,
             );
       }),
       true,

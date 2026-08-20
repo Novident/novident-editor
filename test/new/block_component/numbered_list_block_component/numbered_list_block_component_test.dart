@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../infra/testable_editor.dart';
+import '../../util/editor_text_finders.dart';
 
 void main() async {
   group('numbered list component', () {
@@ -24,10 +25,10 @@ void main() async {
         );
       await editor.startTesting();
 
-      expect(find.text('100.', findRichText: true), findsOneWidget);
-      expect(find.text('101.', findRichText: true), findsOneWidget);
-      expect(find.text('102.', findRichText: true), findsOneWidget);
-      expect(find.text('200.', findRichText: true), findsNothing);
+      expect(findEditorRichText('100.'), findsOneWidget);
+      expect(findEditorRichText('101.'), findsOneWidget);
+      expect(findEditorRichText('102.'), findsOneWidget);
+      expect(findEditorRichText('200.'), findsNothing);
 
       await editor.dispose();
     });
@@ -53,8 +54,8 @@ void main() async {
         );
       await editor.startTesting();
 
-      expect(find.text('100.', findRichText: true), findsOneWidget);
-      expect(find.text('101.', findRichText: true), findsOneWidget);
+      expect(findEditorRichText('100.'), findsOneWidget);
+      expect(findEditorRichText('101.'), findsOneWidget);
 
       final selection = Selection.collapsed(Position(path: [0]));
       await editor.updateSelection(selection);
@@ -63,11 +64,11 @@ void main() async {
       await editor.ime.typeText(' ');
 
       expect(editor.nodeAtPath([0])!.type, NumberedListBlockKeys.type);
-      expect(find.text('1.', findRichText: true), findsOneWidget);
-      expect(find.text('2.', findRichText: true), findsOneWidget);
-      expect(find.text('3.', findRichText: true), findsOneWidget);
-      expect(find.text('100.', findRichText: true), findsNothing);
-      expect(find.text('101.', findRichText: true), findsNothing);
+      expect(findEditorRichText('1.'), findsOneWidget);
+      expect(findEditorRichText('2.'), findsOneWidget);
+      expect(findEditorRichText('3.'), findsOneWidget);
+      expect(findEditorRichText('100.'), findsNothing);
+      expect(findEditorRichText('101.'), findsNothing);
 
       await editor.dispose();
     });
@@ -97,9 +98,9 @@ void main() async {
         );
       await editor.startTesting();
 
-      expect(find.text('1.', findRichText: true), findsOneWidget);
-      expect(find.text('100.', findRichText: true), findsOneWidget);
-      expect(find.text('101.', findRichText: true), findsOneWidget);
+      expect(findEditorRichText('1.'), findsOneWidget);
+      expect(findEditorRichText('100.'), findsOneWidget);
+      expect(findEditorRichText('101.'), findsOneWidget);
 
       final selection = Selection.collapsed(Position(path: [1]));
       await editor.updateSelection(selection);
@@ -107,20 +108,21 @@ void main() async {
       await editor.pressKey(key: LogicalKeyboardKey.backspace);
 
       expect(editor.documentRootLen, 3);
-      expect(find.text('1.', findRichText: true), findsOneWidget);
-      expect(find.text('2.', findRichText: true), findsOneWidget);
-      expect(find.text('3.', findRichText: true), findsOneWidget);
-      expect(find.text('100.', findRichText: true), findsNothing);
-      expect(find.text('101.', findRichText: true), findsNothing);
+      expect(findEditorRichText('1.'), findsOneWidget);
+      expect(findEditorRichText('2.'), findsOneWidget);
+      expect(findEditorRichText('3.'), findsOneWidget);
+      expect(findEditorRichText('100.'), findsNothing);
+      expect(findEditorRichText('101.'), findsNothing);
 
       await editor.ime.typeText('\n');
       await editor.ime.typeText('\n');
-      expect(editor.documentRootLen, 4);
-      expect(find.text('1.', findRichText: true), findsOneWidget);
-      expect(find.text('2.', findRichText: true), findsNothing);
-      expect(find.text('3.', findRichText: true), findsNothing);
-      expect(find.text('100.', findRichText: true), findsOneWidget);
-      expect(find.text('101.', findRichText: true), findsOneWidget);
+      // Each Enter inserts one paragraph node: [1.][para][para][100.][101.].
+      expect(editor.documentRootLen, 5);
+      expect(findEditorRichText('1.'), findsOneWidget);
+      expect(findEditorRichText('2.'), findsNothing);
+      expect(findEditorRichText('3.'), findsNothing);
+      expect(findEditorRichText('100.'), findsOneWidget);
+      expect(findEditorRichText('101.'), findsOneWidget);
 
       await editor.dispose();
     });
@@ -163,13 +165,13 @@ void main() async {
 
       await editor.startTesting();
       for (final number in ['1.', '2.']) {
-        expect(find.text(number, findRichText: true), findsOneWidget);
+        expect(findEditorRichText(number), findsOneWidget);
       }
       for (final latin in ['a.', 'b.']) {
-        expect(find.text(latin, findRichText: true), findsOneWidget);
+        expect(findEditorRichText(latin), findsOneWidget);
       }
       for (final roman in ['I.', 'II.', 'III.']) {
-        expect(find.text(roman, findRichText: true), findsNWidgets(2));
+        expect(findEditorRichText(roman), findsNWidgets(2));
       }
     });
   });

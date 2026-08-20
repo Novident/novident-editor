@@ -2,7 +2,6 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/desktop_scroll_service.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/mobile_scroll_service.dart';
 import 'package:novident_editor/src/editor/toolbar/mobile/utils/keyboard_height_observer.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -148,6 +147,8 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
 
         // soft keyboard
         // workaround: wait for the soft keyboard to show up
+        //TODO: @Cathood0 we need to replace the current keyboard height plugin
+        // to another that supports all platforms
         final keyboardDelay = KeyboardHeightObserver.currentKeyboardHeight == 0
             ? const Duration(milliseconds: 250)
             : Duration.zero;

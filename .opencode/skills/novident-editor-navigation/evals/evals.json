@@ -1,0 +1,23 @@
+{
+  "skill_name": "novident-editor-navigation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to add a new block type called 'callout' to the Novident Editor. Where do I put the files and how do I register it so it shows up in the editor?",
+      "expected_output": "Points to lib/src/editor/block_component/callout_block_component/ with callout_block_component.dart + callout_character_shortcut.dart, registered in standard_block_components.dart, exported from the block_component barrel.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Where does undo/redo logic live in this repo, and where would I add a new keyboard shortcut (e.g. Ctrl+Shift+K)?",
+      "expected_output": "Undo/redo in lib/src/history/undo_manager.dart (HistoryItem, FixedSizeStack); keyboard shortcuts via KeyboardStrategy policies in lib/src/editor/editor_component/service/shortcuts/.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "How do I run just the vim mode tests, and where do vim-related tests live?",
+      "expected_output": "Command: flutter test test/new/vim_mode/vim_mode_test.dart; tests mirror source under test/new/vim_mode/.",
+      "files": []
+    }
+  ]
+}

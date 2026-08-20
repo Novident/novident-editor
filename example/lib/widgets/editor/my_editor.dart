@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
-
+import '../../spell_check/hunspell_spell_checker.dart';
+import '../../spell_check/spell_check_context_menu.dart';
 import 'document_session.dart';
 
 /// The Novident Editor surface shared by every view of the app (split
@@ -14,6 +15,7 @@ class MyEditor extends StatelessWidget {
     super.key,
     required this.session,
     this.zenController,
+    this.styles,
     this.padding = const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
     this.autoFocus = false,
     this.footer,
@@ -25,6 +27,8 @@ class MyEditor extends StatelessWidget {
   /// When non-null the editor renders with the zen visuals and disables
   /// the native caret auto-scroll in favor of the typewriter centering.
   final ZenModeController? zenController;
+
+  final NovidentStylesConfig? styles;
 
   final EdgeInsets padding;
   final bool autoFocus;
@@ -38,6 +42,9 @@ class MyEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    NovidentLogConfiguration()
+      ..handler = debugPrint
+      ..level = NovidentEditorLogLevel.all;
     return NovidentEditor(
       editorState: session.editorState,
       editorScrollController: session.scrollController,
@@ -45,24 +52,69 @@ class MyEditor extends StatelessWidget {
       autoFocus: autoFocus,
       disableAutoScroll: false,
       dynamicHeightConfig: dynamicHeightConfig,
-      editorStyle: EditorStyle.desktop(
-        padding: padding,
-        cursorColor: Colors.black87,
-        selectionColor: const Color(0x33448AFF),
-        textStyleConfiguration: const TextStyleConfiguration(
-          lineHeight: 1,
-          text: TextStyle(fontSize: 12, color: Colors.black87),
+      enableAutoComplete: true,
+      showMagnifier: UniversalPlatform.isMobile,
+      keyboardStrategies: [
+        VimStrategy(
+          session.vimController,
         ),
-        textSpanDecorator: zenController?.textSpanDecorator(),
-      ),
+        DefaultEditorStrategy(
+          commandShortcutEvents: [
+            // vim shortcuts must come first so they take precedence.
+            ...session.vimController.commandShortcutEvents,
+            ...tableCommands,
+            ...standardCommandShortcutEvents,
+          ],
+          characterShortcutEvents: standardCharacterShortcutEvents,
+        ),
+      ],
+      // The mobile surface needs the mobile style: `EditorStyle.desktop`
+      // hardcodes `magnifierSize = Size.zero` (and zero-sized drag
+      // handles), which makes the magnifier invisible on Android.
+      editorStyle: UniversalPlatform.isMobile
+          ? EditorStyle.mobile(
+              padding: padding,
+              firstLineIndent: 30,
+              cursorColor: Colors.blue.withAlpha(255),
+              selectionColor: Colors.blue.withAlpha(140),
+              spellChecker: HunspellSpellChecker.instance,
+            )
+          : EditorStyle.desktop(
+              padding: padding,
+              firstLineIndent: 30,
+              cursorColor: Colors.blue.withAlpha(255),
+              selectionColor: Colors.blue.withAlpha(140),
+              textSpanDecorator: zenController?.textSpanDecorator(),
+              selectionRenderer: VimSelectionRenderer(
+                controller: session.vimController,
+              ),
+              spellChecker: HunspellSpellChecker.instance,
+            ),
       blockWrapper: zenController?.blockWrapper,
       footer: footer,
-      commandShortcutEvents: <CommandShortcutEvent>[
-        // vim shortcuts must come first so they take precedence.
-        ...session.vimController.commandShortcutEvents,
-        ...standardCommandShortcutEvents,
-      ],
-      characterShortcutEvents: standardCharacterShortcutEvents,
+      styles: styles,
+      contextMenuBuilder: (
+        context,
+        position,
+        editorState,
+        onPressed,
+      ) {
+        if (EditorPlatform.isMobile) {
+          return ContextMenu(
+            position: position,
+            editorState: editorState,
+            items: standardContextMenuItems,
+            onPressed: onPressed,
+          );
+        }
+        return buildSpellCheckContextMenu(
+          context: context,
+          position: position,
+          editorState: editorState,
+          onPressed: onPressed,
+          checker: HunspellSpellChecker.instance,
+        );
+      },
     );
   }
 }

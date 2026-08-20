@@ -22,14 +22,6 @@ extension NodeExtensions on Node {
     return level;
   }
 
-  bool inSelection(Selection selection) {
-    if (selection.start.path <= selection.end.path) {
-      return selection.start.path <= path && path <= selection.end.path;
-    } else {
-      return selection.end.path <= path && path <= selection.start.path;
-    }
-  }
-
   Rect get rect {
     if (renderBox != null) {
       final boxOffset = renderBox!.localToGlobal(Offset.zero);
@@ -166,14 +158,6 @@ extension NodeExtensions on Node {
     }
     return false;
   }
-
-  Node? findParent(bool Function(Node element) test) {
-    if (test(this)) {
-      return this;
-    }
-    final parent = this.parent;
-    return parent?.findParent(test);
-  }
 }
 
 extension NodesExtensions<T extends Node> on List<T> {
@@ -198,7 +182,7 @@ extension NodesExtensions<T extends Node> on List<T> {
     }
 
     selection = selection.normalized;
-    final nodes = this.normalized;
+    final nodes = normalized;
 
     if (nodes.length == 1) {
       return nodes.first.allSatisfyInSelection(selection, test);

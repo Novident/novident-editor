@@ -21,7 +21,7 @@ TextSpan defaultTextSpanDecoratorForAttribute(
     return before;
   }
   final editorState = context.read<EditorState>();
-  final href = attributes[NovidentRichTextKeys.href] as String?;
+  final href = attributes[RichTextKeys.href] as String?;
   if (href != null) {
     // add a tap gesture recognizer to the text span
     Timer? timer;

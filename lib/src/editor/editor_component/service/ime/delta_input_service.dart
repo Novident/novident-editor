@@ -4,6 +4,8 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/ime/text_input_service.dart';
 import 'package:flutter/services.dart';
 
+const String _deleteBackwardSelectorName = 'deleteBackward:';
+
 class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
   DeltaTextInputService({
     required super.onInsert,
@@ -11,6 +13,8 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
     required super.onReplace,
     required super.onNonTextUpdate,
     required super.onPerformAction,
+    super.contentInsertionConfiguration,
+    super.onFloatingCursor,
   });
 
   @override
@@ -26,6 +30,16 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
   TextEditingValue? currentTextEditingValue;
 
   TextInputConnection? _textInputConnection;
+
+  final String debounceKey = 'updateEditingValue';
+
+  // when using gesture to move cursor on mobile, the floating cursor will be visible
+  bool _isFloatingCursorVisible = false;
+
+  @override
+  // Returning `attached` signals that focus was handled whenever an IME
+  // connection is active. Default implementation returns false.
+  bool onFocusReceived() => attached;
 
   @override
   Future<bool> apply(List<TextEditingDelta> deltas) async {
@@ -52,8 +66,26 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
     TextEditingValue textEditingValue,
     TextInputConfiguration configuration,
   ) {
-    if (_textInputConnection == null ||
-        _textInputConnection!.attached == false) {
+    // On Windows, the IME (e.g. Korean / other CJK) owns the editing state
+    // while a composing region is active. Pushing `setEditingState` back to the
+    // engine mid-composition cancels/forks the composition and corrupts the
+    // text (jamo get scrambled / duplicated). The text ime connection is
+    // already attached at this point, so we simply skip re-attaching while a
+    // composition is in progress and let the IME drive the state.
+    final composing = composingTextRange;
+    if (EditorPlatform.isWindows &&
+        composing != null &&
+        composing.isValid &&
+        !composing.isCollapsed) {
+      assert(() {
+        NovidentEditorLog.ime
+            .debug('ignore Windows attaching by active composing: $composing');
+        return true;
+      }());
+      return;
+    }
+
+    if (!attached) {
       _textInputConnection = TextInput.attach(
         this,
         configuration,
@@ -65,10 +97,6 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
       ..setEditingState(formattedValue)
       ..show();
     currentTextEditingValue = formattedValue;
-
-    NovidentEditorLog.input.debug(
-      'attach text editing value: $textEditingValue',
-    );
   }
 
   @override
@@ -80,9 +108,12 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
 
   @override
   void updateEditingValueWithDeltas(List<TextEditingDelta> textEditingDeltas) {
-    NovidentEditorLog.input.debug(
-      textEditingDeltas.map((delta) => delta.toString()).toString(),
-    );
+    assert(() {
+      NovidentEditorLog.ime.debug(
+        textEditingDeltas.map((delta) => delta.toString()).toString(),
+      );
+      return true;
+    }());
     apply(textEditingDeltas);
   }
 
@@ -90,7 +121,8 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
   void updateCaretPosition(Size size, Matrix4 transform, Rect rect) {
     _textInputConnection
       ?..setEditableSizeAndTransform(size, transform)
-      ..setCaretRect(rect);
+      ..setCaretRect(rect)
+      ..setComposingRect(rect.translate(0, rect.height));
   }
 
   @override
@@ -106,41 +138,101 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
 
   @override
   Future<void> performAction(TextInputAction action) async {
+    assert(() {
+      NovidentEditorLog.ime.debug("performAction: $action");
+      return true;
+    }());
     return onPerformAction(action);
   }
 
   @override
-  void performPrivateCommand(String action, Map<String, dynamic> data) {}
+  void performPrivateCommand(String action, Map<String, dynamic> data) {
+    assert(() {
+      NovidentEditorLog.ime
+          .debug("performPrivateCommand: $action, data: $data");
+      return true;
+    }());
+  }
 
   @override
   void removeTextPlaceholder() {}
 
   @override
-  void showAutocorrectionPromptRect(int start, int end) {}
+  void showAutocorrectionPromptRect(int start, int end) {
+    assert(() {
+      NovidentEditorLog.ime
+          .debug("showAutocorrectionPromptRect: start: $start, end: $end");
+      return true;
+    }());
+  }
 
   @override
-  void showToolbar() {}
+  void showToolbar() {
+    assert(() {
+      NovidentEditorLog.ime.debug("showToolbar executed");
+      return true;
+    }());
+  }
 
   @override
-  void updateEditingValue(TextEditingValue value) {}
+  void updateEditingValue(TextEditingValue value) {
+    if (EditorPlatform.isIOS && _isFloatingCursorVisible) {
+      // on iOS, when using gesture to move cursor, this function will be called
+      // which may cause the unneeded delta being applied
+      // so we ignore the updateEditingValue event when the floating cursor is visible
+      assert(() {
+        NovidentEditorLog.ime.debug(
+          'ignore updateEditingValue event when the floating cursor is visible',
+        );
+        return true;
+      }());
+      return;
+    }
+  }
 
   @override
-  void updateFloatingCursor(RawFloatingCursorPoint point) {}
+  void updateFloatingCursor(RawFloatingCursorPoint point) {
+    switch (point.state) {
+      case FloatingCursorDragState.Start:
+        _isFloatingCursorVisible = true;
+        break;
+      case FloatingCursorDragState.Update:
+        _isFloatingCursorVisible = true;
+        break;
+      case FloatingCursorDragState.End:
+        _isFloatingCursorVisible = false;
+        break;
+    }
+
+    onFloatingCursor?.call(point);
+  }
 
   @override
   void didChangeInputControl(
     TextInputControl? oldControl,
     TextInputControl? newControl,
-  ) {}
+  ) {
+    assert(() {
+      NovidentEditorLog.ime.debug(
+        'didChangeInputControl => old: $oldControl, new: $newControl',
+      );
+      return true;
+    }());
+  }
 
   @override
   void performSelector(String selectorName) {
+    assert(() {
+      NovidentEditorLog.editor.debug('performSelector: $selectorName');
+      return true;
+    }());
     final currentTextEditingValue = this.currentTextEditingValue;
     if (currentTextEditingValue == null) {
       return;
     }
+
     // magic string from flutter callback
-    if (selectorName == 'deleteBackward:') {
+    if (selectorName == _deleteBackwardSelectorName) {
       final oldText = currentTextEditingValue.text;
       final selection = currentTextEditingValue.selection;
       final deleteRange = selection.isCollapsed
@@ -164,7 +256,19 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
   }
 
   @override
-  void insertContent(KeyboardInsertedContent content) {}
+  void insertContent(KeyboardInsertedContent content) {
+    assert(
+      contentInsertionConfiguration?.allowedMimeTypes
+              .contains(content.mimeType) ??
+          false,
+    );
+    contentInsertionConfiguration?.onContentInserted.call(content);
+
+    assert(() {
+      NovidentEditorLog.ime.debug('insertContent: $content');
+      return true;
+    }());
+  }
 
   void _updateComposing(TextEditingDelta delta) {
     if (delta is! TextEditingDeltaNonTextUpdate) {

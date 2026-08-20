@@ -16,13 +16,16 @@ typedef NovidentEditorLogHandler = void Function(String message);
 /// Set the log level and config the handler depending on your need.
 class NovidentLogConfiguration {
   NovidentLogConfiguration._() {
-    Logger.root.onRecord.listen((record) {
-      if (handler != null) {
-        handler!(
-          '[${record.level.toLogLevel().name}][${record.loggerName}]: ${record.time}: ${record.message}',
-        );
-      }
-    });
+    assert(() {
+      Logger.root.onRecord.listen((record) {
+        if (handler != null) {
+          handler!(
+            '[${record.level.toLogLevel().name}][${record.loggerName}]: ${record.time}: ${record.message}',
+          );
+        }
+      });
+      return true;
+    }());
   }
 
   factory NovidentLogConfiguration() => _logConfiguration;
@@ -70,6 +73,11 @@ class NovidentEditorLog {
   ///
   /// For example, uses the logger when processing text inputs.
   static NovidentEditorLog input = NovidentEditorLog._(name: 'input');
+
+  /// For logging message related to [NovidentInputService].
+  ///
+  /// For example, uses the logger when processing text inputs.
+  static NovidentEditorLog ime = NovidentEditorLog._(name: 'ime');
 
   /// For logging message related to [NovidentScrollService].
   ///

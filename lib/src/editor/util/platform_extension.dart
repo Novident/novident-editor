@@ -1,59 +1,73 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
-import 'package:universal_html/html.dart' show window;
-import 'package:universal_platform/universal_platform.dart';
+import 'package:novident_editor_core/novident_editor_core.dart';
 
-// TODO(Xazin): Refactor to honor `Theme.platform`
-extension PlatformExtension on Platform {
-  static String get _webPlatform =>
-      window.navigator.platform?.toLowerCase() ?? '';
+export 'package:novident_editor_core/src/extensions/platform_extension.dart';
 
-  /// Returns true if the operating system is macOS and not running on Web platform.
-  static bool get isMacOS => UniversalPlatform.isMacOS;
+/// Platform indirection used by the editor's IME layer.
+///
+/// By default every getter delegates to [PlatformExtension] (backed by
+/// `UniversalPlatform`). Tests can install an [override] to make the IME code
+/// path deterministic regardless of the host OS — e.g. force the Linux branch
+/// of `onNonTextUpdate` without running on Linux.
+abstract final class EditorPlatform {
+  /// Active override, or `null` to fall back to the real platform.
+  @visibleForTesting
+  static EditorPlatformOverride? override;
 
-  /// Returns true if the operating system is Windows and not running on Web platform.
-  static bool get isWindows => UniversalPlatform.isWindows;
+  @visibleForTesting
+  static void reset() => override = null;
 
-  /// Returns true if the operating system is Linux and not running on Web platform.
-  static bool get isLinux => UniversalPlatform.isLinux;
+  static bool get isMacOS => override?.isMacOS ?? PlatformExtension.isMacOS;
+  static bool get isWindows => override?.isWindows ?? PlatformExtension.isWindows;
+  static bool get isLinux => override?.isLinux ?? PlatformExtension.isLinux;
+  static bool get isIOS => override?.isIOS ?? PlatformExtension.isIOS;
+  static bool get isAndroid => override?.isAndroid ?? PlatformExtension.isAndroid;
 
-  /// Returns true if the operating system is iOS and not running on Web platform.
-  static bool get isIOS => UniversalPlatform.isIOS;
-
-  /// Returns true if the operating system is Android and not running on Web platform.
-  static bool get isAndroid => UniversalPlatform.isAndroid;
-
-  /// Returns true if the operating system is macOS and running on Web platform.
-  static bool get isWebOnMacOS {
-    if (!kIsWeb) {
-      return false;
-    }
-    return _webPlatform.contains('mac') == true;
-  }
-
-  /// Returns true if the operating system is Windows and running on Web platform.
-  static bool get isWebOnWindows {
-    if (!kIsWeb) {
-      return false;
-    }
-    return _webPlatform.contains('windows') == true;
-  }
-
-  /// Returns true if the operating system is Linux and running on Web platform.
-  static bool get isWebOnLinux {
-    if (!kIsWeb) {
-      return false;
-    }
-    return _webPlatform.contains('linux') == true;
-  }
+  static bool get isWebOnMacOS =>
+      override?.isWebOnMacOS ?? PlatformExtension.isWebOnMacOS;
+  static bool get isWebOnWindows =>
+      override?.isWebOnWindows ?? PlatformExtension.isWebOnWindows;
+  static bool get isWebOnLinux =>
+      override?.isWebOnLinux ?? PlatformExtension.isWebOnLinux;
 
   static bool get isDesktopOrWeb =>
-      UniversalPlatform.isWeb || UniversalPlatform.isDesktop;
+      override?.isDesktopOrWeb ?? PlatformExtension.isDesktopOrWeb;
+  static bool get isDesktop => override?.isDesktop ?? PlatformExtension.isDesktop;
+  static bool get isMobile => override?.isMobile ?? PlatformExtension.isMobile;
+  static bool get isNotMobile =>
+      override?.isNotMobile ?? PlatformExtension.isNotMobile;
+}
 
-  static bool get isDesktop => UniversalPlatform.isDesktop;
+/// Immutable platform snapshot used to override [EditorPlatform] in tests.
+@immutable
+class EditorPlatformOverride {
+  const EditorPlatformOverride({
+    this.isMacOS = false,
+    this.isWindows = false,
+    this.isLinux = false,
+    this.isIOS = false,
+    this.isAndroid = false,
+    this.isWebOnMacOS = false,
+    this.isWebOnWindows = false,
+    this.isWebOnLinux = false,
+    this.isDesktopOrWeb = false,
+    this.isDesktop = false,
+    this.isMobile = false,
+    this.isNotMobile = false,
+  });
 
-  static bool get isMobile => UniversalPlatform.isMobile;
+  final bool isMacOS;
+  final bool isWindows;
+  final bool isLinux;
+  final bool isIOS;
+  final bool isAndroid;
 
-  static bool get isNotMobile => !isMobile;
+  final bool isWebOnMacOS;
+  final bool isWebOnWindows;
+  final bool isWebOnLinux;
+
+  final bool isDesktopOrWeb;
+  final bool isDesktop;
+  final bool isMobile;
+  final bool isNotMobile;
 }

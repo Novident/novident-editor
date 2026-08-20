@@ -173,7 +173,7 @@ class ScrollablePositionedList extends StatefulWidget {
   final bool addRepaintBoundaries;
 
   /// The minimum cache extent used by the underlying scroll lists.
-  /// See [ScrollView.cacheExtent].
+  /// See [ScrollView.scrollCacheExtent].
   ///
   /// Note that the [ScrollablePositionedList] uses two lists to simulate long
   /// scrolls, so using the [ScrollController.scrollTo] method may result
@@ -338,7 +338,7 @@ class _ScrollablePositionedListState extends State<ScrollablePositionedList>
   @override
   void initState() {
     super.initState();
-    ItemPosition? initialPosition =
+    final ItemPosition? initialPosition =
         PageStorage.maybeOf(context)?.readState(context);
     primary.target = initialPosition?.index ?? widget.initialScrollIndex;
     primary.alignment =
@@ -665,7 +665,7 @@ class _ScrollablePositionedListState extends State<ScrollablePositionedList>
         if (opacity.value >= 0.5) {
           // Secondary [ListView] is more visible than the primary; make it the
           // new primary.
-          var temp = primary;
+          final temp = primary;
           primary = secondary;
           secondary = temp;
         }

@@ -44,6 +44,7 @@ class FloatingToolbar extends StatefulWidget {
     this.decoration,
     this.placeHolderBuilder,
     this.toolbarBuilder,
+    this.showWhenNoSelection = false,
   });
 
   final List<ToolbarItem> items;
@@ -58,6 +59,10 @@ class FloatingToolbar extends StatefulWidget {
   final Decoration? decoration;
   final PlaceHolderItemBuilder? placeHolderBuilder;
   final FloatingToolbarBuilder? toolbarBuilder;
+
+  /// When `true`, the toolbar remains visible even when there is no text
+  /// selection. Defaults to `false` (backward-compatible behavior).
+  final bool showWhenNoSelection;
 
   @override
   State<FloatingToolbar> createState() => _FloatingToolbarState();
@@ -150,7 +155,17 @@ class _FloatingToolbarState extends State<FloatingToolbar>
     if (selection == null ||
         selection.isCollapsed ||
         selectionType == SelectionType.block) {
-      _clear();
+      if (!widget.showWhenNoSelection) {
+        _clear();
+        return;
+      }
+      // Show toolbar even without selection when the flag is enabled.
+      _showAfterDelay(
+        duration: const Duration(milliseconds: 200),
+        isMetricsChanged: hasMetricsChanged,
+      );
+      if (hasMetricsChanged) hasMetricsChanged = false;
+      return;
     } else if (!disableToolbar) {
       // uses debounce to avoid the computing the rects too frequently.
       _showAfterDelay(
@@ -195,7 +210,9 @@ class _FloatingToolbarState extends State<FloatingToolbar>
 
   void _showToolbar(bool isMetricsChanged) {
     final selection = editorState.selection;
-    if (selection == null || selection.isCollapsed) {
+    final hasNoSelection = selection == null || selection.isCollapsed;
+
+    if (hasNoSelection && !widget.showWhenNoSelection) {
       return;
     }
 
@@ -209,22 +226,24 @@ class _FloatingToolbarState extends State<FloatingToolbar>
     }
 
     // check the content is visible
-    final nodes = editorState.getSelectedNodes();
-    if (nodes.isEmpty ||
-        nodes.every((node) {
-          final delta = node.delta;
-          return delta == null || delta.isEmpty;
-        })) {
+    final nodes = hasNoSelection ? <Node>[] : editorState.getSelectedNodes();
+    if (!hasNoSelection &&
+        (nodes.isEmpty ||
+            nodes.every((node) {
+              final delta = node.delta;
+              return delta == null || delta.isEmpty;
+            }))) {
       return;
     }
 
-    final rects = editorState.selectionRects();
-    if (rects.isEmpty) {
+    final rects = hasNoSelection ? <Rect>[] : editorState.selectionRects();
+    if (!hasNoSelection && rects.isEmpty) {
       return;
     }
 
-    final rect = _findSuitableRect(rects);
-    final (left, top, right) = calculateToolbarOffset(rect);
+    final (left, top, right) = hasNoSelection
+        ? _fallbackToolbarOffset()
+        : _computeToolbarOffset(rects);
     // if the selection is not visible, then don't show the toolbar.
     if ((top <= floatingToolbarHeight || (left == 0 && right == 0)) &&
         widget.toolbarBuilder != null) {
@@ -248,7 +267,7 @@ class _FloatingToolbarState extends State<FloatingToolbar>
 
   Widget _buildToolbar(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    bool needRefreshToolbar = brightness != this.brightness;
+    final bool needRefreshToolbar = brightness != this.brightness;
     if (needRefreshToolbar) {
       this.brightness = brightness;
     }
@@ -267,9 +286,25 @@ class _FloatingToolbarState extends State<FloatingToolbar>
         padding: widget.padding,
         decoration: widget.decoration,
         placeHolderBuilder: widget.placeHolderBuilder,
+        showWhenNoSelection: widget.showWhenNoSelection,
       );
     }
     return _toolbarWidget!;
+  }
+
+  (double? left, double top, double? right) _computeToolbarOffset(
+    Iterable<Rect> rects,
+  ) {
+    final rect = _findSuitableRect(rects);
+    return calculateToolbarOffset(rect);
+  }
+
+  /// Returns a default toolbar position at the top-left of the editor
+  /// when there is no selection to anchor to.
+  (double? left, double top, double? right) _fallbackToolbarOffset() {
+    final editorOffset =
+        editorState.renderBox?.localToGlobal(Offset.zero) ?? Offset.zero;
+    return (editorOffset.dx, editorOffset.dy, null);
   }
 
   Rect _findSuitableRect(Iterable<Rect> rects) {

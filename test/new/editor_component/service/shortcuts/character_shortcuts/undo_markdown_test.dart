@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -19,7 +18,7 @@ void main() async {
 
       Delta delta = editor.nodeAtPath([0])!.delta!;
       expect(delta.length, 'Hello world'.length);
-      expect(delta.first.attributes![NovidentRichTextKeys.italic], true);
+      expect(delta.first.attributes![RichTextKeys.italic], true);
 
       final key = PlatformExtension.isMacOS
           ? LogicalKeyboardKey.meta
@@ -32,7 +31,7 @@ void main() async {
       delta = editor.nodeAtPath([0])!.delta!;
       expect(delta.length, helloWorld.length);
       expect(delta.toPlainText(), helloWorld);
-      expect(delta.first.attributes?[NovidentRichTextKeys.italic], null);
+      expect(delta.first.attributes?[RichTextKeys.italic], null);
 
       await editor.dispose();
     });
@@ -49,7 +48,7 @@ void main() async {
 
       Delta delta = editor.nodeAtPath([0])!.delta!;
       expect(delta.length, 'Hello world'.length);
-      expect(delta.first.attributes![NovidentRichTextKeys.bold], true);
+      expect(delta.first.attributes![RichTextKeys.bold], true);
 
       final key = PlatformExtension.isMacOS
           ? LogicalKeyboardKey.meta
@@ -62,7 +61,7 @@ void main() async {
       delta = editor.nodeAtPath([0])!.delta!;
       expect(delta.length, helloWorld.length);
       expect(delta.toPlainText(), helloWorld);
-      expect(delta.first.attributes?[NovidentRichTextKeys.italic], null);
+      expect(delta.first.attributes?[RichTextKeys.italic], null);
 
       await editor.dispose();
     });

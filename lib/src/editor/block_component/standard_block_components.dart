@@ -1,6 +1,6 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/block_component/heading_block_component/heading_command_shortcut.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
+import 'package:novident_editor/src/editor/editor_component/service/shortcuts/command/page_commands.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -52,16 +52,20 @@ final Map<String, BlockComponentBuilder> standardBlockComponentBuilderMap = {
       padding: (node) => const EdgeInsets.symmetric(vertical: 8.0),
     ),
   ),
-  TableBlockKeys.type: TableBlockComponentBuilder(),
+  TableBlockKeys.type: TableBlockComponentBuilder(
+    actionMenuItems: defaultTableActionMenuItems,
+  ),
   TableCellBlockKeys.type: TableCellBlockComponentBuilder(),
 };
 
 final List<CharacterShortcutEvent> standardCharacterShortcutEvents = [
   // '\n'
-  insertNewLineAfterBulletedList,
-  insertNewLineAfterTodoList,
-  insertNewLineAfterNumberedList,
-  insertNewLineAfterHeading,
+  // should be overrided by using [keep] or [next] properties
+  // from [NovidentStyleDefinition]
+  // insertNewLineAfterBulletedList,
+  // insertNewLineAfterTodoList,
+  // insertNewLineAfterNumberedList,
+  // insertNewLineAfterHeading,
   insertNewLine,
 
   // bulleted list
@@ -122,6 +126,7 @@ final List<CommandShortcutEvent> standardCommandShortcutEvents = [
   ...arrowRightKeys,
   ...arrowUpKeys,
   ...arrowDownKeys,
+  ...pageUpKeys,
 
   //
   homeCommand,
@@ -142,10 +147,6 @@ final List<CommandShortcutEvent> standardCommandShortcutEvents = [
 
   //
   exitEditingCommand,
-
-  //
-  pageUpCommand,
-  pageDownCommand,
 
   //
   selectAllCommand,

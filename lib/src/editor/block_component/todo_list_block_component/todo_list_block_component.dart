@@ -3,29 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-class TodoListBlockKeys {
-  const TodoListBlockKeys._();
-
-  static const String type = 'todo_list';
-
-  /// The checked data of a todo list block.
-  ///
-  /// The value is a boolean.
-  static const String checked = 'checked';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node todoListNode({
   required bool checked,
   String? text,
   Delta? delta,
   String? textDirection,
   Attributes? attributes,
+  String? styleRef,
   Iterable<Node>? children,
 }) {
   return Node(
@@ -35,6 +19,7 @@ Node todoListNode({
       TodoListBlockKeys.delta:
           (delta ?? (Delta()..insert(text ?? ''))).toJson(),
       if (attributes != null) ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null) TodoListBlockKeys.textDirection: textDirection,
     },
     children: children ?? [],
@@ -164,12 +149,12 @@ class _TodoListBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         textDirection: textDirection,
         children: [
@@ -188,9 +173,11 @@ class _TodoListBlockComponentWidgetState
               key: forwardKey,
               delegate: this,
               node: widget.node,
-              editorState: editorState,
-              textAlign: alignment?.toTextAlign ?? textAlign,
+              editorConfig: editorState,
+              textAlign:
+                  alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
               placeholderText: placeholderText,
+              useFirstLineIndent: false,
               textDirection: textDirection,
               textSpanDecorator: (textSpan) => textSpan
                   .updateTextStyle(textStyleWithTextSpan())
@@ -212,9 +199,10 @@ class _TodoListBlockComponentWidgetState
     );
 
     child = Container(
-      decoration: withBackgroundColor ? decoration : null,
+      decoration:
+          blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
       key: blockComponentKey,
-      padding: padding,
+      padding: blockStyle.applyToPadding(padding),
       child: child,
     );
 
@@ -222,6 +210,8 @@ class _TodoListBlockComponentWidgetState
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

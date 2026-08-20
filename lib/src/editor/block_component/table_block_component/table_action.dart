@@ -1,19 +1,20 @@
+import 'package:collection/collection.dart';
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/util.dart';
 
 class TableActions {
   const TableActions._();
 
-  static void add(
+  static Future<void> add(
     Node node,
     int position,
     EditorState editorState,
     TableDirection dir,
-  ) {
+    NovidentTableStyleDefinition style,
+  ) async {
     if (dir == TableDirection.col) {
-      _addCol(node, position, editorState);
+      _addCol(node, position, editorState, style);
     } else {
-      _addRow(node, position, editorState);
+      await _addRow(node, position, editorState, style);
     }
   }
 
@@ -30,16 +31,16 @@ class TableActions {
     }
   }
 
-  static void duplicate(
+  static Future<void> duplicate(
     Node node,
     int position,
     EditorState editorState,
     TableDirection dir,
-  ) {
+  ) async {
     if (dir == TableDirection.col) {
       _duplicateCol(node, position, editorState);
     } else {
-      _duplicateRow(node, position, editorState);
+      await _duplicateRow(node, position, editorState);
     }
   }
 
@@ -136,19 +137,26 @@ class TableActions {
   }
 }
 
-void _addCol(Node tableNode, int position, EditorState editorState) {
+void _addCol(
+  Node tableNode,
+  int position,
+  EditorState editorState,
+  NovidentTableStyleDefinition style,
+) {
   assert(position >= 0);
 
   final transaction = editorState.transaction;
 
-  List<Node> cellNodes = [];
+  final List<Node> cellNodes = [];
   final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen],
       colsLen = tableNode.attributes[TableBlockKeys.colsLen];
+
+  final table = TableNode(node: tableNode);
 
   if (position != colsLen) {
     for (var i = position; i < colsLen; i++) {
       for (var j = 0; j < rowsLen; j++) {
-        final node = getCellNode(tableNode, i, j)!;
+        final node = table.getCell(i, j);
         transaction.updateNode(node, {TableCellBlockKeys.colPosition: i + 1});
       }
     }
@@ -163,26 +171,31 @@ void _addCol(Node tableNode, int position, EditorState editorState) {
       },
     );
     node.insert(paragraphNode());
-    final firstCellInRow = getCellNode(tableNode, 0, i);
-    if (firstCellInRow?.attributes
-            .containsKey(TableCellBlockKeys.rowBackgroundColor) ??
-        false) {
+    final firstCellInRow = table.getCell(0, i);
+    if (firstCellInRow.attributes
+        .containsKey(TableCellBlockKeys.rowBackgroundColor)) {
       node.updateAttributes({
         TableCellBlockKeys.rowBackgroundColor:
-            firstCellInRow!.attributes[TableCellBlockKeys.rowBackgroundColor],
+            firstCellInRow.attributes[TableCellBlockKeys.rowBackgroundColor],
       });
     }
 
-    cellNodes.add(newCellNode(tableNode, node));
+    cellNodes.add(
+      newCellNode(
+        tableNode,
+        node,
+        style,
+      ),
+    );
   }
 
   late Path insertPath;
   if (position == 0) {
-    insertPath = getCellNode(tableNode, 0, 0)!.path;
+    insertPath = table.getCell(0, 0).path;
   } else {
-    insertPath = getCellNode(tableNode, position - 1, rowsLen - 1)!.path.next;
+    insertPath = table.getCell(position - 1, rowsLen - 1).path.next;
   }
-  // TODO(zoli): this calls notifyListener rowsLen+1 times. isn't there a better
+  // TODO: @CatHood0 this calls notifyListener rowsLen+1 times. isn't there a better
   // way?
   transaction.insertNodes(insertPath, cellNodes);
   transaction.updateNode(tableNode, {TableBlockKeys.colsLen: colsLen + 1});
@@ -190,20 +203,24 @@ void _addCol(Node tableNode, int position, EditorState editorState) {
   editorState.apply(transaction, withUpdateSelection: false);
 }
 
-void _addRow(Node tableNode, int position, EditorState editorState) async {
+Future<void> _addRow(
+  Node tableNode,
+  int position,
+  EditorState editorState,
+  NovidentTableStyleDefinition style,
+) async {
   assert(position >= 0);
 
   final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen];
   final int colsLen = tableNode.attributes[TableBlockKeys.colsLen];
 
-  // insert new rows
-  var error = false;
+  final table = TableNode(node: tableNode);
 
   // generate new table cell nodes & update node attributes
   for (var i = 0; i < colsLen; i++) {
-    final firstCellInCol = getCellNode(tableNode, i, 0);
+    final firstCellInCol = table.getCell(i, 0);
     final colBgColor =
-        firstCellInCol?.attributes[TableCellBlockKeys.colBackgroundColor];
+        firstCellInCol.attributes[TableCellBlockKeys.colBackgroundColor];
     final containsColBgColor = colBgColor != null;
 
     final node = Node(
@@ -219,18 +236,9 @@ void _addRow(Node tableNode, int position, EditorState editorState) async {
 
     late Path insertPath;
     if (position == 0) {
-      final firstCellInCol = getCellNode(tableNode, i, 0);
-      if (firstCellInCol == null) {
-        error = true;
-        break;
-      }
       insertPath = firstCellInCol.path;
     } else {
-      final cellInPrevRow = getCellNode(tableNode, i, position - 1);
-      if (cellInPrevRow == null) {
-        error = true;
-        break;
-      }
+      final cellInPrevRow = table.getCell(i, position - 1);
       insertPath = cellInPrevRow.path.next;
     }
 
@@ -238,11 +246,7 @@ void _addRow(Node tableNode, int position, EditorState editorState) async {
 
     if (position != rowsLen) {
       for (var j = position; j < rowsLen; j++) {
-        final cellNode = getCellNode(tableNode, i, j);
-        if (cellNode == null) {
-          error = true;
-          break;
-        }
+        final cellNode = table.getCell(i, j);
         transaction.updateNode(
           cellNode,
           {
@@ -255,11 +259,6 @@ void _addRow(Node tableNode, int position, EditorState editorState) async {
     transaction.insertNode(insertPath, node);
 
     await editorState.apply(transaction, withUpdateSelection: false);
-  }
-
-  if (error) {
-    NovidentEditorLog.editor.debug('unable to insert row');
-    return;
   }
 
   final transaction = editorState.transaction;
@@ -286,9 +285,10 @@ void _deleteCol(Node tableNode, int col, EditorState editorState) {
     transaction.deleteNode(tableNode);
     tableNode.dispose();
   } else {
-    List<Node> nodes = [];
+    final table = TableNode(node: tableNode);
+    final List<Node> nodes = [];
     for (var i = 0; i < rowsLen; i++) {
-      nodes.add(getCellNode(tableNode, col, i)!);
+      nodes.add(table.getCell(col, i));
     }
     transaction.deleteNodes(nodes);
 
@@ -314,9 +314,10 @@ void _deleteRow(Node tableNode, int row, EditorState editorState) {
     transaction.deleteNode(tableNode);
     tableNode.dispose();
   } else {
-    List<Node> nodes = [];
+    final table = TableNode(node: tableNode);
+    final List<Node> nodes = [];
     for (var i = 0; i < colsLen; i++) {
-      nodes.add(getCellNode(tableNode, i, row)!);
+      nodes.add(table.getCell(i, row));
     }
     transaction.deleteNodes(nodes);
 
@@ -333,9 +334,10 @@ void _duplicateCol(Node tableNode, int col, EditorState editorState) {
 
   final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen],
       colsLen = tableNode.attributes[TableBlockKeys.colsLen];
-  List<Node> nodes = [];
+  final table = TableNode(node: tableNode);
+  final List<Node> nodes = [];
   for (var i = 0; i < rowsLen; i++) {
-    final node = getCellNode(tableNode, col, i)!;
+    final node = table.getCell(col, i);
     nodes.add(
       node.copyWith(
         attributes: {
@@ -347,7 +349,7 @@ void _duplicateCol(Node tableNode, int col, EditorState editorState) {
     );
   }
   transaction.insertNodes(
-    getCellNode(tableNode, col, rowsLen - 1)!.path.next,
+    table.getCell(col, rowsLen - 1).path.next,
     nodes,
   );
 
@@ -358,32 +360,46 @@ void _duplicateCol(Node tableNode, int col, EditorState editorState) {
   editorState.apply(transaction, withUpdateSelection: false);
 }
 
-void _duplicateRow(Node tableNode, int row, EditorState editorState) async {
-  Transaction transaction = editorState.transaction;
-  _updateCellPositions(tableNode, editorState, 0, row + 1, 0, 1);
-  await editorState.apply(transaction, withUpdateSelection: false);
+Future<void> _duplicateRow(
+    Node tableNode, int row, EditorState editorState,) async {
+  final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen];
+  final int colsLen = tableNode.attributes[TableBlockKeys.colsLen];
 
-  final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen],
-      colsLen = tableNode.attributes[TableBlockKeys.colsLen];
+  // Built while the table is still in a valid state: the copy must be
+  // inserted BEFORE the rows below are shifted, otherwise there is a
+  // transient gap at row+1 that invalidates the TableNode.
+  final table = TableNode(node: tableNode);
   for (var i = 0; i < colsLen; i++) {
-    final node = getCellNode(tableNode, i, row)!;
-    transaction = editorState.transaction;
+    final cell = table.getCell(i, row);
+    final transaction = editorState.transaction;
+
+    // Shift the rows below `row` down by one.
+    for (var j = row + 1; j < rowsLen; j++) {
+      final cellNode = table.getCell(i, j);
+      transaction.updateNode(
+        cellNode,
+        {TableCellBlockKeys.rowPosition: j + 1},
+      );
+    }
+
+    // Insert the copy right after the original cell.
     transaction.insertNode(
-      node.path.next,
-      node.copyWith(
+      cell.path.next,
+      cell.copyWith(
         attributes: {
-          ...node.attributes,
+          ...cell.attributes,
           TableCellBlockKeys.rowPosition: row + 1,
           TableCellBlockKeys.colPosition: i,
         },
       ),
     );
+
     await editorState.apply(transaction, withUpdateSelection: false);
   }
 
-  transaction = editorState.transaction;
+  final transaction = editorState.transaction;
   transaction.updateNode(tableNode, {TableBlockKeys.rowsLen: rowsLen + 1});
-  editorState.apply(transaction, withUpdateSelection: false);
+  await editorState.apply(transaction, withUpdateSelection: false);
 }
 
 void _setColBgColor(
@@ -395,8 +411,9 @@ void _setColBgColor(
   final transaction = editorState.transaction;
 
   final rowslen = tableNode.attributes[TableBlockKeys.rowsLen];
+  final table = TableNode(node: tableNode);
   for (var i = 0; i < rowslen; i++) {
-    final node = getCellNode(tableNode, col, i)!;
+    final node = table.getCell(col, i);
     transaction.updateNode(
       node,
       {TableCellBlockKeys.colBackgroundColor: color},
@@ -415,8 +432,9 @@ void _setRowBgColor(
   final transaction = editorState.transaction;
 
   final colsLen = tableNode.attributes[TableBlockKeys.colsLen];
+  final table = TableNode(node: tableNode);
   for (var i = 0; i < colsLen; i++) {
-    final node = getCellNode(tableNode, i, row)!;
+    final node = table.getCell(i, row);
     transaction.updateNode(
       node,
       {TableCellBlockKeys.rowBackgroundColor: color},
@@ -434,8 +452,9 @@ void _clearCol(
   final transaction = editorState.transaction;
 
   final rowsLen = tableNode.attributes[TableBlockKeys.rowsLen];
+  final table = TableNode(node: tableNode);
   for (var i = 0; i < rowsLen; i++) {
-    final node = getCellNode(tableNode, col, i)!;
+    final node = table.getCell(col, i);
     transaction.insertNode(
       node.children.first.path,
       paragraphNode(text: ''),
@@ -453,8 +472,9 @@ void _clearRow(
   final transaction = editorState.transaction;
 
   final colsLen = tableNode.attributes[TableBlockKeys.colsLen];
+  final table = TableNode(node: tableNode);
   for (var i = 0; i < colsLen; i++) {
-    final node = getCellNode(tableNode, i, row)!;
+    final node = table.getCell(i, row);
     transaction.insertNode(
       node.children.first.path,
       paragraphNode(text: ''),
@@ -464,43 +484,58 @@ void _clearRow(
   editorState.apply(transaction, withUpdateSelection: false);
 }
 
-dynamic newCellNode(Node tableNode, n) {
-  final row = n.attributes[TableCellBlockKeys.rowPosition] as int;
-  final col = n.attributes[TableCellBlockKeys.colPosition] as int;
+Node newCellNode(
+  Node tableNode,
+  Node cell,
+  NovidentTableStyleDefinition style,
+) {
+  final row = cell.attributes[TableCellBlockKeys.rowPosition] as int;
+  final col = cell.attributes[TableCellBlockKeys.colPosition] as int;
   final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen];
   final int colsLen = tableNode.attributes[TableBlockKeys.colsLen];
 
-  if (!n.attributes.containsKey(TableCellBlockKeys.height)) {
-    double nodeHeight = double.tryParse(
-      tableNode.attributes[TableBlockKeys.rowDefaultHeight].toString(),
-    )!;
+  if (!cell.attributes.containsKey(TableCellBlockKeys.height)) {
+    double nodeHeight = style.rowDefaultHeight;
     if (row < rowsLen) {
-      nodeHeight = double.tryParse(
-            getCellNode(tableNode, 0, row)!
-                .attributes[TableCellBlockKeys.height]
-                .toString(),
-          ) ??
-          nodeHeight;
+      final firstCellInRow = tableNode.children.firstWhereOrNull(
+        (n) =>
+            n.attributes[TableCellBlockKeys.colPosition] == 0 &&
+            n.attributes[TableCellBlockKeys.rowPosition] == row,
+      );
+      if (firstCellInRow != null) {
+        nodeHeight = double.tryParse(
+              firstCellInRow.attributes[TableCellBlockKeys.height].toString(),
+            ) ??
+            nodeHeight;
+      }
     }
-    n.updateAttributes({TableCellBlockKeys.height: nodeHeight});
+    cell.updateAttributes({
+      TableCellBlockKeys.height: nodeHeight,
+    });
   }
 
-  if (!n.attributes.containsKey(TableCellBlockKeys.width)) {
-    double nodeWidth = double.tryParse(
-      tableNode.attributes[TableBlockKeys.colDefaultWidth].toString(),
-    )!;
+  if (!cell.attributes.containsKey(TableCellBlockKeys.colWeight)) {
+    double nodeWeight = style.colDefaultWeight;
     if (col < colsLen) {
-      nodeWidth = double.tryParse(
-            getCellNode(tableNode, col, 0)!
-                .attributes[TableCellBlockKeys.width]
-                .toString(),
-          ) ??
-          nodeWidth;
+      final firstCellInCol = tableNode.children.firstWhereOrNull(
+        (n) =>
+            n.attributes[TableCellBlockKeys.colPosition] == col &&
+            n.attributes[TableCellBlockKeys.rowPosition] == 0,
+      );
+      if (firstCellInCol != null) {
+        nodeWeight = double.tryParse(
+              firstCellInCol.attributes[TableCellBlockKeys.colWeight]
+                  .toString(),
+            ) ??
+            nodeWeight;
+      }
     }
-    n.updateAttributes({TableCellBlockKeys.width: nodeWidth});
+    cell.updateAttributes({
+      TableCellBlockKeys.colWeight: nodeWeight,
+    });
   }
 
-  return n;
+  return cell;
 }
 
 void _updateCellPositions(
@@ -516,9 +551,11 @@ void _updateCellPositions(
   final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen],
       colsLen = tableNode.attributes[TableBlockKeys.colsLen];
 
+  final table = TableNode(node: tableNode);
+
   for (var i = fromCol; i < colsLen; i++) {
     for (var j = fromRow; j < rowsLen; j++) {
-      transaction.updateNode(getCellNode(tableNode, i, j)!, {
+      transaction.updateNode(table.getCell(i, j), {
         TableCellBlockKeys.colPosition: i + addToCol,
         TableCellBlockKeys.rowPosition: j + addToRow,
       });

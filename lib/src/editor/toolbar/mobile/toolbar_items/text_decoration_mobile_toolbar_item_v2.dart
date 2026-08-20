@@ -34,29 +34,29 @@ class _TextDecorationMenuState extends State<_TextDecorationMenu> {
     TextDecorationUnit(
       icon: NovidentMobileIcons.bold,
       label: NovidentEditorL10n.current.bold,
-      name: NovidentRichTextKeys.bold,
+      name: RichTextKeys.bold,
     ),
     TextDecorationUnit(
       icon: NovidentMobileIcons.italic,
       label: NovidentEditorL10n.current.italic,
-      name: NovidentRichTextKeys.italic,
+      name: RichTextKeys.italic,
     ),
     TextDecorationUnit(
       icon: NovidentMobileIcons.underline,
       label: NovidentEditorL10n.current.underline,
-      name: NovidentRichTextKeys.underline,
+      name: RichTextKeys.underline,
     ),
     TextDecorationUnit(
       icon: NovidentMobileIcons.strikethrough,
       label: NovidentEditorL10n.current.strikethrough,
-      name: NovidentRichTextKeys.strikethrough,
+      name: RichTextKeys.strikethrough,
     ),
 
     // Code
     TextDecorationUnit(
       icon: NovidentMobileIcons.code,
       label: NovidentEditorL10n.current.embedCode,
-      name: NovidentRichTextKeys.code,
+      name: RichTextKeys.code,
     ),
   ];
 

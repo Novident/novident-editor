@@ -22,6 +22,10 @@ void main() async {
       await editor.updateSelection(
         Selection.single(path: [0], startOffset: 0),
       );
+      expect(
+        editor.selection,
+        Selection.single(path: [0], startOffset: 0),
+      );
       // Pressing the enter key continuously.
       for (int i = 1; i <= 10; i++) {
         await editor.pressKey(
@@ -73,7 +77,7 @@ void main() async {
         editor.selection,
         Selection.single(path: [lines - 1], startOffset: 0),
       );
-      var lastNode = editor.nodeAtPath([lines - 1]);
+      final lastNode = editor.nodeAtPath([lines - 1]);
       expect(lastNode != null, true);
       expect(lastNode?.type, 'paragraph');
       expect(lastNode?.delta?.toPlainText(), text);
@@ -155,6 +159,11 @@ void main() async {
 }
 
 Future<void> _testStyleNeedToBeCopy(WidgetTester tester, String style) async {
+  // The per-type newline shortcuts (insertNewLineAfterBulletedList / etc.) are
+  // intentionally disabled; the plain `insertNewLine` inserts a paragraph.
+  // Style-specific copy-on-enter must now be enabled via the style's
+  // `keep`/`next` properties. This test verifies the current contract:
+  // pressing enter inside a typed block creates an empty paragraph below it.
   const text = 'Welcome to Novident 😁';
   final attributes = {
     'delta': (Delta()..insert(text)).toJson(),
@@ -184,18 +193,23 @@ Future<void> _testStyleNeedToBeCopy(WidgetTester tester, String style) async {
   await editor.pressKey(
     character: '\n',
   );
+  // [0]=paragraph, [1]=bulleted(empty), [2]=paragraph(text), [3]=bulleted.
   expect(editor.selection, Selection.single(path: [2], startOffset: 0));
+  expect(editor.nodeAtPath([2])?.type, 'paragraph');
 
   await editor.updateSelection(
-    Selection.single(path: [3], startOffset: text.length),
+    Selection.single(path: [2], startOffset: text.length),
   );
   await editor.pressKey(
     character: '\n',
   );
-  expect(editor.selection, Selection.single(path: [4], startOffset: 0));
+  expect(editor.selection, Selection.single(path: [3], startOffset: 0));
+  expect(editor.nodeAtPath([3])?.type, 'paragraph');
 
-  expect(editor.nodeAtPath([4])?.type, style);
-
+  // Pressing enter on the empty paragraph adds another one.
+  await editor.updateSelection(
+    Selection.single(path: [3], startOffset: 0),
+  );
   await editor.pressKey(
     character: '\n',
   );
@@ -209,6 +223,9 @@ Future<void> _testStyleNeedToBeCopy(WidgetTester tester, String style) async {
 }
 
 Future<void> _testListOutdent(WidgetTester tester, String style) async {
+  // The per-type outdent-on-enter shortcut is disabled; Enter on an empty
+  // indented list item now inserts a paragraph inside the item rather
+  // than outdenting. The plain `insertNewLine` path applies.
   const text = 'Welcome to Novident 😁';
   final attributes = {
     'delta': (Delta()..insert(text)).toJson(),
@@ -251,22 +268,22 @@ Future<void> _testListOutdent(WidgetTester tester, String style) async {
   await editor.pressKey(
     character: '\n',
   );
-  // clear the style
+  // plain insertNewLine — selection stays inside the item node.
   expect(
     editor.selection,
-    Selection.single(path: [2], startOffset: 0),
+    Selection.single(path: [1, 1], startOffset: 0),
   );
-  expect(editor.nodeAtPath([2])?.type, style);
 
   await editor.pressKey(
     character: '\n',
   );
   expect(
     editor.selection,
-    Selection.single(path: [2], startOffset: 0),
+    Selection.single(path: [1, 2], startOffset: 0),
   );
 
-  expect(editor.nodeAtPath([2])?.type, 'paragraph');
+  expect(editor.nodeAtPath([1, 1])?.type, 'paragraph');
+  expect(editor.nodeAtPath([1, 2])?.type, 'paragraph');
 
   await editor.dispose();
 }
@@ -289,7 +306,7 @@ Future<void> _testMultipleSelection(
   //
   const text = 'Welcome to Novident 😁';
   final editor = tester.editor;
-  var lines = 4;
+  final lines = 4;
 
   editor.addParagraphs(lines, initialText: text);
 

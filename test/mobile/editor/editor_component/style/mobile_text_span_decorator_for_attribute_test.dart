@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../new/infra/testable_editor.dart';
+import '../../../../new/util/editor_text_finders.dart';
 
 void main() {
   group('mobile_text_span_decorator_for_attribute.dart', () {
@@ -21,7 +22,7 @@ void main() {
           await editor.startTesting(inMobile: true, editable: false);
           await widgetTester.pumpAndSettle();
 
-          final finder = find.text(text, findRichText: true);
+          final finder = findEditorRichText(text);
           expect(finder, findsOneWidget);
           await widgetTester.tap(finder);
           await widgetTester.pumpAndSettle();
@@ -45,7 +46,7 @@ void main() {
           await editor.startTesting(inMobile: true, editable: false);
           await tester.pumpAndSettle();
 
-          final finder = find.text(text, findRichText: true);
+          final finder = findEditorRichText(text);
           expect(finder, findsOneWidget);
           await tester.longPress(
             finder,
@@ -69,7 +70,7 @@ void main() {
           await editor.startTesting(inMobile: true, editable: false);
           await tester.pumpAndSettle();
 
-          final finder = find.text(text, findRichText: true);
+          final finder = findEditorRichText(text);
           expect(finder, findsOneWidget);
           await tester.longPress(
             finder,
@@ -117,7 +118,7 @@ void main() {
           await editor.startTesting(inMobile: true);
           await tester.pumpAndSettle();
 
-          final finder = find.text(text, findRichText: true);
+          final finder = findEditorRichText(text);
           expect(finder, findsOneWidget);
           await tester.longPress(
             finder,
@@ -138,12 +139,12 @@ void main() {
           );
           await tester.pumpAndSettle(const Duration(seconds: 1));
 
-          var selection = Selection.single(
+          final selection = Selection.single(
             path: [0],
             startOffset: 0,
             endOffset: text2.length,
           );
-          var node = editor.editorState.getNodesInSelection(selection);
+          final node = editor.editorState.getNodesInSelection(selection);
           // link is changed
           expect(
             node.allSatisfyInSelection(selection, (delta) {
@@ -172,7 +173,7 @@ void main() {
           await editor.startTesting(inMobile: true);
           await tester.pumpAndSettle();
 
-          final finder = find.text(text, findRichText: true);
+          final finder = findEditorRichText(text);
           expect(finder, findsOneWidget);
           await tester.longPress(
             finder,
@@ -188,12 +189,12 @@ void main() {
           //dialog is closed
           expect(find.byType(AlertDialog), findsNothing);
 
-          var selection = Selection.single(
+          final selection = Selection.single(
             path: [0],
             startOffset: 0,
             endOffset: text.length,
           );
-          var node = editor.editorState.getNodesInSelection(selection);
+          final node = editor.editorState.getNodesInSelection(selection);
           // link is removed
           expect(
             node.allSatisfyInSelection(selection, (delta) {
@@ -221,7 +222,7 @@ void main() {
           await editor.startTesting(inMobile: true, editable: false);
           await tester.pumpAndSettle();
 
-          final finder = find.text(text, findRichText: true);
+          final finder = findEditorRichText(text);
           expect(finder, findsOneWidget);
           await tester.longPress(
             finder,

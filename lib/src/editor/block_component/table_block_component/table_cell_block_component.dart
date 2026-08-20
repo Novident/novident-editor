@@ -1,42 +1,73 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/table_action_handler.dart';
 import 'package:novident_editor/src/editor/block_component/table_block_component/util.dart';
+import 'package:novident_editor/src/editor/block_component/table_block_component/table_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-class TableCellBlockKeys {
-  const TableCellBlockKeys._();
-
-  static const String type = 'table/cell';
-
-  static const String rowPosition = 'rowPosition';
-
-  static const String colPosition = 'colPosition';
-
-  static const String height = 'height';
-
-  static const String width = 'width';
-
-  static const String rowBackgroundColor = 'rowBackgroundColor';
-
-  static const String colBackgroundColor = 'colBackgroundColor';
-}
 
 typedef TableBlockCellComponentColorBuilder = Color? Function(
   BuildContext context,
   Node node,
 );
 
-Node tableCellNode(String text, int rowPosition, int colPosition) {
+/// Creates a table-cell [Node] with full control over its attributes.
+///
+/// The [child] is the content node rendered inside the cell (typically a
+/// [paragraphNode] or [headingNode]).
+///
+/// Example:
+/// ```dart
+/// tableCellNode(
+///   rowPosition: 0,
+///   colPosition: 1,
+///   child: paragraphNode(text: 'Hello'),
+///   width: 120,
+///   rowBackgroundColor: '0xFFE3F2FD',
+/// )
+/// ```
+Node tableCellNode({
+  required int rowPosition,
+  required int colPosition,
+  required Node child,
+  double? colWeight,
+  double? width,
+  double? height,
+  String? rowBackgroundColor,
+  String? colBackgroundColor,
+  EdgeInsets? cellPadding,
+  TextAlign? cellAlignment,
+  CrossAxisAlignment? cellVerticalAlignment,
+  TextOverflow? cellTextOverflow,
+  String? cellBackgroundColor,
+}) {
   return Node(
     type: TableCellBlockKeys.type,
     attributes: {
       TableCellBlockKeys.rowPosition: rowPosition,
       TableCellBlockKeys.colPosition: colPosition,
+      if (colWeight != null) TableCellBlockKeys.colWeight: colWeight,
+      if (width != null) TableCellBlockKeys.width: width,
+      if (height != null) TableCellBlockKeys.height: height,
+      if (rowBackgroundColor != null)
+        TableCellBlockKeys.rowBackgroundColor: rowBackgroundColor,
+      if (colBackgroundColor != null)
+        TableCellBlockKeys.colBackgroundColor: colBackgroundColor,
+      if (cellPadding != null)
+        TableCellBlockKeys.cellPadding: {
+          'top': cellPadding.top,
+          'bottom': cellPadding.bottom,
+          'left': cellPadding.left,
+          'right': cellPadding.right,
+        },
+      if (cellAlignment != null)
+        TableCellBlockKeys.cellAlignment: cellAlignment.name,
+      if (cellVerticalAlignment != null)
+        TableCellBlockKeys.cellVerticalAlignment: cellVerticalAlignment.name,
+      if (cellTextOverflow != null)
+        TableCellBlockKeys.cellTextOverflow: cellTextOverflow.name,
+      if (cellBackgroundColor != null)
+        TableCellBlockKeys.cellBackgroundColor: cellBackgroundColor,
     },
-    children: [
-      paragraphNode(text: text),
-    ],
+    children: [child],
   );
 }
 
@@ -69,6 +100,9 @@ class TableCellBlockComponentBuilder extends BlockComponentBuilder {
   @override
   BlockComponentWidget build(BlockComponentContext blockComponentContext) {
     final node = blockComponentContext.node;
+    final context = blockComponentContext.buildContext;
+    final tableStyle =
+        NovidentTableStyleScope.of(context) ?? kDefaultTableStyle;
     return TableCelBlockWidget(
       key: node.key,
       node: node,
@@ -77,6 +111,7 @@ class TableCellBlockComponentBuilder extends BlockComponentBuilder {
       colorBuilder: colorBuilder,
       padding: padding,
       actionMenuItems: actionMenuItems,
+      tableStyleDef: tableStyle,
       showActions: showActions(node),
       actionBuilder: (context, state) => actionBuilder(
         blockComponentContext,
@@ -104,6 +139,7 @@ class TableCelBlockWidget extends BlockComponentStatefulWidget {
     this.colorBuilder,
     this.padding = const EdgeInsets.symmetric(horizontal: 4),
     this.actionMenuItems,
+    this.tableStyleDef,
     super.showActions,
     super.actionBuilder,
     super.actionTrailingBuilder,
@@ -113,11 +149,11 @@ class TableCelBlockWidget extends BlockComponentStatefulWidget {
   final TableBlockComponentMenuBuilder? menuBuilder;
   final TableBlockCellComponentColorBuilder? colorBuilder;
 
-  /// The padding around the content of the cell.
   final EdgeInsets padding;
 
-  /// The entries of the default context menu of the row handler.
   final List<TableActionMenuItem>? actionMenuItems;
+
+  final NovidentTableStyleDefinition? tableStyleDef;
 
   @override
   State<TableCelBlockWidget> createState() => _TableCeBlockWidgetState();
@@ -125,67 +161,54 @@ class TableCelBlockWidget extends BlockComponentStatefulWidget {
 
 class _TableCeBlockWidgetState extends State<TableCelBlockWidget> {
   late final editorState = Provider.of<EditorState>(context, listen: false);
-  bool _rowActionVisibility = false;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        MouseRegion(
-          onEnter: (_) => setState(() => _rowActionVisibility = true),
-          onExit: (_) => setState(() => _rowActionVisibility = false),
-          child: Container(
-            constraints: BoxConstraints(
-              minHeight: context.select((Node n) => n.cellHeight),
-            ),
-            color: context.select(
-              (Node n) =>
-                  widget.colorBuilder?.call(context, n) ??
-                  (n.attributes[TableCellBlockKeys.colBackgroundColor]
-                          as String?)
-                      ?.tryToColor() ??
-                  (n.attributes[TableCellBlockKeys.rowBackgroundColor]
-                          as String?)
-                      ?.tryToColor(),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: widget.padding,
-                  child: editorState.renderer.build(
-                    context,
-                    widget.node.children.first,
-                  ),
-                ),
-              ],
+    final style = widget.tableStyleDef ?? kDefaultTableStyle;
+    final cellPadding = _resolveCellPadding(widget.node, widget.padding, style);
+
+    return Container(
+      constraints: BoxConstraints(
+        minHeight: context.select((Node n) => n.cellHeight),
+      ),
+      color: context.select(
+        (Node n) =>
+            widget.colorBuilder?.call(context, n) ??
+            (n.attributes[TableCellBlockKeys.colBackgroundColor] as String?)
+                ?.tryToColor() ??
+            (n.attributes[TableCellBlockKeys.rowBackgroundColor] as String?)
+                ?.tryToColor(),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: cellPadding,
+            child: editorState.renderer.build(
+              context,
+              widget.node.children.first,
             ),
           ),
-        ),
-        TableActionHandler(
-          visible: _rowActionVisibility,
-          node: widget.node.parent!,
-          editorState: editorState,
-          position: widget.node.attributes[TableCellBlockKeys.rowPosition],
-          transform: context.select((Node n) {
-            final int col = n.attributes[TableCellBlockKeys.colPosition];
-            double left = -12;
-            for (var i = 0; i < col; i++) {
-              left -= getCellNode(n.parent!, i, 0)?.cellWidth ??
-                  TableDefaults.colWidth;
-              left -= n.parent!.attributes['borderWidth'] ??
-                  TableDefaults.borderWidth;
-            }
-
-            return Matrix4.translationValues(left, 0.0, 0.0);
-          }),
-          alignment: Alignment.centerLeft,
-          height: context.select((Node n) => n.cellHeight),
-          menuBuilder: widget.menuBuilder,
-          actionMenuItems: widget.actionMenuItems,
-          dir: TableDirection.row,
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  EdgeInsets _resolveCellPadding(
+    Node node,
+    EdgeInsets builderPadding,
+    NovidentTableStyleDefinition style,
+  ) {
+    final map = node.attributes[TableCellBlockKeys.cellPadding]
+        as Map<String, dynamic>?;
+    if (map != null) {
+      return EdgeInsets.fromLTRB(
+        (map['left'] as num?)?.toDouble() ?? 0,
+        (map['top'] as num?)?.toDouble() ?? 0,
+        (map['right'] as num?)?.toDouble() ?? 0,
+        (map['bottom'] as num?)?.toDouble() ?? 0,
+      );
+    }
+    return style.cellPadding ?? builderPadding;
   }
 }

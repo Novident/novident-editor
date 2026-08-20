@@ -1,6 +1,5 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class TableColBorder extends StatefulWidget {
   const TableColBorder({
@@ -10,16 +9,30 @@ class TableColBorder extends StatefulWidget {
     required this.colIdx,
     required this.resizable,
     required this.borderColor,
-    required this.borderHoverColor,
+    required this.colsHeight,
+    required this.borderWidth,
+    this.tableStyleDef,
+    this.borderHoverColor,
+    this.currentColWidth,
   });
 
+  final NovidentTableStyleDefinition? tableStyleDef;
   final bool resizable;
   final int colIdx;
   final TableNode tableNode;
   final EditorState editorState;
 
   final Color borderColor;
-  final Color borderHoverColor;
+  final Color? borderHoverColor;
+  final double colsHeight;
+
+  /// Resolved border width (node override > style default).
+  final double borderWidth;
+
+  /// The current rendered width in pixels of the column this border
+  /// belongs to. Used to convert mouse drag pixels to proportional
+  /// weight deltas.
+  final double? currentColWidth;
 
   @override
   State<TableColBorder> createState() => _TableColBorderState();
@@ -31,6 +44,10 @@ class _TableColBorderState extends State<TableColBorder> {
   bool _borderDragging = false;
 
   Offset initialOffset = const Offset(0, 0);
+
+  NovidentTableStyleDefinition get tableStyle {
+    return widget.tableStyleDef ?? kDefaultTableStyle;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,43 +68,80 @@ class _TableColBorderState extends State<TableColBorder> {
         },
         onHorizontalDragEnd: (_) {
           final transaction = widget.editorState.transaction;
-          widget.tableNode.setColWidth(
-            widget.colIdx,
-            widget.tableNode.getColWidth(widget.colIdx),
+          final col = widget.colIdx;
+          final nextCol = col + 1;
+          widget.tableNode.setColWeight(
+            col,
+            widget.tableNode.getColWeight(col, tableStyle),
+            style: tableStyle,
             transaction: transaction,
             force: true,
           );
+          if (nextCol < widget.tableNode.colsLen) {
+            widget.tableNode.setColWeight(
+              nextCol,
+              widget.tableNode.getColWeight(nextCol, tableStyle),
+              style: tableStyle,
+              transaction: transaction,
+              force: true,
+            );
+          }
           transaction.afterSelection = transaction.beforeSelection;
           widget.editorState.apply(transaction);
           setState(() => _borderDragging = false);
         },
         onHorizontalDragUpdate: (DragUpdateDetails details) {
-          final colWidth = widget.tableNode.getColWidth(widget.colIdx);
-          widget.tableNode.setColWidth(
-            widget.colIdx,
-            colWidth + details.delta.dx,
+          final col = widget.colIdx;
+          final nextCol = col + 1;
+          if (nextCol >= widget.tableNode.colsLen) return;
+
+          // Convert pixel delta to weight delta using the actual
+          // rendered column width for 1:1 pixel-to-visual mapping.
+          final colWidth = widget.currentColWidth ?? TableDefaults.colWidth;
+          final colWeight = widget.tableNode.getColWeight(col, tableStyle);
+          final weightDelta = colWidth > 0
+              ? details.delta.dx * colWeight / colWidth
+              : details.delta.dx / TableDefaults.colWidth;
+
+          // Calculate new weights: left grows, right shrinks.
+          final leftWeight =
+              widget.tableNode.getColWeight(col, tableStyle) + weightDelta;
+          final rightWeight =
+              widget.tableNode.getColWeight(nextCol, tableStyle) - weightDelta;
+
+          // Clamp: neither column can go below minimum.
+          final minWeight = tableStyle.colMinimumWidth / TableDefaults.colWidth;
+          if (leftWeight < minWeight || rightWeight < minWeight) return;
+
+          widget.tableNode.setColWeight(
+            col,
+            leftWeight,
+            style: widget.tableStyleDef,
+          );
+          widget.tableNode.setColWeight(
+            nextCol,
+            rightWeight,
+            style: widget.tableStyleDef,
           );
         },
         child: Container(
           key: _borderKey,
-          width: widget.tableNode.config.borderWidth,
-          height: context.select(
-            (Node n) => n.attributes[TableBlockKeys.colsHeight],
+          width: widget.borderWidth,
+          height: widget.colsHeight,
+          foregroundDecoration: BoxDecoration(
+            color: _borderHovering || _borderDragging
+                ? widget.borderHoverColor
+                : widget.borderColor,
           ),
-          color: _borderHovering || _borderDragging
-              ? widget.borderHoverColor
-              : widget.borderColor,
         ),
       ),
     );
   }
 
-  Container buildFixedBorder(BuildContext context) {
+  Widget buildFixedBorder(BuildContext context) {
     return Container(
-      width: widget.tableNode.config.borderWidth,
-      height: context.select(
-        (Node n) => n.attributes[TableBlockKeys.colsHeight],
-      ),
+      width: widget.borderWidth,
+      height: widget.colsHeight,
       color: widget.borderColor,
     );
   }

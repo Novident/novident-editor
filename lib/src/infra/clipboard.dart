@@ -10,6 +10,8 @@ class NovidentClipboardData {
   final String? html;
 }
 
+//TODO: @CatHood0 this class require more customization and
+// a full refactor to work with html
 class NovidentClipboard {
   static NovidentClipboardData? _mockData;
 
@@ -41,7 +43,6 @@ class NovidentClipboard {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     return NovidentClipboardData(
       text: data?.text,
-      html: null,
     );
   }
 

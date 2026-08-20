@@ -4,15 +4,14 @@ import 'package:example/common/nodes/file.dart';
 import 'package:example/common/store/document_content_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:novident_editor/novident_editor.dart' hide Node;
 import 'package:novident_nodes/novident_nodes.dart';
 import 'package:novident_split_view/novident_split_view.dart';
 
 import '../drawer/tree_view_drawer.dart';
+import '../editor/editor_configuration.dart';
 import '../editor/editor_pane.dart';
 import 'multi_editor_view.dart';
-
-/// Workspace colors.
-const Color _kWorkspaceBackground = Color(0xFFECECEC);
 
 /// Desktop workspace: binder on the left, a [NovSplitView] on the right.
 ///
@@ -34,14 +33,15 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
   late final TreeController treeController;
   final SplitViewController _splitController = SplitViewController();
   late final SplitViewConfiguration _configuration;
+  final FocusedEditorNotifier _toolbarNotifier = FocusedEditorNotifier();
 
   @override
   void initState() {
     super.initState();
     treeController = widget.controller
       ..selectNode(widget.controller.root.atPath(<int>[1, 0]));
-    final Node? initial = treeController.selection.value;
-    if (initial is File) {
+    final File? initial = treeController.selectedFile;
+    if (initial != null) {
       _splitController.open(initial.id);
     }
     treeController.selection.addListener(_onSelectionChanged);
@@ -49,8 +49,6 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
     _configuration = SplitViewConfiguration(
       paneBuilder: _buildPane,
       emptyPlaceholder: _buildEmptySplitTarget,
-      // The mixin already restricts dragging to File; this app-level
-      // rule is here to show where cross validations belong.
       onWillAcceptSplit: (SplitDragAndDropDetails<Node> details) =>
           details.draggedNode is File,
     );
@@ -64,6 +62,7 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
       ..invalidateSelection()
       ..dispose();
     _splitController.dispose();
+    _toolbarNotifier.dispose();
     super.dispose();
   }
 
@@ -72,11 +71,11 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
   /// selection changes: that is the whole point of the split view.
   void _onSelectionChanged() {
     if (!mounted) return;
-    final Node? node = treeController.selection.value;
-    if (node is! File) return;
-    final (int, int)? location = _splitController.locate(node.id);
+    final File? file = treeController.selectedFile;
+    if (file == null) return;
+    final (int, int)? location = _splitController.locate(file.id);
     if (location == null) {
-      _splitController.open(node.id);
+      _splitController.open(file.id);
       return;
     }
     _splitController.focusPane(location.$1, location.$2);
@@ -97,15 +96,18 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
       return _buildMissingDocumentPane(pane);
     }
     return EditorPane(
+      key: ValueKey(node.id),
       file: node,
       isFocused: pane.isFocused,
+      toolbarNotifier: _toolbarNotifier,
+      styles: kEditorStyles,
     );
   }
 
   /// Shown when the document behind a pane was deleted from the tree.
   Widget _buildMissingDocumentPane(PaneContext pane) {
     return ColoredBox(
-      color: _kWorkspaceBackground,
+      color: kWorkspaceBackground,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -226,7 +228,7 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
         .toDouble();
     final store = DocumentContentProvider.of(context);
     return Scaffold(
-      backgroundColor: _kWorkspaceBackground,
+      backgroundColor: kWorkspaceBackground,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -249,9 +251,38 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
                     return MultiEditorView(store: store, directory: dir);
                   }
                 }
-                return NovSplitView(
-                  controller: _splitController,
-                  configuration: _configuration,
+                return Column(
+                  children: [
+                    ValueListenableBuilder<EditorState?>(
+                      valueListenable: _toolbarNotifier,
+                      builder: (
+                        context,
+                        editorState,
+                        _,
+                      ) {
+                        return LayoutBuilder(builder: (
+                          context,
+                          constraints,
+                        ) {
+                          return SizedBox(
+                            width: constraints.maxWidth,
+                            child: NovidentStaticToolbar(
+                              items: kDesktopToolbarItems,
+                              editorState: editorState,
+                              stylesConfig: kEditorStyles,
+                              showWhenNoSelection: true,
+                            ),
+                          );
+                        });
+                      },
+                    ),
+                    Expanded(
+                      child: NovSplitView(
+                        controller: _splitController,
+                        configuration: _configuration,
+                      ),
+                    ),
+                  ],
                 );
               },
             ),

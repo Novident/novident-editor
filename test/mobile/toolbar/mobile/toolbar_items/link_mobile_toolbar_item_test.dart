@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,7 +15,7 @@ void main() {
     final editor = tester.editor..addParagraphs(3, initialText: text);
     await editor.startTesting();
 
-    var selection = Selection.single(
+    final selection = Selection.single(
       path: [1],
       startOffset: 2,
       endOffset: text.length - 2,
@@ -54,7 +53,7 @@ void main() {
       node?.allSatisfyInSelection(selection, (delta) {
         return delta.whereType<TextInsert>().every(
               (element) =>
-                  element.attributes?[NovidentRichTextKeys.href] == linkAddress,
+                  element.attributes?[RichTextKeys.href] == linkAddress,
             );
       }),
       true,

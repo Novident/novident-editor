@@ -1,12 +1,11 @@
+import 'dart:async';
+
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 Future<void> onNonTextUpdate(
   TextEditingDeltaNonTextUpdate nonTextUpdate,
   EditorState editorState,
-  List<CharacterShortcutEvent> characterShortcutEvents,
 ) async {
   NovidentEditorLog.input.debug('onNonTextUpdate: $nonTextUpdate');
 
@@ -15,14 +14,66 @@ Future<void> onNonTextUpdate(
   // when typing characters with CJK IME on Windows, a non-text update is sent
   // with the selection range.
   final selection = editorState.selection;
+  if (selection == null || nonTextUpdate.composing != TextRange.empty) {
+    return;
+  }
 
-  if (await _checkIfBacktickPressed(editorState, nonTextUpdate)) {
+  if (EditorPlatform.isAndroid) {
+    // on some Android keyboards (e.g. Gboard), they use non-text update to update the selection when moving cursor
+    // by space bar.
+    // for the another keyboards (e.g. system keyboard), they will trigger the
+    // `onFloatingCursor` event instead.
+    assert(() {
+      NovidentEditorLog.input
+          .debug('[Android] onNonTextUpdate: $nonTextUpdate');
+      return true;
+    }());
+    final nonTextUpdateStart = nonTextUpdate.selection.start;
+    final nonTextUpdateEnd = nonTextUpdate.selection.end;
+    final selectionStart = selection.start.offset;
+    if (nonTextUpdate.selection.isCollapsed &&
+        selection.isCollapsed &&
+        nonTextUpdateStart != selectionStart) {
+      unawaited(
+        editorState.updateSelectionWithReason(
+          Selection.collapsed(
+            Position(
+              path: selection.start.path,
+              offset: nonTextUpdateStart,
+            ),
+          ),
+          reason: SelectionUpdateReason.uiEvent,
+        ),
+      );
+    } else if (!nonTextUpdate.selection.isCollapsed) {
+      unawaited(
+        editorState.updateSelectionWithReason(
+          Selection(
+            start: Position(
+              path: selection.start.path,
+              offset: nonTextUpdateStart,
+            ),
+            end: Position(
+              path: selection.end.path,
+              offset: nonTextUpdateEnd,
+            ),
+          ),
+          reason: SelectionUpdateReason.uiEvent,
+        ),
+      );
+    }
+  } else if (EditorPlatform.isIOS) {
+    // on iOS, the cursor movement will trigger the `onFloatingCursor` event.
+    // so we don't need to handle the non-text update here.
+    assert(() {
+      NovidentEditorLog.input.debug('[iOS] onNonTextUpdate: $nonTextUpdate');
+      return true;
+    }());
     return;
   }
 
   if (PlatformExtension.isWindows) {
-    if (selection != null &&
-        nonTextUpdate.composing == TextRange.empty &&
+    if (nonTextUpdate.composing == TextRange.empty &&
         nonTextUpdate.selection.isCollapsed) {
       editorState.selection = Selection.collapsed(
         Position(
@@ -32,7 +83,7 @@ Future<void> onNonTextUpdate(
       );
     }
   } else if (PlatformExtension.isLinux) {
-    if (selection != null) {
+    unawaited(
       editorState.updateSelectionWithReason(
         Selection.collapsed(
           Position(
@@ -40,10 +91,10 @@ Future<void> onNonTextUpdate(
             offset: nonTextUpdate.selection.start,
           ),
         ),
-      );
-    }
+      ),
+    );
   } else if (PlatformExtension.isMacOS) {
-    if (selection != null) {
+    unawaited(
       editorState.updateSelectionWithReason(
         Selection.collapsed(
           Position(
@@ -51,103 +102,7 @@ Future<void> onNonTextUpdate(
             offset: nonTextUpdate.selection.start,
           ),
         ),
-      );
-    }
-  } else if (PlatformExtension.isAndroid) {
-    // on some Android keyboards (e.g. Gboard), they use non-text update to update the selection when moving cursor
-    // by space bar.
-    // for the another keyboards (e.g. system keyboard), they will trigger the
-    // `onFloatingCursor` event instead.
-    NovidentEditorLog.input.debug('[Android] onNonTextUpdate: $nonTextUpdate');
-    if (selection != null) {
-      final nonTextUpdateStart = nonTextUpdate.selection.start;
-      final selectionStart = selection.start.offset;
-      if (nonTextUpdateStart != selectionStart) {
-        editorState.updateSelectionWithReason(
-          Selection.collapsed(
-            Position(
-              path: selection.start.path,
-              offset: nonTextUpdateStart,
-            ),
-          ),
-          reason: SelectionUpdateReason.uiEvent,
-        );
-      }
-    }
-  } else if (PlatformExtension.isIOS) {
-    // on iOS, the cursor movement will trigger the `onFloatingCursor` event.
-    // so we don't need to handle the non-text update here.
-    NovidentEditorLog.input.debug('[iOS] onNonTextUpdate: $nonTextUpdate');
+      ),
+    );
   }
-}
-
-Future<bool> _checkIfBacktickPressed(
-  EditorState editorState,
-  TextEditingDeltaNonTextUpdate nonTextUpdate,
-) async {
-  // if the composing range is not empty, it means the user is typing a text,
-  // so we don't need to handle the backtick pressed event
-  if (!nonTextUpdate.composing.isCollapsed) {
-    return false;
-  }
-
-  // if the selection is not collapsed, it means the user is not typing a text,
-  // so we need to handle the backtick pressed event
-  if (!nonTextUpdate.selection.isCollapsed) {
-    return false;
-  }
-
-  final selection = editorState.selection;
-  if (selection == null || !selection.isCollapsed) {
-    NovidentEditorLog.input.debug('selection is null or not collapsed');
-    return false;
-  }
-
-  final node = editorState.getNodesInSelection(selection).firstOrNull;
-  if (node == null) {
-    NovidentEditorLog.input.debug('node is null');
-    return false;
-  }
-
-  // get last character of the node
-  final lastCharacter = node.delta?.toPlainText().characters.lastOrNull;
-  if (lastCharacter != '`') {
-    NovidentEditorLog.input.debug('last character is not backtick');
-    return false;
-  }
-
-  // check if the text should be formatted
-  final (shouldApplyFormat, _) = checkSingleCharacterFormatShouldBeApplied(
-    editorState: editorState,
-    // check before the last character
-    selection: selection.shift(-1),
-    character: '`',
-    formatStyle: FormatStyleByWrappingWithSingleChar.code,
-  );
-
-  if (!shouldApplyFormat) {
-    NovidentEditorLog.input.debug('should not apply format');
-    return false;
-  }
-
-  final transaction = editorState.transaction;
-  transaction.deleteText(node, node.delta!.toPlainText().length - 1, 1);
-  await editorState.apply(transaction);
-
-  // remove the last backtick, and try to format the text to code block
-  final isFormatted = handleFormatByWrappingWithSingleCharacter(
-    editorState: editorState,
-    character: '`',
-    formatStyle: FormatStyleByWrappingWithSingleChar.code,
-  );
-
-  if (!isFormatted) {
-    NovidentEditorLog.input.debug('format failed');
-    // revert the transaction
-    editorState.undoManager.undo();
-  } else {
-    editorState.sliceUpcomingAttributes = false;
-  }
-
-  return true;
 }

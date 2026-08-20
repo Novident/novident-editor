@@ -58,7 +58,7 @@ void main() async {
       final selection = editor.selection!;
       final node = editor.editorState.getNodeAtPath(selection.end.path)!;
 
-      const expectedText = 'flowy 😁';
+      const expectedText = 'ident 😁';
       expect(node.delta!.toPlainText(), expectedText);
 
       await editor.dispose();

@@ -8,7 +8,7 @@ void formatHighlightColor(
 }) {
   editorState.formatDelta(
     selection,
-    {NovidentRichTextKeys.backgroundColor: color},
+    {RichTextKeys.backgroundColor: color},
     withUpdateSelection: withUpdateSelection,
   );
 }
@@ -21,7 +21,7 @@ void formatFontColor(
 }) {
   editorState.formatDelta(
     selection,
-    {NovidentRichTextKeys.textColor: color},
+    {RichTextKeys.textColor: color},
     withUpdateSelection: withUpdateSelection,
   );
 }

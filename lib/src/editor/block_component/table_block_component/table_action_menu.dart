@@ -1,5 +1,4 @@
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/util.dart';
 import 'package:novident_editor/src/editor/toolbar/desktop/items/utils/overlay_util.dart';
 import 'package:flutter/material.dart';
 
@@ -52,8 +51,8 @@ class TableActionMenuContext {
 /// final items = [
 ///   ...defaultTableActionMenuItems,
 ///   TableActionMenuItem(
-///     nameBuilder: (_) => 'Toggle horizontal scroll',
-///     iconBuilder: (_) => Icons.swap_horiz,
+///     name: 'Toggle horizontal scroll',
+///     icon: Icons.swap_horiz,
 ///     onPressed: (menuContext) {
 ///       final enabled = menuContext.node
 ///               .attributes[TableBlockKeys.enableHorizontalScroll] as bool? ??
@@ -70,112 +69,209 @@ class TableActionMenuContext {
 /// ```
 class TableActionMenuItem {
   const TableActionMenuItem({
-    required this.nameBuilder,
-    required this.iconBuilder,
+    required this.name,
+    required this.icon,
     required this.onPressed,
+    this.direction,
     this.visible,
+    this.builder,
   });
 
-  /// The label of the entry, resolved per direction (row/column).
-  final String Function(TableDirection dir) nameBuilder;
+  /// The label of the entry.
+  final String name;
 
-  /// The icon of the entry, resolved per direction (row/column).
-  final IconData Function(TableDirection dir) iconBuilder;
+  /// The icon of the entry.
+  final IconData icon;
 
   /// Invoked when the entry is tapped.
   ///
   /// Call [TableActionMenuContext.dismiss] to close the menu.
   final void Function(TableActionMenuContext menuContext) onPressed;
 
-  /// Optional predicate to hide the entry for specific tables, positions or
-  /// directions. Defaults to always visible.
-  final bool Function(Node node, int position, TableDirection dir)? visible;
+  /// The direction this item acts on.
+  ///
+  /// - [TableDirection.col] / [TableDirection.row]: the item operates on a
+  ///   column or row respectively. Only shown in handlers and menus matching
+  ///   that direction.
+  /// - `null`: the item is direction-agnostic (e.g. border properties) and
+  ///   shown for both directions.
+  final TableDirection? direction;
+
+  /// Optional predicate to hide the entry for specific tables or positions.
+  /// Defaults to always visible.
+  final bool Function(Node node, int position)? visible;
+
+  /// Optional builder that allows create custom widget forms
+  final Widget Function(
+    BuildContext context, {
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    required bool enabled,
+  })? builder;
 }
 
-/// Adds a row/column before the current one.
-final TableActionMenuItem tableActionAddBeforeItem = TableActionMenuItem(
-  nameBuilder: (dir) => dir == TableDirection.col
-      ? NovidentEditorL10n.current.colAddBefore
-      : NovidentEditorL10n.current.rowAddBefore,
-  iconBuilder: (dir) =>
-      dir == TableDirection.col ? Icons.first_page : Icons.vertical_align_top,
+/// Adds a column before the current one.
+final TableActionMenuItem tableActionAddColumnBeforeItem = TableActionMenuItem(
+  name: NovidentEditorL10n.current.colAddBefore,
+  icon: Icons.first_page,
+  direction: TableDirection.col,
   onPressed: (menuContext) {
+    final styles = NovidentEditorStyles.maybeOf(menuContext.buildContext);
+    final resolved = styles?.resolveStyleForNode(menuContext.node);
+    final tableStyleDef = resolved is NovidentTableStyleDefinition
+        ? resolved
+        : kDefaultTableStyle;
     TableActions.add(
       menuContext.node,
       menuContext.position,
       menuContext.editorState,
-      menuContext.dir,
+      TableDirection.col,
+      tableStyleDef,
     );
     menuContext.dismiss();
   },
 );
 
-/// Adds a row/column after the current one.
-final TableActionMenuItem tableActionAddAfterItem = TableActionMenuItem(
-  nameBuilder: (dir) => dir == TableDirection.col
-      ? NovidentEditorL10n.current.colAddAfter
-      : NovidentEditorL10n.current.rowAddAfter,
-  iconBuilder: (dir) => dir == TableDirection.col
-      ? Icons.last_page
-      : Icons.vertical_align_bottom,
+/// Adds a row before the current one.
+final TableActionMenuItem tableActionAddRowBeforeItem = TableActionMenuItem(
+  name: NovidentEditorL10n.current.rowAddBefore,
+  icon: Icons.vertical_align_top,
+  direction: TableDirection.row,
   onPressed: (menuContext) {
+    final styles = NovidentEditorStyles.maybeOf(menuContext.buildContext);
+    final resolved = styles?.resolveStyleForNode(menuContext.node);
+    final tableStyleDef = resolved is NovidentTableStyleDefinition
+        ? resolved
+        : kDefaultTableStyle;
+    TableActions.add(
+      menuContext.node,
+      menuContext.position,
+      menuContext.editorState,
+      TableDirection.row,
+      tableStyleDef,
+    );
+    menuContext.dismiss();
+  },
+);
+
+/// Adds a column after the current one.
+final TableActionMenuItem tableActionAddColumnAfterItem = TableActionMenuItem(
+  name: NovidentEditorL10n.current.colAddAfter,
+  icon: Icons.last_page,
+  direction: TableDirection.col,
+  onPressed: (menuContext) {
+    final styles = NovidentEditorStyles.maybeOf(menuContext.buildContext);
+    final resolved = styles?.resolveStyleForNode(menuContext.node);
+    final tableStyleDef = resolved is NovidentTableStyleDefinition
+        ? resolved
+        : kDefaultTableStyle;
     TableActions.add(
       menuContext.node,
       menuContext.position + 1,
       menuContext.editorState,
-      menuContext.dir,
+      TableDirection.col,
+      tableStyleDef,
     );
     menuContext.dismiss();
   },
 );
 
-/// Removes the current row/column.
-final TableActionMenuItem tableActionRemoveItem = TableActionMenuItem(
-  nameBuilder: (dir) => dir == TableDirection.col
-      ? NovidentEditorL10n.current.colRemove
-      : NovidentEditorL10n.current.rowRemove,
-  iconBuilder: (_) => Icons.delete,
+/// Adds a row after the current one.
+final TableActionMenuItem tableActionAddRowAfterItem = TableActionMenuItem(
+  name: NovidentEditorL10n.current.rowAddAfter,
+  icon: Icons.vertical_align_bottom,
+  direction: TableDirection.row,
+  onPressed: (menuContext) {
+    final styles = NovidentEditorStyles.maybeOf(menuContext.buildContext);
+    final resolved = styles?.resolveStyleForNode(menuContext.node);
+    final tableStyleDef = resolved is NovidentTableStyleDefinition
+        ? resolved
+        : kDefaultTableStyle;
+    TableActions.add(
+      menuContext.node,
+      menuContext.position + 1,
+      menuContext.editorState,
+      TableDirection.row,
+      tableStyleDef,
+    );
+    menuContext.dismiss();
+  },
+);
+
+/// Removes the current column.
+final TableActionMenuItem tableActionRemoveColumnItem = TableActionMenuItem(
+  name: NovidentEditorL10n.current.colRemove,
+  icon: Icons.delete,
+  direction: TableDirection.col,
   onPressed: (menuContext) {
     TableActions.delete(
       menuContext.node,
       menuContext.position,
       menuContext.editorState,
-      menuContext.dir,
+      TableDirection.col,
     );
     menuContext.dismiss();
   },
 );
 
-/// Duplicates the current row/column.
-final TableActionMenuItem tableActionDuplicateItem = TableActionMenuItem(
-  nameBuilder: (dir) => dir == TableDirection.col
-      ? NovidentEditorL10n.current.colDuplicate
-      : NovidentEditorL10n.current.rowDuplicate,
-  iconBuilder: (_) => Icons.content_copy,
+/// Removes the current row.
+final TableActionMenuItem tableActionRemoveRowItem = TableActionMenuItem(
+  name: NovidentEditorL10n.current.rowRemove,
+  icon: Icons.delete,
+  direction: TableDirection.row,
+  onPressed: (menuContext) {
+    TableActions.delete(
+      menuContext.node,
+      menuContext.position,
+      menuContext.editorState,
+      TableDirection.row,
+    );
+    menuContext.dismiss();
+  },
+);
+
+/// Duplicates the current column.
+final TableActionMenuItem tableActionDuplicateColumnItem = TableActionMenuItem(
+  name: NovidentEditorL10n.current.colDuplicate,
+  icon: Icons.content_copy,
+  direction: TableDirection.col,
   onPressed: (menuContext) {
     TableActions.duplicate(
       menuContext.node,
       menuContext.position,
       menuContext.editorState,
-      menuContext.dir,
+      TableDirection.col,
     );
     menuContext.dismiss();
   },
 );
 
-/// Opens the background color picker for the current row/column.
-final TableActionMenuItem tableActionBackgroundColorItem = TableActionMenuItem(
-  nameBuilder: (_) => NovidentEditorL10n.current.backgroundColor,
-  iconBuilder: (_) => Icons.format_color_fill,
+/// Duplicates the current row.
+final TableActionMenuItem tableActionDuplicateRowItem = TableActionMenuItem(
+  name: NovidentEditorL10n.current.rowDuplicate,
+  icon: Icons.content_copy,
+  direction: TableDirection.row,
   onPressed: (menuContext) {
-    final dir = menuContext.dir;
-    final cell = dir == TableDirection.col
-        ? getCellNode(menuContext.node, menuContext.position, 0)
-        : getCellNode(menuContext.node, 0, menuContext.position);
-    final key = dir == TableDirection.col
-        ? TableCellBlockKeys.colBackgroundColor
-        : TableCellBlockKeys.rowBackgroundColor;
+    TableActions.duplicate(
+      menuContext.node,
+      menuContext.position,
+      menuContext.editorState,
+      TableDirection.row,
+    );
+    menuContext.dismiss();
+  },
+);
 
+/// Opens the background color picker for the current column.
+final TableActionMenuItem tableActionColumnBackgroundColorItem =
+    TableActionMenuItem(
+  name: NovidentEditorL10n.current.backgroundColor,
+  icon: Icons.format_color_fill,
+  direction: TableDirection.col,
+  onPressed: (menuContext) {
+    final table = TableNode(node: menuContext.node);
+    final cell = table.getCell(menuContext.position, 0);
     _showColorMenu(
       menuContext.buildContext,
       (color) {
@@ -184,30 +280,74 @@ final TableActionMenuItem tableActionBackgroundColorItem = TableActionMenuItem(
           menuContext.position,
           menuContext.editorState,
           color,
-          dir,
+          TableDirection.col,
         );
       },
       top: menuContext.top,
       bottom: menuContext.bottom,
       left: menuContext.left,
-      selectedColorHex: cell?.attributes[key],
+      selectedColorHex: cell.attributes[TableCellBlockKeys.colBackgroundColor],
     );
     menuContext.dismiss();
   },
 );
 
-/// Clears the content of the current row/column.
-final TableActionMenuItem tableActionClearItem = TableActionMenuItem(
-  nameBuilder: (dir) => dir == TableDirection.col
-      ? NovidentEditorL10n.current.colClear
-      : NovidentEditorL10n.current.rowClear,
-  iconBuilder: (_) => Icons.clear,
+/// Opens the background color picker for the current row.
+final TableActionMenuItem tableActionRowBackgroundColorItem =
+    TableActionMenuItem(
+  name: NovidentEditorL10n.current.backgroundColor,
+  icon: Icons.format_color_fill,
+  direction: TableDirection.row,
+  onPressed: (menuContext) {
+    final table = TableNode(node: menuContext.node);
+    final cell = table.getCell(0, menuContext.position);
+    _showColorMenu(
+      menuContext.buildContext,
+      (color) {
+        TableActions.setBgColor(
+          menuContext.node,
+          menuContext.position,
+          menuContext.editorState,
+          color,
+          TableDirection.row,
+        );
+      },
+      top: menuContext.top,
+      bottom: menuContext.bottom,
+      left: menuContext.left,
+      selectedColorHex: cell.attributes[TableCellBlockKeys.rowBackgroundColor],
+    );
+    menuContext.dismiss();
+  },
+);
+
+/// Clears the content of the current column.
+final TableActionMenuItem tableActionClearColumnItem = TableActionMenuItem(
+  name: NovidentEditorL10n.current.colClear,
+  icon: Icons.clear,
+  direction: TableDirection.col,
   onPressed: (menuContext) {
     TableActions.clear(
       menuContext.node,
       menuContext.position,
       menuContext.editorState,
-      menuContext.dir,
+      TableDirection.col,
+    );
+    menuContext.dismiss();
+  },
+);
+
+/// Clears the content of the current row.
+final TableActionMenuItem tableActionClearRowItem = TableActionMenuItem(
+  name: NovidentEditorL10n.current.rowClear,
+  icon: Icons.clear,
+  direction: TableDirection.row,
+  onPressed: (menuContext) {
+    TableActions.clear(
+      menuContext.node,
+      menuContext.position,
+      menuContext.editorState,
+      TableDirection.row,
     );
     menuContext.dismiss();
   },
@@ -237,8 +377,8 @@ TableActionMenuItem buildTableActionBorderPropertiesItem({
   IconData icon = Icons.border_all,
 }) {
   return TableActionMenuItem(
-    nameBuilder: (_) => name,
-    iconBuilder: (_) => icon,
+    name: name,
+    icon: icon,
     onPressed: (menuContext) {
       // insert the submenu before dismissing the current overlay, so the
       // build context used to resolve the root overlay is still mounted.
@@ -422,12 +562,18 @@ Widget _borderWidthChip(
 /// `[...defaultTableActionMenuItems, myItem]`.
 final List<TableActionMenuItem> defaultTableActionMenuItems =
     List.unmodifiable([
-  tableActionAddBeforeItem,
-  tableActionAddAfterItem,
-  tableActionRemoveItem,
-  tableActionDuplicateItem,
-  tableActionBackgroundColorItem,
-  tableActionClearItem,
+  tableActionAddColumnBeforeItem,
+  tableActionAddRowBeforeItem,
+  tableActionAddColumnAfterItem,
+  tableActionAddRowAfterItem,
+  tableActionRemoveColumnItem,
+  tableActionRemoveRowItem,
+  tableActionDuplicateColumnItem,
+  tableActionDuplicateRowItem,
+  tableActionColumnBackgroundColorItem,
+  tableActionRowBackgroundColorItem,
+  tableActionClearColumnItem,
+  tableActionClearRowItem,
   tableActionBorderPropertiesItem,
 ]);
 
@@ -457,9 +603,10 @@ void showActionMenu(
     overlay = null;
   }
 
-  final visibleItems = (items ?? defaultTableActionMenuItems)
-      .where((item) => item.visible?.call(node, position, dir) ?? true)
-      .toList(growable: false);
+  final visibleItems = (items ?? defaultTableActionMenuItems).where((item) {
+    if (item.direction != null && item.direction != dir) return false;
+    return item.visible?.call(node, position) ?? true;
+  }).toList(growable: false);
   if (visibleItems.isEmpty) {
     return;
   }
@@ -489,8 +636,8 @@ void showActionMenu(
             .map(
               (item) => _menuItem(
                 context,
-                item.nameBuilder(dir),
-                item.iconBuilder(dir),
+                item.name,
+                item.icon,
                 () => item.onPressed(menuContext),
               ),
             )

@@ -1,23 +1,12 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 
-class ParagraphBlockKeys {
-  ParagraphBlockKeys._();
-
-  static const String type = 'paragraph';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node paragraphNode({
   String? text,
   Delta? delta,
   String? textDirection,
   Attributes? attributes,
+  String? styleRef,
   Iterable<Node> children = const [],
 }) {
   return Node(
@@ -26,6 +15,7 @@ Node paragraphNode({
       ParagraphBlockKeys.delta:
           (delta ?? (Delta()..insert(text ?? ''))).toJson(),
       if (attributes != null) ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null)
         ParagraphBlockKeys.textDirection: textDirection,
     },
@@ -160,12 +150,21 @@ class _ParagraphBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(
+      context,
+      widget.node,
+    );
+    final effectivePadding = blockStyle.applyToPadding(padding);
+    //TODO: alignment.toTextAlign should be replaced
+    // by another method or enum that supports jutify alignment
+    final effectiveTextAlign =
+        alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign;
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         textDirection: textDirection,
         children: [
@@ -173,18 +172,9 @@ class _ParagraphBlockComponentWidgetState
             key: forwardKey,
             delegate: this,
             node: widget.node,
-            editorState: editorState,
-            textAlign: alignment?.toTextAlign ?? textAlign,
+            editorConfig: editorState,
+            textAlign: effectiveTextAlign,
             placeholderText: _showPlaceholder ? placeholderText : ' ',
-            textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
-              textStyleWithTextSpan(
-                textSpan: textSpan,
-              ),
-            ),
-            placeholderTextSpanDecorator: (textSpan) =>
-                textSpan.updateTextStyle(
-              placeholderTextStyleWithTextSpan(textSpan: textSpan),
-            ),
             textDirection: textDirection,
             cursorColor: editorState.editorStyle.cursorColor,
             selectionColor: editorState.editorStyle.selectionColor,
@@ -194,17 +184,25 @@ class _ParagraphBlockComponentWidgetState
       ),
     );
 
-    child = Container(
+    var effectiveDecoration = withBackgroundColor ? decoration : null;
+    effectiveDecoration = blockStyle.applyToDecoration(effectiveDecoration);
+
+    child = Padding(
       key: blockComponentKey,
-      decoration: withBackgroundColor ? decoration : null,
-      padding: padding,
-      child: child,
+      padding: effectivePadding,
+      // ignore: use_decorated_box
+      child: Container(
+        decoration: effectiveDecoration,
+        child: child,
+      ),
     );
 
     child = BlockSelectionContainer(
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [

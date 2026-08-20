@@ -81,7 +81,7 @@ void main() async {
     });
 
     testWidgets('remove the last column', (tester) async {
-      var tableNode = TableNode.fromList([
+      final tableNode = TableNode.fromList([
         ['1', '2'],
       ]);
       final editor = tester.editor..addNode(tableNode.node);
@@ -102,7 +102,7 @@ void main() async {
     });
 
     testWidgets('remove the last row', (tester) async {
-      var tableNode = TableNode.fromList([
+      final tableNode = TableNode.fromList([
         ['1'],
         ['3'],
       ]);
@@ -133,13 +133,13 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      TableActions.duplicate(
+      await TableActions.duplicate(
         tableNode.node,
         0,
         editor.editorState,
         TableDirection.col,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       tableNode = TableNode(node: tableNode.node);
 
       expect(tableNode.colsLen, 3);
@@ -162,13 +162,13 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      TableActions.duplicate(
+      await TableActions.duplicate(
         tableNode.node,
         0,
         editor.editorState,
         TableDirection.row,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       tableNode = TableNode(node: tableNode.node);
 
       expect(tableNode.rowsLen, 3);
@@ -191,13 +191,14 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      TableActions.add(
+      await TableActions.add(
         tableNode.node,
         2,
         editor.editorState,
         TableDirection.col,
+        kDefaultTableStyle,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       tableNode = TableNode(node: tableNode.node);
 
       expect(tableNode.colsLen, 3);
@@ -208,7 +209,10 @@ void main() async {
           "data": {"delta": []},
         },
       );
-      expect(tableNode.getColWidth(2), tableNode.config.colDefaultWidth);
+      expect(
+        tableNode.getColWidth(2, kDefaultTableStyle),
+        kDefaultTableStyle.colDefaultWeight * TableDefaults.colWidth,
+      );
       await editor.dispose();
     });
 
@@ -222,13 +226,14 @@ void main() async {
       await editor.startTesting();
       await tester.pumpAndSettle();
 
-      TableActions.add(
+      await TableActions.add(
         tableNode.node,
         2,
         editor.editorState,
         TableDirection.row,
+        kDefaultTableStyle,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       tableNode = TableNode(node: tableNode.node);
 
       expect(tableNode.rowsLen, 3);
@@ -240,13 +245,17 @@ void main() async {
         },
       );
 
-      var cell12 = getCellNode(tableNode.node, 1, 2)!;
-      expect(tableNode.getRowHeight(2), cell12.children.first.rect.height + 8);
+      final cell12 = getCellNode(tableNode.node, 1, 2)!;
+      expect(
+        tableNode.getRowHeight(2, kDefaultTableStyle),
+        cell12.children.first.rect.height +
+            kDefaultTableStyle.cellVerticalPadding,
+      );
       await editor.dispose();
     });
 
     testWidgets('set row bg color', (tester) async {
-      var tableNode = TableNode.fromList([
+      final tableNode = TableNode.fromList([
         ['', ''],
         ['', ''],
       ]);
@@ -263,7 +272,7 @@ void main() async {
         color,
         TableDirection.row,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
 
       for (var i = 0; i < 2; i++) {
         expect(
@@ -294,15 +303,16 @@ void main() async {
         color,
         TableDirection.row,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
 
-      TableActions.add(
+      await TableActions.add(
         tableNode.node,
         2,
         editor.editorState,
         TableDirection.col,
+        kDefaultTableStyle,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
       tableNode = TableNode(node: tableNode.node);
 
       expect(tableNode.colsLen, 3);
@@ -333,13 +343,14 @@ void main() async {
         color,
         TableDirection.col,
       );
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
 
-      TableActions.add(
+      await TableActions.add(
         tableNode.node,
         2,
         editor.editorState,
         TableDirection.row,
+        kDefaultTableStyle,
       );
       await tester.pumpAndSettle(const Duration(milliseconds: 1000));
       tableNode = TableNode(node: tableNode.node);

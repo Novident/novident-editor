@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -23,7 +22,7 @@ const Set<String> _defaultSupportSlashMenuNodeTypes = {
 final CharacterShortcutEvent slashCommand = CharacterShortcutEvent(
   key: 'show the slash menu',
   character: '/',
-  handler: (editorState) async => await _showSlashMenu(
+  handler: (editorState) async => _showSlashMenu(
     editorState,
     standardSelectionMenuItems,
   ),

@@ -5,9 +5,18 @@ const _kNumberedListItemId = 'editor.numbered_list';
 final ToolbarItem numberedListItem = ToolbarItem(
   id: _kNumberedListItemId,
   group: 3,
-  isActive: onlyShowInTextType,
+  isActive: showInTextTypeEvenWithoutSelection,
   builder: (context, editorState, highlightColor, iconColor, tooltipBuilder) {
-    final selection = editorState.selection!;
+    final selection = editorState.selection;
+    if (selection == null) {
+      return SVGIconItemWidget(
+        iconName: 'toolbar/numbered_list',
+        isHighlight: false,
+        highlightColor: highlightColor,
+        iconColor: iconColor,
+        onPressed: () {},
+      );
+    }
     final node = editorState.getNodeAtPath(selection.start.path)!;
     final isHighlight = node.type == 'numbered_list';
     final child = SVGIconItemWidget(

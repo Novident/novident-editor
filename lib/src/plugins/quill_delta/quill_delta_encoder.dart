@@ -21,7 +21,7 @@ class QuillDeltaEncoder extends Converter<Delta, Document> {
   @override
   Document convert(Delta input) {
     final iterator = input.iterator;
-    final document = Document.blank(withInitialText: false);
+    final document = Document.blank();
 
     Node node = paragraphNode();
     int index = 0;
@@ -73,30 +73,30 @@ class QuillDeltaEncoder extends Converter<Delta, Document> {
   void _applyStyle(Node node, String text, Map<String, dynamic>? attributes) {
     final Attributes attrs = {};
     if (_containsStyle(attributes, 'strike')) {
-      attrs[NovidentRichTextKeys.strikethrough] = true;
+      attrs[RichTextKeys.strikethrough] = true;
     }
     if (_containsStyle(attributes, 'underline')) {
-      attrs[NovidentRichTextKeys.underline] = true;
+      attrs[RichTextKeys.underline] = true;
     }
     if (_containsStyle(attributes, 'bold')) {
-      attrs[NovidentRichTextKeys.bold] = true;
+      attrs[RichTextKeys.bold] = true;
     }
     if (_containsStyle(attributes, 'italic')) {
-      attrs[NovidentRichTextKeys.italic] = true;
+      attrs[RichTextKeys.italic] = true;
     }
     final link = attributes?['link'] as String?;
     if (link != null) {
-      attrs[NovidentRichTextKeys.href] = link;
+      attrs[RichTextKeys.href] = link;
     }
     final color = attributes?['color'] as String?;
     final colorHex = _convertColorToHexString(color);
     if (colorHex != null) {
-      attrs[NovidentRichTextKeys.textColor] = colorHex;
+      attrs[RichTextKeys.textColor] = colorHex;
     }
     final backgroundColor = attributes?['background'] as String?;
     final backgroundHex = _convertColorToHexString(backgroundColor);
     if (backgroundHex != null) {
-      attrs[NovidentRichTextKeys.backgroundColor] = backgroundHex;
+      attrs[RichTextKeys.backgroundColor] = backgroundHex;
     }
     // Node.delta returns a cached instance that must be treated as
     // immutable — and Delta.add merges into the LAST TextOperation in
@@ -219,7 +219,7 @@ class QuillDeltaEncoder extends Converter<Delta, Document> {
     if (color.startsWith('#')) {
       return '0xFF${color.substring(1)}';
     } else if (color.startsWith("rgba")) {
-      List rgbaList = color.substring(5, color.length - 1).split(',');
+      final List rgbaList = color.substring(5, color.length - 1).split(',');
       return Color.fromRGBO(
         int.parse(rgbaList[0]),
         int.parse(rgbaList[1]),

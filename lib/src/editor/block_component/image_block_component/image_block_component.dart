@@ -2,39 +2,12 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class ImageBlockKeys {
-  const ImageBlockKeys._();
-
-  static const String type = 'image';
-
-  /// The align data of a image block.
-  ///
-  /// The value is a String.
-  /// left, center, right
-  static const String align = 'align';
-
-  /// The image src of a image block.
-  ///
-  /// The value is a String.
-  /// It can be a url or a base64 string(web).
-  static const String url = 'url';
-
-  /// The height of a image block.
-  ///
-  /// The value is a double.
-  static const String width = 'width';
-
-  /// The width of a image block.
-  ///
-  /// The value is a double.
-  static const String height = 'height';
-}
-
 Node imageNode({
   required String url,
   String align = 'center',
   double? height,
   double? width,
+  String? styleRef,
 }) {
   return Node(
     type: ImageBlockKeys.type,
@@ -43,6 +16,7 @@ Node imageNode({
       ImageBlockKeys.align: align,
       ImageBlockKeys.height: height,
       ImageBlockKeys.width: width,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
     },
   );
 }
@@ -180,6 +154,8 @@ class ImageBlockComponentWidgetState extends State<ImageBlockComponentWidget>
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [
@@ -216,6 +192,8 @@ class ImageBlockComponentWidgetState extends State<ImageBlockComponentWidget>
                   node: node,
                   delegate: this,
                   listenable: editorState.selectionNotifier,
+                  host: editorState,
+                  renderer: editorState.editorStyle.selectionRenderer,
                   remoteSelection: editorState.remoteSelections,
                   cursorColor: editorState.editorStyle.cursorColor,
                   selectionColor: editorState.editorStyle.selectionColor,
@@ -234,7 +212,7 @@ class ImageBlockComponentWidgetState extends State<ImageBlockComponentWidget>
   }
 
   @override
-  Position start() => Position(path: widget.node.path, offset: 0);
+  Position start() => Position(path: widget.node.path);
 
   @override
   Position end() => Position(path: widget.node.path, offset: 1);

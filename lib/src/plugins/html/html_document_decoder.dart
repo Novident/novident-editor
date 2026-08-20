@@ -27,7 +27,7 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
     final document = parse(input);
     final body = document.body;
     if (body == null) {
-      return Document.blank(withInitialText: false);
+      return Document.blank();
     }
 
     ///This is used for temporarily handling documents copied from Google Docs,
@@ -37,7 +37,7 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
     /// this method needs to be removed in the future as it is not stable
     final parseForSingleChild = body.children.length == 1 &&
         HTMLTags.formattingElements.contains(body.children.first.localName);
-    return Document.blank(withInitialText: false)
+    return Document.blank()
       ..insert(
         [0],
         parseForSingleChild
@@ -197,7 +197,7 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
     int columnPosition = 0;
 
     for (final data in element.children) {
-      Attributes attributes = {
+      final Attributes attributes = {
         TableCellBlockKeys.colPosition: columnPosition,
         TableCellBlockKeys.rowPosition: rowPosition,
       };
@@ -280,19 +280,19 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
     Attributes attributes = {};
     switch (localName) {
       case HTMLTags.bold || HTMLTags.strong:
-        attributes = {NovidentRichTextKeys.bold: true};
+        attributes = {RichTextKeys.bold: true};
         break;
       case HTMLTags.italic || HTMLTags.em:
-        attributes = {NovidentRichTextKeys.italic: true};
+        attributes = {RichTextKeys.italic: true};
         break;
       case HTMLTags.underline:
-        attributes = {NovidentRichTextKeys.underline: true};
+        attributes = {RichTextKeys.underline: true};
         break;
       case HTMLTags.del:
-        attributes = {NovidentRichTextKeys.strikethrough: true};
+        attributes = {RichTextKeys.strikethrough: true};
         break;
       case HTMLTags.code:
-        attributes = {NovidentRichTextKeys.code: true};
+        attributes = {RichTextKeys.code: true};
       case HTMLTags.span || HTMLTags.mark:
         final deltaAttributes = _getDeltaAttributesFromHTMLAttributes(
               element.attributes,
@@ -303,12 +303,12 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
       case HTMLTags.anchor:
         final href = element.attributes['href'];
         if (href != null) {
-          attributes = {NovidentRichTextKeys.href: href};
+          attributes = {RichTextKeys.href: href};
         }
         break;
 
       case HTMLTags.strikethrough:
-        attributes = {NovidentRichTextKeys.strikethrough: true};
+        attributes = {RichTextKeys.strikethrough: true};
         break;
       default:
         break;
@@ -439,9 +439,11 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
             );
           }
         }
-      } else {
-        delta.insert(child.text?.replaceAll(RegExp(r'\n+$'), '') ?? '');
+      } else if (child is dom.Text) {
+        delta.insert(child.text.replaceAll(RegExp(r'\n+$'), ''));
       }
+      // other node types (e.g. dom.Comment) carry no visible content and
+      // are intentionally skipped, mirroring _parseElement's handling.
     }
     return (delta, nodes);
   }
@@ -457,11 +459,11 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
     final fontWeight = css['font-weight'];
     if (fontWeight != null) {
       if (fontWeight == 'bold') {
-        attributes[NovidentRichTextKeys.bold] = true;
+        attributes[RichTextKeys.bold] = true;
       } else {
         final weight = int.tryParse(fontWeight);
         if (weight != null && weight >= 500) {
-          attributes[NovidentRichTextKeys.bold] = true;
+          attributes[RichTextKeys.bold] = true;
         }
       }
     }
@@ -473,10 +475,10 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
       for (final decoration in decorations) {
         switch (decoration) {
           case 'underline':
-            attributes[NovidentRichTextKeys.underline] = true;
+            attributes[RichTextKeys.underline] = true;
             break;
           case 'line-through':
-            attributes[NovidentRichTextKeys.strikethrough] = true;
+            attributes[RichTextKeys.strikethrough] = true;
             break;
           default:
             break;
@@ -489,7 +491,7 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
     if (enableColorParse && backgroundColor != null) {
       final highlightColor = backgroundColor.tryToColor()?.toHex();
       if (highlightColor != null) {
-        attributes[NovidentRichTextKeys.backgroundColor] = highlightColor;
+        attributes[RichTextKeys.backgroundColor] = highlightColor;
       }
     }
 
@@ -498,7 +500,7 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
     if (enableColorParse && background != null) {
       final highlightColor = background.tryToColor()?.toHex();
       if (highlightColor != null) {
-        attributes[NovidentRichTextKeys.backgroundColor] = highlightColor;
+        attributes[RichTextKeys.backgroundColor] = highlightColor;
       }
     }
 
@@ -507,14 +509,14 @@ class DocumentHTMLDecoder extends Converter<String, Document> {
     if (enableColorParse && color != null) {
       final textColor = color.tryToColor()?.toHex();
       if (textColor != null) {
-        attributes[NovidentRichTextKeys.textColor] = textColor;
+        attributes[RichTextKeys.textColor] = textColor;
       }
     }
 
     // italic
     final fontStyle = css['font-style'];
     if (fontStyle == 'italic') {
-      attributes[NovidentRichTextKeys.italic] = true;
+      attributes[RichTextKeys.italic] = true;
     }
 
     return attributes.isEmpty ? null : attributes;

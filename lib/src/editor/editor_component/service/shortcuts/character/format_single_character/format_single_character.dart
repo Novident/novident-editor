@@ -55,7 +55,7 @@ class CheckSingleFormatFormatResult {
   // find the last inline code attributes
   final lastInlineCode = delta.indexed.lastWhereOrNull((element) {
     final (_, op) = element;
-    if (op.attributes?[NovidentRichTextKeys.code] == true) {
+    if (op.attributes?[RichTextKeys.code] == true) {
       return true;
     }
     return false;
@@ -83,7 +83,7 @@ class CheckSingleFormatFormatResult {
       );
   final lastCharIndex = plainText.lastIndexOf(character);
   final textAfterLastChar = plainText.substring(lastCharIndex + 1);
-  bool textAfterLastCharIsEmpty = textAfterLastChar.trim().isEmpty;
+  final bool textAfterLastCharIsEmpty = textAfterLastChar.trim().isEmpty;
 
   // The following conditions won't trigger the single character formatting:
   // 1. There is no 'Character' in the plainText: lastIndexOf returns -1.

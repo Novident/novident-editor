@@ -1,16 +1,26 @@
 library;
 
+// Spell-check contract, re-exported so editor consumers can implement
+// NovidentSpellChecker without depending on the interface package directly.
+export 'package:novident_editor_spell_check_interface/novident_editor_spell_check_interface.dart';
+
+// Re-export the document model from the standalone package
+export 'package:novident_editor_document/novident_editor_document.dart';
+
 // core part, including document, node, selection, etc.
+export 'package:novident_editor_styles/novident_editor_styles.dart';
 export 'src/core/core.dart';
-export 'src/editor/block_component/rich_text/novident_rich_text.dart';
-export 'src/editor/block_component/rich_text/novident_rich_text_keys.dart';
-export 'src/editor/block_component/rich_text/default_selectable_mixin.dart';
+export 'package:novident_editor_rich_text/novident_editor_rich_text.dart';
+export 'package:novident_editor_core/novident_editor_flutter.dart';
 export 'src/editor/block_component/table_block_component/table.dart';
 // editor part, including editor component, block component, etc.
 export 'src/editor/editor.dart';
 export 'src/editor/find_replace_menu/find_and_replace.dart';
 export 'src/editor/l10n/novident_editor_l10n.dart';
 export 'src/editor/selection_menu/selection_menu.dart';
+// spell check
+export 'src/editor/spell_check/spell_check_service.dart';
+export 'src/editor/spell_check/spell_check_span_pipeline.dart';
 // editor state
 export 'src/editor_state.dart';
 // extension
@@ -23,7 +33,8 @@ export 'src/l10n/l10n.dart';
 // plugins part, including decoder and encoder.
 export 'src/plugins/plugins.dart';
 export 'src/render/selection/cursor_appearance.dart';
-export 'src/render/selection/selectable.dart';
+export 'package:novident_editor_core/novident_editor_core.dart';
+export 'package:novident_editor_selection/novident_editor_selection.dart';
 export 'src/render/toolbar/toolbar_item.dart';
 export 'src/service/context_menu/context_menu.dart';
 export 'src/service/context_menu/built_in_context_menu_item.dart';

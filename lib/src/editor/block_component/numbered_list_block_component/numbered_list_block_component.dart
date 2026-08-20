@@ -3,25 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:numerus/roman/roman.dart';
 import 'package:provider/provider.dart';
 
-class NumberedListBlockKeys {
-  const NumberedListBlockKeys._();
-
-  static const String type = 'numbered_list';
-
-  static const String number = 'number';
-
-  static const String delta = blockComponentDelta;
-
-  static const String backgroundColor = blockComponentBackgroundColor;
-
-  static const String textDirection = blockComponentTextDirection;
-}
-
 Node numberedListNode({
   Delta? delta,
   Attributes? attributes,
   int? number,
   String? textDirection,
+  String? styleRef,
   Iterable<Node>? children,
 }) {
   attributes ??= {
@@ -32,6 +19,7 @@ Node numberedListNode({
     type: NumberedListBlockKeys.type,
     attributes: {
       ...attributes,
+      if (styleRef != null) blockComponentStyleRef: styleRef,
       if (textDirection != null)
         NumberedListBlockKeys.textDirection: textDirection,
     },
@@ -146,12 +134,13 @@ class _NumberedListBlockComponentWidgetState
       layoutDirection: Directionality.maybeOf(context),
     );
 
+    final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         textDirection: textDirection,
         children: [
@@ -171,9 +160,10 @@ class _NumberedListBlockComponentWidgetState
               key: forwardKey,
               delegate: this,
               node: widget.node,
-              editorState: editorState,
+              editorConfig: editorState,
               textAlign: alignment?.toTextAlign ?? textAlign,
               placeholderText: placeholderText,
+              useFirstLineIndent: false,
               textSpanDecorator: (textSpan) => textSpan.updateTextStyle(
                 textStyleWithTextSpan(textSpan: textSpan),
               ),
@@ -193,8 +183,9 @@ class _NumberedListBlockComponentWidgetState
 
     child = Container(
       key: blockComponentKey,
-      decoration: withBackgroundColor ? decoration : null,
-      padding: padding,
+      decoration:
+          blockStyle.applyToDecoration(withBackgroundColor ? decoration : null),
+      padding: blockStyle.applyToPadding(padding),
       child: child,
     );
 
@@ -202,6 +193,8 @@ class _NumberedListBlockComponentWidgetState
       node: node,
       delegate: this,
       listenable: editorState.selectionNotifier,
+      host: editorState,
+      renderer: editorState.editorStyle.selectionRenderer,
       remoteSelection: editorState.remoteSelections,
       blockColor: editorState.editorStyle.selectionColor,
       supportTypes: const [
@@ -237,7 +230,7 @@ class _NumberedListIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final editorState = context.read<EditorState>();
-    final text = editorState.editorStyle.textStyleConfiguration.text;
+    final defaultText = DefaultTextStyle.of(context).style;
     final textScaleFactor = editorState.editorStyle.textScaleFactor;
     return Container(
       constraints:
@@ -252,7 +245,7 @@ class _NumberedListIcon extends StatelessWidget {
           ),
           TextSpan(
             text: node.levelString,
-            style: text.combine(textStyle),
+            style: defaultText.combine(textStyle),
           ),
           textDirection: direction,
         ),
@@ -324,7 +317,7 @@ extension on int {
     String result = '';
     int number = this;
     while (number > 0) {
-      int remainder = (number - 1) % 26;
+      final int remainder = (number - 1) % 26;
       result = String.fromCharCode(remainder + 65) + result;
       number = (number - 1) ~/ 26;
     }

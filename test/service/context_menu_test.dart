@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../infra/clipboard_test.dart';
 import '../new/infra/testable_editor.dart';
+import '../new/util/editor_text_finders.dart';
 
 void main() async {
   late MockClipboard mockClipboard;
@@ -47,9 +48,9 @@ void main() async {
       await editor.updateSelection(
         Selection.single(path: [0], startOffset: 0, endOffset: text.length),
       );
-      final position = tester.getCenter(find.text(text, findRichText: true));
+      final position = tester.getCenter(findEditorRichText(text));
       rightClickAt(position);
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(find.byType(ContextMenu), findsOneWidget);
       await editor.dispose();
     });
@@ -61,46 +62,45 @@ void main() async {
         ..addParagraph(initialText: 'Hello');
       await editor.startTesting();
       expect(
-        find.text(text, findRichText: true),
+        findEditorRichText(text),
         findsOneWidget,
       );
       await editor.updateSelection(
         Selection(
-          start: Position(path: [1], offset: 0),
+          start: Position(path: [1]),
           end: Position(path: [1], offset: 5),
         ),
       );
       final copiedText =
           editor.editorState.getTextInSelection(editor.selection).join('/n');
-      final position = tester.getCenter(find.text('Hello', findRichText: true));
+      final position = tester.getCenter(findEditorRichText('Hello'));
       rightClickAt(position);
-      await tester.pump();
+      await tester.pumpAndSettle();
       final copyButton = find.text('Copy');
       expect(copyButton, findsOneWidget);
       await tester.tap(copyButton);
       await tester.pumpAndSettle(const Duration(milliseconds: 500));
       expect(
-        find.text('Welcome to Novident', findRichText: true),
+        findEditorRichText('Welcome to Novident'),
         findsOneWidget,
       );
       final clipBoardData = await NovidentClipboard.getData();
       expect(clipBoardData.text, copiedText);
       await editor.updateSelection(
         Selection(
-          start: Position(path: [0], offset: 0),
+          start: Position(path: [0]),
           end: Position(path: [0], offset: 7),
         ),
       );
-      final newPosition =
-          tester.getTopLeft(find.text(text, findRichText: true));
+      final newPosition = tester.getTopLeft(findEditorRichText(text));
       rightClickAt(newPosition);
-      await tester.pump();
+      await tester.pumpAndSettle();
       final pasteButton = find.text('Paste');
       expect(pasteButton, findsOneWidget);
       await tester.tap(pasteButton);
       await tester.pumpAndSettle(const Duration(milliseconds: 500));
       expect(
-        find.text('Hello to Novident', findRichText: true),
+        findEditorRichText('Hello to Novident'),
         findsOneWidget,
       );
       await editor.dispose();

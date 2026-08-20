@@ -127,7 +127,6 @@ class _DynamicHeightLayoutState extends State<DynamicHeightLayout> {
 
     final Widget blockList = hasCache
         ? ListView.builder(
-            shrinkWrap: false,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: items.length,
             itemBuilder: (context, i) => _buildBlock(context, items[i]),
@@ -146,15 +145,7 @@ class _DynamicHeightLayoutState extends State<DynamicHeightLayout> {
         constraints: BoxConstraints(
           minHeight: _controller!.config.minHeight,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (widget.header != null) widget.header!,
-            blockList,
-            if (widget.footer != null) widget.footer!,
-          ],
-        ),
+        child: blockList,
       ),
     );
   }

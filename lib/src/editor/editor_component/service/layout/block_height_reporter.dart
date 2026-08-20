@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
-import 'dynamic_height_controller.dart';
-
 /// Mixin for block component [State] classes that report their measured
 /// height to a [DynamicHeightController] after every layout pass.
 ///
@@ -43,8 +41,12 @@ mixin BlockHeightReporter<T extends StatefulWidget> on State<T> {
   }
 
   void _reportHeightIfChanged() {
+    // Check `mounted` BEFORE touching `context`: a block can be unmounted
+    // between scheduling the report and this post-frame callback (e.g. a
+    // large programmatic jump that rebuilds the list mid-test/mid-scroll).
+    if (!mounted) return;
     final controller = _findController();
-    if (controller == null || !mounted) return;
+    if (controller == null) return;
 
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null || !renderBox.hasSize) return;

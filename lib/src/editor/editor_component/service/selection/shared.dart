@@ -78,9 +78,12 @@ extension EditorStateSelection on EditorState {
         rectCache: rectCache,
         match: (index, rect) {
           final isMatch = rect.contains(offset);
-          NovidentEditorLog.selection.debug(
-            'findNodeInOffset: $index, rect: $rect, offset: $offset, isMatch: $isMatch',
-          );
+          assert(() {
+            NovidentEditorLog.selection.debug(
+              'findNodeInOffset: $index, rect: $rect, offset: $offset, isMatch: $isMatch',
+            );
+            return true;
+          }());
           return isMatch;
         },
         compare: (index, rect) => rect.right <= offset.dx,

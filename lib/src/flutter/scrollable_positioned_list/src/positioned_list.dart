@@ -154,12 +154,18 @@ class _PositionedListState extends State<PositionedList> {
     _ownsScrollController = widget.controller == null;
     scrollController = widget.controller ?? ScrollController();
     scrollController.addListener(_schedulePositionNotificationUpdate);
+    // Re-run the position update when elements mount/unmount: after a large
+    // programmatic jump the post-frame callback scheduled by the scroll
+    // listener runs before the new elements register, so without this the
+    // visible range would stay stale (-1, -1) until the next scroll event.
+    registeredElements.addListener(_schedulePositionNotificationUpdate);
     _schedulePositionNotificationUpdate();
   }
 
   @override
   void dispose() {
     scrollController.removeListener(_schedulePositionNotificationUpdate);
+    registeredElements.removeListener(_schedulePositionNotificationUpdate);
     if (_ownsScrollController) {
       scrollController.dispose();
     }

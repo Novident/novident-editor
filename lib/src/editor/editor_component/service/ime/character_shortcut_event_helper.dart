@@ -25,18 +25,24 @@ Future<bool> executeCharacterShortcutEvent(
           ? await shortcutEvent.executeWithCharacter(editorState, character)
           : await shortcutEvent.handler(editorState);
       if (handled) {
-        NovidentEditorLog.input.debug(
-          'keyboard service - handled by character shortcut event: $shortcutEvent',
-        );
+  assert(() {
+    NovidentEditorLog.input.debug(
+      'keyboard service - handled by character shortcut event: $shortcutEvent',
+    );
+    return true;
+  }());
         return true;
       }
       continue;
     }
     if (shortcutEvent.character == character &&
         await shortcutEvent.handler(editorState)) {
-      NovidentEditorLog.input.debug(
-        'keyboard service - handled by character shortcut event: $shortcutEvent',
-      );
+  assert(() {
+    NovidentEditorLog.input.debug(
+      'keyboard service - handled by character shortcut event: $shortcutEvent',
+    );
+    return true;
+  }());
       return true;
     }
   }

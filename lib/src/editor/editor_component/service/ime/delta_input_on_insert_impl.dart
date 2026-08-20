@@ -6,7 +6,10 @@ Future<void> onInsert(
   TextEditingDeltaInsertion insertion,
   EditorState editorState,
 ) async {
-  NovidentEditorLog.input.debug('onInsert: $insertion');
+  assert(() {
+    // NovidentEditorLog.input.debug('onInsert: $insertion');
+    return true;
+  }());
 
   var selection = editorState.selection;
   if (selection == null) {

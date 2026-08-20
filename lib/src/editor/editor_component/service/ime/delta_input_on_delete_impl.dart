@@ -7,7 +7,7 @@ Future<void> onDelete(
   EditorState editorState,
 ) async {
   assert(() {
-    NovidentEditorLog.input.debug('onDelete: $deletion');
+    // NovidentEditorLog.input.debug('onDelete: $deletion');
     return true;
   }());
 

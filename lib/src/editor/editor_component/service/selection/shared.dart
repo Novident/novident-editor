@@ -14,18 +14,10 @@ extension EditorStateSelection on EditorState {
       return sortedNodes;
     }
 
-    int i = -1;
-    // NOTE: shouldn't we use indexes directly without requiring
-    // traverse the tree in this way
-    for (final child in document.root.children) {
-      i++;
-      if (min > i) {
-        continue;
-      }
-      if (i > max) {
-        break;
-      }
-      sortedNodes.add(child);
+    for (int index = (min - 1).clamp(0, double.infinity).toInt();
+        index <= max;
+        index++) {
+      sortedNodes.add(document.root.children[index]);
     }
     return sortedNodes;
   }
@@ -51,9 +43,9 @@ extension EditorStateSelection on EditorState {
       rectCache: rectCache,
       match: (index, rect) {
         final isMatch = rect.contains(offset);
-        NovidentEditorLog.selection.debug(
-          'findNodeInOffset: $index, rect: $rect, offset: $offset, isMatch: $isMatch',
-        );
+        // NovidentEditorLog.selection.debug(
+        //   'findNodeInOffset: $index, rect: $rect, offset: $offset, isMatch: $isMatch',
+        // );
         return isMatch;
       },
       compare: (index, rect) => rect.bottom <= offset.dy,

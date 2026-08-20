@@ -148,6 +148,11 @@ class _PositionedListState extends State<PositionedList> {
 
   bool updateScheduled = false;
 
+  /// The last positions reported to [widget.itemPositionsNotifier], used to
+  /// avoid re-notifying listeners (and the O(n) visible-range computation they
+  /// trigger) on every frame when nothing actually moved.
+  List<ItemPosition>? _lastPositions;
+
   @override
   void initState() {
     super.initState();
@@ -340,62 +345,60 @@ class _PositionedListState extends State<PositionedList> {
           return;
         }
         final positions = <ItemPosition>[];
-        RenderViewportBase? viewport;
+        RenderAbstractViewport? viewport;
         for (final element in elements) {
           final RenderBox box = element.renderObject as RenderBox;
-          viewport ??= RenderAbstractViewport.of(box) as RenderViewportBase?;
-          var anchor = 0.0;
-          if (viewport is RenderViewport) {
-            anchor = viewport.anchor;
-          }
-
-          if (viewport is CustomRenderViewport) {
-            anchor = viewport.anchor;
-          }
-
+          viewport ??= RenderAbstractViewport.of(box);
           final ValueKey<int> key = element.widget.key as ValueKey<int>;
           // Skip this element if `box` has never been laid out.
           if (!box.hasSize) continue;
-          if (widget.scrollDirection == Axis.vertical) {
-            final reveal = viewport!.getOffsetToReveal(box, 0).offset;
-            if (!reveal.isFinite) continue;
-            final itemOffset =
-                reveal - viewport.offset.pixels + anchor * viewport.size.height;
-            positions.add(
-              ItemPosition(
-                index: key.value,
-                itemLeadingEdge: itemOffset.round() /
-                    scrollController.position.viewportDimension,
-                itemTrailingEdge: (itemOffset + box.size.height).round() /
-                    scrollController.position.viewportDimension,
-              ),
-            );
-          } else {
-            final itemOffset =
-                box.localToGlobal(Offset.zero, ancestor: viewport).dx;
-            if (!itemOffset.isFinite) continue;
-            positions.add(
-              ItemPosition(
-                index: key.value,
-                itemLeadingEdge: (widget.reverse
-                            ? scrollController.position.viewportDimension -
-                                (itemOffset + box.size.width)
-                            : itemOffset)
-                        .round() /
-                    scrollController.position.viewportDimension,
-                itemTrailingEdge: (widget.reverse
-                            ? scrollController.position.viewportDimension -
-                                itemOffset
-                            : (itemOffset + box.size.width))
-                        .round() /
-                    scrollController.position.viewportDimension,
-              ),
-            );
-          }
+          // `localToGlobal` gives the item's leading edge relative to the
+          // viewport's leading edge directly (it already accounts for the
+          // scroll offset and the anchor), which is cheaper than
+          // `getOffsetToReveal` — no `RevealedOffset` allocation, no sliver
+          // chain walk, no alignment/pinned-sliver math — and matches the
+          // horizontal branch below.
+          final Offset global =
+              box.localToGlobal(Offset.zero, ancestor: viewport);
+          final double itemOffset = widget.scrollDirection == Axis.vertical
+              ? global.dy
+              : global.dx;
+          if (!itemOffset.isFinite) continue;
+          final double dimension =
+              scrollController.position.viewportDimension;
+          final double leading = itemOffset;
+          final double trailing = widget.scrollDirection == Axis.vertical
+              ? itemOffset + box.size.height
+              : itemOffset + box.size.width;
+          // For a reversed list the leading edge is the far edge, so mirror
+          // the offsets around the viewport dimension.
+          final double edge = widget.reverse ? dimension - trailing : leading;
+          final double tail = widget.reverse ? dimension - leading : trailing;
+          positions.add(
+            ItemPosition(
+              index: key.value,
+              itemLeadingEdge: edge.round() / dimension,
+              itemTrailingEdge: tail.round() / dimension,
+            ),
+          );
         }
-        widget.itemPositionsNotifier?.itemPositions.value = positions;
+        // Only notify listeners when the positions actually changed, so we
+        // don't wake consumers (visible-range computation, PageStorage writes)
+        // on every frame when nothing moved.
+        if (!_samePositions(_lastPositions, positions)) {
+          _lastPositions = positions;
+          widget.itemPositionsNotifier?.itemPositions.value = positions;
+        }
         updateScheduled = false;
       });
     }
+  }
+
+  bool _samePositions(List<ItemPosition>? previous, List<ItemPosition> next) {
+    if (previous == null || previous.length != next.length) return false;
+    for (var i = 0; i < previous.length; i++) {
+      if (previous[i] != next[i]) return false;
+    }
+    return true;
   }
 }

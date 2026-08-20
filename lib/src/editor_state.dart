@@ -743,9 +743,10 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
         onScrollViewScrolled: () {
           _notifyScrollViewScrolledListeners();
           if (!isDesktopOrWeb) {
-            final dynamic dragMode = selectionExtraInfo?[selectionDragModeKey];
-            final bool isDraggingSelection = dragMode != null &&
-                dragMode.toString() != 'MobileSelectionDragMode.none';
+            final dragMode = selectionExtraInfo?[selectionDragModeKey]
+                as MobileSelectionDragMode?;
+            final bool isDraggingSelection =
+                dragMode != null && dragMode != MobileSelectionDragMode.none;
             if (!isDraggingSelection) {
               return;
             }
@@ -798,7 +799,10 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     _debouncedSealHistoryItemTimer?.cancel();
     _debouncedSealHistoryItemTimer = Timer(minHistoryItemDuration, () {
       if (undoManager.undoStack.isNonEmpty) {
-        NovidentEditorLog.editor.debug('Seal history item');
+        assert(() {
+          NovidentEditorLog.editor.debug('Seal history item');
+          return true;
+        }());
         final last = undoManager.undoStack.last;
         last.seal();
       }
@@ -808,7 +812,10 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   void _applyTransactionInLocal(Transaction transaction) {
     final changedNodes = <Node>[];
     for (final op in transaction.operations) {
-      NovidentEditorLog.editor.debug('apply op (local): ${op.toJson()}');
+      assert(() {
+        // NovidentEditorLog.editor.debug('apply op (local): ${op.toJson()}');
+        return true;
+      }());
 
       if (op is InsertOperation) {
         document.insert(op.path, op.nodes);

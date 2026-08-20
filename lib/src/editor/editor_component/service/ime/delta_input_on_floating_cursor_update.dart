@@ -10,9 +10,12 @@ Future<void> onFloatingCursorUpdate(
   RawFloatingCursorPoint point,
   EditorState editorState,
 ) async {
-  NovidentEditorLog.input.debug(
-    'onFloatingCursorUpdate: ${point.state}, ${point.offset}',
-  );
+  assert(() {
+    NovidentEditorLog.input.debug(
+      'onFloatingCursorUpdate: ${point.state}, ${point.offset}',
+    );
+    return true;
+  }());
 
   // support updating the cursor position via the space bar on iOS/Android.
   if (EditorPlatform.isDesktopOrWeb) {

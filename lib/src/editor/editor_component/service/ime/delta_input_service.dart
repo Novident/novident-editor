@@ -109,9 +109,9 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
   @override
   void updateEditingValueWithDeltas(List<TextEditingDelta> textEditingDeltas) {
     assert(() {
-      NovidentEditorLog.ime.debug(
-        textEditingDeltas.map((delta) => delta.toString()).toString(),
-      );
+      // NovidentEditorLog.ime.debug(
+      //   textEditingDeltas.map((delta) => delta.toString()).toString(),
+      // );
       return true;
     }());
     apply(textEditingDeltas);

@@ -1,7 +1,6 @@
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 /// Builds a [TextSpanDecoratorForAttribute] that visually neutralizes the
 /// text color (`font_color`) and highlight color (`bg_color`) attributes
@@ -66,7 +65,6 @@ TextSpan _neutralizeColors(
   if (config.ignoreTextColor &&
       !isTransparent &&
       attributes[RichTextKeys.textColor] != null) {
-    final editorState = context.read<EditorState>();
     final baseColor = DefaultTextStyle.of(context).style.color;
     if (baseColor != null && style.color != baseColor) {
       style = style.copyWith(color: baseColor);

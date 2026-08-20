@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:novident_editor/novident_editor.dart';
 import 'package:flutter/widgets.dart';
 
@@ -301,7 +303,7 @@ void handlePaste(EditorState editorState) async {
     return _pasteRichClipboard(editorState, data);
   }
 
-  deleteSelectedContent(editorState);
+  unawaited(deleteSelectedContent(editorState));
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
     _pasteRichClipboard(editorState, data);

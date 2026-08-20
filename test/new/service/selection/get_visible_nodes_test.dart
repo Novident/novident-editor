@@ -13,7 +13,6 @@ import 'dart:math' as math;
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/selection/shared.dart';
 import 'package:novident_editor/src/flutter/scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -36,7 +35,7 @@ void main() {
           final scrollController = _readScrollController(tester);
           final (min, max) = scrollController.visibleRangeNotifier.value;
           expect(min, greaterThanOrEqualTo(0),
-              reason: 'visible range must be populated after layout');
+              reason: 'visible range must be populated after layout',);
           expect(max, greaterThanOrEqualTo(min));
 
           final visibleNodes =
@@ -73,8 +72,7 @@ void main() {
           // The visible window moved towards the end of the document.
           final beforeIndex =
               editor.document.root.children.indexOf(before.first);
-          final afterIndex =
-              editor.document.root.children.indexOf(after.first);
+          final afterIndex = editor.document.root.children.indexOf(after.first);
           expect(afterIndex, greaterThan(beforeIndex));
           // The range -> nodes mapping still holds after scrolling.
           final start = math.max(min - 1, 0);
@@ -171,7 +169,8 @@ void _expectSameNodes(List<Node> actual, List<Node> expected) {
     expect(
       identical(actual[i], expected[i]),
       isTrue,
-      reason: 'node at index $i must be the same instance as the document child',
+      reason:
+          'node at index $i must be the same instance as the document child',
     );
   }
 }

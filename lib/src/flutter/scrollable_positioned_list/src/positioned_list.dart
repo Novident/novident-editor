@@ -13,7 +13,6 @@ import 'element_registry.dart';
 import 'item_positions_listener.dart';
 import 'item_positions_notifier.dart';
 import 'scroll_view.dart';
-import 'wrapping.dart';
 
 /// A list of widgets similar to [ListView], except scroll control
 /// and position reporting is based on index rather than pixel offset.
@@ -360,12 +359,10 @@ class _PositionedListState extends State<PositionedList> {
           // horizontal branch below.
           final Offset global =
               box.localToGlobal(Offset.zero, ancestor: viewport);
-          final double itemOffset = widget.scrollDirection == Axis.vertical
-              ? global.dy
-              : global.dx;
+          final double itemOffset =
+              widget.scrollDirection == Axis.vertical ? global.dy : global.dx;
           if (!itemOffset.isFinite) continue;
-          final double dimension =
-              scrollController.position.viewportDimension;
+          final double dimension = scrollController.position.viewportDimension;
           final double leading = itemOffset;
           final double trailing = widget.scrollDirection == Axis.vertical
               ? itemOffset + box.size.height

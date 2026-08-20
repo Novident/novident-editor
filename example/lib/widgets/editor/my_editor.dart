@@ -126,7 +126,8 @@ class MyEditor extends StatelessWidget {
   }) {
     var wrapped = child;
     if (zenController != null) {
-      wrapped = zenController!.blockWrapper(context, node: node, child: wrapped);
+      wrapped =
+          zenController!.blockWrapper(context, node: node, child: wrapped);
     }
     if (showVisibleBlocks) {
       wrapped = VisibleBlockWrapper(

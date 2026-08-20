@@ -105,81 +105,81 @@ void main() {
       expect(after.first.index, greaterThanOrEqualTo(45));
     });
 
-      testWidgets('does not re-notify when positions are unchanged',
-          (tester) async {
-        final positionsListener = ItemPositionsListener.create();
-        var notificationCount = 0;
-        positionsListener.itemPositions.addListener(() => notificationCount++);
+    testWidgets('does not re-notify when positions are unchanged',
+        (tester) async {
+      final positionsListener = ItemPositionsListener.create();
+      var notificationCount = 0;
+      positionsListener.itemPositions.addListener(() => notificationCount++);
 
-        await tester.pumpWidget(
-          buildList(itemCount: 10, positionsListener: positionsListener),
-        );
-        await tester.pump();
+      await tester.pumpWidget(
+        buildList(itemCount: 10, positionsListener: positionsListener),
+      );
+      await tester.pump();
 
-        final afterFirstBuild = notificationCount;
-        expect(afterFirstBuild, greaterThan(0),
-            reason: 'initial layout must notify once');
+      final afterFirstBuild = notificationCount;
+      expect(afterFirstBuild, greaterThan(0),
+          reason: 'initial layout must notify once',);
 
-        // Rebuild with an identical configuration: the scroll offset and layout
-        // are unchanged, so the positions are identical and the listener must
-        // NOT fire again (the `_samePositions` guard).
-        await tester.pumpWidget(
-          buildList(itemCount: 10, positionsListener: positionsListener),
-        );
-        await tester.pump();
+      // Rebuild with an identical configuration: the scroll offset and layout
+      // are unchanged, so the positions are identical and the listener must
+      // NOT fire again (the `_samePositions` guard).
+      await tester.pumpWidget(
+        buildList(itemCount: 10, positionsListener: positionsListener),
+      );
+      await tester.pump();
 
-        expect(notificationCount, afterFirstBuild,
-            reason: 'unchanged positions must not re-notify listeners');
-      });
+      expect(notificationCount, afterFirstBuild,
+          reason: 'unchanged positions must not re-notify listeners',);
+    });
 
-      testWidgets('exposes only visible items as a materialized list',
-          (tester) async {
-        final positionsListener = ItemPositionsListener.create();
+    testWidgets('exposes only visible items as a materialized list',
+        (tester) async {
+      final positionsListener = ItemPositionsListener.create();
 
-        await tester.pumpWidget(
-          buildList(itemCount: 20, positionsListener: positionsListener),
-        );
-        await tester.pump();
+      await tester.pumpWidget(
+        buildList(itemCount: 20, positionsListener: positionsListener),
+      );
+      await tester.pump();
 
-        final positions = positionsListener.itemPositions.value;
-        // `_updatePositions` must hand consumers a concrete list, not a lazy
-        // `.where(...)` iterable that re-evaluates the filter on every pass.
-        expect(positions, isA<List<ItemPosition>>());
-        expect(positions, isNotEmpty);
-        // Only items at least partially visible are reported.
-        for (final position in positions) {
-          expect(position.itemLeadingEdge, lessThan(1));
-          expect(position.itemTrailingEdge, greaterThan(0));
-        }
-      });
+      final positions = positionsListener.itemPositions.value;
+      // `_updatePositions` must hand consumers a concrete list, not a lazy
+      // `.where(...)` iterable that re-evaluates the filter on every pass.
+      expect(positions, isA<List<ItemPosition>>());
+      expect(positions, isNotEmpty);
+      // Only items at least partially visible are reported.
+      for (final position in positions) {
+        expect(position.itemLeadingEdge, lessThan(1));
+        expect(position.itemTrailingEdge, greaterThan(0));
+      }
+    });
 
-      testWidgets('shrink-wrap mode lays out without hanging', (tester) async {
-        final positionsListener = ItemPositionsListener.create();
+    testWidgets('shrink-wrap mode lays out without hanging', (tester) async {
+      final positionsListener = ItemPositionsListener.create();
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: SingleChildScrollView(
-                child: SizedBox(
-                  width: 400,
-                  child: ScrollablePositionedList.builder(
-                    shrinkWrap: true,
-                    itemCount: 10,
-                    itemPositionsListener: positionsListener,
-                    itemBuilder: (context, index) => SizedBox(
-                      height: itemExtent,
-                      child: Text('Item $index'),
-                    ),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: SizedBox(
+                width: 400,
+                child: ScrollablePositionedList.builder(
+                  shrinkWrap: true,
+                  itemCount: 10,
+                  itemPositionsListener: positionsListener,
+                  itemBuilder: (context, index) => SizedBox(
+                    height: itemExtent,
+                    child: Text('Item $index'),
                   ),
                 ),
               ),
             ),
           ),
-        );
-        await tester.pump();
+        ),
+      );
+      await tester.pump();
 
-        expect(tester.takeException(), isNull);
-        expect(positionsListener.itemPositions.value, isNotEmpty);
-      });
+      expect(tester.takeException(), isNull);
+      expect(positionsListener.itemPositions.value, isNotEmpty);
     });
+  });
 }

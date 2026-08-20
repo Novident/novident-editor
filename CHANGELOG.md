@@ -2,6 +2,11 @@
 
 ## 1.0.5
 
+* feat: start of replace Delta with a new optimized version `TextDocument` by @CatHood0 in https://github.com/Novident/novident-editor/pull/23
+* feat: support for fast indexation and replaced delta with text document by @CatHood0 in https://github.com/Novident/novident-editor/pull/24
+* feat: extract keyboard handling into composable KeyboardStrategy policies by @CatHood0 in https://github.com/Novident/novident-editor/pull/28
+* feat(spell checker): out-of-band analysis, mark-driven rendering, and isolate-backed suggestions by @CatHood0 in https://github.com/Novident/novident-editor/pull/29
+* fix: most of the issues with rendering, positioning, head weird render, and vertical movement during vim usage by @CatHood0 in https://github.com/Novident/novident-editor/pull/25
 * fix: internal `ScrollablePositionedList` perfomance was improved to avoid traversing multiples times the rendered tree when no required. Useful for `getVisibleNodes` that uses it.
 * fix: `moveVerticallyInText` return `null` on empty paragraphs or empty nodes. `_renderParagraph` was the only used, and `_placeholderRenderParagraph` was ignored, causing the error.
 * fix: `getRectsInSelection` always gets a height of `0.0` since is not checking the `_placeholderRenderParagraph` first (always null when there's content). 
@@ -15,7 +20,6 @@
 * chore: bumped all internal package dependencies to latest.
 * chore(breaking changes): deprecated `characterShortcutEvents` and `commandShortcutEvents` and replaced for `keyboardStrategies`.
 * chore(example): added ~18k of words for example, to allow testing how behaves the editor with a large document.
-    
 
 
 ## 1.0.4

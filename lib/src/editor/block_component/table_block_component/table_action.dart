@@ -361,7 +361,10 @@ void _duplicateCol(Node tableNode, int col, EditorState editorState) {
 }
 
 Future<void> _duplicateRow(
-    Node tableNode, int row, EditorState editorState,) async {
+  Node tableNode,
+  int row,
+  EditorState editorState,
+) async {
   final int rowsLen = tableNode.attributes[TableBlockKeys.rowsLen];
   final int colsLen = tableNode.attributes[TableBlockKeys.colsLen];
 

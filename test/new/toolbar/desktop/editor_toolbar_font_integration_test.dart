@@ -234,8 +234,10 @@ void main() {
 
       // Items still visible (flag on), showing cached values.
       expect(find.text('24'), findsOneWidget); // cached font size
-      expect(find.text(getDefaultFont()),
-          findsOneWidget,); // font family never changed
+      expect(
+        find.text(getDefaultFont()),
+        findsOneWidget,
+      ); // font family never changed
     });
   });
 }

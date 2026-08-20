@@ -18,10 +18,12 @@ abstract final class EditorPlatform {
   static void reset() => override = null;
 
   static bool get isMacOS => override?.isMacOS ?? PlatformExtension.isMacOS;
-  static bool get isWindows => override?.isWindows ?? PlatformExtension.isWindows;
+  static bool get isWindows =>
+      override?.isWindows ?? PlatformExtension.isWindows;
   static bool get isLinux => override?.isLinux ?? PlatformExtension.isLinux;
   static bool get isIOS => override?.isIOS ?? PlatformExtension.isIOS;
-  static bool get isAndroid => override?.isAndroid ?? PlatformExtension.isAndroid;
+  static bool get isAndroid =>
+      override?.isAndroid ?? PlatformExtension.isAndroid;
 
   static bool get isWebOnMacOS =>
       override?.isWebOnMacOS ?? PlatformExtension.isWebOnMacOS;
@@ -32,7 +34,8 @@ abstract final class EditorPlatform {
 
   static bool get isDesktopOrWeb =>
       override?.isDesktopOrWeb ?? PlatformExtension.isDesktopOrWeb;
-  static bool get isDesktop => override?.isDesktop ?? PlatformExtension.isDesktop;
+  static bool get isDesktop =>
+      override?.isDesktop ?? PlatformExtension.isDesktop;
   static bool get isMobile => override?.isMobile ?? PlatformExtension.isMobile;
   static bool get isNotMobile =>
       override?.isNotMobile ?? PlatformExtension.isNotMobile;

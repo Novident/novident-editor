@@ -44,9 +44,6 @@ class MyEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    NovidentLogConfiguration()
-      ..handler = debugPrint
-      ..level = NovidentEditorLogLevel.all;
     return NovidentEditor(
       editorState: session.editorState,
       editorScrollController: session.scrollController,

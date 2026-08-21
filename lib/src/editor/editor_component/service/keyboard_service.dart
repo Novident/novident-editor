@@ -49,6 +49,9 @@ abstract class NovidentKeyboardService {
   /// Used in mobile
   void enableKeyBoard(Selection selection);
 
+  /// Disables the current cached elements into the service
+  void invalidateCache();
+
   /// Register interceptor
   void registerInterceptor(NovidentKeyboardServiceInterceptor interceptor);
 

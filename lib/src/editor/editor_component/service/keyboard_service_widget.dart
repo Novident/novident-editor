@@ -288,14 +288,26 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
   /// O(n²) string concatenation on every drag event. Invalidated by
   /// node list identity.
   String? _cachedPlainText;
-  Iterable<Node>? _cachedPlainTextNodes;
+  List<Node>? _cachedEditableNodes;
+
+  @override
+  void invalidateCache() {
+    _cachedPlainText = null;
+    _cachedEditableNodes = null;
+  }
 
   // This function is used to get the current text editing value of the editor
   // based on the given selection.
   TextEditingValue? _getCurrentTextEditingValue(Selection selection) {
-    // Get all the editable nodes in the selection.
-    final editableNodes = editorState.document.root.children
-        .where((element) => element.delta != null);
+    final doc = editorState.document;
+    final startIndex = selection.start.path.first;
+    final endIndex = selection.end.path.first;
+    final editableNodes = List.of(
+      doc.root.children.sublist(
+        startIndex,
+        (endIndex + 1).clamp(0, doc.root.length),
+      ),
+    );
 
     // if the selection is inline and the selection is updated by ui event,
     // we should clear the composing range on Android.
@@ -315,15 +327,16 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
       // selections fire ~60×/s with identical node ranges — only the
       // offsets change. A plain StringBuffer eliminates the O(n²)
       // per-event allocations of the former fold.
-      if (!identical(editableNodes, _cachedPlainTextNodes) ||
+      if (!identical(editableNodes, _cachedEditableNodes) ||
           _cachedPlainText == null) {
         final buffer = StringBuffer();
         for (final node in editableNodes) {
           buffer.writeln(node.delta?.toPlainText() ?? '');
         }
-        _cachedPlainTextNodes = editableNodes;
+        _cachedEditableNodes = editableNodes;
         _cachedPlainText = buffer.toString();
       }
+
       // strip trailing \n
       final text = _cachedPlainText!.substring(
         0,

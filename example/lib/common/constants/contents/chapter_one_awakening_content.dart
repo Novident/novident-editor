@@ -3,14 +3,21 @@ import 'package:novident_editor/novident_editor.dart';
 /// Content for `Manuscript ▸ Chapter 1 ▸ Awakening`.
 final Document awakeningDocument = Document(
   root: pageNode(
-    children: repeat(500),
+    // Large document
+    // 166.000 words
+    // 903.917 characters
+    children: repeat(1000),
   ),
 );
 
 List<Node> repeat(int times) {
+  int index = 0;
   final List<List<Node>> nodes = List.generate(times, (time) {
+    if (index != 0) {
+      index += 9;
+    }
     return [
-      headingNode(level: 2, text: 'Awakening $time'),
+      headingNode(level: 2, text: 'Awakening ${index == 0 ? ++index : index}'),
       paragraphNode(
         text: 'The first thing Elara noticed was the silence. Not the '
             'comfortable hush of a sleeping house, but a silence so complete '

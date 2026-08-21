@@ -70,6 +70,7 @@ class _EditorPaneState extends State<EditorPane> {
 
   @override
   void dispose() {
+    _sessionController.removeListener(_onSessionChanged);
     _sessionController.dispose();
     super.dispose();
   }

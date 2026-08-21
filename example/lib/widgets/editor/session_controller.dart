@@ -133,7 +133,9 @@ class EditorSessionController extends ChangeNotifier {
       // owning view (and its toolbar notifier) has been disposed, touching
       // a dead notifier. The pane disposes before its ancestor view, so
       // the notifier is still alive here.
-      toolbarNotifier.value = null;
+      if (toolbarNotifier.hasListeners && !_disposed) {
+        toolbarNotifier.value = null;
+      }
     }
     session.dispose();
     super.dispose();

@@ -147,11 +147,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   @override
   SelectionRenderer? get selectionRenderer => editorStyle.selectionRenderer;
 
-  /// @override from BlockSelectionHost
   @override
   bool isBlockSelectionMode() => selectionType == SelectionType.block;
 
-  /// @override from BlockSelectionHost
   @override
   CursorAppearance? customizeCursor({
     required Node node,
@@ -161,18 +159,14 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     return cursorAppearanceBuilder?.call(node, selection!, position);
   }
 
-  /// @override from BlockSelectionHost
   @override
   EdgeInsets? blockSelectionMargin(Node node) {
     final builder = service.rendererService.blockComponentBuilder(node.type);
     return builder?.configuration.blockSelectionAreaMargin(node);
   }
 
-  /// @override from BlockSelectionHost
   @override
   dynamic selectionDragModeValue() => selectionExtraInfo?[selectionDragModeKey];
-
-  // ---- RichTextEditorConfig overrides ----
 
   @override
   double get textScaleFactor => editorStyle.textScaleFactor;
@@ -371,8 +365,10 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
       _onScrollViewScrolledListeners.remove(callback);
 
   void _notifyScrollViewScrolledListeners() {
-    for (final listener in Set.of(_onScrollViewScrolledListeners)) {
-      listener.call();
+    for (int index = 0;
+        index < _onScrollViewScrolledListeners.length;
+        index++) {
+      _onScrollViewScrolledListeners.elementAt(index).call();
     }
   }
 
@@ -407,6 +403,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     // broadcast to other users here
     selectionExtraInfo = extraInfo;
     _selectionUpdateReason = reason;
+    if (selection == null || reason == SelectionUpdateReason.remote) {
+      service.keyboardService?.invalidateCache();
+    }
 
     // Assign synchronously when there is no custom renderer so callers
     // (including unit tests) can read `selection` immediately after the
@@ -504,6 +503,7 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     if (isRemote) {
       _selectionUpdateReason = SelectionUpdateReason.remote;
       selection = _applyTransactionFromRemote(transaction);
+      service.keyboardService?.invalidateCache();
     } else {
       // broadcast to other users here, before applying the transaction
       if (!_observer.isClosed) {

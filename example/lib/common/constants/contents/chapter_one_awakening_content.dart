@@ -3,7 +3,7 @@ import 'package:novident_editor/novident_editor.dart';
 /// Content for `Manuscript ▸ Chapter 1 ▸ Awakening`.
 final Document awakeningDocument = Document(
   root: pageNode(
-    children: repeat(110),
+    children: repeat(500),
   ),
 );
 

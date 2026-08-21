@@ -288,100 +288,26 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
   /// O(n²) string concatenation on every drag event. Invalidated by
   /// node list identity.
   String? _cachedPlainText;
-  String? _cachedLeadingPlainText;
-  Path? _cachedLeadingPath;
-  String? _cachedTrailingPlainText;
-  Path? _cachedTrailingPath;
   List<Node>? _cachedEditableNodes;
 
   @override
   void invalidateCache() {
     _cachedPlainText = null;
-    _cachedLeadingPlainText = null;
-    _cachedLeadingPath = null;
-    _cachedTrailingPlainText = null;
-    _cachedTrailingPath = null;
     _cachedEditableNodes = null;
   }
 
   // This function is used to get the current text editing value of the editor
   // based on the given selection.
   TextEditingValue? _getCurrentTextEditingValue(Selection selection) {
-    // Get all the editable nodes in the selection.
-
-    // We should NOT remove these cache operations
-    // makes great improvements for the mobile
-    // perfomance in large documents
     final doc = editorState.document;
-    final length = doc.root.children.length;
     final startIndex = selection.start.path.first;
     final endIndex = selection.end.path.first;
-    if ((_cachedLeadingPath == null ||
-            _cachedLeadingPath!.first != startIndex) &&
-        startIndex < length) {
-      _cachedLeadingPath = selection.start.path;
-      final buffer = StringBuffer();
-      // If the cache starts at the path=[0]
-      // and we moves the cursor to the path=[2]
-      //
-      // this variable indicates that the loop only
-      // needs to traverse between the missing sections
-      //
-      // Instead of navigating between 2 nodes, we only
-      // use the required between the cached path and the
-      // current user path
-      final initialIndex =
-          _cachedLeadingPath != null && _cachedLeadingPath!.first < startIndex
-              ? startIndex - 1
-              : 0;
-      if (initialIndex > 0 && _cachedLeadingPlainText != null) {
-        buffer.write(_cachedLeadingPlainText);
-        _cachedLeadingPlainText = null;
-      }
-      final effectiveIndex = startIndex;
-      for (int index = initialIndex;
-          index < effectiveIndex && effectiveIndex > 0;
-          index++) {
-        final node = doc.root.childAtIndexOrNull(index);
-        assert(
-          node != null,
-          'node should not be null at this point for index $index in length $length',
-        );
-        buffer.writeln(node!.delta?.toPlainText() ?? '');
-      }
-      _cachedLeadingPlainText = buffer.toString();
-
-      if (effectiveIndex <= 0) {
-        _cachedLeadingPath = null;
-        _cachedLeadingPlainText = null;
-      }
-    }
-
-    if ((_cachedTrailingPath == null ||
-            _cachedTrailingPath!.first != endIndex) &&
-        endIndex < length) {
-      _cachedTrailingPath = selection.end.path;
-      final buffer = StringBuffer();
-      final effectiveIndex = endIndex + 1;
-      for (int index = effectiveIndex; index < length; index++) {
-        final node = doc.root.childAtIndexOrNull(index);
-        assert(
-          node != null,
-          'node should not be null at this point for index $index in length $length',
-        );
-        buffer.writeln(node!.delta?.toPlainText() ?? '');
-      }
-      _cachedTrailingPlainText = buffer.toString();
-      if (effectiveIndex >= length) {
-        _cachedLeadingPath = null;
-        _cachedLeadingPlainText = null;
-      }
-    }
-
-    final editableNodes = <Node>[];
-    for (int index = startIndex; index <= endIndex; index++) {
-      editableNodes.add(doc.root.children[index]);
-    }
+    final editableNodes = List.of(
+      doc.root.children.sublist(
+        startIndex,
+        (endIndex + 1).clamp(0, doc.root.length),
+      ),
+    );
 
     // if the selection is inline and the selection is updated by ui event,
     // we should clear the composing range on Android.
@@ -411,23 +337,11 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         _cachedPlainText = buffer.toString();
       }
 
-      final textBuffer = StringBuffer();
-      if (_cachedLeadingPath != null) {
-        textBuffer.writeln(_cachedLeadingPlainText!);
-      }
-      if (_cachedPlainText != null) {
-        textBuffer.writeln(_cachedPlainText!);
-      }
-      if (_cachedTrailingPath != null) {
-        textBuffer.writeln(_cachedTrailingPlainText!);
-      }
       // strip trailing \n
-      final text = textBuffer.isNotEmpty
-          ? textBuffer.toString().substring(
-                0,
-                _cachedPlainText!.length - 1,
-              )
-          : '';
+      final text = _cachedPlainText!.substring(
+        0,
+        _cachedPlainText!.length - 1,
+      );
 
       return TextEditingValue(
         text: text,

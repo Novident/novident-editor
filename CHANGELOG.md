@@ -2,6 +2,7 @@
 
 ## 1.0.6
 
+* chore(readme): updated some documentation examples.
 * fix(39d7562): cannot paste properly in mobile devices. Introduced in the commit 39d7562.
 * fix: when pasted content has newlines, instead be inserting multiple nodes, just inyect the `Delta` with the raw newlines (decreases the perfomance too and produces weird rendering stuff).
 

@@ -111,32 +111,46 @@ every derived style inherits font, size, spacing and colours, resolved through a
 three-tier fallback (explicit style → type default → global default):
 
 ```dart
-NovidentEditor(
+final baseStyle = NovidentStyleDefinition(
+  id: 'base',
+  name: 'Base',
+  fontSize: 12,
+  fontFamily: 'Arial',
+  indent: NovidentStyleIndent.defaultLineFilter(),
+);
+
+final editor = NovidentEditor(
   editorState: editorState,
   styles: NovidentStylesConfig(
+    defaultStyle: baseStyle,
+    defaultStylesByType: <String, NovidentStyleDefinition>{
+      'table': kDefaultTableStyle,
+    },
     registry: NovidentStyleRegistry({
-      'base': NovidentStyleDefinition(
-        id: 'base', name: 'Base',
-        fontSize: 12, fontFamily: 'Arial',
-        indent: NovidentStyleIndent.defaultLineFilter(),
-      ),
+      baseStyle.id: baseStyle,
       'body': NovidentStyleDefinition.nextSame(
-        id: 'body', name: 'Body', basedOn: 'base',
+        id: 'body',
+        name: 'Body',
+        basedOn: 'base',
         spacing: NovidentStyleSpacing(after: 8),
       ),
       'heading-1': NovidentStyleDefinition(
-        id: 'heading-1', name: 'Heading 1', basedOn: 'base',
-        fontSize: 32, bold: true,
+        id: 'heading-1',
+        name: 'Heading 1',
+        basedOn: 'base',
+        fontSize: 32,
+        bold: true,
         spacing: NovidentStyleSpacing(before: 24, after: 12),
         next: 'body',
       ),
     }),
   ),
 );
+
 ```
 
 > [!IMPORTANT]
-> Base styles require `fontSize`, `fontFamily` and `textColor` to be defined.
+> Default styles require `fontSize`, `fontFamily` and `textColor` to be defined.
 
 Toolbar items (`styleToolbarItem`, `buildFontFamilyItem`, `buildFontSizeItem`)
 resolve the current value through the same chain. See
@@ -203,7 +217,7 @@ document**, and keeps the focused block vertically centered (typewriter scroll):
 ```dart
 final zenController = ZenModeController();
 
-NovidentEditor(
+final editor = NovidentEditor(
   editorState: editorState,
   editorScrollController: editorScrollController,
   blockWrapper: zenController.blockWrapper,
@@ -224,7 +238,7 @@ no checker call ever runs inside `build`:
 ```dart
 final checker = MySpellChecker(); // implements NovidentSpellChecker
 
-NovidentEditor(
+final editor = NovidentEditor(
   editorState: editorState,
   editorStyle: EditorStyle.desktop(
     spellChecker: checker,
@@ -283,7 +297,7 @@ Override a built-in block or register a new one through
 `blockComponentBuilders`:
 
 ```dart
-NovidentEditor(
+final editor = NovidentEditor(
   editorState: editorState,
   blockComponentBuilders: {
     ...standardBlockComponentBuilderMap,

@@ -11,7 +11,7 @@ Future<void> onReplace(
   EditorState editorState,
 ) async {
   assert(() {
-    // NovidentEditorLog.input.debug('onReplace: $replacement');
+    NovidentEditorLog.input.debug('onReplace: $replacement');
     return true;
   }());
 

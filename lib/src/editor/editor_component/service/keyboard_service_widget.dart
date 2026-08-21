@@ -288,6 +288,7 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
   /// O(n²) string concatenation on every drag event. Invalidated by
   /// node list identity.
   String? _cachedPlainText;
+  int? _cachedEndOffset;
   List<Node>? _cachedEditableNodes;
 
   @override
@@ -299,15 +300,7 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
   // This function is used to get the current text editing value of the editor
   // based on the given selection.
   TextEditingValue? _getCurrentTextEditingValue(Selection selection) {
-    final doc = editorState.document;
-    final startIndex = selection.start.path.first;
-    final endIndex = selection.end.path.first;
-    final editableNodes = List.of(
-      doc.root.children.sublist(
-        startIndex,
-        (endIndex + 1).clamp(0, doc.root.length),
-      ),
-    );
+    final editableNodes = editorState.getNodesInSelection(selection);
 
     // if the selection is inline and the selection is updated by ui event,
     // we should clear the composing range on Android.
@@ -322,6 +315,9 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
     // Get the composing text range.
     final composingTextRange =
         textInputService.composingTextRange ?? TextRange.empty;
+    _cachedEndOffset = selection.isCollapsed || selection.isSingle
+        ? null
+        : selection.startIndex;
     if (editableNodes.isNotEmpty) {
       // Cache the concatenated text by node-set identity: drag
       // selections fire ~60×/s with identical node ranges — only the
@@ -335,6 +331,9 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         }
         _cachedEditableNodes = editableNodes;
         _cachedPlainText = buffer.toString();
+        if (!selection.isCollapsed && !selection.isSingle) {
+          _cachedEndOffset = _cachedPlainText!.length - 1;
+        }
       }
 
       // strip trailing \n
@@ -347,7 +346,9 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         text: text,
         selection: TextSelection(
           baseOffset: selection.startIndex,
-          extentOffset: selection.endIndex,
+          extentOffset: selection.isSingle
+              ? selection.endIndex
+              : _cachedEndOffset ?? selection.endIndex,
         ),
         composing: composingTextRange,
       );

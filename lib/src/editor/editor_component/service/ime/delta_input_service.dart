@@ -230,6 +230,7 @@ class DeltaTextInputService extends TextInputService with DeltaTextInputClient {
     if (currentTextEditingValue == null) {
       return;
     }
+    //TODO: @Cathood0 handle `selectAll:`, `cut:`, etc from the context menus
 
     // magic string from flutter callback
     if (selectorName == _deleteBackwardSelectorName) {

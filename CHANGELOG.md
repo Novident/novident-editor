@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.6
+
+* fix(39d7562): cannot paste properly in mobile devices. Introduced in the commit 39d7562.
+
 ## 1.0.5
 
 * feat: start of replace Delta with a new optimized version `TextDocument` by @CatHood0 in https://github.com/Novident/novident-editor/pull/23

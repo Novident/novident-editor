@@ -8,7 +8,7 @@ Future<void> onNonTextUpdate(
   EditorState editorState,
 ) async {
   assert(() {
-    // NovidentEditorLog.input.debug('onNonTextUpdate: $nonTextUpdate');
+    NovidentEditorLog.input.debug('onNonTextUpdate: $nonTextUpdate');
     return true;
   }());
 
@@ -27,8 +27,8 @@ Future<void> onNonTextUpdate(
     // for the another keyboards (e.g. system keyboard), they will trigger the
     // `onFloatingCursor` event instead.
     assert(() {
-      // NovidentEditorLog.input
-      //     .debug('[Android] onNonTextUpdate: $nonTextUpdate');
+      NovidentEditorLog.input
+          .debug('[Android] onNonTextUpdate: $nonTextUpdate');
       return true;
     }());
     final nonTextUpdateStart = nonTextUpdate.selection.start;

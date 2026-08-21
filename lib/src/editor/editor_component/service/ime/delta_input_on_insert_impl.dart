@@ -7,7 +7,7 @@ Future<void> onInsert(
   EditorState editorState,
 ) async {
   assert(() {
-    // NovidentEditorLog.input.debug('onInsert: $insertion');
+    NovidentEditorLog.input.debug('onInsert: $insertion');
     return true;
   }());
 

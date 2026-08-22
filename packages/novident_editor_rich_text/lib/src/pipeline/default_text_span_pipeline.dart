@@ -31,8 +31,10 @@ class DefaultNovidentTextSpanPipeline extends NovidentTextSpanPipeline {
   TextStyle resolveStyle(
     Attributes? attributes,
     TextStyle base,
-    TextStyleConfiguration textStyleConfiguration,
-  ) {
+    TextStyleConfiguration textStyleConfiguration, {
+    Node? node,
+    BuildContext? context,
+  }) {
     var textStyle = base;
     if (attributes == null) {
       return textStyle;

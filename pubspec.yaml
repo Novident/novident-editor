@@ -52,6 +52,23 @@ dev_dependencies:
   path_provider: ^2.0.5
   pubspec_dependency_sorter: ^1.0.5
 
+# Local overrides while the rich_text package change (resolveStyle with
+# node/context) is unpublished. Remove once the new version is published and
+# the constraints above are bumped.
+dependency_overrides:
+  novident_editor_core:
+    path: packages/novident_editor_core
+  novident_editor_document:
+    path: packages/novident_document
+  novident_editor_rich_text:
+    path: packages/novident_editor_rich_text
+  novident_editor_selection:
+    path: packages/novident_editor_selection
+  novident_editor_spell_check_interface:
+    path: packages/novident_editor_spell_check_interface
+  novident_editor_styles:
+    path: packages/novident_editor_styles
+
 topics:
   - widgets
   - editor

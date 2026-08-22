@@ -44,6 +44,7 @@ class _ZenEditorViewState extends State<ZenEditorView> {
           unfocusedOpacity: 0.3,
         ),
       ),
+      typewriterController: TypewriterScrollController(),
     )..addListener(_onSessionChanged);
   }
 
@@ -132,6 +133,8 @@ class _ZenEditorViewState extends State<ZenEditorView> {
                         child: MyEditor(
                           session: _session,
                           zenController: _session.zenController,
+                          typewriterController:
+                              _session.typewriterController,
                           autoFocus: true,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 32,

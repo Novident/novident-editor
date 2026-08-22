@@ -124,6 +124,11 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   /// [NovidentEditor] during init.
   EditorStyle editorStyle = const EditorStyle.desktop();
 
+  /// Configuration of the typewriter (centered) scrolling, applied by a
+  /// [TypewriterScrollController]. Independent from zen mode: set it and
+  /// attach the controller to keep the focused block vertically centered.
+  TypewriterScrollConfig typewriter = const TypewriterScrollConfig();
+
   /// The styles configuration for the editor.
   ///
   /// Set by [NovidentEditor] during init. Used by [insertNewLine] to resolve
@@ -188,6 +193,17 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
   @override
   NovidentTextSpanPipeline? get spanPipeline {
+    final effective = _effectiveSpanPipeline;
+    final wrapper = _spanPipelineWrapper;
+    if (wrapper != null) {
+      return wrapper(effective ?? const DefaultNovidentTextSpanPipeline());
+    }
+    return effective;
+  }
+
+  /// The pipeline selected by the editor configuration alone (spell check or
+  /// `null` for the default).
+  NovidentTextSpanPipeline? get _effectiveSpanPipeline {
     if (editorStyle.spellChecker == null) {
       return null;
     }
@@ -195,6 +211,30 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
       misspelledStyle: editorStyle.spellCheckMisspelledStyle ??
           SpellCheckSpanPipeline.defaultMisspelledStyle,
     );
+  }
+
+  /// Wrapper registered by optional modes (e.g. zen) to compose their
+  /// pipeline layer on top of the effective one.
+  NovidentTextSpanPipeline Function(NovidentTextSpanPipeline)?
+      _spanPipelineWrapper;
+
+  /// Registers a wrapper that composes the effective span pipeline.
+  ///
+  /// Optional modes (e.g. zen) use this to layer their behavior on top of
+  /// whatever pipeline is active (spell check or the default). The wrapper
+  /// receives the effective pipeline and returns the composed one. Register
+  /// at most one wrapper; [clearSpanPipelineWrapper] restores the effective
+  /// pipeline.
+  void setSpanPipelineWrapper(
+    NovidentTextSpanPipeline Function(NovidentTextSpanPipeline) wrapper,
+  ) {
+    _spanPipelineWrapper = wrapper;
+  }
+
+  /// Clears a previously registered pipeline wrapper, restoring the
+  /// effective pipeline (spell check or default).
+  void clearSpanPipelineWrapper() {
+    _spanPipelineWrapper = null;
   }
 
   /// The spell-check analysis service, created and attached by the editor

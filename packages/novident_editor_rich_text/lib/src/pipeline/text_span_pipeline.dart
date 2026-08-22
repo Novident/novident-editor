@@ -27,11 +27,18 @@ abstract class NovidentTextSpanPipeline {
 
   /// Phase 1 — converts a [TextInsert]'s attributes into a [TextStyle]
   /// combined over [base]. Replaces the legacy `_attributesToStyle`.
+  ///
+  /// [node] and [context] are optional and may be `null` when resolving
+  /// outside a widget build (e.g. pure unit tests). Implementations that
+  /// need to react to the node or its surroundings (e.g. zen-mode color
+  /// dimming) can use them; the default pipeline ignores them.
   TextStyle resolveStyle(
     Attributes? attributes,
     TextStyle base,
-    TextStyleConfiguration textStyleConfiguration,
-  );
+    TextStyleConfiguration textStyleConfiguration, {
+    Node? node,
+    BuildContext? context,
+  });
 
   /// Phase 2 — textual transformation before rendering (caps/smallCaps).
   ///

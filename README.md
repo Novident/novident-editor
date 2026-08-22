@@ -216,16 +216,65 @@ document**, and keeps the focused block vertically centered (typewriter scroll):
 
 ```dart
 final zenController = ZenModeController();
+zenController.attach(
+  editorState: editorState,
+  scrollController: editorScrollController,
+);
 
 final editor = NovidentEditor(
   editorState: editorState,
   editorScrollController: editorScrollController,
   blockWrapper: zenController.blockWrapper,
-  editorStyle: EditorStyle.desktop(
-    textSpanDecorator: zenController.textSpanDecorator(),
-  ),
 );
 ```
+
+The dimming is applied through the span pipeline: `attach` registers a
+`ZenSpanPipeline` wrapper on the `EditorState` that composes over the effective
+pipeline (spell check or default).
+
+### Typewriter mode
+
+Keeps the focused block vertically centered in the viewport as you type
+(typewriter scrolling). It is **independent from zen mode** — the
+configuration lives on the `EditorState` and a `TypewriterScrollController`
+applies it, with or without zen:
+
+```dart
+final editorState = EditorState.blank();
+editorState.typewriter = const TypewriterScrollConfig(
+  enabled: true,
+  centerAlignment: 0.45, // 0.0 = top, 0.5 = center, 1.0 = bottom
+  scrollDuration: Duration(milliseconds: 240),
+  scrollCurve: Curves.easeOutCubic,
+);
+
+final typewriterController = TypewriterScrollController();
+typewriterController.attach(
+  editorState: editorState,
+  scrollController: editorScrollController,
+);
+
+final editor = NovidentEditor(
+  editorState: editorState,
+  editorScrollController: editorScrollController,
+  // disable the native caret auto-scroll so it doesn't fight the
+  // typewriter centering.
+  disableAutoScroll: typewriterController.shouldDisableNativeAutoScroll,
+);
+```
+
+To **disable** the centering (the editor keeps the native caret auto-scroll):
+
+```dart
+editorState.typewriter = const TypewriterScrollConfig(enabled: false);
+```
+
+You can also center a specific block programmatically at any time with
+`typewriterController.centerBlockAt(topLevelIndex)`.
+
+> [!NOTE]
+> Typewriter scrolling is now a standalone feature: it w require"cmp.utils.feedkeys".run(226)
+ýorks with or without zen  mode. Zen only dims unfocused blocks; the typewriter controller only scrolls.
 
 ### Spell checking
 
@@ -392,16 +441,18 @@ you need one piece without the full editor:
 
 ## Migrating
 
-If you were using version 1.0.4, see
-[migration to 1.0.4](./documentation/migrations/1.0.3_to_1.0.4.md).
+- If you were using version **1.0.5**, see
+  [migration to 1.0.7](./documentation/migrations/1.0.5_to_1.0.7.md) — zen
+  mode dimming moved to the span pipeline and typewriter scrolling became a
+  standalone feature.
+- If you were using version **1.0.4**, see
+  [migration to 1.0.4](./documentation/migrations/1.0.3_to_1.0.4.md).
 
 ## Roadmap
 
-- Improve Zen mode performance.
 - Full customization of every default block.
 - Richer clipboard copy/paste (currently plain text).
 - Translations.
-- Typewriter scrolling without Zen mode.
 - Uncouple remaining editor parts into individual packages (block
   components, keyboard service, scroll service…).
 

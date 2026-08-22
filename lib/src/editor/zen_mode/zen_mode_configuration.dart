@@ -25,17 +25,9 @@ class ZenModeConfiguration {
     this.ignoreTextColor = true,
     this.ignoreHighlightColor = true,
     this.ignoreBlockBackgroundColor = true,
-    this.centerFocusedBlock = true,
-    this.centerAlignment = 0.45,
-    this.scrollDuration = const Duration(milliseconds: 240),
-    this.scrollCurve = Curves.easeOutCubic,
-  })  : assert(
+  }) : assert(
           unfocusedOpacity >= 0.0 && unfocusedOpacity <= 1.0,
           'unfocusedOpacity must be between 0.0 and 1.0',
-        ),
-        assert(
-          centerAlignment >= 0.0 && centerAlignment <= 1.0,
-          'centerAlignment must be between 0.0 and 1.0',
         );
 
   /// Whether zen mode is active.
@@ -73,20 +65,6 @@ class ZenModeConfiguration {
   /// not painted while zen mode is enabled.
   final bool ignoreBlockBackgroundColor;
 
-  /// Whether the focused block should be kept vertically centered
-  /// (typewriter scrolling).
-  final bool centerFocusedBlock;
-
-  /// Where the leading edge of the focused block is aligned inside the
-  /// viewport when centering: 0.0 = top, 0.5 = center, 1.0 = bottom.
-  final double centerAlignment;
-
-  /// Duration of the centering scroll animation.
-  final Duration scrollDuration;
-
-  /// Curve of the centering scroll animation.
-  final Curve scrollCurve;
-
   ZenModeConfiguration copyWith({
     bool? enabled,
     double? unfocusedOpacity,
@@ -95,10 +73,6 @@ class ZenModeConfiguration {
     bool? ignoreTextColor,
     bool? ignoreHighlightColor,
     bool? ignoreBlockBackgroundColor,
-    bool? centerFocusedBlock,
-    double? centerAlignment,
-    Duration? scrollDuration,
-    Curve? scrollCurve,
   }) {
     return ZenModeConfiguration(
       enabled: enabled ?? this.enabled,
@@ -109,10 +83,6 @@ class ZenModeConfiguration {
       ignoreHighlightColor: ignoreHighlightColor ?? this.ignoreHighlightColor,
       ignoreBlockBackgroundColor:
           ignoreBlockBackgroundColor ?? this.ignoreBlockBackgroundColor,
-      centerFocusedBlock: centerFocusedBlock ?? this.centerFocusedBlock,
-      centerAlignment: centerAlignment ?? this.centerAlignment,
-      scrollDuration: scrollDuration ?? this.scrollDuration,
-      scrollCurve: scrollCurve ?? this.scrollCurve,
     );
   }
 
@@ -128,11 +98,7 @@ class ZenModeConfiguration {
         other.fadeCurve == fadeCurve &&
         other.ignoreTextColor == ignoreTextColor &&
         other.ignoreHighlightColor == ignoreHighlightColor &&
-        other.ignoreBlockBackgroundColor == ignoreBlockBackgroundColor &&
-        other.centerFocusedBlock == centerFocusedBlock &&
-        other.centerAlignment == centerAlignment &&
-        other.scrollDuration == scrollDuration &&
-        other.scrollCurve == scrollCurve;
+        other.ignoreBlockBackgroundColor == ignoreBlockBackgroundColor;
   }
 
   @override
@@ -144,9 +110,5 @@ class ZenModeConfiguration {
         ignoreTextColor,
         ignoreHighlightColor,
         ignoreBlockBackgroundColor,
-        centerFocusedBlock,
-        centerAlignment,
-        scrollDuration,
-        scrollCurve,
       );
 }

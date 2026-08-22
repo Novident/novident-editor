@@ -62,7 +62,7 @@ void main() {
       expect(controller.enabled, isTrue);
     });
 
-    test('focusedTopLevelRange updates on selection change', () async {
+    test('selection updates on selection change', () async {
       final state = EditorState(document: Document.blank());
       state.document.root.addParagraphs(3);
       final controller = ZenModeController();
@@ -71,7 +71,10 @@ void main() {
       await state.updateSelectionWithReason(
         Selection.collapsed(Position(path: [2])),
       );
-      expect(controller.focusedTopLevelRange.value, (start: 2, end: 2));
+      expect(
+        controller.selection.value,
+        Selection.collapsed(Position(path: [2])),
+      );
       controller.detach();
     });
 
@@ -84,7 +87,10 @@ void main() {
       await state.updateSelectionWithReason(
         Selection.collapsed(Position(path: [1])),
       );
-      expect(controller.focusedTopLevelRange.value, (start: 1, end: 1));
+      expect(
+        controller.selection.value,
+        Selection.collapsed(Position(path: [1])),
+      );
 
       await state.updateSelectionWithReason(
         Selection(
@@ -93,7 +99,7 @@ void main() {
         ),
         reason: SelectionUpdateReason.selectAll,
       );
-      expect(controller.focusedTopLevelRange.value, isNull);
+      expect(controller.selection.value, isNull);
       controller.detach();
     });
 

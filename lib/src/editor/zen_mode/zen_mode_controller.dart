@@ -44,16 +44,15 @@ class ZenModeController extends ValueNotifier<ZenModeConfiguration> {
   BlockComponentBackgroundColorDecorator? _previousBlockDecorator;
   bool _ownsBlockDecorator = false;
 
-  /// The top-level block range covered by the selection, updated only when
-  /// it changes. Wrappers listen to this instead of the full selection
-  /// notifier, so typing inside the same block never rebuilds them.
-  final ValueNotifier<({int start, int end})?> _focusedTopLevelRange =
-      ValueNotifier(null);
+  /// The current selection, exposed so each block wrapper can decide whether
+  /// its node is focused via `path.inSelection`. Updated on every selection
+  /// change; wrappers recompute cheaply and only rebuild when their own
+  /// dimmed state flips.
+  final ValueNotifier<Selection?> _selection = ValueNotifier(null);
 
-  /// The top-level block range covered by the selection, or `null` when no
-  /// block is focused (zen disabled, no selection, or select-all).
-  ValueListenable<({int start, int end})?> get focusedTopLevelRange =>
-      _focusedTopLevelRange;
+  /// The current selection, or `null` when no block is focused (zen disabled,
+  /// no selection, or select-all).
+  ValueListenable<Selection?> get selection => _selection;
 
   ZenModeConfiguration get configuration => value;
   set configuration(ZenModeConfiguration configuration) =>
@@ -80,11 +79,11 @@ class ZenModeController extends ValueNotifier<ZenModeConfiguration> {
 
     if (oldValue.enabled != newValue.enabled) {
       if (newValue.enabled) {
-        // initialize the focused range from the current selection so the
+        // initialize the focused selection from the current selection so the
         // wrappers dim correctly as soon as zen is turned on.
-        _refreshFocusedRange();
+        _updateFocusedSelection();
       } else {
-        _focusedTopLevelRange.value = null;
+        _selection.value = null;
       }
     }
   }
@@ -131,7 +130,7 @@ class ZenModeController extends ValueNotifier<ZenModeConfiguration> {
   @override
   void dispose() {
     detach();
-    _focusedTopLevelRange.dispose();
+    _selection.dispose();
     super.dispose();
   }
 
@@ -145,68 +144,41 @@ class ZenModeController extends ValueNotifier<ZenModeConfiguration> {
   }) {
     return ZenModeBlock(
       configuration: this,
-      focusedTopLevelRange: _focusedTopLevelRange,
+      selection: _selection,
       node: node,
       child: child,
     );
   }
 
-  void _onSelectionChanged() {
+  void _updateFocusedSelection() {
     final editorState = _editorState;
     if (editorState == null) {
+      _selection.value = null;
       return;
     }
     final config = value;
     if (!config.enabled) {
-      _focusedTopLevelRange.value = null;
+      _selection.value = null;
       return;
     }
     final selection = editorState.selection;
     if (selection == null) {
-      _focusedTopLevelRange.value = null;
+      _selection.value = null;
       return;
     }
     if (editorState.selectionUpdateReason == SelectionUpdateReason.selectAll) {
-      // the whole document is selected — nothing is dimmed.
-      _focusedTopLevelRange.value = null;
+      _selection.value = null;
       return;
     }
     final normalized = selection.normalized;
     if (normalized.start.path.isEmpty || normalized.end.path.isEmpty) {
-      _focusedTopLevelRange.value = null;
+      _selection.value = null;
       return;
     }
-    final start = normalized.start.path.first;
-    final end = normalized.end.path.first;
-    final range = (start: start, end: end);
-    // only notify the wrappers when the focused range changes.
-    if (_focusedTopLevelRange.value != range) {
-      _focusedTopLevelRange.value = range;
-    }
+    _selection.value = selection;
   }
 
-  /// Recomputes [_focusedTopLevelRange] from the current selection.
-  void _refreshFocusedRange() {
-    final editorState = _editorState;
-    if (editorState == null) {
-      _focusedTopLevelRange.value = null;
-      return;
-    }
-    final selection = editorState.selection;
-    if (selection == null) {
-      _focusedTopLevelRange.value = null;
-      return;
-    }
-    final normalized = selection.normalized;
-    if (normalized.start.path.isEmpty || normalized.end.path.isEmpty) {
-      _focusedTopLevelRange.value = null;
-      return;
-    }
-    _focusedTopLevelRange.value = (
-      start: normalized.start.path.first,
-      end: normalized.end.path.first,
-    );
-  }
+  void _onSelectionChanged() => _updateFocusedSelection();
 
   bool _needsBlockRefresh(
     ZenModeConfiguration oldValue,

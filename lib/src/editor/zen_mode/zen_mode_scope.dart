@@ -25,14 +25,19 @@ class ZenModeScope extends InheritedWidget {
   /// The active zen configuration (ignore flags).
   final ZenModeConfiguration configuration;
 
-  /// Reads the scope without registering a dependency: the rebuild trigger
-  /// is [ZenModeBlock] itself, so dependents must not rebuild on scope
-  /// changes. Returns `null` when [context] is null or no scope is present.
+  /// Reads the scope, registering a dependency so the caller rebuilds when
+  /// the dimmed state changes.
+  ///
+  /// The text spans are resolved through [ZenSpanPipeline.resolveStyle], which
+  /// is called during build; registering the dependency is what makes the text
+  /// re-resolve when [ZenModeBlock] flips its dimmed state (a collapsed
+  /// selection change does not rebuild the block component on its own).
+  /// Returns `null` when [context] is null or no scope is present.
   static ZenModeScope? maybeOf(BuildContext? context) {
     if (context == null) {
       return null;
     }
-    return context.getInheritedWidgetOfExactType<ZenModeScope>();
+    return context.dependOnInheritedWidgetOfExactType<ZenModeScope>();
   }
 
   @override

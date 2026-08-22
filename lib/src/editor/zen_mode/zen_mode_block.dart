@@ -12,15 +12,15 @@ import 'zen_mode_scope.dart';
 /// change, no widget). Only node types in [wrapNonTextTypes] (e.g. images,
 /// which have no text spans to style) get a cheap static [Opacity] wrapper.
 ///
-/// The widget subscribes to the focused top-level range exposed by the
-/// controller and only calls [State.setState] when **its own** dimmed state
-/// flips — typing inside the same block never rebuilds it, and a focus
-/// change rebuilds only the two affected blocks (O(1), not O(N)).
+/// The widget subscribes to the current selection exposed by the controller
+/// and only calls [State.setState] when **its own** dimmed state flips —
+/// typing inside the same block never rebuilds it, and a focus change
+/// rebuilds only the two affected blocks (O(1), not O(N)).
 class ZenModeBlock extends StatefulWidget {
   const ZenModeBlock({
     super.key,
     required this.configuration,
-    required this.focusedTopLevelRange,
+    required this.selection,
     required this.node,
     required this.child,
     this.wrapNonTextTypes = const {ImageBlockKeys.type},
@@ -29,9 +29,9 @@ class ZenModeBlock extends StatefulWidget {
   /// The zen mode configuration source, usually a `ZenModeController`.
   final ValueListenable<ZenModeConfiguration> configuration;
 
-  /// The top-level block range covered by the selection, exposed by the
-  /// controller as a `ValueNotifier<({int start, int end})?>`.
-  final ValueListenable<({int start, int end})?> focusedTopLevelRange;
+  /// The current selection exposed by the controller. The block is dimmed
+  /// when its node is not in the selection (see [_ZenModeBlockState._isFocused]).
+  final ValueListenable<Selection?> selection;
 
   /// The top-level node wrapped by this widget.
   final Node node;
@@ -54,7 +54,7 @@ class _ZenModeBlockState extends State<ZenModeBlock> {
     super.initState();
     _dimmed = _computeDimmed();
     widget.configuration.addListener(_onChanged);
-    widget.focusedTopLevelRange.addListener(_onChanged);
+    widget.selection.addListener(_onChanged);
   }
 
   @override
@@ -64,9 +64,9 @@ class _ZenModeBlockState extends State<ZenModeBlock> {
       oldWidget.configuration.removeListener(_onChanged);
       widget.configuration.addListener(_onChanged);
     }
-    if (oldWidget.focusedTopLevelRange != widget.focusedTopLevelRange) {
-      oldWidget.focusedTopLevelRange.removeListener(_onChanged);
-      widget.focusedTopLevelRange.addListener(_onChanged);
+    if (oldWidget.selection != widget.selection) {
+      oldWidget.selection.removeListener(_onChanged);
+      widget.selection.addListener(_onChanged);
     }
     // re-evaluate with the new widget (e.g. a different node).
     _onChanged();
@@ -75,18 +75,25 @@ class _ZenModeBlockState extends State<ZenModeBlock> {
   @override
   void dispose() {
     widget.configuration.removeListener(_onChanged);
-    widget.focusedTopLevelRange.removeListener(_onChanged);
+    widget.selection.removeListener(_onChanged);
     super.dispose();
   }
 
   bool _computeDimmed() {
     final config = widget.configuration.value;
-    final range = widget.focusedTopLevelRange.value;
-    if (!config.enabled || range == null) {
+    final selection = widget.selection.value;
+    if (!config.enabled || selection == null) {
       return false;
     }
-    final index = widget.node.path.first;
-    return !(range.start <= index && index <= range.end);
+    return !_isFocused(widget.node, selection);
+  }
+
+  bool _isFocused(Node node, Selection selection) {
+    final path = node.path;
+    final normalized = selection.normalized;
+    return path.inSelection(selection) ||
+        path.isAncestorOf(normalized.start.path) ||
+        path.isAncestorOf(normalized.end.path);
   }
 
   void _onChanged() {
@@ -114,3 +121,4 @@ class _ZenModeBlockState extends State<ZenModeBlock> {
     return child;
   }
 }
+

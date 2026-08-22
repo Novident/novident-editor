@@ -441,8 +441,12 @@ you need one piece without the full editor:
 
 ## Migrating
 
-If you were using version 1.0.4, see
-[migration to 1.0.4](./documentation/migrations/1.0.3_to_1.0.4.md).
+- If you were using version **1.0.5**, see
+  [migration to 1.0.7](./documentation/migrations/1.0.5_to_1.0.7.md) — zen
+  mode dimming moved to the span pipeline and typewriter scrolling became a
+  standalone feature.
+- If you were using version **1.0.4**, see
+  [migration to 1.0.4](./documentation/migrations/1.0.3_to_1.0.4.md).
 
 ## Roadmap
 

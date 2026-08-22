@@ -273,8 +273,7 @@ You can also center a specific block programmatically at any time with
 `typewriterController.centerBlockAt(topLevelIndex)`.
 
 > [!NOTE]
-> Typewriter scrolling is now a standalone feature: it w require"cmp.utils.feedkeys".run(226)
-ýorks with or without zen  mode. Zen only dims unfocused blocks; the typewriter controller only scrolls.
+> Typewriter scrolling is now a standalone feature it works with or without zen  mode. Zen only dims unfocused blocks; the typewriter controller only scrolls.
 
 ### Spell checking
 

@@ -32,6 +32,7 @@ class NovidentEditor extends StatefulWidget {
     )
     List<CommandShortcutEvent>? commandShortcutEvents,
     this.keyboardStrategies = const [],
+    this.scrollStrategies = const [],
     this.contextMenuBuilder,
     this.contentInsertionConfiguration,
     this.editable = true,
@@ -137,6 +138,13 @@ class NovidentEditor extends StatefulWidget {
   /// When empty (default), a [DefaultEditorStrategy] is used over
   /// [commandShortcutEvents].
   final List<KeyboardStrategy> keyboardStrategies;
+
+  /// Scroll policies, consulted in order on each selection change (the first
+  /// one that returns [ScrollDecision.handled] wins).
+  ///
+  /// When empty (default), the built-in edge-follow runs. Pass e.g.
+  /// `[TypewriterScrollStrategy(...)]` to enable typewriter centering.
+  final List<ScrollStrategy> scrollStrategies;
 
   /// The context menu builder.
   ///
@@ -390,6 +398,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
       child = ScrollServiceWidget(
         key: editorState.service.scrollServiceKey,
         editorScrollController: editorScrollController,
+        scrollStrategies: widget.scrollStrategies,
         child: child,
       );
     }

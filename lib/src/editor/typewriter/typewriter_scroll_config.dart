@@ -15,7 +15,7 @@ class TypewriterScrollConfig {
     this.scrollDuration = const Duration(milliseconds: 240),
     this.scrollCurve = Curves.easeOutCubic,
     this.keepInViewTopMargin = 100.0,
-    this.keepInViewBottomMargin = 160.0,
+    this.keepInViewBottomMargin = 200.0,
   }) : assert(
           centerAlignment >= 0.0 && centerAlignment <= 1.0,
           'centerAlignment must be between 0.0 and 1.0',

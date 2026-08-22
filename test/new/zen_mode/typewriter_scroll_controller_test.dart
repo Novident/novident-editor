@@ -134,4 +134,42 @@ void main() {
       expect(offset, isNull);
     });
   });
+
+  group('TypewriterScrollController.targetOffsetToCenterCaret', () {
+    const viewportHeight = 600.0;
+    const centerAlignment = 0.5;
+    final targetCenter = centerAlignment * viewportHeight; // 300
+
+    test('returns the current offset when the caret is already centered', () {
+      final offset = TypewriterScrollController.targetOffsetToCenterCaret(
+        caretRect: Rect.fromLTWH(0, targetCenter - 10, 2, 20),
+        viewportHeight: viewportHeight,
+        currentOffset: 500,
+        centerAlignment: centerAlignment,
+      );
+      expect(offset, 500);
+    });
+
+    test('scrolls down when the caret is below the centered position', () {
+      // caret center is 100px below the target center → scroll down 100px.
+      final offset = TypewriterScrollController.targetOffsetToCenterCaret(
+        caretRect: Rect.fromLTWH(0, targetCenter + 90, 2, 20),
+        viewportHeight: viewportHeight,
+        currentOffset: 500,
+        centerAlignment: centerAlignment,
+      );
+      expect(offset, 500 + 100);
+    });
+
+    test('scrolls up when the caret is above the centered position', () {
+      // caret center is 100px above the target center → scroll up 100px.
+      final offset = TypewriterScrollController.targetOffsetToCenterCaret(
+        caretRect: Rect.fromLTWH(0, targetCenter - 110, 2, 20),
+        viewportHeight: viewportHeight,
+        currentOffset: 1000,
+        centerAlignment: centerAlignment,
+      );
+      expect(offset, 1000 - 100);
+    });
+  });
 }

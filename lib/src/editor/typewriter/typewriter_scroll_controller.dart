@@ -10,18 +10,19 @@ const int _maxInt = 1 << 31;
 /// selection moves, driving the [EditorScrollController]. It is independent
 /// from zen mode: attach it with or without a `ZenModeController`.
 ///
-/// The strategy is two-fold:
+/// The strategy:
 ///
-/// 1. When the focused top-level block **changes**, the block is centered at
-///    [TypewriterScrollConfig.centerAlignment] (the classic typewriter feel).
+/// 1. When the focused top-level block **changes**, the view centers itself
+///    relative to the caret's position at
+///    [TypewriterScrollConfig.centerAlignment], in a single scroll. Centering
+///    the caret (rather than the block's leading edge) never hides it, and a
+///    single scroll avoids the two-step jump of center-then-correct.
 /// 2. When the caret moves **within the same block**, the editor does not
 ///    re-center (that would ping-pong on every keystroke). Instead it keeps
-///    the caret inside a vertical "dead zone" box — the central region bounded
-///    by [TypewriterScrollConfig.keepInViewTopMargin] and
+///    the caret inside a vertical "dead zone" box — the central region
+///    bounded by [TypewriterScrollConfig.keepInViewTopMargin] and
 ///    [TypewriterScrollConfig.keepInViewBottomMargin] — and only scrolls when
 ///    the caret leaves that box, bringing it back just enough to stay inside.
-///    This covers tall blocks and manual scrolls without ever letting the
-///    caret leave the visible area.
 ///
 /// Usage:
 ///
@@ -110,9 +111,23 @@ class TypewriterScrollController {
       return currentOffset + caretRect.top - topMargin;
     }
     if (caretRect.bottom > viewportHeight - bottomMargin) {
-      return (currentOffset + caretRect.bottom - (viewportHeight - bottomMargin)) + 30;
+      return currentOffset + caretRect.bottom - (viewportHeight - bottomMargin);
     }
     return null;
+  }
+
+  /// Computes the scroll offset (in pixels) that centers [caretRect] —
+  /// expressed in viewport-local coordinates — at [centerAlignment] of the
+  /// viewport, given the current [currentOffset].
+  static double targetOffsetToCenterCaret({
+    required Rect caretRect,
+    required double viewportHeight,
+    required double currentOffset,
+    required double centerAlignment,
+  }) {
+    final center = (caretRect.top + caretRect.bottom) / 2;
+    final targetCenter = centerAlignment * viewportHeight;
+    return currentOffset + (center - targetCenter);
   }
 
   /// Scrolls the editor so the top-level block at [topLevelIndex] is
@@ -183,8 +198,9 @@ class TypewriterScrollController {
       return;
     }
     final topLevelIndex = path.first;
+    final previousIndex = _lastTopLevelIndex;
     // only re-center the block when the focused top-level block changes.
-    if (_lastTopLevelIndex == topLevelIndex) {
+    if (previousIndex == topLevelIndex) {
       // caret moved within the same block: keep it inside the dead-zone box
       // instead of re-centering the whole block on every keystroke.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -196,21 +212,26 @@ class TypewriterScrollController {
     // a new block invalidates the previous keep-in-view target.
     _lastTargetOffset = null;
 
-    // wait for the layout of the new selection before scrolling.
+    // On a block change, center the view relative to the caret's position in a
+    // single scroll (centering the caret never hides it, unlike centering the
+    // block's leading edge, and it avoids the two-step jump of center-then-
+    // correct).
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      centerBlockAt(topLevelIndex);
+      _centerCaretInView();
     });
   }
 
-  /// Scrolls the editor just enough to keep the caret inside the dead-zone
-  /// box, without re-centering the whole block.
+  /// Scrolls the editor so the caret is centered at
+  /// [TypewriterScrollConfig.centerAlignment] of the viewport, in a single
+  /// scroll.
   ///
-  /// No-op when the caret is already inside the box, when no scroll controller
-  /// is attached, in shrinkWrap mode, or when the scrollable is not mounted.
-  void _keepCaretInView() {
+  /// Used on block changes: centering the caret (rather than the block's
+  /// leading edge) never hides it, and doing it in one scroll avoids the
+  /// two-step jump of center-then-correct.
+  void _centerCaretInView() {
     final editorState = _editorState;
     final scrollController = _scrollController;
-    if (editorState == null || scrollController == null || editorState.selection == null || !editorState.selection!.isCollapsed) {
+    if (editorState == null || scrollController == null) {
       return;
     }
     if (scrollController.shrinkWrap) {
@@ -221,18 +242,78 @@ class TypewriterScrollController {
       return;
     }
 
-    final rects = editorState.selectionRects();
-    if (rects.isEmpty) {
+    final caretInViewport = _caretRectInViewport(editorState, scrollableState);
+    if (caretInViewport == null) {
       return;
     }
-    final caretRect = rects.reduce((a, b) => a.expandToInclude(b));
 
     final viewportHeight = scrollableState.position.viewportDimension;
-    final deltaToOrigin = scrollableState.deltaToScrollOrigin;
-    final caretInViewport = caretRect.shift(
-      Offset(-deltaToOrigin.dx, -deltaToOrigin.dy),
+    final config = editorState.typewriter;
+    final targetOffset = targetOffsetToCenterCaret(
+      caretRect: caretInViewport,
+      viewportHeight: viewportHeight,
+      currentOffset: scrollableState.position.pixels,
+      centerAlignment: config.centerAlignment,
     );
+    if (targetOffset == _lastTargetOffset) {
+      return;
+    }
+    _lastTargetOffset = targetOffset;
 
+    if (config.scrollDuration > Duration.zero) {
+      scrollController.animateTo(
+        offset: targetOffset,
+        duration: config.scrollDuration,
+        curve: config.scrollCurve,
+      );
+    } else {
+      scrollController.scrollOffsetController.jumpTo(offset: targetOffset);
+    }
+  }
+
+  /// Measures the caret's rect in viewport-local coordinates (relative to the
+  /// viewport's top-left), or `null` when it can't be measured.
+  static Rect? _caretRectInViewport(
+    EditorState editorState,
+    ScrollableState scrollableState,
+  ) {
+    final rects = editorState.selectionRects();
+    if (rects.isEmpty) {
+      return null;
+    }
+    final caretRect = rects.reduce((a, b) => a.expandToInclude(b));
+    final deltaToOrigin = scrollableState.deltaToScrollOrigin;
+    return caretRect.shift(Offset(-deltaToOrigin.dx, -deltaToOrigin.dy));
+  }
+
+  /// Scrolls the editor just enough to keep the caret inside the dead-zone
+  /// box, without re-centering the whole block.
+  ///
+  /// No-op when the caret is already inside the box, when no scroll controller
+  /// is attached, in shrinkWrap mode, or when the scrollable is not mounted.
+  void _keepCaretInView() {
+    final editorState = _editorState;
+    final scrollController = _scrollController;
+    if (editorState == null ||
+        scrollController == null ||
+        editorState.selection == null ||
+        !editorState.selection!.isCollapsed) {
+      return;
+    }
+    if (scrollController.shrinkWrap) {
+      return;
+    }
+    final scrollableState = editorState.scrollableState;
+    if (scrollableState == null) {
+      return;
+    }
+
+    final caretInViewport = _caretRectInViewport(editorState, scrollableState);
+    if (caretInViewport == null) {
+      return;
+    }
+
+    final viewportHeight = scrollableState.position.viewportDimension;
     final config = editorState.typewriter;
     final targetOffset = targetOffsetToKeepInView(
       caretRect: caretInViewport,
@@ -265,4 +346,3 @@ class TypewriterScrollController {
     }
   }
 }
-

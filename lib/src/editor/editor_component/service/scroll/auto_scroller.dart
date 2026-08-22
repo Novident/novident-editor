@@ -1,5 +1,8 @@
-import 'package:flutter/material.dart' hide EdgeDraggingAutoScroller;
-import '../../../../flutter/scrollable_helpers.dart';
+import 'package:flutter/material.dart';
+
+import 'scroll_driver.dart';
+import 'scroll_target_resolver.dart';
+import 'scroll_velocity.dart';
 
 abstract class AutoScrollerService {
   void startAutoScroll(
@@ -12,25 +15,50 @@ abstract class AutoScrollerService {
   void stopAutoScroll();
 }
 
-class AutoScroller extends EdgeDraggingAutoScroller
-    implements AutoScrollerService {
+/// An auto scroller that scrolls the [scrollable] if a drag gesture drags
+/// close to its edge.
+///
+/// The scroll velocity is controlled by the [velocityScalar]:
+///
+/// velocity = (distance of overscroll) * [velocityScalar].
+///
+/// It is a thin composition of a [ScrollTargetResolver] (edge policy), a
+/// [ScrollPhysics] (velocity profile) and a [ScrollDriver] (the follow loop),
+/// plus the drag-session lifecycle (`lastOffset` / `continueToAutoScroll`).
+class AutoScroller implements AutoScrollerService {
   AutoScroller(
-    super.scrollable, {
-    super.onScrollViewScrolled,
-    super.velocityScalar = _kDefaultAutoScrollVelocityScalar,
-    super.minimumAutoScrollDelta = _kDefaultMinAutoScrollDelta,
-    super.maxAutoScrollDelta = _kDefaultMaxAutoScrollDelta,
-    super.animationDuration,
-  });
+    ScrollableState scrollable, {
+    VoidCallback? onScrollViewScrolled,
+    double velocityScalar = _kDefaultAutoScrollVelocityScalar,
+    double minimumAutoScrollDelta = _kDefaultMinAutoScrollDelta,
+    double maxAutoScrollDelta = _kDefaultMaxAutoScrollDelta,
+    Duration? animationDuration,
+  }) : _driver = ScrollDriver(
+          scrollable,
+          resolver: const EdgeScrollTargetResolver(),
+          physics: SmoothScrollVelocity(
+            velocityScalar: velocityScalar,
+            minDelta: minimumAutoScrollDelta,
+            maxDelta: maxAutoScrollDelta,
+          ),
+          onScrollViewScrolled: onScrollViewScrolled,
+          animationDuration:
+              animationDuration ?? const Duration(milliseconds: 5),
+        );
 
   static const double _kDefaultAutoScrollVelocityScalar = 7;
   static const double _kDefaultMinAutoScrollDelta = 1.0;
   static const double _kDefaultMaxAutoScrollDelta = 20.0;
 
+  final ScrollDriver _driver;
+
   Offset? lastOffset;
   Duration? lastDuration;
   double? lastEdgeOffset;
   AxisDirection? lastDirection;
+
+  /// Whether the auto scroll is in progress.
+  bool get scrolling => _driver.isActive;
 
   @override
   void startAutoScroll(
@@ -44,15 +72,25 @@ class AutoScroller extends EdgeDraggingAutoScroller
     lastEdgeOffset = edgeOffset;
     lastDirection = direction;
     if (direction != null && direction == AxisDirection.up) {
-      return startAutoScrollIfNecessary(
-        Rect.fromLTWH(offset.dx, offset.dy - edgeOffset, 1, edgeOffset),
+      return _driver.start(
+        Rect.fromLTWH(
+          offset.dx,
+          offset.dy - edgeOffset,
+          1,
+          edgeOffset,
+        ),
         duration: duration,
       );
     }
 
     if (direction != null && direction == AxisDirection.down) {
-      return startAutoScrollIfNecessary(
-        Rect.fromLTWH(offset.dx, offset.dy, 1, edgeOffset),
+      return _driver.start(
+        Rect.fromLTWH(
+          offset.dx,
+          offset.dy,
+          1,
+          edgeOffset,
+        ),
         duration: duration,
       );
     }
@@ -63,10 +101,7 @@ class AutoScroller extends EdgeDraggingAutoScroller
       height: edgeOffset,
     );
 
-    startAutoScrollIfNecessary(
-      dragTarget,
-      duration: duration,
-    );
+    _driver.start(dragTarget, duration: duration);
   }
 
   @override
@@ -75,7 +110,7 @@ class AutoScroller extends EdgeDraggingAutoScroller
     lastDuration = null;
     lastEdgeOffset = null;
     lastDirection = null;
-    super.stopAutoScroll();
+    _driver.stop();
   }
 
   void continueToAutoScroll() {
@@ -89,3 +124,4 @@ class AutoScroller extends EdgeDraggingAutoScroller
     }
   }
 }
+

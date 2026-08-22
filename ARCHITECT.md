@@ -371,12 +371,17 @@ text spans to style. Typewriter scrolling is a separate feature — see below.
 
 ### Typewriter scrolling (`lib/src/editor/typewriter/`)
 
-`TypewriterScrollConfig` lives on `EditorState.typewriter`; a standalone
-`TypewriterScrollController` keeps the focused block vertically centered by
-driving the `EditorScrollController` on selection changes. It is independent
-from zen mode (usable with or without it) and exposes
-`shouldDisableNativeAutoScroll` so the native caret auto-scroll doesn't
-fight the centering.
+`TypewriterScrollStrategy` (a `ScrollStrategy`) keeps the cursor vertically
+centered by driving the `EditorScrollController` on selection changes. It is
+independent from zen mode (usable with or without it) and is passed to
+`NovidentEditor.scrollStrategies`. It centers **instantly** for collapsed
+selections and **delegates to the default edge-follow** for expanded ones.
+
+The scroll system is decomposed into reusable pieces under
+`service/scroll/`: `ScrollTargetResolver` (edge policy), `ScrollVelocity`
+(velocity profile) and `ScrollDriver` (the follow loop), composed by
+`AutoScroller`. `ScrollStrategy` is the full-control seam (like
+`KeyboardStrategy`): the editor delegates, the strategy decides.
 
 ### Spell check (`lib/src/editor/spell_check/`)
 

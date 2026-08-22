@@ -64,6 +64,11 @@ class TypewriterScrollController {
     _lastTopLevelIndex = null;
   }
 
+  /// Unbinds the controller. Call it when the editor goes away.
+  void dispose() {
+    detach();
+  }
+
   /// Scrolls the editor so the top-level block at [topLevelIndex] is
   /// positioned at [TypewriterScrollConfig.centerAlignment] of the viewport.
   ///

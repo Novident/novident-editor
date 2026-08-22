@@ -10,12 +10,15 @@ import 'visible_block_wrapper.dart';
 ///
 /// Vim mode is always wired in (its shortcuts take precedence over the
 /// standard ones); when a [ZenModeController] is provided the zen visuals
-/// (block dimming, ignored colors, typewriter scrolling) are enabled too.
+/// (block dimming, ignored colors) are enabled too, and when a
+/// [TypewriterScrollController] is provided the focused block stays
+/// vertically centered.
 class MyEditor extends StatelessWidget {
   const MyEditor({
     super.key,
     required this.session,
     this.zenController,
+    this.typewriterController,
     this.styles,
     this.padding = const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
     this.autoFocus = false,
@@ -25,9 +28,14 @@ class MyEditor extends StatelessWidget {
 
   final DocumentSession session;
 
-  /// When non-null the editor renders with the zen visuals and disables
-  /// the native caret auto-scroll in favor of the typewriter centering.
+  /// When non-null the editor renders with the zen visuals (block dimming,
+  /// ignored colors).
   final ZenModeController? zenController;
+
+  /// When non-null the editor keeps the focused block vertically centered
+  /// and disables the native caret auto-scroll in favor of the typewriter
+  /// centering.
+  final TypewriterScrollController? typewriterController;
 
   final NovidentStylesConfig? styles;
 
@@ -49,7 +57,8 @@ class MyEditor extends StatelessWidget {
       editorScrollController: session.scrollController,
       focusNode: session.focusNode,
       autoFocus: autoFocus,
-      disableAutoScroll: false,
+      disableAutoScroll: typewriterController?.shouldDisableNativeAutoScroll ??
+          false,
       enableAutoComplete: true,
       showMagnifier: UniversalPlatform.isMobile,
       keyboardStrategies: [

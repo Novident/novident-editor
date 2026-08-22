@@ -71,6 +71,19 @@ void main() {
       expect(style.color, Colors.black.withValues(alpha: 0.35));
     });
 
+    testWidgets('dims plain text without a textColor attribute',
+        (tester) async {
+      final context = await pumpScope(tester, dimmed: true);
+      final style = pipeline.resolveStyle(
+        null,
+        baseStyle,
+        config,
+        node: paragraph(),
+        context: context,
+      );
+      expect(style.color, Colors.black.withValues(alpha: 0.35));
+    });
+
     testWidgets('does not dim when ignoreTextColor is false', (tester) async {
       final context = await pumpScope(
         tester,

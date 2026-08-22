@@ -31,20 +31,21 @@ class ZenSpanPipeline extends NovidentTextSpanPipeline {
       context: context,
     );
     final scope = ZenModeScope.maybeOf(context);
-    if (scope == null || !scope.dimmed || attributes == null) {
+    if (scope == null || !scope.dimmed) {
       return style;
     }
     final config = scope.configuration;
 
     // the transparent attribute is used internally (e.g. for auto-complete
     // ghost text), don't override it.
-    final isTransparent = attributes[RichTextKeys.transparent] == true;
+    final isTransparent = attributes?[RichTextKeys.transparent] == true;
 
-    if (config.ignoreTextColor &&
-        !isTransparent &&
-        attributes[RichTextKeys.textColor] != null) {
+    // Dim the text color of every dimmed block — not only text that carries
+    // an explicit `textColor` attribute. Plain text (the common case) must
+    // look dimmed too, replacing the old whole-block opacity fade.
+    if (config.ignoreTextColor && !isTransparent) {
       final baseColor = base.color;
-      if (baseColor != null && style.color != baseColor) {
+      if (baseColor != null) {
         style = style.copyWith(
           color: _dimmedColor(baseColor, scope.unfocusedOpacity),
         );
@@ -54,10 +55,10 @@ class ZenSpanPipeline extends NovidentTextSpanPipeline {
     // the find & replace highlight (find_bg_color) is never neutralized,
     // otherwise search matches would become invisible.
     final hasFindHighlight =
-        attributes[RichTextKeys.findBackgroundColor] != null;
+        attributes?[RichTextKeys.findBackgroundColor] != null;
     if (config.ignoreHighlightColor &&
         !hasFindHighlight &&
-        attributes[RichTextKeys.backgroundColor] != null) {
+        attributes?[RichTextKeys.backgroundColor] != null) {
       style = style.copyWith(backgroundColor: Colors.transparent);
     }
 

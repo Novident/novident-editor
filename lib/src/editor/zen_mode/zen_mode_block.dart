@@ -2,9 +2,6 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
-import 'zen_mode_configuration.dart';
-import 'zen_mode_scope.dart';
-
 /// Wraps a top-level block and provides its zen dimming state.
 ///
 /// Replaces the old opacity-based wrapper: for text blocks the dimming is

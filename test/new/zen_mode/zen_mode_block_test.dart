@@ -170,7 +170,7 @@ void main() {
       final node = document.root.children[1]; // path [1]
       final config = ValueNotifier(const ZenModeConfiguration());
       final selection = ValueNotifier<Selection?>(
-        Selection.collapsed(Position(path: [0], offset: 0)),
+        Selection.collapsed(Position(path: [0])),
       );
 
       await tester.pumpWidget(

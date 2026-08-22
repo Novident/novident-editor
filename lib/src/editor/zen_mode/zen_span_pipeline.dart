@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
-import 'zen_mode_scope.dart';
-
 /// Layers the zen dimming on top of the effective span pipeline (spell check
 /// or default) without coupling to it.
 ///

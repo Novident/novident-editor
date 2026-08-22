@@ -164,6 +164,37 @@ void main() {
       expect(identical(scopeBefore, scopeAfter), isTrue);
     });
 
+    testWidgets('does not rebuild when only the selection offset changes',
+        (tester) async {
+      final document = documentWith(3);
+      final node = document.root.children[1]; // path [1]
+      final config = ValueNotifier(const ZenModeConfiguration());
+      final selection = ValueNotifier<Selection?>(
+        Selection.collapsed(Position(path: [0], offset: 0)),
+      );
+
+      await tester.pumpWidget(
+        buildBlock(
+          node: node,
+          config: config,
+          selection: selection,
+        ),
+      );
+      final scopeBefore =
+          tester.widget<ZenModeScope>(find.byType(ZenModeScope));
+      expect(scopeBefore.dimmed, isTrue);
+
+      // typing inside block [0]: only the offset changes, the selection
+      // paths stay the same → the dimmed state cannot change → no setState.
+      selection.value = Selection.collapsed(Position(path: [0], offset: 3));
+      await tester.pump();
+
+      final scopeAfter =
+          tester.widget<ZenModeScope>(find.byType(ZenModeScope));
+      expect(scopeAfter.dimmed, isTrue);
+      expect(identical(scopeBefore, scopeAfter), isTrue);
+    });
+
     testWidgets('rebuilds when its own dimmed state flips', (tester) async {
       final document = documentWith(3);
       final node = document.root.children[1]; // path [1]

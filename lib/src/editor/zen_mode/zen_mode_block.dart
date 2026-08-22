@@ -49,6 +49,14 @@ class ZenModeBlock extends StatefulWidget {
 class _ZenModeBlockState extends State<ZenModeBlock> {
   bool _dimmed = false;
 
+  /// The normalized selection start/end paths that determined [_dimmed].
+  ///
+  /// The dimmed state depends only on these paths (not the offsets), so when
+  /// they are unchanged — e.g. typing inside the same block — the focus
+  /// recompute is skipped entirely instead of re-running `inSelection` on
+  /// every keystroke.
+  (Path, Path)? _lastSelectionPaths;
+
   @override
   void initState() {
     super.initState();
@@ -68,7 +76,9 @@ class _ZenModeBlockState extends State<ZenModeBlock> {
       oldWidget.selection.removeListener(_onChanged);
       widget.selection.addListener(_onChanged);
     }
-    // re-evaluate with the new widget (e.g. a different node).
+    // the node may have changed (virtualized list recycling) — force a
+    // recompute against the new node.
+    _lastSelectionPaths = null;
     _onChanged();
   }
 
@@ -97,7 +107,29 @@ class _ZenModeBlockState extends State<ZenModeBlock> {
   }
 
   void _onChanged() {
-    final dimmed = _computeDimmed();
+    final config = widget.configuration.value;
+    final selection = widget.selection.value;
+    if (!config.enabled || selection == null) {
+      _setDimmed(false);
+      _lastSelectionPaths = null;
+      return;
+    }
+    final normalized = selection.normalized;
+    final startPath = normalized.start.path;
+    final endPath = normalized.end.path;
+    // The dimmed state depends only on the selection's paths, not its
+    // offsets. When they are unchanged (e.g. typing inside the same block),
+    // skip the focus recompute entirely.
+    if (_lastSelectionPaths != null &&
+        _lastSelectionPaths!.$1.equals(startPath) &&
+        _lastSelectionPaths!.$2.equals(endPath)) {
+      return;
+    }
+    _lastSelectionPaths = (startPath, endPath);
+    _setDimmed(!_isFocused(widget.node, selection));
+  }
+
+  void _setDimmed(bool dimmed) {
     if (dimmed != _dimmed) {
       setState(() => _dimmed = dimmed);
     }

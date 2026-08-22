@@ -47,10 +47,11 @@ lib/
     │   ├── selection_menu/
     │   ├── spell_check/                     # spell_check_service, spell_check_span_pipeline
     │   ├── toolbar/                         # desktop/ (static_toolbar, items/color, items/link) + mobile/
+    │   ├── typewriter/                      # typewriter_scroll_config, typewriter_scroll_controller (standalone)
     │   ├── util/                            # debounce, delta_util, file_picker/, link_util, platform_extension…
     │   ├── vim_mode/                        # vim_mode_controller, vim_keyboard_strategy, vim_selection_renderer,
     │   │                                    #   vim_mode_configuration, vim_mode_shortcuts
-    │   └── zen_mode/                        # zen_mode_controller, block_wrapper, text_span_decorator
+    │   └── zen_mode/                        # zen_mode_controller, zen_mode_block, zen_mode_scope, zen_span_pipeline
     ├── editor_state.dart                    # EditorState — single mutable state (public API)
     ├── extensions/                          # node, position, attributes, color, theme, alignment extensions
     ├── flutter/                             # vendored forks of Flutter ecosystem code
@@ -117,7 +118,7 @@ novident_editor_core                    (Position, Selection, SelectableMixin, t
 
 - `novident_editor_document` knows nothing about selection, styles, or rendering — only the node tree, rich-text Delta, paths, and attributes.
 - `novident_editor_core` depends only on document; `novident_editor_styles` and `novident_editor_selection` depend only on document + core; `novident_editor_rich_text` depends on document + core + styles + selection.
-- The root `novident_editor` is the **only** place for block components, editor services, plugins, toolbar, vim/zen, and find & replace.
+- The root `novident_editor` is the **only** place for block components, editor services, plugins, toolbar, vim/zen/typewriter, and find & replace.
 - `novident_editor_spell_check_interface` must stay pure Dart — no `flutter` import, ever.
 - Never let a lower layer import a higher one; a package must not import the root `novident_editor` or a sibling it doesn't already depend on.
 
@@ -127,6 +128,7 @@ novident_editor_core                    (Position, Selection, SelectableMixin, t
 - **Selection rendering**: implement `SelectionRenderer`; the deprecated head-cursor methods (`buildExpandedHeadCursor`, `paintExpandedHeadCursor`, `expandedHeadPosition`) are replaced by computing the head and injecting it into the rects in `onSelectionRectsMeasured` (see `VimSelectionRenderer`).
 - **Spell check runs out of band**: analysis after typing inactivity, marks stored in the delta, render pipeline underlines; no checker call inside `build`.
 - **IME**: text input goes through the `ime/` services (`delta_input_*`, `non_delta_input_service`, `text_diff`).
+- **Optional modes compose over the span pipeline**: `EditorState.setSpanPipelineWrapper` lets a mode (e.g. zen) layer its behavior over the effective pipeline (spell check or default) without coupling — `ZenSpanPipeline` wraps it as a delegate and only overrides `resolveStyle` (which now receives `node`/`context`).
 
 ## Entry points (public API)
 
@@ -191,5 +193,5 @@ Every fix, modification, or feature **must** ship with tests. A change without t
 
 ## Roadmap context
 
-- **Done** (CHANGELOG): layered extraction (1.0.4), style system + font provider + static toolbar (1.0.3), vim emulation, zen mode, spell check, tables, named styles with `basedOn`, `keyboardStrategies` (1.0.5).
-- **Next** (README roadmap): Zen mode performance, full customization of every default block, richer clipboard (currently plain text), translations, typewriter scrolling without Zen, uncouple keyboard/scroll services.
+- **Done** (CHANGELOG): layered extraction (1.0.4), style system + font provider + static toolbar (1.0.3), vim emulation, zen mode, spell check, tables, named styles with `basedOn`, `keyboardStrategies` (1.0.5), zen mode performance (pipeline dimming, O(1) rebuilds), standalone typewriter scrolling.
+- **Next** (README roadmap): full customization of every default block, richer clipboard (currently plain text), translations, uncouple keyboard/scroll services.

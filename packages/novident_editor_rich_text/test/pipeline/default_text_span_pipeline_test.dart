@@ -111,6 +111,19 @@ void main() {
       expect(style.fontSize, 20.0);
       expect(style.fontFamily, 'Roboto'); // preserved from base
     });
+
+    test('node and context are ignored by the default pipeline', () {
+      final attributes = {RichTextKeys.bold: true, RichTextKeys.textColor: '#FF0000'};
+      final withArgs = pipeline.resolveStyle(
+        attributes,
+        baseStyle,
+        config,
+        node: paragraph(),
+        context: null,
+      );
+      final withoutArgs = pipeline.resolveStyle(attributes, baseStyle, config);
+      expect(withArgs, withoutArgs);
+    });
   });
 
   group('phase 2: transformText', () {

@@ -58,7 +58,8 @@ class MyEditor extends StatelessWidget {
       autoFocus: autoFocus,
       enableAutoComplete: true,
       showMagnifier: UniversalPlatform.isMobile,
-      scrollStrategies: typewriterStrategy != null
+      scrollStrategies: session.zenController?.value.enabled == true &&
+              typewriterStrategy != null
           ? [typewriterStrategy!]
           : const [],
       keyboardStrategies: [
@@ -75,7 +76,7 @@ class MyEditor extends StatelessWidget {
           characterShortcutEvents: standardCharacterShortcutEvents,
         ),
       ],
-      autoScrollEdgeOffset: 10,
+      autoScrollEdgeInset: 10,
       // The mobile surface needs the mobile style: `EditorStyle.desktop`
       // hardcodes `magnifierSize = Size.zero` (and zero-sized drag
       // handles), which makes the magnifier invisible on Android.

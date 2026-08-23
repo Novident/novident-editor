@@ -14,7 +14,7 @@ import 'package:novident_editor/src/editor/editor_component/service/scroll/auto_
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const edgeOffset = 100.0;
+  const inset = 100.0;
 
   Future<ScrollController> pumpScrollable(WidgetTester tester) async {
     final controller = ScrollController();
@@ -50,7 +50,7 @@ void main() {
       // caret 50px from the bottom edge → within edgeOffset(100) → must scroll.
       autoScroller.startAutoScroll(
         Offset(200, viewportHeight - 50),
-        edgeOffset: edgeOffset,
+        inset: inset,
       );
       // bounded pumps: the recursive follow loop terminates at maxScrollExtent.
       await tester.pump();
@@ -75,7 +75,7 @@ void main() {
       // caret 150px from the bottom edge → beyond edgeOffset(100) → no scroll.
       autoScroller.startAutoScroll(
         Offset(200, viewportHeight - 150),
-        edgeOffset: edgeOffset,
+        inset: inset,
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
@@ -101,7 +101,7 @@ void main() {
       // caret 50px from the top edge → within edgeOffset(100) → must scroll up.
       autoScroller.startAutoScroll(
         Offset(200, 50),
-        edgeOffset: edgeOffset,
+        inset: inset,
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));

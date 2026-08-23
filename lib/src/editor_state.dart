@@ -113,8 +113,16 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   /// Whether the editor should disable auto scroll.
   bool disableAutoScroll = false;
 
-  /// The edge offset of the auto scroll.
-  double autoScrollEdgeOffset = novidentEditorAutoScrollEdgeOffset;
+  /// The inset (dead zone) from each viewport edge, in logical pixels, within
+  /// which the caret does not trigger auto-scroll.
+  double autoScrollEdgeInset = novidentEditorAutoScrollEdgeInset;
+
+  /// Deprecated: use [autoScrollEdgeInset] instead.
+  @Deprecated('Use autoScrollEdgeInset instead.')
+  double get autoScrollEdgeOffset => autoScrollEdgeInset;
+
+  @Deprecated('Use autoScrollEdgeInset instead.')
+  set autoScrollEdgeOffset(double value) => autoScrollEdgeInset = value;
 
   /// The style of the editor.
   ///

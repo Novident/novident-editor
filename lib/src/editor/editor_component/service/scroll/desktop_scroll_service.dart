@@ -98,8 +98,7 @@ class _DesktopScrollServiceState extends State<DesktopScrollService>
   @override
   void startAutoScroll(
     Offset offset, {
-    double edgeOffset = 200,
-    AxisDirection? direction,
+    double inset = 200,
     Duration? duration,
   }) {
     if (editorState.disableAutoScroll) {
@@ -108,8 +107,7 @@ class _DesktopScrollServiceState extends State<DesktopScrollService>
 
     autoScroller?.startAutoScroll(
       offset,
-      edgeOffset: edgeOffset,
-      direction: direction,
+      inset: inset,
       duration: duration ?? _kDesktopAutoScrollTickDuration,
     );
   }

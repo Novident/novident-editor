@@ -34,6 +34,7 @@ class EditorSessionController extends ChangeNotifier {
           ownsZenController: false,
         ) {
     _session.addListener(_onSessionChanged);
+    _zenController?.addListener(_onSessionChanged);
   }
 
   /// Shared across panes (desktop) or owned by the view (mobile).
@@ -46,7 +47,7 @@ class EditorSessionController extends ChangeNotifier {
   /// disposes it in [dispose], not per-session).
   final ZenModeController? _zenController;
 
-  final TypewriterScrollStrategy? _typewriterStrategy;
+  TypewriterScrollStrategy? _typewriterStrategy;
 
   DocumentSession _session;
   DocumentContentStore? _store;

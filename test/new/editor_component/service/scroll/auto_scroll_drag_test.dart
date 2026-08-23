@@ -15,7 +15,7 @@ import '../../../util/document_util.dart';
 ///
 /// Each drag direction is its own independent test. The invariant under test:
 /// **auto-scroll starts BEFORE the finger touches the viewport edge** — as soon
-/// as it enters the configured `edgeOffset` band. With `autoScrollEdgeOffset =
+/// as it enters the configured `inset` band. With `autoScrollEdgeInset =
 /// 100`, dragging the finger to 50px from the edge (inside the 100px band, but
 /// not touching it) must already scroll.
 void main() {
@@ -40,7 +40,7 @@ void main() {
       NovidentEditor(
         editorState: editorState,
         editorScrollController: scrollController,
-        autoScrollEdgeOffset: edgeOffset,
+        autoScrollEdgeInset: edgeOffset,
       ),
     );
     return scrollController;

@@ -92,14 +92,12 @@ class _MobileScrollServiceState extends State<MobileScrollService>
   @override
   void startAutoScroll(
     Offset offset, {
-    double edgeOffset = 200,
-    AxisDirection? direction,
+    double inset = 200,
     Duration? duration,
   }) {
     autoScroller?.startAutoScroll(
       offset,
-      edgeOffset: edgeOffset,
-      direction: direction,
+      inset: inset,
       duration: duration,
     );
   }

@@ -7,14 +7,16 @@ import 'scroll_velocity.dart';
 /// Drives the scrollable toward a resolved [ScrollTarget] in small,
 /// incremental ticks (the "follow" loop).
 ///
-/// Each tick re-resolves the target against the current viewport geometry
-/// (the scrollable moves, so the geometry changes), computes a delta via the
+/// Each tick re-resolves the caret against the current viewport geometry (the
+/// scrollable moves, so the geometry changes), computes a delta via the
 /// [physics], applies it clamped to the scroll extents, and recurses until the
-/// target is back inside the dead zone.
+/// caret is back inside the dead zone.
 ///
-/// This reproduces the recursive `_scroll()` loop that used to live inside
-/// `EdgeDraggingAutoScroller`, with the edge-detection and velocity logic
-/// extracted into [resolver] and [physics].
+/// Coordinate contract: the target is converted to **viewport-local**
+/// coordinates exactly once in [start], via `RenderBox.globalToLocal`. This
+/// removes the previous `deltaToScrollOrigin` + `getTransformTo(null)` mixing
+/// (which was only accidentally correct and broke under keyboard resize, nested
+/// scrollables, DPR ≠ 1, and ancestor transforms).
 class ScrollDriver {
   ScrollDriver(
     this.scrollable, {
@@ -31,21 +33,27 @@ class ScrollDriver {
   final Duration animationDuration;
 
   Duration? _currentDuration;
-  Rect? _dragTargetRelatedToScrollOrigin;
+  double? _caretDocumentOffset;
+  double _currentInset = 20.0;
   bool _scrolling = false;
 
   /// Whether a scroll session is in progress.
   bool get isActive => _scrolling;
 
-  /// Starts (or continues) an auto-scroll toward [dragTarget] (in global
-  /// coordinates). If a session is already running, the new target is picked
-  /// up on the next tick.
-  void start(Rect dragTarget, {Duration? duration}) {
-    final Offset deltaToOrigin = scrollable.deltaToScrollOrigin;
-    _dragTargetRelatedToScrollOrigin = dragTarget.translate(
-      deltaToOrigin.dx,
-      deltaToOrigin.dy,
-    );
+  /// Starts (or continues) an auto-scroll toward [globalTarget] (a global
+  /// point — the caret / finger position), using [inset] as the dead zone from
+  /// each viewport edge. If a session is already running, the new target is
+  /// picked up on the next tick.
+  void start(Offset globalTarget, {required double inset, Duration? duration}) {
+    final RenderBox box = scrollable.context.findRenderObject()! as RenderBox;
+    final Offset caretLocal = box.globalToLocal(globalTarget);
+    // Convert to DOCUMENT (scroll-origin) coordinates. The target is fixed in
+    // the document frame; as the scrollable moves (pixels changes), the
+    // target's viewport-local position changes, so the overshoot converges.
+    _caretDocumentOffset =
+        scrollable.position.pixels +
+        _offsetExtent(caretLocal, axisDirectionToAxis(scrollable.axisDirection));
+    _currentInset = inset;
     _currentDuration = duration;
     if (_scrolling) {
       // The change will be picked up in the next scroll.
@@ -63,51 +71,23 @@ class ScrollDriver {
 
   Future<void> _scroll() async {
     try {
-      final RenderBox scrollRenderBox =
-          scrollable.context.findRenderObject()! as RenderBox;
-      final Matrix4 transform = scrollRenderBox.getTransformTo(null);
-      final Rect globalRect = MatrixUtils.transformRect(
-        transform,
-        Rect.fromLTWH(
-          0,
-          0,
-          scrollRenderBox.size.width,
-          scrollRenderBox.size.height,
-        ),
-      );
-      final Rect transformedDragTarget = MatrixUtils.transformRect(
-        transform,
-        _dragTargetRelatedToScrollOrigin!,
-      );
-
       _scrolling = true;
 
-      final Offset deltaToOrigin = scrollable.deltaToScrollOrigin;
-      final Offset viewportOrigin =
-          globalRect.topLeft.translate(deltaToOrigin.dx, deltaToOrigin.dy);
-      final Rect viewport = viewportOrigin & globalRect.size;
-
-      // ---- INVESTIGATION LOG: geometry before resolve ----
-      debugPrint(
-        '[scroll-driver] pixels=${scrollable.position.pixels} '
-        'viewportTop=${viewport.top.toStringAsFixed(1)} '
-        'viewportBottom=${viewport.bottom.toStringAsFixed(1)} '
-        'dragTargetTop=${transformedDragTarget.top.toStringAsFixed(1)} '
-        'dragTargetBottom=${transformedDragTarget.bottom.toStringAsFixed(1)} '
-        'caretCenterY=${transformedDragTarget.center.dy.toStringAsFixed(1)}',
-      );
+      final ScrollPosition position = scrollable.position;
+      // Re-derive the viewport-local caret position from the (fixed) document
+      // offset and the current pixels: it decreases as we scroll, so the
+      // overshoot converges instead of staying constant.
+      final double caretOffset = _caretDocumentOffset! - position.pixels;
+      final double viewportDimension = position.viewportDimension;
 
       final ScrollTarget? target = resolver.resolve(
-        target: transformedDragTarget,
-        viewport: viewport,
+        caretOffset: caretOffset,
+        viewportDimension: viewportDimension,
+        inset: _currentInset,
         axisDirection: scrollable.axisDirection,
-        pixels: scrollable.position.pixels,
-        minScrollExtent: scrollable.position.minScrollExtent,
-        maxScrollExtent: scrollable.position.maxScrollExtent,
-      );
-
-      debugPrint(
-        '[scroll-driver] resolved=${target == null ? 'null(no-scroll)' : 'overshoot=${target.overshoot.toStringAsFixed(1)} dir=${target.direction}'}',
+        pixels: position.pixels,
+        minScrollExtent: position.minScrollExtent,
+        maxScrollExtent: position.maxScrollExtent,
       );
 
       if (target == null) {
@@ -119,13 +99,13 @@ class ScrollDriver {
       final double delta = physics.deltaFor(target.overshoot);
       final double sign =
           target.direction == ScrollDirection.increase ? 1.0 : -1.0;
-      double newOffset = scrollable.position.pixels + sign * delta;
+      double newOffset = position.pixels + sign * delta;
       newOffset = newOffset.clamp(
-        scrollable.position.minScrollExtent,
-        scrollable.position.maxScrollExtent,
+        position.minScrollExtent,
+        position.maxScrollExtent,
       );
 
-      final double currentPixels = scrollable.position.pixels;
+      final double currentPixels = position.pixels;
       double deltaPixels = newOffset - currentPixels;
       if (deltaPixels.abs() < physics.minDelta) {
         if (deltaPixels.abs() <= precisionErrorTolerance) {
@@ -135,8 +115,8 @@ class ScrollDriver {
         final double direction = deltaPixels.sign;
         final double targetOffset =
             (currentPixels + direction * physics.minDelta).clamp(
-          scrollable.position.minScrollExtent,
-          scrollable.position.maxScrollExtent,
+          position.minScrollExtent,
+          position.maxScrollExtent,
         );
         newOffset = targetOffset.toDouble();
         deltaPixels = newOffset - currentPixels;
@@ -146,7 +126,7 @@ class ScrollDriver {
         }
       }
 
-      await scrollable.position.moveTo(
+      await position.moveTo(
         newOffset,
         duration: _currentDuration ?? animationDuration,
         curve: Curves.linear,
@@ -161,5 +141,11 @@ class ScrollDriver {
       _scrolling = false;
     }
   }
-}
 
+  double _offsetExtent(Offset offset, Axis axis) {
+    return switch (axis) {
+      Axis.horizontal => offset.dx,
+      Axis.vertical => offset.dy,
+    };
+  }
+}

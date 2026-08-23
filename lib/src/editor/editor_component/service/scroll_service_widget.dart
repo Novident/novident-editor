@@ -62,35 +62,14 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
       value: widget.editorScrollController,
       child: Builder(
         builder: (context) {
-          final child = _withEdgeZoneDebugOverlay(widget.child);
           if (PlatformExtension.isDesktopOrWeb) {
-            return _buildDesktopScrollService(context, child);
+            return _buildDesktopScrollService(context, widget.child);
           } else if (PlatformExtension.isMobile) {
-            return _buildMobileScrollService(context, child);
+            return _buildMobileScrollService(context, widget.child);
           }
           throw UnimplementedError();
         },
       ),
-    );
-  }
-
-  /// DEBUG overlay: paints the auto-scroll edge band (the area at
-  /// `edgeOffset` from the top and bottom of the viewport where the
-  /// auto-scroll kicks in) so the edge can be calibrated visually.
-  Widget _withEdgeZoneDebugOverlay(Widget child) {
-    return Stack(
-      children: [
-        child,
-        Positioned.fill(
-          child: IgnorePointer(
-            child: CustomPaint(
-              painter: _EdgeZoneDebugPainter(
-                edgeOffset: editorState.autoScrollEdgeOffset,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -123,11 +102,6 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
       return;
     }
 
-    debugPrint('[scroll] _onSelectionChanged '
-        'sel=${selection.start.path}/${selection.start.offset} '
-        'reason=${editorState.selectionUpdateReason} '
-        'dragMode=${editorState.selectionDragModeValue()}');
-
     // Wait two frames before measuring: the text insertion (IME) updates the
     // document and selection synchronously, but the rebuild that lays out the
     // new text happens in the NEXT frame. A single post-frame callback would
@@ -151,8 +125,6 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
         // consult the strategies in order; the first that handles wins.
         for (final strategy in widget.scrollStrategies) {
           final decision = strategy.onSelectionChanged(ctx);
-          debugPrint('[scroll] strategy=${strategy.runtimeType} '
-              'decision=$decision');
           if (decision == ScrollDecision.handled) {
             return;
           }
@@ -164,10 +136,8 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
         // back to the finger position (see _defaultEdgeFollow).
         if (selectionRects.isEmpty &&
             editorState.selectionDragModeValue() == null) {
-          debugPrint('[scroll] edge-follow: no rects');
           return;
         }
-        debugPrint('[scroll] edge-follow');
         _defaultEdgeFollow(selection, selectionRects);
       });
     });
@@ -177,7 +147,6 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
   /// AutoScroller. This is the fallback when no strategy handles the event.
   void _defaultEdgeFollow(Selection selection, List<Rect> selectionRects) {
     Rect targetRect;
-    AxisDirection? direction;
     final dynamic dragMode =
         editorState.selectionExtraInfo?['selection_drag_mode'];
 
@@ -196,8 +165,7 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
     if (selectionRects.isEmpty && dragMode != null) {
       final finger = editorState.service.selectionService.lastPanOffset;
       if (finger != null) {
-        debugPrint('[scroll] edge-follow: no rects, using finger $finger');
-        _startAutoScrollForDrag(finger, dragMode, direction);
+        _startAutoScrollForDrag(finger, dragMode);
         return;
       }
     }
@@ -205,11 +173,9 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
     switch (dragMode?.toString()) {
       case 'MobileSelectionDragMode.leftSelectionHandle':
         targetRect = selectionRects.first;
-        direction = AxisDirection.up;
         break;
       case 'MobileSelectionDragMode.rightSelectionHandle':
         targetRect = selectionRects.last;
-        direction = AxisDirection.down;
         break;
       default:
         targetRect = selectionRects.last;
@@ -226,7 +192,7 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
     lastSelection = selection;
 
     final endTouchPoint = targetRect.centerRight;
-    _startAutoScrollForDrag(endTouchPoint, dragMode, direction);
+    _startAutoScrollForDrag(endTouchPoint, dragMode);
   }
 
   /// Starts the auto-scroll toward [endTouchPoint] (global coordinates),
@@ -234,12 +200,7 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
   void _startAutoScrollForDrag(
     Offset endTouchPoint,
     dynamic dragMode,
-    AxisDirection? direction,
   ) {
-    NovidentEditorLog.scroll.debug(
-      'startAutoScrollForDrag point=$endTouchPoint '
-      'edgeOffset=${editorState.autoScrollEdgeOffset} direction=$direction',
-    );
     if (PlatformExtension.isMobile) {
       // Determine if this is a drag operation
       final bool isDragOperation = dragMode != null &&
@@ -268,8 +229,7 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
         // Don't skip even if already scrolling, because direction may have changed
         startAutoScroll(
           endTouchPoint,
-          edgeOffset: editorState.autoScrollEdgeOffset,
-          direction: direction,
+          inset: editorState.autoScrollEdgeInset,
           duration: scrollDuration,
         );
       });
@@ -279,8 +239,7 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
       }
       startAutoScroll(
         endTouchPoint,
-        edgeOffset: editorState.autoScrollEdgeOffset,
-        direction: direction,
+        inset: editorState.autoScrollEdgeInset,
         duration: Duration.zero,
       );
     }
@@ -330,14 +289,12 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
   @override
   void startAutoScroll(
     Offset offset, {
-    double edgeOffset = 100,
-    AxisDirection? direction,
+    double inset = 100,
     Duration? duration,
   }) {
     forward.startAutoScroll(
       offset,
-      edgeOffset: edgeOffset,
-      direction: direction,
+      inset: inset,
       duration: duration,
     );
   }
@@ -347,36 +304,4 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
 
   @override
   void goBallistic(double velocity) => forward.goBallistic(velocity);
-}
-
-/// DEBUG painter: fills the auto-scroll edge band (the area at `edgeOffset`
-/// from the top and bottom of the viewport). When the caret / finger enters
-/// this band the auto-scroll starts, so this shows exactly where the edge is.
-class _EdgeZoneDebugPainter extends CustomPainter {
-  _EdgeZoneDebugPainter({required this.edgeOffset});
-
-  final double edgeOffset;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final band = edgeOffset;
-    final paint = Paint()
-      ..color = const Color(0x66FF0000) // semi-transparent red
-      ..style = PaintingStyle.fill;
-
-    // top band
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, band),
-      paint,
-    );
-    // bottom band
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height - band, size.width, band),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _EdgeZoneDebugPainter oldDelegate) =>
-      oldDelegate.edgeOffset != edgeOffset;
 }

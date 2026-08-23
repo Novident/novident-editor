@@ -5,31 +5,27 @@ import 'package:novident_editor/src/editor/editor_component/service/scroll/scrol
 
 /// # Purpose
 ///
-/// This test EXISTS to **reproduce and freeze a specific bug** reported on a
-/// physical device: the auto-scroll fires while the caret is **still inside the
-/// viewport** — it never touches, let alone leaves, the viewport edge.
+/// This test reproduces and pins a specific bug reported on a physical device:
+/// the auto-scroll fires while the caret is **still inside the viewport** — it
+/// never touches, let alone leaves, the viewport edge.
 ///
-/// It is a **regression-reproduction test**: it asserts the CURRENT (buggy)
-/// behavior on purpose, so the bug is documented and cannot silently change
-/// without someone noticing. When the bug is eventually fixed, THIS test must
-/// be updated (or inverted) to assert the DESIRED behavior instead.
+/// It exists to (a) document the bug with the exact device-log numbers, and (b)
+/// verify the fix: with an **explicit `inset`** the trigger is predictable, and
+/// with `inset = 0` the auto-scroll fires only once the caret actually crosses
+/// the edge.
 ///
-/// # The bug (root cause)
+/// # The bug (root cause) and the fix
 ///
-/// `edgeOffset` does not mean "distance the caret may overshoot the edge". It
-/// is used to **inflate the drag-target rect** around the caret, and the
-/// trigger compares the **inflated rect's** edge against the viewport edge.
-/// So the auto-scroll fires `edgeOffset` px *before* the caret reaches the
-/// edge — i.e. while the caret is still comfortably inside the viewport.
+/// The old code inflated a drag-target rect with `edgeOffset` and compared the
+/// **rect's** edge against the viewport edge, so it fired `edgeOffset` px before
+/// the caret reached the edge. The fix replaces the rect with a **viewport-local
+/// caret offset** and an **explicit symmetric `inset`** (dead zone):
 ///
 /// ```
-/// trigger: caret + edgeOffset > viewportBottom   ← current (buggy)
-/// desired: caret            > viewportBottom   ← fires only after the caret
-///                                                actually crosses the edge
+/// old:      caret + edgeOffset > viewportBottom      ← fires early (rect inflated)
+/// new:      caretOffset      > viewportDimension - inset
+/// fixed:    inset = 0  ⇒  fires only once caretOffset > viewportDimension
 /// ```
-///
-/// On mobile with the keyboard up, the viewport shrinks (~319px), so a small
-/// `edgeOffset` (10px ≈ 3%) makes the auto-scroll feel aggressively early.
 ///
 /// # Source of truth (physical-device logs, `[scroll-driver]`)
 ///
@@ -39,118 +35,118 @@ import 'package:novident_editor/src/editor/editor_component/service/scroll/scrol
 /// resolved=overshoot=2.6 dir=increase
 /// ```
 ///
-/// Decoded:
-/// * `edgeOffset = 10` (drag target is `2×10 = 20px` tall, centered on the caret).
-/// * The caret (`463.7`) is **7.4px INSIDE** the viewport bottom (`471.1`).
-/// * Yet `resolved=overshoot=2.6` — the auto-scroll fires anyway, because the
-///   trigger compares the **inflated** drag-target bottom (`caret + edgeOffset
-///   = 473.7`) against the viewport bottom (`471.1`), not the caret itself.
-///
-/// # How to read this file
-///
-/// * The **unit group** pins the exact geometry from the log (caret 7.4px
-///   inside, `edgeOffset=10`, overshoot 2.6).
-/// * The **widget test** proves the same thing end-to-end: a real scrollable
-///   moves its offset even though the caret is 7px inside the viewport.
-///
-/// Both assert the buggy behavior. If the semantic of `edgeOffset` is ever
-/// changed to "fire only once the caret crosses the edge", update the
-/// assertions here accordingly.
+/// Decoded into a clean 0..319 viewport-local frame: caret at `311.6` (7.4px
+/// inside the bottom `319`), `edgeOffset = 10`, overshoot `2.6`.
 void main() {
-  const resolver = EdgeScrollTargetResolver();
-  const edgeOffset = 10.0;
+  const resolver = EdgeInsetResolver();
 
-  group('BUG reproduction — caret INSIDE the viewport still triggers', () {
-    // Mirrors the log numbers, mapped into a clean 0..319 viewport-local frame:
-    // viewport height 319, caret at 311.6 → 7.4px from the bottom.
-    const viewportHeight = 319.0;
-    const caret = Offset(200, 311.6); // 7.4px INSIDE the viewport bottom
+  // Mirrors the log numbers in a clean 0..319 viewport-local frame.
+  const viewportDimension = 319.0;
+  const caret = 311.6; // 7.4px INSIDE the viewport bottom
 
+  group('BUG reproduction + fix — caret INSIDE the viewport', () {
     test('the caret is verifiably inside the viewport', () {
+      expect(caret, lessThan(viewportDimension));
       expect(
-        caret.dy,
-        lessThan(viewportHeight),
-        reason: 'precondition: the caret has NOT touched the viewport edge',
-      );
-      expect(
-        viewportHeight - caret.dy,
+        viewportDimension - caret,
         closeTo(7.4, 0.001),
         reason: 'the caret is 7.4px from the bottom edge',
       );
     });
 
-    test('yet resolve() returns a ScrollTarget (auto-scroll fires)', () {
-      final dragTarget = buildAutoScrollDragTarget(caret, edgeOffset, null);
-
-      // The drag target is inflated by edgeOffset: bottom = caret + 10 = 321.6,
-      // which is BELOW the viewport bottom (319).
-      expect(dragTarget.bottom, closeTo(321.6, 0.001));
-      expect(dragTarget.bottom - viewportHeight, closeTo(2.6, 0.001));
-
+    test('with inset=10 (the logged edgeOffset) it still fires — the band', () {
+      // Reproduces the log: caret 7.4px inside, inset 10 → overshoot 2.6.
       final result = resolver.resolve(
-        target: dragTarget,
-        viewport: Rect.fromLTWH(0, 0, 400, viewportHeight),
+        caretOffset: caret,
+        viewportDimension: viewportDimension,
+        inset: 10,
         axisDirection: AxisDirection.down,
         pixels: 45,
         minScrollExtent: 0,
         maxScrollExtent: 1000,
       );
+      expect(result, isNotNull);
+      expect(result!.overshoot, closeTo(2.6, 0.001)); // matches the log
+      expect(result.direction, ScrollDirection.increase);
+    });
 
+    test('with inset=0 it does NOT fire while the caret is inside', () {
+      // The fix: no dead zone means the caret must actually cross the edge.
+      final result = resolver.resolve(
+        caretOffset: caret,
+        viewportDimension: viewportDimension,
+        inset: 0,
+        axisDirection: AxisDirection.down,
+        pixels: 45,
+        minScrollExtent: 0,
+        maxScrollExtent: 1000,
+      );
       expect(
         result,
-        isNotNull,
+        isNull,
         reason:
-            'BUG: auto-scroll triggers even though the caret (311.6) is '
-            '7.4px INSIDE the viewport bottom (319)',
+            'fixed: a caret 7.4px INSIDE the viewport must NOT trigger when inset=0',
       );
-      // Matches the log's overshoot=2.6 exactly.
-      expect(result!.overshoot, closeTo(2.6, 0.001));
-      expect(result.direction, ScrollDirection.increase);
     });
   });
 
-  group('BUG reproduction — real scrollable scrolls with the caret inside', () {
-    testWidgets(
-      'AutoScroller moves the scroll offset while the caret is 7px inside',
-      (tester) async {
-        final controller = ScrollController();
-        await tester.pumpWidget(
-          MaterialApp(
-            home: ListView(
-              controller: controller,
-              children: const [SizedBox(height: 2000)],
-            ),
+  group('BUG reproduction + fix — real scrollable', () {
+    Future<(ScrollController, AutoScroller)> pumpAutoScroller(
+      WidgetTester tester,
+    ) async {
+      final controller = ScrollController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ListView(
+            controller: controller,
+            children: const [SizedBox(height: 2000)],
           ),
-        );
-        final scrollableState =
-            tester.state<ScrollableState>(find.byType(Scrollable).first);
-        final autoScroller = AutoScroller(
-          scrollableState,
-          animationDuration: Duration.zero,
-        );
+        ),
+      );
+      final scrollableState =
+          tester.state<ScrollableState>(find.byType(Scrollable).first);
+      return (
+        controller,
+        AutoScroller(scrollableState, animationDuration: Duration.zero),
+      );
+    }
 
-        final viewportHeight =
-            tester.getSize(find.byType(Scrollable).first).height;
+    testWidgets('inset=10: the scroll offset moves while the caret is 7px inside',
+        (tester) async {
+      final (controller, autoScroller) = await pumpAutoScroller(tester);
+      final viewportHeight =
+          tester.getSize(find.byType(Scrollable).first).height;
+      final caretY = viewportHeight - 7; // 7px INSIDE
 
-        // caret 7px from the bottom edge — INSIDE the viewport.
-        final caretY = viewportHeight - 7;
-        expect(caretY, lessThan(viewportHeight));
+      autoScroller.startAutoScroll(Offset(200, caretY), inset: 10);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
-        autoScroller.startAutoScroll(
-          Offset(200, caretY),
-          edgeOffset: edgeOffset,
-        );
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 50));
+      // The band: with inset 10, a caret 7px inside still scrolls (the bug).
+      expect(
+        controller.offset,
+        greaterThan(0),
+        reason: 'inset=10: a caret 7px inside is within the dead zone → scrolls',
+      );
+    });
 
-        expect(
-          controller.offset,
-          greaterThan(0),
-          reason:
-              'BUG: the scroll offset moved even though the caret was '
-              '7px INSIDE the viewport (never touched the edge)',
-        );
-      },
-    );
+    testWidgets('inset=0: the scroll offset does NOT move while the caret is inside',
+        (tester) async {
+      final (controller, autoScroller) = await pumpAutoScroller(tester);
+      final viewportHeight =
+          tester.getSize(find.byType(Scrollable).first).height;
+      final caretY = viewportHeight - 7; // 7px INSIDE
+
+      autoScroller.startAutoScroll(Offset(200, caretY), inset: 0);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(
+        controller.offset,
+        0,
+        reason:
+            'fixed: a caret 7px INSIDE the viewport must NOT scroll when inset=0',
+      );
+    });
   });
 }

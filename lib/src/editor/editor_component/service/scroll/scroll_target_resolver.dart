@@ -12,32 +12,38 @@ enum ScrollDirection {
   decrease,
 }
 
-/// The result of resolving a drag target against the viewport: which edge it
-/// overflows and by how much.
+/// The result of resolving a caret position against the viewport: which edge
+/// it is near and by how much.
 class ScrollTarget {
   const ScrollTarget({required this.overshoot, required this.direction});
 
-  /// How far (in logical pixels) the target overflows the viewport edge,
-  /// clamped to the resolver's max overshoot.
+  /// How far (in logical pixels) the caret is past the inset (dead-zone)
+  /// boundary, clamped to the resolver's max overshoot.
   final double overshoot;
 
-  /// Which way the scrollable must move to bring the target back inside.
+  /// Which way the scrollable must move to bring the caret back inside.
   final ScrollDirection direction;
 }
 
-/// Decides whether a drag target (caret / selection rect, in scroll-origin
-/// coordinates) is outside the viewport's "dead zone" and, if so, in which
+/// Decides whether a caret position (viewport-local) is inside the viewport's
+/// dead zone — defined by an [inset] from each edge — and, if not, in which
 /// direction and by how much the scrollable should move.
 ///
-/// Pure and injectable: a strategy can swap this to change the edge policy
-/// (e.g. a wider dead zone, or "always center" instead of "follow edge").
+/// Pure and injectable: a strategy can swap this to change the edge policy.
+///
+/// Coordinate contract: [caretOffset] is the caret's position along the scroll
+/// axis in **viewport-local** coordinates (`0` = start of the viewport,
+/// [viewportDimension] = end of the viewport). This is a single, unambiguous
+/// frame — no rect inflation, no `deltaToScrollOrigin`/`getTransformTo(null)`
+/// mixing.
 abstract class ScrollTargetResolver {
   const ScrollTargetResolver();
 
-  /// Returns `null` when [target] is inside the dead zone (no scroll needed).
+  /// Returns `null` when [caretOffset] is inside the dead zone (no scroll).
   ScrollTarget? resolve({
-    required Rect target,
-    required Rect viewport,
+    required double caretOffset,
+    required double viewportDimension,
+    required double inset,
     required AxisDirection axisDirection,
     required double pixels,
     required double minScrollExtent,
@@ -45,78 +51,68 @@ abstract class ScrollTargetResolver {
   });
 }
 
-/// The default edge-follow resolver: scrolls only when the target overflows
-/// the viewport edge, by an amount capped at [maxOvershoot].
+/// The default edge-follow resolver: an explicit symmetric [inset] (dead zone)
+/// from each viewport edge. The caret may sit within [inset] px of an edge
+/// without triggering auto-scroll; once it is closer than that (or past the
+/// edge), the resolver reports the overshoot, capped at [maxOvershoot], and the
+/// direction to scroll.
 ///
-/// This reproduces the edge-detection logic that used to live inside
-/// `EdgeDraggingAutoScroller._scroll()`.
-class EdgeScrollTargetResolver extends ScrollTargetResolver {
-  const EdgeScrollTargetResolver({this.maxOvershoot = 20.0});
+/// With [inset] == 0 the auto-scroll fires only once the caret actually crosses
+/// the viewport edge.
+class EdgeInsetResolver extends ScrollTargetResolver {
+  const EdgeInsetResolver({this.maxOvershoot = 20.0});
 
   /// Maximum overshoot (in logical pixels) considered per resolution.
   final double maxOvershoot;
 
   @override
   ScrollTarget? resolve({
-    required Rect target,
-    required Rect viewport,
+    required double caretOffset,
+    required double viewportDimension,
+    required double inset,
     required AxisDirection axisDirection,
     required double pixels,
     required double minScrollExtent,
     required double maxScrollExtent,
   }) {
-    final axis = axisDirectionToAxis(axisDirection);
-    final viewportStart = _offsetExtent(viewport.topLeft, axis);
-    final viewportEnd = viewportStart + _sizeExtent(viewport.size, axis);
-    final proxyStart = _offsetExtent(target.topLeft, axis);
-    final proxyEnd = _offsetExtent(target.bottomRight, axis);
-
     switch (axisDirection) {
       case AxisDirection.up:
       case AxisDirection.left:
-        if (proxyEnd > viewportEnd && pixels > minScrollExtent) {
+        if (caretOffset < inset && pixels < maxScrollExtent) {
           return ScrollTarget(
-            overshoot: math.min(proxyEnd - viewportEnd, maxOvershoot),
-            direction: ScrollDirection.decrease,
+            overshoot: math.min(inset - caretOffset, maxOvershoot),
+            direction: ScrollDirection.increase,
           );
         }
-        if (proxyStart < viewportStart && pixels < maxScrollExtent) {
+        if (caretOffset > viewportDimension - inset && pixels > minScrollExtent) {
           return ScrollTarget(
-            overshoot: math.min(viewportStart - proxyStart, maxOvershoot),
-            direction: ScrollDirection.increase,
+            overshoot: math.min(
+              caretOffset - (viewportDimension - inset),
+              maxOvershoot,
+            ),
+            direction: ScrollDirection.decrease,
           );
         }
         break;
       case AxisDirection.right:
       case AxisDirection.down:
-        if (proxyStart < viewportStart && pixels > minScrollExtent) {
+        if (caretOffset < inset && pixels > minScrollExtent) {
           return ScrollTarget(
-            overshoot: math.min(viewportStart - proxyStart, maxOvershoot),
+            overshoot: math.min(inset - caretOffset, maxOvershoot),
             direction: ScrollDirection.decrease,
           );
         }
-        if (proxyEnd > viewportEnd && pixels < maxScrollExtent) {
+        if (caretOffset > viewportDimension - inset && pixels < maxScrollExtent) {
           return ScrollTarget(
-            overshoot: math.min(proxyEnd - viewportEnd, maxOvershoot),
+            overshoot: math.min(
+              caretOffset - (viewportDimension - inset),
+              maxOvershoot,
+            ),
             direction: ScrollDirection.increase,
           );
         }
         break;
     }
     return null;
-  }
-
-  double _offsetExtent(Offset offset, Axis axis) {
-    return switch (axis) {
-      Axis.horizontal => offset.dx,
-      Axis.vertical => offset.dy,
-    };
-  }
-
-  double _sizeExtent(Size size, Axis axis) {
-    return switch (axis) {
-      Axis.horizontal => size.width,
-      Axis.vertical => size.height,
-    };
   }
 }

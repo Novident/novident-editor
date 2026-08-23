@@ -5,7 +5,6 @@ Future<void> onPerformAction(
   TextInputAction action,
   EditorState editorState,
 ) async {
-  print('onPerformAction: $action');
   assert(() {
     NovidentEditorLog.input.debug('onPerformAction: $action');
     return true;

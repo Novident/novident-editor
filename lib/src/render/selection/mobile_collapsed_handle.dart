@@ -31,14 +31,14 @@ class _MobileCollapsedHandleState extends State<MobileCollapsedHandle> {
   @override
   Widget build(BuildContext context) {
     final debugInfo = context.read<EditorState>().debugInfo;
-    if (PlatformExtension.isIOS) {
+    if (EditorPlatform.isIOS) {
       return _IOSCollapsedHandle(
         layerLink: widget.layerLink,
         rect: widget.rect,
         handleWidth: widget.handleWidth,
         debugPaintSizeEnabled: debugInfo.debugPaintSizeEnabled,
       );
-    } else if (PlatformExtension.isAndroid) {
+    } else if (EditorPlatform.isAndroid) {
       return _AndroidCollapsedHandle(
         layerLink: widget.layerLink,
         rect: widget.rect,

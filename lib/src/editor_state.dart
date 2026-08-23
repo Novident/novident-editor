@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/editor_component/service/scroll/auto_scroller.dart';
 import 'package:novident_editor/src/history/undo_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -79,12 +78,6 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     undoManager.state = this;
   }
 
-  @Deprecated('use EditorState.blank() instead')
-  EditorState.empty()
-      : this(
-          document: Document.blank(),
-        );
-
   EditorState.blank({
     bool withInitialText = true,
   }) : this(
@@ -113,8 +106,16 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   /// Whether the editor should disable auto scroll.
   bool disableAutoScroll = false;
 
-  /// The edge offset of the auto scroll.
-  double autoScrollEdgeOffset = novidentEditorAutoScrollEdgeOffset;
+  /// The inset (dead zone) from each viewport edge, in logical pixels, within
+  /// which the caret does not trigger auto-scroll.
+  double autoScrollEdgeInset = novidentEditorAutoScrollEdgeInset;
+
+  /// Deprecated: use [autoScrollEdgeInset] instead.
+  @Deprecated('Use autoScrollEdgeInset instead.')
+  double get autoScrollEdgeOffset => autoScrollEdgeInset;
+
+  @Deprecated('Use autoScrollEdgeInset instead.')
+  set autoScrollEdgeOffset(double value) => autoScrollEdgeInset = value;
 
   /// The style of the editor.
   ///
@@ -123,11 +124,6 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   /// calling [updateSelectionWithReason] directly). Overwritten by
   /// [NovidentEditor] during init.
   EditorStyle editorStyle = const EditorStyle.desktop();
-
-  /// Configuration of the typewriter (centered) scrolling, applied by a
-  /// [TypewriterScrollController]. Independent from zen mode: set it and
-  /// attach the controller to keep the focused block vertically centered.
-  TypewriterScrollConfig typewriter = const TypewriterScrollConfig();
 
   /// The styles configuration for the editor.
   ///
@@ -304,8 +300,15 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   EditorStateDebugInfo debugInfo = EditorStateDebugInfo();
 
   /// store the auto scroller instance in here temporarily.
-  AutoScroller? autoScroller;
+  AutoScrollerService? autoScroller;
   ScrollableState? scrollableState;
+
+  /// Creates the [AutoScroller] for the editor.
+  ///
+  /// Override this to provide your own auto scroller (e.g. a subclass with a
+  /// custom velocity profile or resolver). Set by [NovidentEditor] during
+  /// init; defaults to a platform-tuned [AutoScroller].
+  AutoScrollerBuilder autoScrollerBuilder = defaultAutoScrollerBuilder;
 
   /// Configures log output parameters,
   /// such as log level and log output callbacks,
@@ -772,34 +775,31 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   ) {
     if (this.scrollableState != scrollableState) {
       autoScroller?.stopAutoScroll();
-      final bool isDesktopOrWeb = PlatformExtension.isDesktopOrWeb;
-      late AutoScroller scroller;
-      scroller = AutoScroller(
+      late AutoScrollerService scroller;
+      scroller = autoScrollerBuilder(
         scrollableState,
-        velocityScalar: 0.5,
-        minimumAutoScrollDelta: 0.07,
-        maxAutoScrollDelta: 15.0,
-        animationDuration: Duration.zero,
-        onScrollViewScrolled: () {
-          _notifyScrollViewScrolledListeners();
-          if (!isDesktopOrWeb) {
-            final dragMode = selectionExtraInfo?[selectionDragModeKey]
-                as MobileSelectionDragMode?;
-            final bool isDraggingSelection =
-                dragMode != null && dragMode != MobileSelectionDragMode.none;
-            if (!isDraggingSelection) {
-              return;
-            }
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (autoScroller == scroller) {
-                scroller.continueToAutoScroll();
-              }
-            });
-          }
-        },
+        onScrollViewScrolled: () => _onScrollViewScrolled(scroller),
       );
       autoScroller = scroller;
       this.scrollableState = scrollableState;
+    }
+  }
+
+  void _onScrollViewScrolled(AutoScrollerService scroller) {
+    _notifyScrollViewScrolledListeners();
+    if (!EditorPlatform.isDesktopOrWeb) {
+      final dragMode =
+          selectionExtraInfo?[selectionDragModeKey] as MobileSelectionDragMode?;
+      final bool isDraggingSelection =
+          dragMode != null && dragMode != MobileSelectionDragMode.none;
+      if (!isDraggingSelection) {
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (autoScroller == scroller) {
+          scroller.continueToAutoScroll();
+        }
+      });
     }
   }
 
@@ -986,4 +986,24 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
     return selection;
   }
+}
+
+/// The default [AutoScrollerBuilder]: a platform-tuned [AutoScroller].
+///
+/// Desktop uses a larger, instant delta profile; mobile uses a smaller, animated
+/// profile for smooth drag auto-scroll.
+AutoScrollerService defaultAutoScrollerBuilder(
+  ScrollableState scrollableState, {
+  required VoidCallback onScrollViewScrolled,
+}) {
+  final bool isDesktopOrWeb = EditorPlatform.isDesktopOrWeb;
+  return AutoScroller(
+    scrollableState,
+    velocityScalar: 0.5,
+    minimumAutoScrollDelta: isDesktopOrWeb ? 0.07 : 0.03,
+    maxAutoScrollDelta: isDesktopOrWeb ? 15.0 : 9.0,
+    animationDuration:
+        isDesktopOrWeb ? Duration.zero : const Duration(milliseconds: 5),
+    onScrollViewScrolled: onScrollViewScrolled,
+  );
 }

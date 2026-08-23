@@ -117,8 +117,11 @@ void main() {
       await tester.pump();
 
       final afterFirstBuild = notificationCount;
-      expect(afterFirstBuild, greaterThan(0),
-          reason: 'initial layout must notify once',);
+      expect(
+        afterFirstBuild,
+        greaterThan(0),
+        reason: 'initial layout must notify once',
+      );
 
       // Rebuild with an identical configuration: the scroll offset and layout
       // are unchanged, so the positions are identical and the listener must
@@ -128,8 +131,11 @@ void main() {
       );
       await tester.pump();
 
-      expect(notificationCount, afterFirstBuild,
-          reason: 'unchanged positions must not re-notify listeners',);
+      expect(
+        notificationCount,
+        afterFirstBuild,
+        reason: 'unchanged positions must not re-notify listeners',
+      );
     });
 
     testWidgets('exposes only visible items as a materialized list',

@@ -10,8 +10,8 @@ import 'package:novident_editor/novident_editor.dart';
 ///
 /// * external store changes rebuild the [editorState] (and notify);
 /// * local transactions are written back to the store;
-/// * the vim controller (and optionally a zen controller and a typewriter
-///   controller) are re-attached every time the editor is rebuilt.
+/// * the vim controller (and optionally a zen controller) are re-attached
+///   every time the editor is rebuilt.
 ///
 /// Shared by every editor surface of the app (split view panes, the zen
 /// view and the mobile view), so they all read/write the same source of
@@ -21,7 +21,8 @@ class DocumentSession extends ChangeNotifier {
     required this.nodeId,
     VimModeConfiguration vimConfiguration = const VimModeConfiguration(),
     this.zenController,
-    this.typewriterController,
+    this.typewriterStrategy,
+    this.ownsZenController = true,
   }) : vimController = VimModeController(configuration: vimConfiguration);
 
   final String nodeId;
@@ -32,13 +33,21 @@ class DocumentSession extends ChangeNotifier {
   /// Optional zen controller (used by the zen view).
   final ZenModeController? zenController;
 
-  /// Optional typewriter controller (used by the zen view).
-  final TypewriterScrollController? typewriterController;
+  /// Optional typewriter scroll strategy (used by the zen view).
+  final TypewriterScrollStrategy? typewriterStrategy;
+
+  /// Whether this session owns (and disposes) the [zenController].
+  ///
+  /// Defaults to `true` (the zen view owns its controller). Surfaces that
+  /// share one controller across sessions — e.g. the mobile view, which
+  /// swaps documents in place via `replace()` — pass `false` and dispose it
+  /// themselves, so the controller survives document changes.
+  final bool ownsZenController;
 
   /// Persistent focus node: survives editor rebuilds.
   final FocusNode focusNode = FocusNode();
 
-  static const Duration saveDelay = Duration(milliseconds: 50);
+  static const Duration saveDelay = Duration(milliseconds: 400);
 
   EditorState? _editorState;
   EditorScrollController? _scrollController;
@@ -77,7 +86,6 @@ class DocumentSession extends ChangeNotifier {
     _subscription?.cancel();
     vimController.detach();
     zenController?.detach();
-    typewriterController?.detach();
     _wordCounter?.dispose();
     _scrollController?.dispose();
     _editorState?.dispose();
@@ -106,10 +114,6 @@ class DocumentSession extends ChangeNotifier {
       }
       vimController.attach(editorState);
       zenController?.attach(
-        editorState: editorState,
-        scrollController: _scrollController,
-      );
-      typewriterController?.attach(
         editorState: editorState,
         scrollController: _scrollController,
       );
@@ -144,8 +148,9 @@ class DocumentSession extends ChangeNotifier {
     _saveTimer?.cancel();
     _subscription?.cancel();
     vimController.dispose();
-    zenController?.dispose();
-    typewriterController?.dispose();
+    if (ownsZenController) {
+      zenController?.dispose();
+    }
     _wordCounter?.dispose();
     _scrollController?.dispose();
     _editorState?.dispose();

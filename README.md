@@ -234,46 +234,45 @@ pipeline (spell check or default).
 
 ### Typewriter mode
 
-Keeps the focused block vertically centered in the viewport as you type
-(typewriter scrolling). It is **independent from zen mode** — the
-configuration lives on the `EditorState` and a `TypewriterScrollController`
-applies it, with or without zen:
+Keeps the cursor vertically centered in the viewport as you type (typewriter
+scrolling). It is **independent from zen mode** — pass a
+`TypewriterScrollStrategy` to `NovidentEditor.scrollStrategies`:
 
 ```dart
-final editorState = EditorState.blank();
-editorState.typewriter = const TypewriterScrollConfig(
-  enabled: true,
-  centerAlignment: 0.45, // 0.0 = top, 0.5 = center, 1.0 = bottom
-  scrollDuration: Duration(milliseconds: 240),
-  scrollCurve: Curves.easeOutCubic,
-);
-
-final typewriterController = TypewriterScrollController();
-typewriterController.attach(
-  editorState: editorState,
-  scrollController: editorScrollController,
-);
-
 final editor = NovidentEditor(
   editorState: editorState,
   editorScrollController: editorScrollController,
-  // disable the native caret auto-scroll so it doesn't fight the
-  // typewriter centering.
-  disableAutoScroll: typewriterController.shouldDisableNativeAutoScroll,
+  scrollStrategies: const [
+    TypewriterScrollStrategy(
+      alignment: 0.45, // 0.0 = top, 0.5 = center, 1.0 = bottom
+    ),
+  ],
 );
 ```
 
-To **disable** the centering (the editor keeps the native caret auto-scroll):
+The strategy keeps the cursor centered **instantly** (no animation, so no
+ping-pong) for collapsed selections, and **delegates to the default
+edge-follow** for expanded selections (e.g. while selecting text). When the
+caret is at the very top or bottom of the document (no content to scroll
+into), the scroll clamps and the caret is not centered.
+
+To **disable** the centering (the editor keeps the native caret auto-scroll),
+pass an empty list:
 
 ```dart
-editorState.typewriter = const TypewriterScrollConfig(enabled: false);
+NovidentEditor(
+  editorState: editorState,
+  scrollStrategies: const [],
+);
 ```
 
-You can also center a specific block programmatically at any time with
-`typewriterController.centerBlockAt(topLevelIndex)`.
-
 > [!NOTE]
-> Typewriter scrolling is now a standalone feature it works with or without zen  mode. Zen only dims unfocused blocks; the typewriter controller only scrolls.
+> Typewriter scrolling is now a standalone feature that works with or without
+> zen mode. Zen only dims unfocused blocks; the scroll strategy only scrolls.
+
+See **[Scroll Strategies](documentation/scroll-strategies.md)** for the full
+`scrollStrategies` API — how dispatch works, the `ScrollStrategy` interface,
+and how to write your own scroll policy.
 
 ### Spell checking
 

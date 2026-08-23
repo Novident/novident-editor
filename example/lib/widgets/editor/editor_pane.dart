@@ -9,7 +9,6 @@ import 'my_editor.dart';
 import 'session_controller.dart';
 import 'vim_mode_chip.dart';
 import 'word_count_chip.dart';
-import 'zen_editor_view.dart';
 
 /// A self-contained editor pane for the split view.
 ///
@@ -18,6 +17,10 @@ import 'zen_editor_view.dart';
 /// [DocumentContentProvider] (keyed by node id): edits are written there,
 /// the provider notifies, and every pane showing the same document re-reads
 /// it — duplicated panes stay in sync for free, with no extra wiring.
+///
+/// Zen mode is toggled **in place** (the status-bar moon button): the same
+/// editor dims the unfocused blocks and centers the caret, keeping the
+/// pane's look and feel — no separate view.
 class EditorPane extends StatefulWidget {
   final File file;
   final bool isFocused;
@@ -39,13 +42,24 @@ class EditorPane extends StatefulWidget {
 class _EditorPaneState extends State<EditorPane> {
   late EditorSessionController _sessionController;
 
+  /// Zen mode controller shared across document changes (survives
+  /// `replace()`); toggled from the status-bar moon button.
+  late final ZenModeController _zenController;
+
   @override
   void initState() {
     super.initState();
-
+    _zenController = ZenModeController(
+      configuration: const ZenModeConfiguration(
+        enabled: false,
+        unfocusedOpacity: 0.3,
+      ),
+    );
     _sessionController = EditorSessionController(
       nodeId: widget.file.id,
       toolbarNotifier: widget.toolbarNotifier,
+      zenController: _zenController,
+      typewriterStrategy: const TypewriterScrollStrategy(),
     )
       ..addListener(_onSessionChanged)
       ..isFocused = widget.isFocused;
@@ -89,16 +103,8 @@ class _EditorPaneState extends State<EditorPane> {
     );
   }
 
-  void _openZenMode() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ZenEditorView(file: widget.file),
-      ),
-    );
-  }
-
   /// Slim status bar at the bottom of the sheet: vim mode on the left,
-  /// the zen mode toggle on the right.
+  /// the (active) zen toggle on the right.
   Widget _buildStatusBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -112,16 +118,26 @@ class _EditorPaneState extends State<EditorPane> {
           const Spacer(),
           WordCountChip(service: _sessionController.session.wordCounter),
           const SizedBox(width: 10),
-          IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints.tightFor(width: 26, height: 26),
-            iconSize: 15,
-            tooltip: 'Zen mode',
-            icon: Icon(
-              CupertinoIcons.moon_stars,
-              color: Colors.grey.shade600,
-            ),
-            onPressed: _openZenMode,
+          ValueListenableBuilder<ZenModeConfiguration>(
+            valueListenable: _zenController,
+            builder: (BuildContext context, ZenModeConfiguration config, _) {
+              return IconButton(
+                padding: EdgeInsets.zero,
+                constraints:
+                    const BoxConstraints.tightFor(width: 26, height: 26),
+                iconSize: 15,
+                tooltip: config.enabled ? 'Exit zen mode' : 'Zen mode',
+                icon: Icon(
+                  config.enabled
+                      ? CupertinoIcons.moon_stars_fill
+                      : CupertinoIcons.moon_stars,
+                  color: config.enabled
+                      ? const Color(0xFF448AFF)
+                      : Colors.grey.shade600,
+                ),
+                onPressed: _zenController.toggle,
+              );
+            },
           ),
         ],
       ),
@@ -162,6 +178,10 @@ class _EditorPaneState extends State<EditorPane> {
                         child: MyEditor(
                           session: _sessionController.session,
                           styles: widget.styles,
+                          zenController:
+                              _sessionController.session.zenController,
+                          typewriterStrategy:
+                              _sessionController.typewriterStrategy,
                         ),
                       ),
                     ),

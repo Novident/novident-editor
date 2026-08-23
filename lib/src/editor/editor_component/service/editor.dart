@@ -14,9 +14,10 @@ import 'package:provider/provider.dart';
 // the operation must be paired
 KeepEditorFocusNotifier keepEditorFocusNotifier = KeepEditorFocusNotifier();
 
-/// The default value of the auto scroll edge offset on mobile
-/// The editor will scroll when the cursor is close to the edge of the screen
-const double novidentEditorAutoScrollEdgeOffset = 220.0;
+/// The default inset (dead zone) of the auto scroll.
+/// The editor will scroll when the cursor is closer than this many pixels to
+/// the edge of the screen.
+const double novidentEditorAutoScrollEdgeInset = 10.0;
 
 class NovidentEditor extends StatefulWidget {
   NovidentEditor({
@@ -32,6 +33,7 @@ class NovidentEditor extends StatefulWidget {
     )
     List<CommandShortcutEvent>? commandShortcutEvents,
     this.keyboardStrategies = const [],
+    this.scrollStrategies = const [],
     this.contextMenuBuilder,
     this.contentInsertionConfiguration,
     this.editable = true,
@@ -51,7 +53,8 @@ class NovidentEditor extends StatefulWidget {
     this.disableKeyboardService = false,
     this.disableScrollService = false,
     this.disableAutoScroll = false,
-    this.autoScrollEdgeOffset = novidentEditorAutoScrollEdgeOffset,
+    this.autoScrollEdgeInset = novidentEditorAutoScrollEdgeInset,
+    this.autoScrollerBuilder,
     this.documentRules = const [],
     this.blockWrapper,
     this.styles,
@@ -137,6 +140,13 @@ class NovidentEditor extends StatefulWidget {
   /// When empty (default), a [DefaultEditorStrategy] is used over
   /// [commandShortcutEvents].
   final List<KeyboardStrategy> keyboardStrategies;
+
+  /// Scroll policies, consulted in order on each selection change (the first
+  /// one that returns [ScrollDecision.handled] wins).
+  ///
+  /// When empty (default), the built-in edge-follow runs. Pass e.g.
+  /// `[TypewriterScrollStrategy(...)]` to enable typewriter centering.
+  final List<ScrollStrategy> scrollStrategies;
 
   /// The context menu builder.
   ///
@@ -238,7 +248,12 @@ class NovidentEditor extends StatefulWidget {
 
   /// The edge offset of the auto scroll.
   ///
-  final double autoScrollEdgeOffset;
+  final double autoScrollEdgeInset;
+
+  /// Creates the [AutoScroller] used by the editor. When null, the editor
+  /// uses a platform-tuned default. Provide a custom builder to control the
+  /// auto-scroll velocity profile, physics, or resolver.
+  final AutoScrollerBuilder? autoScrollerBuilder;
 
   /// The rules to apply to the document.
   ///
@@ -390,6 +405,7 @@ class _NovidentEditorState extends State<NovidentEditor> {
       child = ScrollServiceWidget(
         key: editorState.service.scrollServiceKey,
         editorScrollController: editorScrollController,
+        scrollStrategies: widget.scrollStrategies,
         child: child,
       );
     }
@@ -447,7 +463,10 @@ class _NovidentEditorState extends State<NovidentEditor> {
     editorState.enableAutoComplete = widget.enableAutoComplete;
     editorState.autoCompleteTextProvider = widget.autoCompleteTextProvider;
     editorState.disableAutoScroll = widget.disableAutoScroll;
-    editorState.autoScrollEdgeOffset = widget.autoScrollEdgeOffset;
+    editorState.autoScrollEdgeInset = widget.autoScrollEdgeInset;
+    if (widget.autoScrollerBuilder != null) {
+      editorState.autoScrollerBuilder = widget.autoScrollerBuilder!;
+    }
     editorState.documentRules = widget.documentRules;
   }
 

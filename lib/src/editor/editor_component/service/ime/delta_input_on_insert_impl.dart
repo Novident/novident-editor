@@ -47,7 +47,7 @@ Future<void> onInsert(
   final containsNewLine = insertion.textInserted.length <= 1
       ? false
       : insertion.textInserted.contains('\n');
-  late final afterSelection;
+  late final Selection afterSelection;
 
   final transaction = editorState.transaction;
   if (!containsNewLine) {

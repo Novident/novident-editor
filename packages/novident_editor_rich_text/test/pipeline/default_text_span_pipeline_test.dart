@@ -113,7 +113,10 @@ void main() {
     });
 
     test('node and context are ignored by the default pipeline', () {
-      final attributes = {RichTextKeys.bold: true, RichTextKeys.textColor: '#FF0000'};
+      final attributes = {
+        RichTextKeys.bold: true,
+        RichTextKeys.textColor: '#FF0000'
+      };
       final withArgs = pipeline.resolveStyle(
         attributes,
         baseStyle,

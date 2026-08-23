@@ -17,6 +17,7 @@ export 'service/renderer/block_component_context.dart';
 export 'service/renderer/block_component_service.dart';
 export 'service/renderer/block_component_widget.dart';
 export 'service/scroll/editor_scroll_controller.dart';
+export 'service/scroll/scroll_strategy.dart';
 export 'service/scroll_service.dart';
 export 'service/scroll_service_widget.dart';
 export 'service/selection_service.dart';

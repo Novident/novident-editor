@@ -55,8 +55,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final selectionService = editorState.service.selectionService;
-      final viewportHeight =
-          tester.getSize(find.byType(NovidentEditor)).height;
+      final viewportHeight = tester.getSize(find.byType(NovidentEditor)).height;
       expect(viewportHeight, greaterThan(0));
 
       // Start the drag and hold the finger 5px from the bottom edge.

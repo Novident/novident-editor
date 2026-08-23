@@ -5,7 +5,7 @@ import 'scroll_target_resolver.dart';
 import 'scroll_velocity.dart';
 
 abstract class AutoScrollerService {
-  bool get scrolling; 
+  bool get scrolling;
   void startAutoScroll(
     Offset offset, {
     double inset = 200,

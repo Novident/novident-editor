@@ -158,8 +158,7 @@ void main() {
       selection.value = Selection.collapsed(Position(path: [2]));
       await tester.pump();
 
-      final scopeAfter =
-          tester.widget<ZenModeScope>(find.byType(ZenModeScope));
+      final scopeAfter = tester.widget<ZenModeScope>(find.byType(ZenModeScope));
       expect(scopeAfter.dimmed, isTrue);
       expect(identical(scopeBefore, scopeAfter), isTrue);
     });
@@ -189,8 +188,7 @@ void main() {
       selection.value = Selection.collapsed(Position(path: [0], offset: 3));
       await tester.pump();
 
-      final scopeAfter =
-          tester.widget<ZenModeScope>(find.byType(ZenModeScope));
+      final scopeAfter = tester.widget<ZenModeScope>(find.byType(ZenModeScope));
       expect(scopeAfter.dimmed, isTrue);
       expect(identical(scopeBefore, scopeAfter), isTrue);
     });
@@ -217,16 +215,14 @@ void main() {
       selection.value = Selection.collapsed(Position(path: [1]));
       await tester.pump();
 
-      final scopeAfter =
-          tester.widget<ZenModeScope>(find.byType(ZenModeScope));
+      final scopeAfter = tester.widget<ZenModeScope>(find.byType(ZenModeScope));
       expect(scopeAfter.dimmed, isFalse);
       expect(identical(scopeBefore, scopeAfter), isFalse);
     });
   });
 
   group('ZenModeBlock text re-resolution', () {
-    testWidgets('text re-resolves when the dimmed state flips',
-        (tester) async {
+    testWidgets('text re-resolves when the dimmed state flips', (tester) async {
       final document = documentWith(3);
       final node = document.root.children[1]; // path [1]
       final config = ValueNotifier(const ZenModeConfiguration());

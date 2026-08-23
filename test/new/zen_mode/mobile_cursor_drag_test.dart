@@ -1,8 +1,6 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/editor_component/service/selection/mobile_selection_service.dart';
 
 import '../../test_helper.dart';
 import '../util/document_util.dart';
@@ -33,8 +31,6 @@ void main() {
       EditorPlatform.override = const EditorPlatformOverride(
         isMobile: true,
         isAndroid: true,
-        isDesktopOrWeb: false,
-        isNotMobile: false,
       );
       addTearDown(EditorPlatform.reset);
 
@@ -72,7 +68,7 @@ void main() {
       final selectionService = editorState.service.selectionService;
       // lastPanOffset is null before the drag starts.
       expect(selectionService.lastPanOffset, isNull,
-          reason: 'no finger position before drag');
+          reason: 'no finger position before drag',);
       selectionService.onPanStart(
         DragStartDetails(globalPosition: caretCenter),
         MobileSelectionDragMode.cursor,
@@ -96,7 +92,7 @@ void main() {
         // The finger position is tracked so the edge-follow can fall back to
         // it when the caret leaves the viewport (selectionRects empty).
         expect(selectionService.lastPanOffset, position,
-            reason: 'finger position tracked during drag at step $i');
+            reason: 'finger position tracked during drag at step $i',);
         final offset = scrollController.offsetNotifier.value;
         final delta = offset - (lastOffset ?? offset);
         debugPrint('DIAG step=$i dy=$dy offset=$offset delta=$delta '
@@ -117,7 +113,7 @@ void main() {
       await tester.pumpAndSettle();
       // The finger position is cleared once the drag ends.
       expect(selectionService.lastPanOffset, isNull,
-          reason: 'finger position cleared after drag');
+          reason: 'finger position cleared after drag',);
       debugPrint('DIAG endOffset=${scrollController.offsetNotifier.value}');
     },
   );

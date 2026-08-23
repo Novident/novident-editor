@@ -44,7 +44,8 @@ void main() {
       final controller = await pumpScrollable(tester);
       final autoScroller = buildAutoScroller(tester);
 
-      final viewportHeight = tester.getSize(find.byType(Scrollable).first).height;
+      final viewportHeight =
+          tester.getSize(find.byType(Scrollable).first).height;
       expect(viewportHeight, greaterThan(0));
 
       // caret 50px from the bottom edge → within edgeOffset(100) → must scroll.
@@ -70,7 +71,8 @@ void main() {
       final controller = await pumpScrollable(tester);
       final autoScroller = buildAutoScroller(tester);
 
-      final viewportHeight = tester.getSize(find.byType(Scrollable).first).height;
+      final viewportHeight =
+          tester.getSize(find.byType(Scrollable).first).height;
 
       // caret 150px from the bottom edge → beyond edgeOffset(100) → no scroll.
       autoScroller.startAutoScroll(

@@ -225,4 +225,3 @@ class _TypewriterScrollState {
     lastNodePath = null;
   }
 }
-

@@ -34,8 +34,11 @@ void main() {
 
           final scrollController = _readScrollController(tester);
           final (min, max) = scrollController.visibleRangeNotifier.value;
-          expect(min, greaterThanOrEqualTo(0),
-              reason: 'visible range must be populated after layout',);
+          expect(
+            min,
+            greaterThanOrEqualTo(0),
+            reason: 'visible range must be populated after layout',
+          );
           expect(max, greaterThanOrEqualTo(min));
 
           final visibleNodes =

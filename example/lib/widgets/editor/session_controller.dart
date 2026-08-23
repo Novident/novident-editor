@@ -47,7 +47,7 @@ class EditorSessionController extends ChangeNotifier {
   /// disposes it in [dispose], not per-session).
   final ZenModeController? _zenController;
 
-  TypewriterScrollStrategy? _typewriterStrategy;
+  final TypewriterScrollStrategy? _typewriterStrategy;
 
   DocumentSession _session;
   DocumentContentStore? _store;

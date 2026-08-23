@@ -1,4 +1,3 @@
-import 'package:novident_editor/src/editor/editor_component/service/scroll/auto_scroller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

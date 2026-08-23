@@ -788,8 +788,8 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   void _onScrollViewScrolled(AutoScrollerService scroller) {
     _notifyScrollViewScrolledListeners();
     if (!EditorPlatform.isDesktopOrWeb) {
-      final dragMode = selectionExtraInfo?[selectionDragModeKey]
-          as MobileSelectionDragMode?;
+      final dragMode =
+          selectionExtraInfo?[selectionDragModeKey] as MobileSelectionDragMode?;
       final bool isDraggingSelection =
           dragMode != null && dragMode != MobileSelectionDragMode.none;
       if (!isDraggingSelection) {

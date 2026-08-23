@@ -150,4 +150,3 @@ class _ZenModeBlockState extends State<ZenModeBlock> {
     return child;
   }
 }
-

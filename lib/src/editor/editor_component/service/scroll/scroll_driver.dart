@@ -50,9 +50,9 @@ class ScrollDriver {
     // Convert to DOCUMENT (scroll-origin) coordinates. The target is fixed in
     // the document frame; as the scrollable moves (pixels changes), the
     // target's viewport-local position changes, so the overshoot converges.
-    _caretDocumentOffset =
-        scrollable.position.pixels +
-        _offsetExtent(caretLocal, axisDirectionToAxis(scrollable.axisDirection));
+    _caretDocumentOffset = scrollable.position.pixels +
+        _offsetExtent(
+            caretLocal, axisDirectionToAxis(scrollable.axisDirection),);
     _currentInset = inset;
     _currentDuration = duration;
     if (_scrolling) {

@@ -84,7 +84,8 @@ class EdgeInsetResolver extends ScrollTargetResolver {
             direction: ScrollDirection.increase,
           );
         }
-        if (caretOffset > viewportDimension - inset && pixels > minScrollExtent) {
+        if (caretOffset > viewportDimension - inset &&
+            pixels > minScrollExtent) {
           return ScrollTarget(
             overshoot: math.min(
               caretOffset - (viewportDimension - inset),
@@ -102,7 +103,8 @@ class EdgeInsetResolver extends ScrollTargetResolver {
             direction: ScrollDirection.decrease,
           );
         }
-        if (caretOffset > viewportDimension - inset && pixels < maxScrollExtent) {
+        if (caretOffset > viewportDimension - inset &&
+            pixels < maxScrollExtent) {
           return ScrollTarget(
             overshoot: math.min(
               caretOffset - (viewportDimension - inset),

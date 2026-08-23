@@ -129,7 +129,6 @@ class _DesktopScrollServiceState extends State<DesktopScrollService>
   @override
   ScrollController get scrollController => throw UnimplementedError();
 
-
   @override
   void continueToAutoScroll() => autoScroller?.continueToAutoScroll();
 

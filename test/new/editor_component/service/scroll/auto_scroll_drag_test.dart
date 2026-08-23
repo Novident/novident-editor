@@ -67,8 +67,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final viewportHeight =
-          tester.getSize(find.byType(NovidentEditor)).height;
+      final viewportHeight = tester.getSize(find.byType(NovidentEditor)).height;
       expect(viewportHeight, greaterThan(0));
 
       final selectionService = editorState.service.selectionService;
@@ -106,8 +105,7 @@ void main() {
       expect(
         offsetAfterDrag,
         greaterThan(0),
-        reason:
-            'dragging the finger to 50px from the bottom edge (inside the '
+        reason: 'dragging the finger to 50px from the bottom edge (inside the '
             'edgeOffset=80 band) must auto-scroll BEFORE touching the edge',
       );
     },
@@ -132,8 +130,7 @@ void main() {
       final offsetAtBottom = scrollController.offsetNotifier.value;
       expect(offsetAtBottom, greaterThan(0));
 
-      final viewportHeight =
-          tester.getSize(find.byType(NovidentEditor)).height;
+      final viewportHeight = tester.getSize(find.byType(NovidentEditor)).height;
 
       final selectionService = editorState.service.selectionService;
 
@@ -170,8 +167,7 @@ void main() {
       expect(
         offsetAfterDrag,
         lessThan(offsetAtBottom),
-        reason:
-            'dragging the finger to 50px from the top edge (inside the '
+        reason: 'dragging the finger to 50px from the top edge (inside the '
             'edgeOffset=80 band) must auto-scroll UP BEFORE touching the edge',
       );
     },

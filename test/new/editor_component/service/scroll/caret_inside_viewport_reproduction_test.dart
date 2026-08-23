@@ -111,7 +111,8 @@ void main() {
       );
     }
 
-    testWidgets('inset=10: the scroll offset moves while the caret is 7px inside',
+    testWidgets(
+        'inset=10: the scroll offset moves while the caret is 7px inside',
         (tester) async {
       final (controller, autoScroller) = await pumpAutoScroller(tester);
       final viewportHeight =
@@ -126,11 +127,13 @@ void main() {
       expect(
         controller.offset,
         greaterThan(0),
-        reason: 'inset=10: a caret 7px inside is within the dead zone → scrolls',
+        reason:
+            'inset=10: a caret 7px inside is within the dead zone → scrolls',
       );
     });
 
-    testWidgets('inset=0: the scroll offset does NOT move while the caret is inside',
+    testWidgets(
+        'inset=0: the scroll offset does NOT move while the caret is inside',
         (tester) async {
       final (controller, autoScroller) = await pumpAutoScroller(tester);
       final viewportHeight =

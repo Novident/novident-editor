@@ -134,7 +134,6 @@ class ScrollableDetails {
   }
 }
 
-
 /// A typedef for a function that can calculate the offset for a type of scroll
 /// increment given a [ScrollIncrementDetails].
 ///

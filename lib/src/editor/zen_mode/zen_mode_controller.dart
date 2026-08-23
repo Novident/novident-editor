@@ -29,8 +29,8 @@ import 'package:flutter/material.dart';
 /// The zen dimming is applied through the span pipeline: [attach] registers
 /// a [ZenSpanPipeline] wrapper on the [EditorState] that composes over the
 /// effective pipeline (spell check or default). No `textSpanDecorator` is
-/// needed. Typewriter scrolling is a separate feature — see
-/// [TypewriterScrollController].
+/// needed. Typewriter scrolling is a separate feature — pass a
+/// [TypewriterScrollStrategy] to `NovidentEditor.scrollStrategies`.
 ///
 /// Remember to call [dispose] (or at least [detach]) when the editor goes
 /// away.

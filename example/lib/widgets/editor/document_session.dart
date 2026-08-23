@@ -38,7 +38,7 @@ class DocumentSession extends ChangeNotifier {
   /// Persistent focus node: survives editor rebuilds.
   final FocusNode focusNode = FocusNode();
 
-  static const Duration saveDelay = Duration(milliseconds: 50);
+  static const Duration saveDelay = Duration(milliseconds: 400);
 
   EditorState? _editorState;
   EditorScrollController? _scrollController;

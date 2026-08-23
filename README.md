@@ -270,6 +270,10 @@ NovidentEditor(
 > Typewriter scrolling is now a standalone feature that works with or without
 > zen mode. Zen only dims unfocused blocks; the scroll strategy only scrolls.
 
+See **[Scroll Strategies](documentation/scroll-strategies.md)** for the full
+`scrollStrategies` API — how dispatch works, the `ScrollStrategy` interface,
+and how to write your own scroll policy.
+
 ### Spell checking
 
 Spell checking plugs in through the engine-agnostic

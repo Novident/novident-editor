@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
@@ -136,9 +135,11 @@ class TypewriterScrollStrategy extends DefaultScrollStrategy {
     // from the previous frame — scrolling by its delta would pile up stale
     // corrections (the typewriter "goes crazy"). Skip the event; the next
     // fresh measurement (after the frame renders) corrects.
-    final state = ctx.state.getOrCreate(_TypewriterScrollState.new);
+    final state = ctx.state.getOrCreate(
+      _TypewriterScrollState.new,
+    );
     final nodePath = ctx.selection.start.path;
-    if (!listEquals(state.lastNodePath, nodePath)) {
+    if (state.lastNodePath == null || !state.lastNodePath!.equals(nodePath)) {
       // different node → previous measurements don't apply. (listEquals:
       // paths are lists, and `==` on lists is identity — a fresh `[0]` from
       // the selection would reset the state on every keystroke.)
@@ -167,7 +168,10 @@ class TypewriterScrollStrategy extends DefaultScrollStrategy {
     // list has a leading offset); scrolling negative corrupts the caret rect
     // measurement and makes the typewriter "go crazy".
     final clampedTarget = targetOffset
-        .clamp(math.max(0.0, minExtent), maxExtent)
+        .clamp(
+          math.max(0.0, minExtent),
+          maxExtent,
+        )
         .toDouble();
 
     // record the fresh measurement (pre-jump pixels) so the next event can
@@ -183,9 +187,8 @@ class TypewriterScrollStrategy extends DefaultScrollStrategy {
     }
 
     // instant centering — no animation (animation would ping-pong).
-    ctx.editorScrollController.scrollOffsetController.jumpTo(
-      offset: clampedTarget,
-    );
+    ctx.editorScrollController.scrollOffsetController
+        .jumpTo(offset: clampedTarget);
   }
 }
 
@@ -207,3 +210,4 @@ class _TypewriterScrollState {
     lastNodePath = null;
   }
 }
+

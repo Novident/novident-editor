@@ -8,8 +8,8 @@ import '../../../util/document_util.dart';
 /// (the default edge-follow driven by `ScrollServiceWidget` +
 /// `AutoScroller`/`EdgeDraggingAutoScroller`).
 ///
-/// These run with the typewriter DISABLED (no `TypewriterScrollController`
-/// attached, `disableAutoScroll` left at its default `false`), so they
+/// These run with the typewriter DISABLED (no `TypewriterScrollStrategy`
+/// passed, `scrollStrategies` left at its default empty list), so they
 /// exercise exactly the behavior that the `DefaultScrollStrategy` must
 /// preserve after the scroll-strategy refactor.
 ///

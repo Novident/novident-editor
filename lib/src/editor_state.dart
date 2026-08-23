@@ -124,11 +124,6 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   /// [NovidentEditor] during init.
   EditorStyle editorStyle = const EditorStyle.desktop();
 
-  /// Configuration of the typewriter (centered) scrolling, applied by a
-  /// [TypewriterScrollController]. Independent from zen mode: set it and
-  /// attach the controller to keep the focused block vertically centered.
-  TypewriterScrollConfig typewriter = const TypewriterScrollConfig();
-
   /// The styles configuration for the editor.
   ///
   /// Set by [NovidentEditor] during init. Used by [insertNewLine] to resolve

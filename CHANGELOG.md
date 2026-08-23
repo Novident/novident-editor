@@ -2,9 +2,12 @@
 
 ## 1.0.6
 
-* chore(readme): updated some documentation examples.
+* fix(ime): send only selected nodes during text input attach by @CatHood0 in https://github.com/Novident/novident-editor/pull/32
+* fix(modes): zen mode performance refactor, color-based dimming, O(1) rebuilds, and standalone typewriter by @CatHood0 in https://github.com/Novident/novident-editor/pull/34
+* fix(scroll): new scroll strategy system + corrected typewriter mode by @CatHood0 in https://github.com/Novident/novident-editor/pull/36
+* fix(paste): when pasted content has newlines, instead be inserting multiple nodes, just inyect the `Delta` with the raw newlines (decreases the perfomance too and produces weird rendering stuff).
 * fix(39d7562): cannot paste properly in mobile devices. Introduced in the commit 39d7562.
-* fix: when pasted content has newlines, instead be inserting multiple nodes, just inyect the `Delta` with the raw newlines (decreases the perfomance too and produces weird rendering stuff).
+* chore(readme): updated some documentation examples.
 
 ## 1.0.5
 

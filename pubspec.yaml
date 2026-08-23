@@ -1,5 +1,5 @@
 name: novident_editor
-version: 1.0.5
+version: 1.0.6
 homepage: https://github.com/Novident/
 repository: https://github.com/Novident/novident-editor/
 documentation: https://github.com/Novident/novident-editor/
@@ -20,7 +20,7 @@ dependencies:
   diff_match_patch: ^0.4.1
   novident_editor_core: ^1.0.3
   novident_editor_selection: ^1.0.5
-  novident_editor_rich_text: ^1.0.4
+  novident_editor_rich_text: ^1.0.5
   novident_editor_spell_check_interface: ^1.0.0
   novident_editor_styles: ^1.0.3
   novident_editor_document: ^1.0.6
@@ -51,23 +51,6 @@ dev_dependencies:
   network_image_mock: ^2.1.1
   path_provider: ^2.0.5
   pubspec_dependency_sorter: ^1.0.5
-
-# Local overrides while the rich_text package change (resolveStyle with
-# node/context) is unpublished. Remove once the new version is published and
-# the constraints above are bumped.
-dependency_overrides:
-  novident_editor_core:
-    path: packages/novident_editor_core
-  novident_editor_document:
-    path: packages/novident_document
-  novident_editor_rich_text:
-    path: packages/novident_editor_rich_text
-  novident_editor_selection:
-    path: packages/novident_editor_selection
-  novident_editor_spell_check_interface:
-    path: packages/novident_editor_spell_check_interface
-  novident_editor_styles:
-    path: packages/novident_editor_styles
 
 topics:
   - widgets

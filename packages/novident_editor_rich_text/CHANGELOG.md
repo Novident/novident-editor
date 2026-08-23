@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.5
+
+* fix: zen mode performance refactor, color-based dimming, O(1) rebuilds, and standalone typewriter by @CatHood0 in https://github.com/Novident/novident-editor/pull/34
+
 ## 1.0.4
 
 * chore: update `novident_editor_selection` dependency to the latest version.

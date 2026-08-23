@@ -63,9 +63,15 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
       child: Builder(
         builder: (context) {
           if (EditorPlatform.isDesktopOrWeb) {
-            return _buildDesktopScrollService(context, widget.child);
+            return DesktopScrollService(
+              key: _forwardKey,
+              child: widget.child,
+            );
           } else if (EditorPlatform.isMobile) {
-            return _buildMobileScrollService(context, widget.child);
+            return MobileScrollService(
+              key: _forwardKey,
+              child: widget.child,
+            );
           }
           throw UnimplementedError();
         },
@@ -73,32 +79,11 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
     );
   }
 
-  Widget _buildDesktopScrollService(
-    BuildContext context,
-    Widget child,
-  ) {
-    return DesktopScrollService(
-      key: _forwardKey,
-      child: child,
-    );
-  }
-
-  Widget _buildMobileScrollService(
-    BuildContext context,
-    Widget child,
-  ) {
-    return MobileScrollService(
-      key: _forwardKey,
-      child: child,
-    );
-  }
-
   void _onSelectionChanged() {
     // should auto scroll after the cursor or selection updated.
     final selection = editorState.selection;
     if (selection == null ||
-        [SelectionUpdateReason.selectAll]
-            .contains(editorState.selectionUpdateReason)) {
+        editorState.selectionUpdateReason == SelectionUpdateReason.selectAll) {
       return;
     }
 
@@ -109,37 +94,35 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
     // typewriter "goes crazy" on word-wrap). The second post-frame runs after
     // that rebuild, so the caret rect is accurate.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final selectionRects = editorState.selectionRects();
+      final selectionRects = editorState.selectionRects();
 
-        final ctx = ScrollStrategyContext(
-          editorState: editorState,
-          selection: selection,
-          reason: editorState.selectionUpdateReason,
-          scrollService: this,
-          editorScrollController: widget.editorScrollController,
-          selectionRects: selectionRects,
-          state: _strategyState,
-        );
+      final ctx = ScrollStrategyContext(
+        editorState: editorState,
+        selection: selection,
+        reason: editorState.selectionUpdateReason,
+        scrollService: this,
+        editorScrollController: widget.editorScrollController,
+        selectionRects: selectionRects,
+        state: _strategyState,
+      );
 
-        // consult the strategies in order; the first that handles wins.
-        for (final strategy in widget.scrollStrategies) {
-          final decision = strategy.onSelectionChanged(ctx);
-          if (decision == ScrollDecision.handled) {
-            return;
-          }
-        }
-
-        // no strategy handled it → run the built-in edge-follow (needs rects).
-        // During a mobile drag the caret may have jumped outside the viewport,
-        // leaving the rects empty — still run the edge-follow so it can fall
-        // back to the finger position (see _defaultEdgeFollow).
-        if (selectionRects.isEmpty &&
-            editorState.selectionDragModeValue() == null) {
+      // consult the strategies in order; the first that handles wins.
+      for (final strategy in widget.scrollStrategies) {
+        final decision = strategy.onSelectionChanged(ctx);
+        if (decision == ScrollDecision.handled) {
           return;
         }
-        _defaultEdgeFollow(selection, selectionRects);
-      });
+      }
+
+      // no strategy handled it → run the built-in edge-follow (needs rects).
+      // During a mobile drag the caret may have jumped outside the viewport,
+      // leaving the rects empty — still run the edge-follow so it can fall
+      // back to the finger position (see _defaultEdgeFollow).
+      if (selectionRects.isEmpty &&
+          editorState.selectionDragModeValue() == null) {
+        return;
+      }
+      _defaultEdgeFollow(selection, selectionRects);
     });
   }
 
@@ -210,8 +193,9 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
                   'MobileSelectionDragMode.rightSelectionHandle');
 
       // Use animation for drag operations, instant for others
-      final scrollDuration =
-          isDragOperation ? const Duration(milliseconds: 2) : const Duration(milliseconds: 16);
+      final scrollDuration = isDragOperation
+          ? const Duration(milliseconds: 2)
+          : const Duration(milliseconds: 16);
 
       // soft keyboard
       // workaround: wait for the soft keyboard to show up
@@ -304,4 +288,10 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
 
   @override
   void goBallistic(double velocity) => forward.goBallistic(velocity);
+
+  @override
+  void continueToAutoScroll() => forward.continueToAutoScroll();
+
+  @override
+  bool get scrolling => forward.scrolling;
 }

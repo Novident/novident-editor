@@ -446,9 +446,6 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     // broadcast to other users here
     selectionExtraInfo = extraInfo;
     _selectionUpdateReason = reason;
-    debugPrint('[editor] updateSelectionWithReason '
-        'sel=$selection reason=$reason '
-        'extraInfo=$extraInfo');
     if (selection == null || reason == SelectionUpdateReason.remote) {
       service.keyboardService?.invalidateCache();
     }

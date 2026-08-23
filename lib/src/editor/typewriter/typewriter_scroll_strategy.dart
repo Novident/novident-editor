@@ -73,7 +73,6 @@ class TypewriterScrollStrategy extends DefaultScrollStrategy {
       return ScrollDecision.ignored;
     }
     if (ctx.editorScrollController.shrinkWrap) {
-      // the ScrollOffsetController is not available in shrinkWrap mode.
       return ScrollDecision.ignored;
     }
 

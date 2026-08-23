@@ -87,6 +87,16 @@ class ScrollDriver {
           globalRect.topLeft.translate(deltaToOrigin.dx, deltaToOrigin.dy);
       final Rect viewport = viewportOrigin & globalRect.size;
 
+      // ---- INVESTIGATION LOG: geometry before resolve ----
+      debugPrint(
+        '[scroll-driver] pixels=${scrollable.position.pixels} '
+        'viewportTop=${viewport.top.toStringAsFixed(1)} '
+        'viewportBottom=${viewport.bottom.toStringAsFixed(1)} '
+        'dragTargetTop=${transformedDragTarget.top.toStringAsFixed(1)} '
+        'dragTargetBottom=${transformedDragTarget.bottom.toStringAsFixed(1)} '
+        'caretCenterY=${transformedDragTarget.center.dy.toStringAsFixed(1)}',
+      );
+
       final ScrollTarget? target = resolver.resolve(
         target: transformedDragTarget,
         viewport: viewport,
@@ -94,6 +104,10 @@ class ScrollDriver {
         pixels: scrollable.position.pixels,
         minScrollExtent: scrollable.position.minScrollExtent,
         maxScrollExtent: scrollable.position.maxScrollExtent,
+      );
+
+      debugPrint(
+        '[scroll-driver] resolved=${target == null ? 'null(no-scroll)' : 'overshoot=${target.overshoot.toStringAsFixed(1)} dir=${target.direction}'}',
       );
 
       if (target == null) {

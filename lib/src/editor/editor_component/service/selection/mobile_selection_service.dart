@@ -62,6 +62,9 @@ class _MobileSelectionServiceWidgetState
   final List<SelectionGestureInterceptor> _interceptors = [];
   final ValueNotifier<Offset?> _lastPanOffset = ValueNotifier(null);
 
+  @override
+  Offset? get lastPanOffset => _lastPanOffset.value;
+
   // the selection from editorState will be updated directly, but the cursor
   // or selection area depends on the layout of the text, so we need to update
   // the selection after the layout.
@@ -126,7 +129,7 @@ class _MobileSelectionServiceWidgetState
         _buildCollapsedHandle(),
       ],
     );
-    return PlatformExtension.isIOS
+    return EditorPlatform.isIOS
         ? MobileSelectionGestureDetector(
             onTapUp: _onTapUpIOS,
             onDoubleTapUp: _onDoubleTapUp,
@@ -176,7 +179,7 @@ class _MobileSelectionServiceWidgetState
         }
 
         // on Android, the drag handle should be updated when typing text.
-        if (PlatformExtension.isAndroid &&
+        if (EditorPlatform.isAndroid &&
             editorState.selectionUpdateReason !=
                 SelectionUpdateReason.uiEvent) {
           isCollapsedHandleVisible = false;
@@ -312,7 +315,7 @@ class _MobileSelectionServiceWidgetState
 
   // The collapsed handle will be dismissed when no user interaction is detected.
   void _clearCollapsedHandleOnAndroid() {
-    if (!PlatformExtension.isAndroid) {
+    if (!EditorPlatform.isAndroid) {
       return;
     }
     collapsedHandleTimer?.cancel();

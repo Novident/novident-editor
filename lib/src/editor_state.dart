@@ -438,6 +438,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     // broadcast to other users here
     selectionExtraInfo = extraInfo;
     _selectionUpdateReason = reason;
+    debugPrint('[editor] updateSelectionWithReason '
+        'sel=$selection reason=$reason '
+        'extraInfo=$extraInfo');
     if (selection == null || reason == SelectionUpdateReason.remote) {
       service.keyboardService?.invalidateCache();
     }
@@ -771,9 +774,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
       late AutoScroller scroller;
       scroller = AutoScroller(
         scrollableState,
-        velocityScalar: 0.5,
-        minimumAutoScrollDelta: 0.07,
-        maxAutoScrollDelta: 15.0,
+        velocityScalar: isDesktopOrWeb ? 0.5 : 0.02,
+        minimumAutoScrollDelta: isDesktopOrWeb ? 0.07 : 0.004,
+        maxAutoScrollDelta: isDesktopOrWeb ? 15.0 : 0.053,
         animationDuration: Duration.zero,
         onScrollViewScrolled: () {
           _notifyScrollViewScrolledListeners();

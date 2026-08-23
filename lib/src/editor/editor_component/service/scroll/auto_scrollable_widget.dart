@@ -1,10 +1,8 @@
 import 'package:novident_editor/src/editor/editor_component/service/scroll/auto_scroller.dart';
-import 'package:novident_editor/src/editor_state.dart';
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-const _selectionDragModeKey = 'selection_drag_mode';
+import '../../../../../novident_editor.dart';
 
 class AutoScrollableWidget extends StatefulWidget {
   const AutoScrollableWidget({
@@ -66,10 +64,11 @@ class _AutoScrollableWidgetState extends State<AutoScrollableWidget> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               final editorState = context.read<EditorState?>();
-              final dynamic dragMode =
-                  editorState?.selectionExtraInfo?[_selectionDragModeKey];
-              final bool isDraggingSelection = dragMode != null &&
-                  dragMode.toString() != 'MobileSelectionDragMode.none';
+              final dragMode =
+                  editorState?.selectionExtraInfo?[selectionDragModeKey]
+                      as MobileSelectionDragMode?;
+              final bool isDraggingSelection =
+                  dragMode != null && dragMode != MobileSelectionDragMode.none;
               if (!isDraggingSelection) {
                 return;
               }

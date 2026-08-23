@@ -75,6 +75,7 @@ class MyEditor extends StatelessWidget {
           characterShortcutEvents: standardCharacterShortcutEvents,
         ),
       ],
+      autoScrollEdgeOffset: 10,
       // The mobile surface needs the mobile style: `EditorStyle.desktop`
       // hardcodes `magnifierSize = Size.zero` (and zero-sized drag
       // handles), which makes the magnifier invisible on Android.

@@ -50,7 +50,10 @@ class _EditorPaneState extends State<EditorPane> {
   void initState() {
     super.initState();
     _zenController = ZenModeController(
-      configuration: const ZenModeConfiguration(unfocusedOpacity: 0.3),
+      configuration: const ZenModeConfiguration(
+        enabled: false,
+        unfocusedOpacity: 0.3,
+      ),
     );
     _sessionController = EditorSessionController(
       nodeId: widget.file.id,
@@ -120,7 +123,8 @@ class _EditorPaneState extends State<EditorPane> {
             builder: (BuildContext context, ZenModeConfiguration config, _) {
               return IconButton(
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(width: 26, height: 26),
+                constraints:
+                    const BoxConstraints.tightFor(width: 26, height: 26),
                 iconSize: 15,
                 tooltip: config.enabled ? 'Exit zen mode' : 'Zen mode',
                 icon: Icon(
@@ -174,7 +178,8 @@ class _EditorPaneState extends State<EditorPane> {
                         child: MyEditor(
                           session: _sessionController.session,
                           styles: widget.styles,
-                          zenController: _sessionController.session.zenController,
+                          zenController:
+                              _sessionController.session.zenController,
                           typewriterStrategy:
                               _sessionController.typewriterStrategy,
                         ),

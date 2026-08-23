@@ -53,6 +53,9 @@ class _DesktopSelectionServiceWidgetState
   bool _isDraggingSelection = false;
   Offset? _lastPanOffset;
 
+  @override
+  Offset? get lastPanOffset => _lastPanOffset;
+
   OverlayEntry? _dropTargetEntry;
 
   late EditorState editorState = Provider.of<EditorState>(
@@ -428,6 +431,7 @@ class _DesktopSelectionServiceWidgetState
 
     editorState.service.scrollService?.startAutoScroll(
       _lastPanOffset!,
+      edgeOffset: editorState.autoScrollEdgeOffset,
       duration: const Duration(milliseconds: 2),
     );
   }

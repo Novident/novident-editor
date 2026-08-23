@@ -62,10 +62,11 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
       value: widget.editorScrollController,
       child: Builder(
         builder: (context) {
+          final child = _withEdgeZoneDebugOverlay(widget.child);
           if (PlatformExtension.isDesktopOrWeb) {
-            return _buildDesktopScrollService(context);
+            return _buildDesktopScrollService(context, child);
           } else if (PlatformExtension.isMobile) {
-            return _buildMobileScrollService(context);
+            return _buildMobileScrollService(context, child);
           }
           throw UnimplementedError();
         },
@@ -73,21 +74,43 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
     );
   }
 
+  /// DEBUG overlay: paints the auto-scroll edge band (the area at
+  /// `edgeOffset` from the top and bottom of the viewport where the
+  /// auto-scroll kicks in) so the edge can be calibrated visually.
+  Widget _withEdgeZoneDebugOverlay(Widget child) {
+    return Stack(
+      children: [
+        child,
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(
+              painter: _EdgeZoneDebugPainter(
+                edgeOffset: editorState.autoScrollEdgeOffset,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDesktopScrollService(
     BuildContext context,
+    Widget child,
   ) {
     return DesktopScrollService(
       key: _forwardKey,
-      child: widget.child,
+      child: child,
     );
   }
 
   Widget _buildMobileScrollService(
     BuildContext context,
+    Widget child,
   ) {
     return MobileScrollService(
       key: _forwardKey,
-      child: widget.child,
+      child: child,
     );
   }
 
@@ -99,6 +122,11 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
             .contains(editorState.selectionUpdateReason)) {
       return;
     }
+
+    debugPrint('[scroll] _onSelectionChanged '
+        'sel=${selection.start.path}/${selection.start.offset} '
+        'reason=${editorState.selectionUpdateReason} '
+        'dragMode=${editorState.selectionDragModeValue()}');
 
     // Wait two frames before measuring: the text insertion (IME) updates the
     // document and selection synchronously, but the rebuild that lays out the
@@ -122,15 +150,24 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
 
         // consult the strategies in order; the first that handles wins.
         for (final strategy in widget.scrollStrategies) {
-          if (strategy.onSelectionChanged(ctx) == ScrollDecision.handled) {
+          final decision = strategy.onSelectionChanged(ctx);
+          debugPrint('[scroll] strategy=${strategy.runtimeType} '
+              'decision=$decision');
+          if (decision == ScrollDecision.handled) {
             return;
           }
         }
 
         // no strategy handled it → run the built-in edge-follow (needs rects).
-        if (selectionRects.isEmpty) {
+        // During a mobile drag the caret may have jumped outside the viewport,
+        // leaving the rects empty — still run the edge-follow so it can fall
+        // back to the finger position (see _defaultEdgeFollow).
+        if (selectionRects.isEmpty &&
+            editorState.selectionDragModeValue() == null) {
+          debugPrint('[scroll] edge-follow: no rects');
           return;
         }
+        debugPrint('[scroll] edge-follow');
         _defaultEdgeFollow(selection, selectionRects);
       });
     });
@@ -149,6 +186,20 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
     if (PlatformExtension.isDesktopOrWeb &&
         (editorState.autoScroller?.scrolling ?? false)) {
       return;
+    }
+
+    // During a mobile drag the caret can jump to a node that is not laid out
+    // yet (or is outside the viewport), leaving [selectionRects] empty. The
+    // finger position is always inside the viewport, so use it as the
+    // auto-scroll target instead of giving up — otherwise the caret escapes
+    // the viewport and the drag stops scrolling.
+    if (selectionRects.isEmpty && dragMode != null) {
+      final finger = editorState.service.selectionService.lastPanOffset;
+      if (finger != null) {
+        debugPrint('[scroll] edge-follow: no rects, using finger $finger');
+        _startAutoScrollForDrag(finger, dragMode, direction);
+        return;
+      }
     }
 
     switch (dragMode?.toString()) {
@@ -175,7 +226,20 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
     lastSelection = selection;
 
     final endTouchPoint = targetRect.centerRight;
+    _startAutoScrollForDrag(endTouchPoint, dragMode, direction);
+  }
 
+  /// Starts the auto-scroll toward [endTouchPoint] (global coordinates),
+  /// applying the mobile keyboard delay and drag animation duration.
+  void _startAutoScrollForDrag(
+    Offset endTouchPoint,
+    dynamic dragMode,
+    AxisDirection? direction,
+  ) {
+    NovidentEditorLog.scroll.debug(
+      'startAutoScrollForDrag point=$endTouchPoint '
+      'edgeOffset=${editorState.autoScrollEdgeOffset} direction=$direction',
+    );
     if (PlatformExtension.isMobile) {
       // Determine if this is a drag operation
       final bool isDragOperation = dragMode != null &&
@@ -283,4 +347,36 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
 
   @override
   void goBallistic(double velocity) => forward.goBallistic(velocity);
+}
+
+/// DEBUG painter: fills the auto-scroll edge band (the area at `edgeOffset`
+/// from the top and bottom of the viewport). When the caret / finger enters
+/// this band the auto-scroll starts, so this shows exactly where the edge is.
+class _EdgeZoneDebugPainter extends CustomPainter {
+  _EdgeZoneDebugPainter({required this.edgeOffset});
+
+  final double edgeOffset;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final band = edgeOffset;
+    final paint = Paint()
+      ..color = const Color(0x66FF0000) // semi-transparent red
+      ..style = PaintingStyle.fill;
+
+    // top band
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, band),
+      paint,
+    );
+    // bottom band
+    canvas.drawRect(
+      Rect.fromLTWH(0, size.height - band, size.width, band),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _EdgeZoneDebugPainter oldDelegate) =>
+      oldDelegate.edgeOffset != edgeOffset;
 }

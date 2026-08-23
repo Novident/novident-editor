@@ -16,7 +16,7 @@ KeepEditorFocusNotifier keepEditorFocusNotifier = KeepEditorFocusNotifier();
 
 /// The default value of the auto scroll edge offset on mobile
 /// The editor will scroll when the cursor is close to the edge of the screen
-const double novidentEditorAutoScrollEdgeOffset = 220.0;
+const double novidentEditorAutoScrollEdgeOffset = 100.0;
 
 class NovidentEditor extends StatefulWidget {
   NovidentEditor({

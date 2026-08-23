@@ -93,7 +93,7 @@ class DragHandle extends _IDragHandle {
   Widget build(BuildContext context) {
     Widget child;
 
-    if (PlatformExtension.isIOS) {
+    if (EditorPlatform.isIOS) {
       child = _IOSDragHandle(
         handleHeight: handleHeight,
         handleColor: handleColor,
@@ -103,7 +103,7 @@ class DragHandle extends _IDragHandle {
         debugPaintSizeEnabled: debugPaintSizeEnabled,
         onDragging: onDragging,
       );
-    } else if (PlatformExtension.isAndroid) {
+    } else if (EditorPlatform.isAndroid) {
       child = _AndroidDragHandle(
         handleHeight: handleHeight,
         handleColor: handleColor,
@@ -125,7 +125,7 @@ class DragHandle extends _IDragHandle {
     }
 
     if (handleType != HandleType.none && handleType != HandleType.collapsed) {
-      final offset = PlatformExtension.isIOS ? -handleWidth : 0.0;
+      final offset = EditorPlatform.isIOS ? -handleWidth : 0.0;
       child = Stack(
         clipBehavior: Clip.none,
         children: [

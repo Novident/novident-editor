@@ -47,7 +47,10 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
   void initState() {
     super.initState();
     _zenController = ZenModeController(
-      configuration: const ZenModeConfiguration(unfocusedOpacity: 0.3),
+      configuration: const ZenModeConfiguration(
+        enabled: false,
+        unfocusedOpacity: 0.3,
+      ),
     );
     treeController = widget.controller
       ..selectNode(widget.controller.root.atPath(<int>[1, 0]));

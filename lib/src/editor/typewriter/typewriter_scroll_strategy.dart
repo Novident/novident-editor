@@ -23,8 +23,8 @@ import 'package:novident_editor/novident_editor.dart';
 class TypewriterScrollStrategy extends DefaultScrollStrategy {
   const TypewriterScrollStrategy({
     this.alignment = 0.45,
-    this.centerTolerance = 1.0,
-    this.stalenessTolerance = 0.5,
+    this.centerTolerance = 2,
+    this.stalenessTolerance = 0.8,
   });
 
   /// Where the cursor is kept inside the viewport: 0.0 = top, 0.5 = center,

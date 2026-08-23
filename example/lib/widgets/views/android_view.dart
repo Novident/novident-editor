@@ -1,6 +1,7 @@
 import 'package:example/common/controller/tree_controller.dart';
 import 'package:example/common/nodes/file.dart';
 import 'package:example/common/store/document_content_store.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
@@ -17,6 +18,10 @@ import '../editor/session_controller.dart';
 /// ([FocusedEditorNotifier]) — the only differences are the missing
 /// split view (a phone cannot fit panes) and the toolbar placement:
 /// above the soft keyboard instead of the top of the editor.
+///
+/// Zen mode is toggled **in place** (the AppBar moon button): unlike the
+/// desktop, a phone cannot open a separate zen view, so the same editor
+/// dims the unfocused blocks and centers the caret while zen is active.
 class AndroidTreeViewExample extends StatefulWidget {
   final TreeController controller;
   const AndroidTreeViewExample({
@@ -34,9 +39,16 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
   EditorSessionController? _sessionController;
   DocumentContentStore? _store;
 
+  /// Zen mode controller shared across document changes (survives
+  /// `replace()`); toggled from the AppBar moon button.
+  late final ZenModeController _zenController;
+
   @override
   void initState() {
     super.initState();
+    _zenController = ZenModeController(
+      configuration: const ZenModeConfiguration(unfocusedOpacity: 0.3),
+    );
     treeController = widget.controller
       ..selectNode(widget.controller.root.atPath(<int>[1, 0]));
     treeController.selection.addListener(_onSelectionChanged);
@@ -99,6 +111,8 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
         nodeId: nodeId,
         toolbarNotifier: _toolbarNotifier,
         vimConfiguration: kMobileVimConfiguration,
+        zenController: _zenController,
+        typewriterStrategy: const TypewriterScrollStrategy(),
       )
         ..addListener(_onSessionChanged)
         ..isFocused = true;
@@ -129,6 +143,8 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
               session: controller.session,
               styles: kEditorStyles,
               padding: EdgeInsets.symmetric(horizontal: 10),
+              zenController: controller.session.zenController,
+              typewriterStrategy: controller.typewriterStrategy,
             ),
           ),
         ),
@@ -183,6 +199,25 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(selected?.name ?? 'No name'),
+        actions: <Widget>[
+          // Zen mode toggles in place (no separate view on a phone): the
+          // same editor dims unfocused blocks and centers the caret.
+          ValueListenableBuilder<ZenModeConfiguration>(
+            valueListenable: _zenController,
+            builder: (BuildContext context, ZenModeConfiguration config, _) {
+              return IconButton(
+                tooltip: config.enabled ? 'Exit zen mode' : 'Enter zen mode',
+                icon: Icon(
+                  config.enabled
+                      ? CupertinoIcons.moon_stars_fill
+                      : CupertinoIcons.moon_stars,
+                  color: config.enabled ? const Color(0xFF448AFF) : null,
+                ),
+                onPressed: _zenController.toggle,
+              );
+            },
+          ),
+        ],
       ),
       drawer: TreeViewDrawer(
         controller: widget.controller,

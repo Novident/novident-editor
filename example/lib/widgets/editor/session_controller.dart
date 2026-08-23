@@ -22,12 +22,16 @@ class EditorSessionController extends ChangeNotifier {
     required this.toolbarNotifier,
     VimModeConfiguration vimConfiguration = const VimModeConfiguration(),
     ZenModeController? zenController,
+    TypewriterScrollStrategy? typewriterStrategy,
   })  : _vimConfiguration = vimConfiguration,
         _zenController = zenController,
+        _typewriterStrategy = typewriterStrategy,
         _session = DocumentSession(
           nodeId: nodeId,
           vimConfiguration: vimConfiguration,
           zenController: zenController,
+          typewriterStrategy: typewriterStrategy,
+          ownsZenController: false,
         ) {
     _session.addListener(_onSessionChanged);
   }
@@ -38,9 +42,11 @@ class EditorSessionController extends ChangeNotifier {
   final VimModeConfiguration _vimConfiguration;
 
   /// Only supported at construction: [replace] reuses the same
-  /// [ZenModeController], but disposing a session disposes its zen
-  /// controller, so surfaces using zen mode must not call [replace].
+  /// [ZenModeController] across sessions (the controller owns it and
+  /// disposes it in [dispose], not per-session).
   final ZenModeController? _zenController;
+
+  final TypewriterScrollStrategy? _typewriterStrategy;
 
   DocumentSession _session;
   DocumentContentStore? _store;
@@ -50,6 +56,9 @@ class EditorSessionController extends ChangeNotifier {
   DocumentSession get session => _session;
   String get nodeId => _session.nodeId;
   bool get isReady => _session.isReady;
+
+  /// The typewriter scroll strategy shared across sessions (if any).
+  TypewriterScrollStrategy? get typewriterStrategy => _typewriterStrategy;
 
   /// While focused, publishes the session [EditorState] so the toolbar
   /// follows this surface; while unfocused, clears the notifier only if
@@ -91,6 +100,8 @@ class EditorSessionController extends ChangeNotifier {
       nodeId: nodeId,
       vimConfiguration: _vimConfiguration,
       zenController: _zenController,
+      typewriterStrategy: _typewriterStrategy,
+      ownsZenController: false,
     )..addListener(_onSessionChanged);
     final DocumentContentStore? store = _store;
     if (store != null) {
@@ -138,6 +149,7 @@ class EditorSessionController extends ChangeNotifier {
       }
     }
     session.dispose();
+    _zenController?.dispose();
     super.dispose();
   }
 }

@@ -58,6 +58,16 @@ class TypewriterScrollStrategy extends DefaultScrollStrategy {
       return ScrollDecision.ignored;
     }
 
+    // mobile drag (cursor or selection handles) moves the caret freely while
+    // the user pans; centering against it would fight the drag and the
+    // auto-scroll. Delegate to the default edge-follow until the drag ends
+    // (the drag mode is cleared on pan end).
+    final dragMode = ctx.editorState.selectionDragModeValue();
+    if (dragMode != null &&
+        dragMode.toString() != 'MobileSelectionDragMode.none') {
+      return ScrollDecision.ignored;
+    }
+
     final scrollableState = ctx.editorState.scrollableState;
     if (scrollableState == null) {
       return ScrollDecision.ignored;
@@ -164,15 +174,21 @@ class TypewriterScrollStrategy extends DefaultScrollStrategy {
 
     final minExtent = scrollableState.position.minScrollExtent;
     final maxExtent = scrollableState.position.maxScrollExtent;
-    // never scroll above the top (minScrollExtent can be negative when the
-    // list has a leading offset); scrolling negative corrupts the caret rect
-    // measurement and makes the typewriter "go crazy".
-    final clampedTarget = targetOffset
-        .clamp(
-          math.max(0.0, minExtent),
-          maxExtent,
-        )
-        .toDouble();
+    // Clamp to the scrollable's REAL extent range. `minScrollExtent` can be
+    // negative (the ScrollablePositionedList anchor allows scrolling below
+    // zero), so forcing the lower bound to 0.0 would clamp every target to
+    // 0.0 while the scrollable can only reach `maxExtent` — the strategy
+    // would jump to 0.0, the scrollable would clamp it back, and the next
+    // event would measure the caret at the clamped offset and jump again
+    // (ping-pong). Use the real range instead.
+    //
+    // Guard against an inconsistent range: during a huge paste the
+    // auto-scroll can outrun the layout, leaving `maxScrollExtent` below
+    // `minScrollExtent` — `clamp` would throw `ArgumentError` and break the
+    // strategy for good. Clamp the upper bound up to the lower one.
+    final lower = minExtent;
+    final upper = math.max(lower, maxExtent);
+    final clampedTarget = targetOffset.clamp(lower, upper).toDouble();
 
     // record the fresh measurement (pre-jump pixels) so the next event can
     // tell fresh from stale.

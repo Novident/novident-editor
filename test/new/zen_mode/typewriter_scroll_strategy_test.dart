@@ -607,4 +607,42 @@ void main() {
       expect(center, isNot(closeTo(0.45 * viewportHeight, 1.0)));
     },
   );
+
+  testWidgets(
+    'delegates to the default edge-follow while a mobile drag is active',
+    (tester) async {
+      final editorState = EditorState(document: Document.blank());
+      for (var i = 0; i < 60; i++) {
+        editorState.document.addParagraph(initialText: 'paragraph $i');
+      }
+      await pumpEditor(
+        tester,
+        editorState,
+        scrollStrategies: const [TypewriterScrollStrategy()],
+      );
+
+      // center the caret in block 5 first.
+      await editorState.updateSelectionWithReason(
+        Selection.collapsed(Position(path: [5])),
+      );
+      await tester.pumpAndSettle();
+
+      // simulate a mobile cursor drag across blocks: the selection updates
+      // carry the drag mode. The strategy must NOT center against the
+      // freely-moving caret — it delegates to the default edge-follow.
+      await editorState.updateSelectionWithReason(
+        Selection.collapsed(Position(path: [6])),
+        extraInfo: {'selection_drag_mode': 'MobileSelectionDragMode.cursor'},
+      );
+      await tester.pumpAndSettle();
+
+      final scrollableState = editorState.scrollableState;
+      expect(scrollableState, isNotNull);
+      final viewportHeight = scrollableState!.position.viewportDimension;
+      final center = caretCenterInViewport(editorState, scrollableState);
+      // the caret is NOT re-centered while dragging (it stays where the
+      // drag left it, just off-center).
+      expect(center, isNot(closeTo(0.45 * viewportHeight, 1.0)));
+    },
+  );
 }

@@ -76,23 +76,22 @@ class MyEditor extends StatelessWidget {
           characterShortcutEvents: standardCharacterShortcutEvents,
         ),
       ],
-      autoScrollEdgeInset: 10,
       // The mobile surface needs the mobile style: `EditorStyle.desktop`
       // hardcodes `magnifierSize = Size.zero` (and zero-sized drag
       // handles), which makes the magnifier invisible on Android.
       editorStyle: UniversalPlatform.isMobile
           ? EditorStyle.mobile(
               padding: padding,
-              firstLineIndent: 30,
-              cursorColor: Colors.blue.withAlpha(255),
-              selectionColor: Colors.blue.withAlpha(140),
+              firstLineIndent: 20,
+              cursorColor: Colors.blue.withAlpha(230),
+              selectionColor: Colors.blue.withAlpha(100),
               spellChecker: HunspellSpellChecker.instance,
             )
           : EditorStyle.desktop(
               padding: padding,
-              firstLineIndent: 30,
-              cursorColor: Colors.blue.withAlpha(255),
-              selectionColor: Colors.blue.withAlpha(140),
+              firstLineIndent: 20,
+              cursorColor: Colors.blue.withAlpha(230),
+              selectionColor: Colors.blue.withAlpha(100),
               selectionRenderer: VimSelectionRenderer(
                 controller: session.vimController,
               ),

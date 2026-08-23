@@ -53,7 +53,7 @@ class _AutoScrollableWidgetState extends State<AutoScrollableWidget> {
   }
 
   void _initAutoScroller() {
-    final bool isDesktopOrWeb = PlatformExtension.isDesktopOrWeb;
+    final bool isDesktopOrWeb = EditorPlatform.isDesktopOrWeb;
     _autoScroller = AutoScroller(
       _scrollableState,
       velocityScalar: isDesktopOrWeb ? 0.5 : 0.02,

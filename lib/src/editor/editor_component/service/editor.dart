@@ -17,7 +17,7 @@ KeepEditorFocusNotifier keepEditorFocusNotifier = KeepEditorFocusNotifier();
 /// The default inset (dead zone) of the auto scroll.
 /// The editor will scroll when the cursor is closer than this many pixels to
 /// the edge of the screen.
-const double novidentEditorAutoScrollEdgeInset = 100.0;
+const double novidentEditorAutoScrollEdgeInset = 10.0;
 
 class NovidentEditor extends StatefulWidget {
   NovidentEditor({
@@ -54,6 +54,7 @@ class NovidentEditor extends StatefulWidget {
     this.disableScrollService = false,
     this.disableAutoScroll = false,
     this.autoScrollEdgeInset = novidentEditorAutoScrollEdgeInset,
+    this.autoScrollerBuilder,
     this.documentRules = const [],
     this.blockWrapper,
     this.styles,
@@ -248,6 +249,11 @@ class NovidentEditor extends StatefulWidget {
   /// The edge offset of the auto scroll.
   ///
   final double autoScrollEdgeInset;
+
+  /// Creates the [AutoScroller] used by the editor. When null, the editor
+  /// uses a platform-tuned default. Provide a custom builder to control the
+  /// auto-scroll velocity profile, physics, or resolver.
+  final AutoScrollerBuilder? autoScrollerBuilder;
 
   /// The rules to apply to the document.
   ///
@@ -458,6 +464,9 @@ class _NovidentEditorState extends State<NovidentEditor> {
     editorState.autoCompleteTextProvider = widget.autoCompleteTextProvider;
     editorState.disableAutoScroll = widget.disableAutoScroll;
     editorState.autoScrollEdgeInset = widget.autoScrollEdgeInset;
+    if (widget.autoScrollerBuilder != null) {
+      editorState.autoScrollerBuilder = widget.autoScrollerBuilder!;
+    }
     editorState.documentRules = widget.documentRules;
   }
 

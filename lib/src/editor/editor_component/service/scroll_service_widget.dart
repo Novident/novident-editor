@@ -62,9 +62,9 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
       value: widget.editorScrollController,
       child: Builder(
         builder: (context) {
-          if (PlatformExtension.isDesktopOrWeb) {
+          if (EditorPlatform.isDesktopOrWeb) {
             return _buildDesktopScrollService(context, widget.child);
-          } else if (PlatformExtension.isMobile) {
+          } else if (EditorPlatform.isMobile) {
             return _buildMobileScrollService(context, widget.child);
           }
           throw UnimplementedError();
@@ -152,7 +152,7 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
 
     // For desktop: if auto-scroller is already scrolling (from drag-to-select),
     // don't override it here. The desktop_selection_service handles drag scrolling.
-    if (PlatformExtension.isDesktopOrWeb &&
+    if (EditorPlatform.isDesktopOrWeb &&
         (editorState.autoScroller?.scrolling ?? false)) {
       return;
     }
@@ -201,7 +201,7 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
     Offset endTouchPoint,
     dynamic dragMode,
   ) {
-    if (PlatformExtension.isMobile) {
+    if (EditorPlatform.isMobile) {
       // Determine if this is a drag operation
       final bool isDragOperation = dragMode != null &&
           (dragMode.toString() ==
@@ -211,7 +211,7 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
 
       // Use animation for drag operations, instant for others
       final scrollDuration =
-          isDragOperation ? const Duration(milliseconds: 2) : Duration.zero;
+          isDragOperation ? const Duration(milliseconds: 2) : const Duration(milliseconds: 16);
 
       // soft keyboard
       // workaround: wait for the soft keyboard to show up

@@ -48,9 +48,9 @@ void main() {
 
   EditorState tallEditor() {
     final editorState = EditorState(document: Document.blank());
-    editorState.document.addParagraph(
-      initialText: List.filled(800, 'word').join(' '),
-    );
+    for (var i = 0; i < 200; i++) {
+      editorState.document.addParagraph(initialText: 'line $i');
+    }
     return editorState;
   }
 
@@ -89,7 +89,10 @@ void main() {
         MobileSelectionDragMode.cursor,
       );
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+      for (var i = 0; i < 25; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
 
       final offsetAfterDrag = scrollController.offsetNotifier.value;
 
@@ -118,10 +121,12 @@ void main() {
       final scrollController = await pumpEditor(tester, editorState);
 
       // scroll down first so there is room to scroll back up.
-      final node = editorState.document.root.children.first;
-      final length = node.delta?.toPlainText().length ?? 0;
-      await editorState.updateSelectionWithReason(
-        Selection.collapsed(Position(path: [0], offset: length)),
+      scrollController.scrollOffsetController.jumpTo(offset: 100000);
+      await tester.pumpAndSettle();
+      // Place the caret on a visible node (the last one) so the drag starts on
+      // laid-out text.
+      editorState.service.selectionService.updateSelection(
+        Selection.collapsed(Position(path: [199])),
       );
       await tester.pumpAndSettle();
       final offsetAtBottom = scrollController.offsetNotifier.value;
@@ -148,7 +153,10 @@ void main() {
         MobileSelectionDragMode.cursor,
       );
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+      for (var i = 0; i < 25; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
 
       final offsetAfterDrag = scrollController.offsetNotifier.value;
 

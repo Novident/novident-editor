@@ -5,6 +5,7 @@ import 'scroll_target_resolver.dart';
 import 'scroll_velocity.dart';
 
 abstract class AutoScrollerService {
+  bool get scrolling; 
   void startAutoScroll(
     Offset offset, {
     double inset = 200,
@@ -12,7 +13,20 @@ abstract class AutoScrollerService {
   });
 
   void stopAutoScroll();
+
+  void continueToAutoScroll();
 }
+
+/// Creates an [AutoScrollerService] (commonly is used the [AutoScroller] implementation) for the editor, given the [ScrollableState].
+///
+/// Override this to provide a custom [AutoScrollerService] (or a subclass) with your
+/// own velocity profile, physics, or resolver. The [onScrollViewScrolled]
+/// callback is owned by the editor (it drives `continueToAutoScroll` and
+/// notifies scroll listeners) — forward it to your [AutoScroller].
+typedef AutoScrollerBuilder = AutoScrollerService Function(
+  ScrollableState scrollableState, {
+  required VoidCallback onScrollViewScrolled,
+});
 
 /// An auto scroller that scrolls the [scrollable] if a drag gesture drags
 /// close to its edge.
@@ -56,6 +70,7 @@ class AutoScroller implements AutoScrollerService {
   double? lastInset;
 
   /// Whether the auto scroll is in progress.
+  @override
   bool get scrolling => _driver.isActive;
 
   @override
@@ -82,6 +97,7 @@ class AutoScroller implements AutoScrollerService {
     _driver.stop();
   }
 
+  @override
   void continueToAutoScroll() {
     if (lastOffset != null) {
       startAutoScroll(

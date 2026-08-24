@@ -95,8 +95,8 @@ print(editorState.document.toJson());   // persistable structure
 editorState.selection = Selection.collapsed(
   Position(path: node.path, offset: 5),
 );
-editorState.undoManager.undo();
-editorState.undoManager.redo();
+editorState.undoManager.undo(collapseSelection: false);
+editorState.undoManager.redo(collapseSelection: true);
 ```
 
 Hydrate the editor from JSON, Markdown, or Quill Delta — see
@@ -440,7 +440,7 @@ you need one piece without the full editor:
 ## Migrating
 
 - If you were using version **1.0.5**, see
-  [migration to 1.0.7](./documentation/migrations/1.0.5_to_1.0.7.md) — zen
+  [migration to 1.0.6](./documentation/migrations/1.0.5_to_1.0.6.md) — zen
   mode dimming moved to the span pipeline and typewriter scrolling became a
   standalone feature.
 - If you were using version **1.0.4**, see

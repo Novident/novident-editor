@@ -2,7 +2,8 @@
 
 ## 1.0.7
 
-* fix(vim): undo and redo on vim mode preserves previous ranged selection.
+* fix(toolbar): toggled items are not activated when the selection is colapsed by @CatHood0 in https://github.com/Novident/novident-editor/pull/37
+* fix(vim): undo and redo on vim mode preserves previous ranged selection (now collapses).
 * fix: most of the issues related with the workflows and the testing failing.
 * fix: make public internal paste text methods using `EditorState`.
 * chore(example): updated example to have the native toolbar for every platform.

@@ -23,9 +23,45 @@ final editor = NovidentEditor(
 abstract class SelectionRenderer {
   // ── Render (4 methods) ──
   Widget buildCursor(CursorPaintContext ctx);
+
+  @Deprecated(
+      'Use shouldPaintHeadRect + SelectionPaintContext.headColor instead. '
+      'Will be removed in a future version.')
   Widget buildExpandedHeadCursor(CursorPaintContext ctx);
   Widget buildSelectionHighlight(SelectionPaintContext ctx);
   Widget buildBlockSelectionHighlight(BlockSelectionContext ctx);
+
+  /// Called during the [editorState.updateSelectionWithReason]. Provides
+  /// the values that let us decide which will be the new selection for
+  /// the editor
+  Future<Selection?> updateSelectionWithReason(
+    BlockSelectionHost state,
+    Selection? selection, {
+    SelectionUpdateReason reason = SelectionUpdateReason.transaction,
+    Map? extraInfo,
+    SelectionType? customSelectionType,
+  }) async =>
+      null;
+
+  /// Whether the selection painter should differentiate the moving head
+  /// of an expanded selection by painting its rect in cursor color.
+  bool get shouldPaintHeadRect => false;
+
+  /// Whether the [NovidentRichText] should take in account the moving head
+  /// of an expanded selection to compute the correct character constrast color.
+  bool get headWrapsCharacter => false;
+
+  /// Whether the [EditorState] should take in account the [start] and [end] positions
+  /// of the selection and collapse if them starts at the same point.
+  bool get shouldCollapseIfSharePositions => true;
+
+  @Deprecated(
+      'Use shouldPaintHeadRect instead. Will be removed in a future version.')
+  bool get paintExpandedHeadCursor => false;
+
+  @Deprecated('The painter handles head positioning via shouldPaintHeadRect. '
+      'Will be removed in a future version.')
+  Position? expandedHeadPosition(Selection? rawSelection) => null;
 
   // ── Movement (6 methods) ──
   Position? onVerticalMove(CursorMoveContext ctx);

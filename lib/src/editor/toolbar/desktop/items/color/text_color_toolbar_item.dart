@@ -20,18 +20,10 @@ ToolbarItem buildTextColorItem({
           onPressed: () {},
         );
       }
-      String? textColorHex;
-      final nodes = editorState.getNodesInSelection(selection);
-      final isHighlight = nodes.allSatisfyInSelection(selection, (delta) {
-        if (delta.everyAttributes((attr) => attr.isEmpty)) {
-          return false;
-        }
-
-        return delta.everyAttributes((attr) {
-          textColorHex = attr[RichTextKeys.textColor];
-          return (textColorHex != null);
-        });
-      });
+      final textColorHex =
+          activeAttributeValue(editorState, selection, RichTextKeys.textColor)
+              as String?;
+      final isHighlight = textColorHex != null;
 
       final child = SVGIconItemWidget(
         iconName: 'toolbar/text_color',
@@ -39,20 +31,27 @@ ToolbarItem buildTextColorItem({
         highlightColor: highlightColor,
         iconColor: iconColor,
         onPressed: () {
-          bool showClearButton = false;
-          nodes.allSatisfyInSelection(
-            selection,
-            (delta) {
-              if (!showClearButton) {
-                showClearButton = delta.whereType<TextInsert>().any(
-                  (element) {
-                    return element.attributes?[RichTextKeys.textColor] != null;
-                  },
-                );
-              }
-              return true;
-            },
-          );
+          bool showClearButton;
+          if (selection.isCollapsed) {
+            showClearButton = textColorHex != null;
+          } else {
+            final nodes = editorState.getNodesInSelection(selection);
+            showClearButton = false;
+            nodes.allSatisfyInSelection(
+              selection,
+              (delta) {
+                if (!showClearButton) {
+                  showClearButton = delta.whereType<TextInsert>().any(
+                    (element) {
+                      return element.attributes?[RichTextKeys.textColor] !=
+                          null;
+                    },
+                  );
+                }
+                return true;
+              },
+            );
+          }
           showColorMenu(
             context,
             editorState,

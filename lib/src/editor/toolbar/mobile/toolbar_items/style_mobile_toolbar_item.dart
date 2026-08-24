@@ -26,6 +26,7 @@ class _StyleMenu extends StatefulWidget {
 }
 
 class _StyleMenuState extends State<_StyleMenu> {
+  late final size = MediaQuery.sizeOf(context);
   @override
   Widget build(BuildContext context) {
     final styles = NovidentEditorStyles.of(context);
@@ -38,7 +39,6 @@ class _StyleMenuState extends State<_StyleMenu> {
     final currentStyleRef = node.attributes[blockComponentStyleRef] as String?;
 
     final style = MobileToolbarTheme.of(context);
-    final size = MediaQuery.sizeOf(context);
 
     final entries = <_StyleMenuEntry>[
       _StyleMenuEntry(

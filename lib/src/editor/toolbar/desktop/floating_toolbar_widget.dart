@@ -67,6 +67,7 @@ class _FloatingToolbarWidgetState extends State<FloatingToolbarWidget> {
   void initState() {
     super.initState();
     selectionNotifier.addListener(_onSelectionChanged);
+    editorState.toggledStyleNotifier.addListener(_onSelectionChanged);
   }
 
   @override
@@ -75,13 +76,17 @@ class _FloatingToolbarWidgetState extends State<FloatingToolbarWidget> {
     if (widget.editorState != oldWidget.editorState) {
       oldWidget.editorState.selectionNotifier
           .removeListener(_onSelectionChanged);
+      oldWidget.editorState.toggledStyleNotifier
+          .removeListener(_onSelectionChanged);
       selectionNotifier.addListener(_onSelectionChanged);
+      editorState.toggledStyleNotifier.addListener(_onSelectionChanged);
     }
   }
 
   @override
   void dispose() {
     selectionNotifier.removeListener(_onSelectionChanged);
+    editorState.toggledStyleNotifier.removeListener(_onSelectionChanged);
     super.dispose();
   }
 

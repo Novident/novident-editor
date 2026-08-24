@@ -56,6 +56,7 @@ class _NovidentStaticToolbarState extends State<NovidentStaticToolbar> {
   void initState() {
     super.initState();
     editorState?.selectionNotifier.addListener(_onSelectionChanged);
+    editorState?.toggledStyleNotifier.addListener(_onSelectionChanged);
   }
 
   @override
@@ -64,13 +65,17 @@ class _NovidentStaticToolbarState extends State<NovidentStaticToolbar> {
     if (widget.editorState != oldWidget.editorState) {
       oldWidget.editorState?.selectionNotifier
           .removeListener(_onSelectionChanged);
+      oldWidget.editorState?.toggledStyleNotifier
+          .removeListener(_onSelectionChanged);
       widget.editorState?.selectionNotifier.addListener(_onSelectionChanged);
+      widget.editorState?.toggledStyleNotifier.addListener(_onSelectionChanged);
     }
   }
 
   @override
   void dispose() {
     editorState?.selectionNotifier.removeListener(_onSelectionChanged);
+    editorState?.toggledStyleNotifier.removeListener(_onSelectionChanged);
     super.dispose();
   }
 

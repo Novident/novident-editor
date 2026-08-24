@@ -171,6 +171,7 @@ class _MobileToolbarV2State extends State<MobileToolbarV2> {
     );
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      if (!mounted) return;
       Overlay.of(context, rootOverlay: true).insert(toolbarOverlay!);
     });
   }

@@ -54,10 +54,11 @@ class _HeadingMenuState extends State<_HeadingMenu> {
   Widget build(BuildContext context) {
     final style = MobileToolbarTheme.of(context);
     final size = MediaQuery.sizeOf(context);
+    final node = widget.editorState.getNodeAtPath(widget.selection.start.path);
+    if (node == null) return const SizedBox.shrink();
+
     final btnList = headings.map((currentHeading) {
       // Check if current node is heading and its level
-      final node =
-          widget.editorState.getNodeAtPath(widget.selection.start.path)!;
       final isSelected = node.type == HeadingBlockKeys.type &&
           node.attributes[HeadingBlockKeys.level] == currentHeading.level;
 

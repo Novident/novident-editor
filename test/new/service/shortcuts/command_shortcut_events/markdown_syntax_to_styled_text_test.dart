@@ -694,9 +694,9 @@ void main() async {
     );
 
     testWidgets(
-      'App__Flowy__ to bold Novident',
+      'Nov__ident__ to bold Novident',
       (tester) async {
-        const text = 'App__Flowy_';
+        const text = 'Nov__ident_';
         final editor = tester.editor..addEmptyParagraph();
         await editor.startTesting();
         await editor.updateSelection(

@@ -75,7 +75,7 @@ Future<void> onNonTextUpdate(
     return;
   }
 
-  if (PlatformExtension.isWindows) {
+  if (EditorPlatform.isWindows) {
     if (nonTextUpdate.composing == TextRange.empty &&
         nonTextUpdate.selection.isCollapsed) {
       editorState.selection = Selection.collapsed(
@@ -85,7 +85,7 @@ Future<void> onNonTextUpdate(
         ),
       );
     }
-  } else if (PlatformExtension.isLinux) {
+  } else if (EditorPlatform.isLinux) {
     unawaited(
       editorState.updateSelectionWithReason(
         Selection.collapsed(

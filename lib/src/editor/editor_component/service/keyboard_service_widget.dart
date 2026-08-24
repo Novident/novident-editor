@@ -345,15 +345,31 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
       return TextEditingValue(
         text: text,
         selection: TextSelection(
-          baseOffset: selection.startIndex,
+          baseOffset: _clampOffset(selection.startIndex, text.length),
           extentOffset: selection.isSingle
-              ? selection.endIndex
-              : _cachedEndOffset ?? selection.endIndex,
+              ? _clampOffset(selection.endIndex, text.length)
+              : _clampOffset(
+                  _cachedEndOffset ?? selection.endIndex,
+                  text.length,
+                ),
         ),
         composing: composingTextRange,
       );
     }
     return null;
+  }
+
+  /// Clamps a character offset to the valid `[0, length]` range.
+  ///
+  /// A selection can legitimately point at a non-text node (divider, image,
+  /// …) whose `delta` is null, so the concatenated text is empty while the
+  /// selection still carries non-zero offsets. Pushing such an out-of-range
+  /// selection to the IME (`setEditingState`) trips Flutter's
+  /// `TextEditingValue._textRangeIsValid` assertion, so clamp here.
+  static int _clampOffset(int offset, int length) {
+    if (offset < 0) return 0;
+    if (offset > length) return length;
+    return offset;
   }
 
   void _onFocusChanged() {

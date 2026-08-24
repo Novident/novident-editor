@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/desktop_scroll_service.dart';
 import 'package:novident_editor/src/editor/editor_component/service/scroll/mobile_scroll_service.dart';
@@ -44,6 +46,12 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
 
   Selection? lastSelection;
 
+  /// Pending mobile keyboard-delay timer that defers the start of
+  /// auto-scroll until the soft keyboard shows. Canceled on dispose so a
+  /// still-pending timer does not outlive the widget (and trip the test
+  /// framework's pending-timer invariant).
+  Timer? _keyboardDelayTimer;
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +60,7 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
 
   @override
   void dispose() {
+    _keyboardDelayTimer?.cancel();
     editorState.selectionNotifier.removeListener(_onSelectionChanged);
     super.dispose();
   }
@@ -205,7 +214,8 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
           ? const Duration(milliseconds: 250)
           : Duration.zero;
 
-      Future.delayed(keyboardDelay, () {
+      _keyboardDelayTimer?.cancel();
+      _keyboardDelayTimer = Timer(keyboardDelay, () {
         if (_forwardKey.currentContext == null) {
           return;
         }

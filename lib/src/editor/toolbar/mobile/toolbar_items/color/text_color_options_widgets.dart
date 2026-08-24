@@ -24,12 +24,12 @@ class _TextColorOptionsWidgetsState extends State<TextColorOptionsWidgets> {
     final style = MobileToolbarTheme.of(context);
 
     final selection = widget.selection;
-    final nodes = widget.editorState.getNodesInSelection(selection);
-    final hasTextColor = nodes.allSatisfyInSelection(selection, (delta) {
-      return delta.everyAttributes(
-        (attributes) => attributes[RichTextKeys.textColor] != null,
-      );
-    });
+    final activeColor = activeAttributeValue(
+      widget.editorState,
+      selection,
+      RichTextKeys.textColor,
+    ) as String?;
+    final hasTextColor = activeColor != null;
 
     final colorOptions = widget.textColorOptions ?? generateTextColorOptions();
 
@@ -56,17 +56,11 @@ class _TextColorOptionsWidgetsState extends State<TextColorOptionsWidgets> {
             isSelected: !hasTextColor,
           ),
           // color option buttons
-          ...colorOptions.map((e) {
-            final isSelected = nodes.allSatisfyInSelection(selection, (delta) {
-              return delta.everyAttributes(
-                (attributes) =>
-                    attributes[RichTextKeys.textColor] == e.colorHex,
-              );
-            });
-            return ColorButton(
+          for (final e in colorOptions)
+            ColorButton(
               colorOption: e,
               onPressed: () {
-                if (!isSelected) {
+                if (activeColor != e.colorHex) {
                   setState(() {
                     formatFontColor(
                       widget.editorState,
@@ -78,9 +72,8 @@ class _TextColorOptionsWidgetsState extends State<TextColorOptionsWidgets> {
                   // TODO(yijing): handle when no text is selected
                 }
               },
-              isSelected: isSelected,
-            );
-          }),
+              isSelected: activeColor == e.colorHex,
+            ),
         ],
       ),
     );

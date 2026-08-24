@@ -258,8 +258,8 @@ class _StyleMenuPanel extends StatelessWidget {
                 textColor: textColor,
                 onTap: () => onSelected(''),
               ),
-              ...allStyles.map(
-                (style) => _StyleMenuItem(
+              for (final style in allStyles)
+                _StyleMenuItem(
                   label: style.name,
                   isSelected: style.id == currentStyleRef,
                   selectedBg: selectedBg,
@@ -267,7 +267,6 @@ class _StyleMenuPanel extends StatelessWidget {
                   textColor: textColor,
                   onTap: () => onSelected(style.id),
                 ),
-              ),
             ],
           ),
         ),

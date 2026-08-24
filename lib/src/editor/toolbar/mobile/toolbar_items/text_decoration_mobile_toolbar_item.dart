@@ -54,22 +54,16 @@ class _TextDecorationMenuState extends State<_TextDecorationMenu> {
   @override
   Widget build(BuildContext context) {
     final style = MobileToolbarTheme.of(context);
-    final btnList = textDecorations.map((currentDecoration) {
+    final btnList = List.generate(textDecorations.length, (index) {
+      final currentDecoration = textDecorations[index];
       // Check current decoration is active or not
       final selection = widget.selection;
-      final nodes = widget.editorState.getNodesInSelection(selection);
-      final bool isSelected;
-      if (selection.isCollapsed) {
-        isSelected = widget.editorState.toggledStyle.containsKey(
-          currentDecoration.name,
-        );
-      } else {
-        isSelected = nodes.allSatisfyInSelection(selection, (delta) {
-          return delta.everyAttributes(
-            (attributes) => attributes[currentDecoration.name] == true,
-          );
-        });
-      }
+      final isSelected = activeAttributeValue(
+            widget.editorState,
+            selection,
+            currentDecoration.name,
+          ) ==
+          true;
 
       return MobileToolbarItemMenuBtn(
         icon: NovidentMobileIcon(
@@ -84,7 +78,7 @@ class _TextDecorationMenuState extends State<_TextDecorationMenu> {
           });
         },
       );
-    }).toList();
+    });
 
     return GridView(
       shrinkWrap: true,

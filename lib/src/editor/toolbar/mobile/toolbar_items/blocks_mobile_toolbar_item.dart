@@ -76,12 +76,12 @@ class _BlocksMenuState extends State<_BlocksMenu> {
   Widget build(BuildContext context) {
     final style = MobileToolbarTheme.of(context);
 
-    final children = lists.map((list) {
-      // Check if current node is list and its type
-      final node = widget.editorState.getNodeAtPath(
-        widget.selection.start.path,
-      )!;
+    final node = widget.editorState.getNodeAtPath(widget.selection.start.path);
+    if (node == null) return const SizedBox.shrink();
 
+    final children = List.generate(lists.length, (index) {
+      final list = lists[index];
+      // Check if current node is list and its type
       final isSelected = node.type == list.name &&
           (list.level == null ||
               node.attributes[HeadingBlockKeys.level] == list.level);
@@ -116,7 +116,7 @@ class _BlocksMenuState extends State<_BlocksMenu> {
           });
         },
       );
-    }).toList();
+    });
 
     return GridView(
       shrinkWrap: true,

@@ -18,19 +18,12 @@ ToolbarItem buildHighlightColorItem({List<ColorOption>? colorOptions}) {
           onPressed: () {},
         );
       }
-      String? highlightColorHex;
-
-      final nodes = editorState.getNodesInSelection(selection);
-      final isHighlight = nodes.allSatisfyInSelection(selection, (delta) {
-        if (delta.everyAttributes((attr) => attr.isEmpty)) {
-          return false;
-        }
-
-        return delta.everyAttributes((attributes) {
-          highlightColorHex = attributes[RichTextKeys.backgroundColor];
-          return highlightColorHex != null;
-        });
-      });
+      final highlightColorHex = activeAttributeValue(
+        editorState,
+        selection,
+        RichTextKeys.backgroundColor,
+      ) as String?;
+      final isHighlight = highlightColorHex != null;
 
       final child = SVGIconItemWidget(
         iconName: 'toolbar/highlight_color',
@@ -38,18 +31,24 @@ ToolbarItem buildHighlightColorItem({List<ColorOption>? colorOptions}) {
         highlightColor: highlightColor,
         iconColor: iconColor,
         onPressed: () {
-          bool showClearButton = false;
-          nodes.allSatisfyInSelection(selection, (delta) {
-            if (!showClearButton) {
-              showClearButton = delta.whereType<TextInsert>().any(
-                (element) {
-                  return element.attributes?[RichTextKeys.backgroundColor] !=
-                      null;
-                },
-              );
-            }
-            return true;
-          });
+          bool showClearButton;
+          if (selection.isCollapsed) {
+            showClearButton = highlightColorHex != null;
+          } else {
+            final nodes = editorState.getNodesInSelection(selection);
+            showClearButton = false;
+            nodes.allSatisfyInSelection(selection, (delta) {
+              if (!showClearButton) {
+                showClearButton = delta.whereType<TextInsert>().any(
+                  (element) {
+                    return element.attributes?[RichTextKeys.backgroundColor] !=
+                        null;
+                  },
+                );
+              }
+              return true;
+            });
+          }
           showColorMenu(
             context,
             editorState,

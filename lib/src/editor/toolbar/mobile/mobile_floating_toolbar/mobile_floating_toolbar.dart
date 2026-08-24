@@ -77,6 +77,8 @@ class _MobileFloatingToolbarState extends State<MobileFloatingToolbar>
     super.didUpdateWidget(oldWidget);
 
     if (widget.editorState != oldWidget.editorState) {
+      oldWidget.editorState.selectionNotifier
+          .removeListener(_onSelectionChanged);
       editorState.selectionNotifier.addListener(_onSelectionChanged);
     }
   }

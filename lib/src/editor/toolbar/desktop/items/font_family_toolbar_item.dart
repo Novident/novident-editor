@@ -317,13 +317,12 @@ class _FontFamilyMenuPanel extends StatelessWidget {
             : NovidentEditorL10n.current.noFontFamily,
         isSelected: currentFamily == null,
       ),
-      ...fontFamilies.map(
-        (f) => _FontFamilyEntry(
+      for (final f in fontFamilies)
+        _FontFamilyEntry(
           family: f,
           label: f,
           isSelected: f == currentFamily,
         ),
-      ),
     ];
 
     return Material(
@@ -348,17 +347,18 @@ class _FontFamilyMenuPanel extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 4),
             shrinkWrap: true,
-            children: entries.map((entry) {
-              return _FontFamilyMenuItem(
-                label: entry.label,
-                fontFamily: entry.family.isNotEmpty ? entry.family : null,
-                isSelected: entry.isSelected,
-                selectedBg: selectedBg,
-                selectedText: selectedText,
-                textColor: textColor,
-                onTap: () => onSelected(entry.family),
-              );
-            }).toList(growable: false),
+            children: [
+              for (final entry in entries)
+                _FontFamilyMenuItem(
+                  label: entry.label,
+                  fontFamily: entry.family.isNotEmpty ? entry.family : null,
+                  isSelected: entry.isSelected,
+                  selectedBg: selectedBg,
+                  selectedText: selectedText,
+                  textColor: textColor,
+                  onTap: () => onSelected(entry.family),
+                ),
+            ],
           ),
         ),
       ),

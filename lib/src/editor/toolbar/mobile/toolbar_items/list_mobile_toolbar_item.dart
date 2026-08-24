@@ -46,7 +46,8 @@ class _ListMenuState extends State<_ListMenu> {
     final node = widget.editorState.getNodeAtPath(widget.selection.start.path);
     if (node == null) return const SizedBox.shrink();
 
-    final btnList = lists.map((currentList) {
+    final btnList = List.generate(lists.length, (index) {
+      final currentList = lists[index];
       // Check if current node is list and its type
       final isSelected = node.type == currentList.name;
 
@@ -71,7 +72,7 @@ class _ListMenuState extends State<_ListMenu> {
           });
         },
       );
-    }).toList();
+    });
 
     return GridView(
       shrinkWrap: true,

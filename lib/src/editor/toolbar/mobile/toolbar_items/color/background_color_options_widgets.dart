@@ -56,13 +56,12 @@ class _BackgroundColorOptionsWidgetsState
             isSelected: !hasTextColor,
           ),
           // color option buttons
-          ...colorOptions.map((e) {
-            final isSelected = activeColor == e.colorHex;
-            return ColorButton(
+          for (final e in colorOptions)
+            ColorButton(
               isBackgroundColor: true,
               colorOption: e,
               onPressed: () {
-                if (!isSelected) {
+                if (activeColor != e.colorHex) {
                   setState(() {
                     formatHighlightColor(
                       widget.editorState,
@@ -72,9 +71,8 @@ class _BackgroundColorOptionsWidgetsState
                   });
                 }
               },
-              isSelected: isSelected,
-            );
-          }),
+              isSelected: activeColor == e.colorHex,
+            ),
         ],
       ),
     );

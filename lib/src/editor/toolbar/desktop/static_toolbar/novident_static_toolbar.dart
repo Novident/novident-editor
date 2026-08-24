@@ -94,7 +94,7 @@ class _NovidentStaticToolbarState extends State<NovidentStaticToolbar> {
         ),
       ),
       child: _StaticToolbarRow(
-        items: widget.items.toList(),
+        items: widget.items,
         editorState: editorState,
         activeColor: widget.style.toolbarActiveColor,
         iconColor: widget.style.toolbarIconColor,

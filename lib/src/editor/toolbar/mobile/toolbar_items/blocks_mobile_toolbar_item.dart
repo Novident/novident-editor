@@ -79,7 +79,8 @@ class _BlocksMenuState extends State<_BlocksMenu> {
     final node = widget.editorState.getNodeAtPath(widget.selection.start.path);
     if (node == null) return const SizedBox.shrink();
 
-    final children = lists.map((list) {
+    final children = List.generate(lists.length, (index) {
+      final list = lists[index];
       // Check if current node is list and its type
       final isSelected = node.type == list.name &&
           (list.level == null ||
@@ -115,7 +116,7 @@ class _BlocksMenuState extends State<_BlocksMenu> {
           });
         },
       );
-    }).toList();
+    });
 
     return GridView(
       shrinkWrap: true,

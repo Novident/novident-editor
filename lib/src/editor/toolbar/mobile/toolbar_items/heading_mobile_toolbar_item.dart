@@ -57,7 +57,8 @@ class _HeadingMenuState extends State<_HeadingMenu> {
     final node = widget.editorState.getNodeAtPath(widget.selection.start.path);
     if (node == null) return const SizedBox.shrink();
 
-    final btnList = headings.map((currentHeading) {
+    final btnList = List.generate(headings.length, (index) {
+      final currentHeading = headings[index];
       // Check if current node is heading and its level
       final isSelected = node.type == HeadingBlockKeys.type &&
           node.attributes[HeadingBlockKeys.level] == currentHeading.level;
@@ -101,7 +102,7 @@ class _HeadingMenuState extends State<_HeadingMenu> {
           },
         ),
       );
-    }).toList();
+    });
 
     return ConstrainedBox(
       constraints: BoxConstraints.tightFor(width: size.width),

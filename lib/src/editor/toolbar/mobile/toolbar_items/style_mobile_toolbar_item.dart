@@ -46,21 +46,21 @@ class _StyleMenuState extends State<_StyleMenu> {
         name: NovidentEditorL10n.current.noStyle,
         isSelected: currentStyleRef == null,
       ),
-      ...allStyles.map(
-        (s) => _StyleMenuEntry(
+      for (final s in allStyles)
+        _StyleMenuEntry(
           id: s.id,
           name: s.name,
           isSelected: s.id == currentStyleRef,
           style: s,
         ),
-      ),
     ];
 
     final columnCount = (entries.length / 4).ceil().clamp(1, 3);
     final itemWidth =
         (size.width - (columnCount + 1) * style.buttonSpacing) / columnCount;
 
-    final btnList = entries.map((entry) {
+    final btnList = List.generate(entries.length, (index) {
+      final entry = entries[index];
       final style = entry.style == null
           ? kDefaultBaseStyle
           : styles.resolveStyle(entry.style ?? kDefaultBaseStyle);
@@ -100,7 +100,7 @@ class _StyleMenuState extends State<_StyleMenu> {
           ),
         ),
       );
-    }).toList();
+    });
 
     return ConstrainedBox(
       constraints: BoxConstraints.tightFor(width: size.width),

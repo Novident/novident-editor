@@ -56,12 +56,11 @@ class _TextColorOptionsWidgetsState extends State<TextColorOptionsWidgets> {
             isSelected: !hasTextColor,
           ),
           // color option buttons
-          ...colorOptions.map((e) {
-            final isSelected = activeColor == e.colorHex;
-            return ColorButton(
+          for (final e in colorOptions)
+            ColorButton(
               colorOption: e,
               onPressed: () {
-                if (!isSelected) {
+                if (activeColor != e.colorHex) {
                   setState(() {
                     formatFontColor(
                       widget.editorState,
@@ -73,9 +72,8 @@ class _TextColorOptionsWidgetsState extends State<TextColorOptionsWidgets> {
                   // TODO(yijing): handle when no text is selected
                 }
               },
-              isSelected: isSelected,
-            );
-          }),
+              isSelected: activeColor == e.colorHex,
+            ),
         ],
       ),
     );

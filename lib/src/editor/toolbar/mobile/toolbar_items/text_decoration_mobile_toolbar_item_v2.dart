@@ -64,7 +64,8 @@ class _TextDecorationMenuState extends State<_TextDecorationMenu> {
   Widget build(BuildContext context) {
     final style = MobileToolbarTheme.of(context);
 
-    final bius = textDecorations.map((currentDecoration) {
+    final bius = List.generate(textDecorations.length, (index) {
+      final currentDecoration = textDecorations[index];
       // Check current decoration is active or not
       final selection = widget.selection;
       final isSelected = activeAttributeValue(
@@ -92,7 +93,7 @@ class _TextDecorationMenuState extends State<_TextDecorationMenu> {
           });
         },
       );
-    }).toList();
+    });
 
     return GridView(
       shrinkWrap: true,

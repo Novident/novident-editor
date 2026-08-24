@@ -72,11 +72,9 @@ class _StyleMenuState extends State<_StyleMenu> {
             label: Text(
               entry.name,
               maxLines: 2,
-              overflow: TextOverflow.clip,
-              style: _buildBaseTextStyle(
-                style,
-              ).merge(
+              style: _buildBaseTextStyle(style).merge(
                 TextStyle(
+                  fontSize: 16,
                   fontWeight:
                       entry.isSelected ? FontWeight.bold : FontWeight.normal,
                 ),

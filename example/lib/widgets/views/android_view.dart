@@ -139,15 +139,40 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
     return Column(
       children: <Widget>[
         Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(top: 15),
-            child: MyEditor(
-              key: ValueKey(controller.nodeId),
-              session: controller.session,
-              styles: kEditorStyles,
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              zenController: controller.session.zenController,
-              typewriterStrategy: controller.typewriterStrategy,
+          child: MobileFloatingToolbar(
+            editorState: controller.session.editorState,
+            editorScrollController: controller.session.scrollController,
+            floatingToolbarHeight: 32,
+            toolbarBuilder: (context, anchor, closeToolbar) {
+              final editorState = controller.session.editorState;
+              return AdaptiveTextSelectionToolbar.editable(
+                clipboardStatus: ClipboardStatus.pasteable,
+                onCopy: () {
+                  copyCommand.execute(editorState);
+                  closeToolbar();
+                },
+                onCut: () => cutCommand.execute(editorState),
+                onPaste: () => pasteCommand.execute(editorState),
+                onSelectAll: () => selectAllCommand.execute(editorState),
+                onLiveTextInput: null,
+                onLookUp: null,
+                onSearchWeb: null,
+                onShare: null,
+                anchors: TextSelectionToolbarAnchors(
+                  primaryAnchor: anchor,
+                ),
+              );
+            },
+            child: Padding(
+              padding: EdgeInsets.only(top: 15),
+              child: MyEditor(
+                key: ValueKey(controller.nodeId),
+                session: controller.session,
+                styles: kEditorStyles,
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                zenController: controller.session.zenController,
+                typewriterStrategy: controller.typewriterStrategy,
+              ),
             ),
           ),
         ),

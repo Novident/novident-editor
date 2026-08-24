@@ -33,14 +33,17 @@ final List<ToolbarItem> kDesktopToolbarItems = <ToolbarItem>[
 /// lists, link, quote and code. Font size, font family and alignment
 /// have no mobile counterpart widgets yet, so they are omitted.
 final List<MobileToolbarItem> kMobileToolbarItems = <MobileToolbarItem>[
-  styleMobileToolbarItem,
-  textDecorationMobileToolbarItem,
   headingMobileToolbarItem,
-  todoListMobileToolbarItem,
-  listMobileToolbarItem,
-  linkMobileToolbarItem,
-  quoteMobileToolbarItem,
+  styleMobileToolbarItem,
+  textDecorationMobileToolbarItemV2,
   codeMobileToolbarItem,
+  linkMobileToolbarItem,
+  buildTextAndBackgroundColorMobileToolbarItem(),
+  listMobileToolbarItem,
+  todoListMobileToolbarItem,
+  quoteMobileToolbarItem,
+  blocksMobileToolbarItem,
+  dividerMobileToolbarItem,
 ];
 
 /// Editor styles shared by every editor surface of the app (desktop

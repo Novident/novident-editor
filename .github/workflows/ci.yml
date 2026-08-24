@@ -42,7 +42,14 @@ jobs:
         run: flutter pub get
 
       - name: Analyze (root)
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        # Scope to lib/ + test/ only: the root package consumes the extracted
+        # layers via pub.dev (hosted), not path deps, so packages/ must not be
+        # analyzed from the root context. In a fresh checkout packages/* have no
+        # .dart_tool/package_config.json yet, so an unscoped `flutter analyze`
+        # descends into them and resolves their self-imports against the hosted
+        # versions, producing phantom type-identity errors. Each package is
+        # analyzed correctly (and independently) in the loop below.
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib test
 
       - name: Test (root)
         run: flutter test

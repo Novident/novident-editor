@@ -2,6 +2,8 @@
 
 ## 1.0.7
 
+* fix(vim): undo and redo on vim mode preserves previous ranged selection.
+* fix: most of the issues related with the workflows and the testing failing.
 * fix: make public internal paste text methods using `EditorState`.
 * chore(example): updated example to have the native toolbar for every platform.
 

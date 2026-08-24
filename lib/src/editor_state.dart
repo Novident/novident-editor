@@ -34,6 +34,7 @@ class ApplyOptions {
     this.recordUndo = true,
     this.recordRedo = false,
     this.inMemoryUpdate = false,
+    this.collapse = false,
   });
 
   /// This flag indicates that
@@ -44,6 +45,10 @@ class ApplyOptions {
 
   /// This flag used to determine whether the transaction is in-memory update.
   final bool inMemoryUpdate;
+
+  /// This flag used to determine whether the transaction after selection
+  /// will be collapsed forcely.
+  final bool collapse;
 }
 
 enum TransactionTime {
@@ -545,7 +550,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
     if (isRemote) {
       _selectionUpdateReason = SelectionUpdateReason.remote;
-      selection = _applyTransactionFromRemote(transaction);
+      final remoteSel = _applyTransactionFromRemote(transaction);
+      selection =
+          options.collapse ? remoteSel?.collapse(atStart: true) : remoteSel;
       service.keyboardService?.invalidateCache();
     } else {
       // broadcast to other users here, before applying the transaction
@@ -577,7 +584,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
         if (transaction.selectionExtraInfo != null) {
           selectionExtraInfo = transaction.selectionExtraInfo;
         }
-        selection = transaction.afterSelection;
+        selection = options.collapse
+            ? transaction.afterSelection?.collapse(atStart: true)
+            : transaction.afterSelection;
       }
     }
 

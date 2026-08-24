@@ -254,15 +254,25 @@ Map<VimCommand, CommandShortcutEvent> buildVimModeCommandShortcutEvents(
     VimCommand.undo: event(
       VimCommand.undo,
       controller: controller,
-      onNormal: delegate(undoCommand),
+      onNormal: (state, controller) => _undoCommandHandler(state),
     ),
     VimCommand.redo: event(
       VimCommand.redo,
       controller: controller,
-      onNormal: delegate(redoCommand),
+      onNormal: (state, controller) => _redoCommandHandler(state),
     ),
   };
 }
+
+CommandShortcutEventHandler _undoCommandHandler = (editorState) {
+  editorState.undoManager.undo(collapseSelection: true);
+  return KeyEventResult.handled;
+};
+
+CommandShortcutEventHandler _redoCommandHandler = (editorState) {
+  editorState.undoManager.redo(collapseSelection: true);
+  return KeyEventResult.handled;
+};
 
 void _collapseSelection(EditorState editorState, {bool atStart = false}) {
   final selection = editorState.selection;

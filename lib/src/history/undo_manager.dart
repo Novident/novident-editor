@@ -87,7 +87,7 @@ class FixedSizeStack {
 }
 
 class UndoManager {
-  UndoManager([int stackSize = 20])
+  UndoManager([int stackSize = 500])
       : undoStack = FixedSizeStack(stackSize),
         redoStack = FixedSizeStack(stackSize);
   final FixedSizeStack undoStack;
@@ -110,8 +110,11 @@ class UndoManager {
     return last;
   }
 
-  void undo() {
-    NovidentEditorLog.editor.debug('undo');
+  void undo({bool collapseSelection = false}) {
+    assert(() {
+      NovidentEditorLog.editor.debug('undo');
+      return true;
+    }());
     final s = state;
     if (s == null) {
       return;
@@ -123,15 +126,19 @@ class UndoManager {
     final transaction = historyItem.toTransaction(s);
     s.apply(
       transaction,
-      options: const ApplyOptions(
+      options: ApplyOptions(
         recordUndo: false,
         recordRedo: true,
+        collapse: collapseSelection,
       ),
     );
   }
 
-  void redo() {
-    NovidentEditorLog.editor.debug('redo');
+  void redo({bool collapseSelection = false}) {
+    assert(() {
+      NovidentEditorLog.editor.debug('redo');
+      return true;
+    }());
     final s = state;
     if (s == null) {
       return;
@@ -143,11 +150,17 @@ class UndoManager {
     final transaction = historyItem.toTransaction(s);
     s.apply(
       transaction,
+      options: ApplyOptions(
+        collapse: collapseSelection,
+      ),
     );
   }
 
   void forgetRecentUndo() {
-    NovidentEditorLog.editor.debug('forgetRecentUndo');
+    assert(() {
+      NovidentEditorLog.editor.debug('forgetRecentUndo');
+      return true;
+    }());
     if (state != null) {
       undoStack.pop();
     }

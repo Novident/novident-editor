@@ -82,7 +82,8 @@ RegExp _phoneRegex = RegExp(r'^\+?' // Optional '+' at start
     r'[0-9]$' // Ensure it ends with a digit
     );
 
-extension on EditorState {
+//TODO: @Cathood0 this extension requires some refactor and perfomance improvements
+extension PasteToEditor on EditorState {
   Future<bool> pasteHtml(String html) async {
     final nodes = htmlToDocument(html).root.children.toList();
     // remove the front and back empty line
@@ -120,6 +121,8 @@ extension on EditorState {
       return;
     }
 
+    // NOTE: @Cathood0 why 3 MAPS?
+    // this can be handled in just one for!
     final nodes = plainText
         .split('\n')
         .map(

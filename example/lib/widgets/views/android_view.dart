@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:example/common/controller/tree_controller.dart';
 import 'package:example/common/nodes/file.dart';
 import 'package:example/common/store/document_content_store.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:novident_editor/novident_editor.dart';
 
 import '../drawer/tree_view_drawer.dart';
@@ -56,6 +59,7 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
       ..selectNode(widget.controller.root.atPath(<int>[1, 0]));
     treeController.selection.addListener(_onSelectionChanged);
     treeController.root.addListener(_onTreeChanged);
+    _initAndroidNativeTextProcessActions();
     final File? initial = treeController.selectedFile;
     if (initial != null) {
       _openSession(initial.id);
@@ -131,6 +135,82 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
     if (mounted) setState(() {});
   }
 
+  /// The native context menu items (e.g., `Translate`, `Search`).
+  /// This is Android-specific and is always `null` on other platforms.
+  List<ProcessTextAction>? _nativeTextProcessActions;
+
+  // Always `null` on platforms other than Android.
+  @visibleForTesting
+  ProcessTextService? processTextService;
+
+  /// The native context menu items like `Translate` and `Search` on Android.
+  ///
+  /// This feature is platform-specific and will
+  /// be silently ignored on platforms other than Android.
+  ///
+  /// To use this feature, ensure the following is added in your `AndroidManifest.xml`:
+  ///
+  /// ```xml
+  /// <queries>
+  ///  <intent>
+  ///      <action android:name="android.intent.action.PROCESS_TEXT"/>
+  ///      <data android:mimeType="text/plain"/>
+  ///  </intent>
+  /// </queries>
+  /// ```
+  Future<void> _initAndroidNativeTextProcessActions() async {
+    if (EditorPlatform.isAndroid) {
+      processTextService ??= DefaultProcessTextService();
+      _nativeTextProcessActions = [
+        ...await processTextService!.queryTextActions()
+      ];
+    }
+  }
+
+  // For the original method, 
+  // refer to: 
+  // https://github.com/flutter/flutter/blob/9e211cabbd72de59d79decacfe0ad6f707c61366/packages/flutter/lib/src/widgets/editable_text.dart#L3059-L3091
+  List<ContextMenuButtonItem> _buildTextProcessingActionButtonItems(
+    EditorState state,
+  ) {
+    final buttonItems = <ContextMenuButtonItem>[];
+
+    if (state.selection == null || state.selection!.isCollapsed) {
+      return buttonItems;
+    }
+    final textEditingValue =
+        state.getTextInSelection(state.selection).join('\n');
+    if (textEditingValue.isEmpty) return buttonItems;
+
+    for (final action in _nativeTextProcessActions ?? []) {
+      buttonItems.add(
+        ContextMenuButtonItem(
+          label: action.label,
+          onPressed: () async {
+            final processedText = await processTextService!.processTextAction(
+              action.id,
+              textEditingValue,
+              !state.editable,
+            );
+
+            if (processedText == null ||
+                textEditingValue == processedText ||
+                !state.editable) {
+              unawaited(state.updateSelectionWithReason(
+                  Selection.collapsed(state.selection!.start)));
+              return;
+            }
+
+            if (processedText.isNotEmpty) {
+              await state.pastePlainText(processedText);
+            }
+          },
+        ),
+      );
+    }
+    return buttonItems;
+  }
+
   Widget _buildEditor() {
     final EditorSessionController? controller = _sessionController;
     if (controller == null || !controller.isReady) {
@@ -145,8 +225,10 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
             floatingToolbarHeight: 32,
             toolbarBuilder: (context, anchor, closeToolbar) {
               final editorState = controller.session.editorState;
-              return AdaptiveTextSelectionToolbar.editable(
-                clipboardStatus: ClipboardStatus.pasteable,
+              final buttons = EditableText.getEditableButtonItems(
+                clipboardStatus: editorState.editable
+                    ? ClipboardStatus.pasteable
+                    : ClipboardStatus.notPasteable,
                 onCopy: () {
                   copyCommand.execute(editorState);
                   closeToolbar();
@@ -158,6 +240,12 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
                 onLookUp: null,
                 onSearchWeb: null,
                 onShare: null,
+              );
+              return AdaptiveTextSelectionToolbar.buttonItems(
+                buttonItems: [
+                  ...buttons,
+                  ..._buildTextProcessingActionButtonItems(editorState),
+                ],
                 anchors: TextSelectionToolbarAnchors(
                   primaryAnchor: anchor,
                 ),

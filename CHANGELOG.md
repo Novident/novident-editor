@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.7
+
+* fix: make public internal paste text methods using `EditorState`.
+* chore(example): updated example to have the native toolbar for every platform.
+
 ## 1.0.6
 
 * fix(ime): send only selected nodes during text input attach by @CatHood0 in https://github.com/Novident/novident-editor/pull/32

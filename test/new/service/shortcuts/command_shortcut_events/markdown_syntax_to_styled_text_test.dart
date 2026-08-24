@@ -88,8 +88,8 @@ void main() async {
         await editor.dispose();
       });
 
-      testWidgets('App`Flowy` to code AppFlowy', (tester) async {
-        const text = 'App`Flowy';
+      testWidgets('Nov`ident` to code Novident', (tester) async {
+        const text = 'Nov`ident';
         final editor = tester.editor..addEmptyParagraph();
         await editor.startTesting();
         await editor.updateSelection(
@@ -111,7 +111,7 @@ void main() async {
         );
 
         expect(allCode, true);
-        expect(node?.delta?.toPlainText(), 'AppFlowy');
+        expect(node?.delta?.toPlainText(), 'Novident');
         await editor.dispose();
       });
 
@@ -200,8 +200,8 @@ void main() async {
         await editor.dispose();
       });
 
-      testWidgets('App~~Flowy~~ to strikethrough AppFlowy', (tester) async {
-        const text = 'App~~Flowy~';
+      testWidgets('Nov~~ident~~ to strikethrough Novident', (tester) async {
+        const text = 'Nov~~ident~';
         final editor = tester.editor..addEmptyParagraph();
         await editor.startTesting();
         await editor.updateSelection(
@@ -220,7 +220,7 @@ void main() async {
         );
 
         expect(result, true);
-        expect(node.delta?.toPlainText(), 'AppFlowy');
+        expect(node.delta?.toPlainText(), 'Novident');
         await editor.dispose();
       });
 
@@ -288,9 +288,9 @@ void main() async {
     );
 
     testWidgets(
-      'App**Flowy** to bold AppFlowy',
+      'Nov**ident** to bold Novident',
       (tester) async {
-        const text = 'App**Flowy*';
+        const text = 'Nov**ident*';
         final editor = tester.editor..addEmptyParagraph();
         await editor.startTesting();
         await editor.updateSelection(
@@ -309,7 +309,7 @@ void main() async {
         );
 
         expect(result, true);
-        expect(node.delta?.toPlainText(), 'AppFlowy');
+        expect(node.delta?.toPlainText(), 'Novident');
         await editor.dispose();
       },
     );
@@ -694,7 +694,7 @@ void main() async {
     );
 
     testWidgets(
-      'App__Flowy__ to bold AppFlowy',
+      'App__Flowy__ to bold Novident',
       (tester) async {
         const text = 'App__Flowy_';
         final editor = tester.editor..addEmptyParagraph();
@@ -716,7 +716,7 @@ void main() async {
         );
 
         expect(result, true);
-        expect(node.delta!.toPlainText(), 'AppFlowy');
+        expect(node.delta!.toPlainText(), 'Novident');
         await editor.dispose();
       },
     );

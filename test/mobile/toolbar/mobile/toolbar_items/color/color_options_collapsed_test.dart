@@ -85,8 +85,7 @@ void main() {
       final redButton = tester.widget<ColorButton>(
         find.byWidgetPredicate(
           (w) =>
-              w is ColorButton &&
-              w.colorOption.colorHex == Colors.red.toHex(),
+              w is ColorButton && w.colorOption.colorHex == Colors.red.toHex(),
         ),
       );
       expect(redButton.isSelected, isTrue);
@@ -124,8 +123,7 @@ void main() {
       final redButton = tester.widget<ColorButton>(
         find.byWidgetPredicate(
           (w) =>
-              w is ColorButton &&
-              w.colorOption.colorHex == Colors.red.toHex(),
+              w is ColorButton && w.colorOption.colorHex == Colors.red.toHex(),
         ),
       );
       expect(redButton.isSelected, isFalse);

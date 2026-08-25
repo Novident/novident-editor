@@ -16,7 +16,8 @@ final Document blogPostDocument = Document(
       paragraphNode(
         delta: Delta()
           ..insert('By ')
-          ..insert('Lucas', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('Lucas',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' @ AppFlowy · Dec 12, 2022 · 18 min read'),
       ),
       paragraphNode(
@@ -72,7 +73,8 @@ final Document blogPostDocument = Document(
             'node with a new type and define a corresponding NodeWidgetBuilder '
             'to render these components in the AppFlowy Editor.',
       ),
-      headingNode(level: 3, text: 'Issues with Self-Consistent Production Process'),
+      headingNode(
+          level: 3, text: 'Issues with Self-Consistent Production Process'),
       paragraphNode(
         text: 'We have been unable to support self-consistent context '
             'production processes, such as inserting new components via the '
@@ -127,7 +129,8 @@ final Document blogPostDocument = Document(
             'use a tree node like Slate.js to assemble the documents while '
             'continuing to use Delta for the data storage of text nodes.',
       ),
-      headingNode(level: 3, text: 'Why Use a Combination of Node Tree and Delta?'),
+      headingNode(
+          level: 3, text: 'Why Use a Combination of Node Tree and Delta?'),
       paragraphNode(text: 'Why do we use a node tree?'),
       bulletedListNode(
         text: 'The entirety of the document data is described using a single '
@@ -161,15 +164,18 @@ final Document blogPostDocument = Document(
       ),
       numberedListNode(
         delta: Delta()
-          ..insert('What is the data made of? (keywords: Node, Delta, Document)'),
+          ..insert(
+              'What is the data made of? (keywords: Node, Delta, Document)'),
       ),
       numberedListNode(
         delta: Delta()
-          ..insert('How to update the data? (keywords: Position, Path, Operation, Transaction, EditorState, Apply)'),
+          ..insert(
+              'How to update the data? (keywords: Position, Path, Operation, Transaction, EditorState, Apply)'),
       ),
       numberedListNode(
         delta: Delta()
-          ..insert('How to render widgets through the data? (keywords: Render Plugins)'),
+          ..insert(
+              'How to render widgets through the data? (keywords: Render Plugins)'),
       ),
       headingNode(level: 3, text: 'Editor Data Structure'),
       paragraphNode(
@@ -183,14 +189,16 @@ final Document blogPostDocument = Document(
       bulletedListNode(
         delta: Delta()
           ..insert('The ')
-          ..insert('Type', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('Type',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' field is used to find the renderer and control how to '
               'serialize and deserialize the current node.'),
       ),
       bulletedListNode(
         delta: Delta()
           ..insert('The ')
-          ..insert('Attributes', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('Attributes',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' field indicates what data should be presented and '
               'synced. An ImageNode, for example, uses the image_src in its '
               'attributes to describe the link where to load the image.'),
@@ -198,7 +206,8 @@ final Document blogPostDocument = Document(
       bulletedListNode(
         delta: Delta()
           ..insert('The ')
-          ..insert('Children', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('Children',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' field indicates the children nodes, such as the embedded '
               'bulleted list or the block in the table component.'),
       ),
@@ -206,13 +215,15 @@ final Document blogPostDocument = Document(
       paragraphNode(text: 'Below is the definition of a Node in Dart:'),
       paragraphNode(
         delta: Delta()
-          ..insert('class Node extends ChangeNotifier with LinkedListEntry<Node> { ... }'),
+          ..insert(
+              'class Node extends ChangeNotifier with LinkedListEntry<Node> { ... }'),
         attributes: <String, dynamic>{RichTextKeys.code: true},
       ),
       paragraphNode(text: 'And the JSON representation of an ImageNode:'),
       paragraphNode(
         delta: Delta()
-          ..insert('{ "type": "image", "attributes": { "image_src": "https://i.ibb.co/WKQwVDn/Xnip2022-09-02-15-49-51.jpg", "align": "left", "width": 285 } }'),
+          ..insert(
+              '{ "type": "image", "attributes": { "image_src": "https://i.ibb.co/WKQwVDn/Xnip2022-09-02-15-49-51.jpg", "align": "left", "width": 285 } }'),
         attributes: <String, dynamic>{RichTextKeys.code: true},
       ),
       headingNode(level: 3, text: 'Updating Data in the Editor'),
@@ -224,21 +235,24 @@ final Document blogPostDocument = Document(
       paragraphNode(text: 'Nodes may be located in a variety of manners:'),
       bulletedListNode(
         delta: Delta()
-          ..insert('Path', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('Path',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' — an integer array consisting of a node\'s position in '
               'its ancestor\'s node and the position of its ancestors. All '
               'data change operations are performed based on the Path.'),
       ),
       bulletedListNode(
         delta: Delta()
-          ..insert('Position', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('Position',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' — locates the offset of a node. It consists of a path '
               'and an offset, and is usually used for text editing and cursor '
               'locating.'),
       ),
       bulletedListNode(
         delta: Delta()
-          ..insert('Selection', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('Selection',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' — represents the range of the selection. The cursor is '
               'also a special kind of selection, except that start and end '
               'coincide.'),
@@ -252,25 +266,29 @@ final Document blogPostDocument = Document(
       paragraphNode(text: 'The operations defined in AppFlowy Editor include:'),
       bulletedListNode(
         delta: Delta()
-          ..insert('Insert', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('Insert',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' — inserting a list of nodes into the document at a given '
               'path. Its reverse operation is Delete.'),
       ),
       bulletedListNode(
         delta: Delta()
-          ..insert('Delete', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('Delete',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' — deleting a list of nodes at a given path. Its reverse '
               'operation is Insert.'),
       ),
       bulletedListNode(
         delta: Delta()
-          ..insert('Update', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('Update',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' — updating a node\'s attributes at the given path. Its '
               'reverse operation is itself.'),
       ),
       bulletedListNode(
         delta: Delta()
-          ..insert('UpdateText', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('UpdateText',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' — updating the text delta in the text node, which is '
               'consistent with the Delta logic.'),
       ),

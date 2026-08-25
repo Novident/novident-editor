@@ -28,19 +28,24 @@ final Document textFormattingDocument = Document(
       paragraphNode(
         delta: Delta()
           ..insert('Rich text is a Quill-style Delta. You can combine ')
-          ..insert('bold', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('bold',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(', ')
-          ..insert('italic', attributes: <String, dynamic>{RichTextKeys.italic: true})
+          ..insert('italic',
+              attributes: <String, dynamic>{RichTextKeys.italic: true})
           ..insert(', ')
-          ..insert('underline', attributes: <String, dynamic>{RichTextKeys.underline: true})
+          ..insert('underline',
+              attributes: <String, dynamic>{RichTextKeys.underline: true})
           ..insert(' and ')
-          ..insert('strikethrough', attributes: <String, dynamic>{RichTextKeys.strikethrough: true})
+          ..insert('strikethrough',
+              attributes: <String, dynamic>{RichTextKeys.strikethrough: true})
           ..insert(' in a single paragraph.'),
       ),
       paragraphNode(
         delta: Delta()
           ..insert('Inline ')
-          ..insert('code', attributes: <String, dynamic>{RichTextKeys.code: true})
+          ..insert('code',
+              attributes: <String, dynamic>{RichTextKeys.code: true})
           ..insert(' is rendered with a monospace font, and you can add a ')
           ..insert(
             'hyperlink',
@@ -53,9 +58,12 @@ final Document textFormattingDocument = Document(
       paragraphNode(
         delta: Delta()
           ..insert('Text can be ')
-          ..insert('colored', attributes: <String, dynamic>{RichTextKeys.textColor: '#FF5722'})
+          ..insert('colored',
+              attributes: <String, dynamic>{RichTextKeys.textColor: '#FF5722'})
           ..insert(' and ')
-          ..insert('highlighted', attributes: <String, dynamic>{RichTextKeys.backgroundColor: '#FFF59D'})
+          ..insert('highlighted', attributes: <String, dynamic>{
+            RichTextKeys.backgroundColor: '#FFF59D'
+          })
           ..insert(' with a background color.'),
       ),
       headingNode(level: 2, text: 'Named styles'),
@@ -79,8 +87,7 @@ final Document textFormattingDocument = Document(
         textDirection: 'rtl',
       ),
       paragraphNode(
-        delta: Delta()
-          ..insert('مرحباً بكم في محرر نوفيدنت'),
+        delta: Delta()..insert('مرحباً بكم في محرر نوفيدنت'),
         textDirection: 'rtl',
       ),
     ],

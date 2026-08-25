@@ -167,8 +167,8 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
     }
   }
 
-  // For the original method, 
-  // refer to: 
+  // For the original method,
+  // refer to:
   // https://github.com/flutter/flutter/blob/9e211cabbd72de59d79decacfe0ad6f707c61366/packages/flutter/lib/src/widgets/editable_text.dart#L3059-L3091
   List<ContextMenuButtonItem> _buildTextProcessingActionButtonItems(
     EditorState state,

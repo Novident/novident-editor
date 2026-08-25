@@ -424,6 +424,7 @@ you need one piece without the full editor:
 | [`novident_document`](https://pub.dev/packages/novident_document) | Document tree, rich-text Deltas, delta-change events | Document models, storage, offline-first apps |
 | [`novident_editor_core`](https://pub.dev/packages/novident_editor_core) | Core editor primitives (RichText rendering base) | Low-level rendering work |
 | [`novident_editor_styles`](https://pub.dev/packages/novident_editor_styles) | Style definitions and resolution | Custom style engines |
+| [`novident_editor_quill_parser`](https://pub.dev/packages/novident_editor_quill_parser) | Encoder and Decoder of Quill Delta | Export or Import Delta/Nodes in both directions |
 | [`novident_editor_selection`](https://pub.dev/packages/novident_editor_selection) | Selection model, renderers, painters | Custom selection UIs |
 | [`novident_editor_rich_text`](https://pub.dev/packages/novident_editor_rich_text) | `NovidentRichText` + the 6-phase span pipeline | Paragraph rendering, custom decorations |
 | [`novident_editor_spell_check_interface`](https://pub.dev/packages/novident_editor_spell_check_interface) | The spell-checker contract (`NovidentSpellChecker`) | Building or swapping spell-check engines |

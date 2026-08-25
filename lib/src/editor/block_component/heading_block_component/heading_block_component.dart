@@ -84,7 +84,7 @@ class _HeadingBlockComponentWidgetState
         BlockComponentAlignMixin,
         BlockHeightReporter {
   @override
-  final forwardKey = GlobalKey(debugLabel: 'flowy_rich_text');
+  final forwardKey = GlobalKey(debugLabel: 'rich_text');
 
   @override
   GlobalKey<State<StatefulWidget>> get containerKey => widget.node.key;
@@ -125,12 +125,14 @@ class _HeadingBlockComponentWidgetState
 
     final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
 
+    final effectiveTextAlign =
+        nodeTextAlign ?? blockStyle.alignment ?? textAlign;
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         textDirection: textDirection,
         children: [
           Flexible(
@@ -139,8 +141,7 @@ class _HeadingBlockComponentWidgetState
               delegate: this,
               node: widget.node,
               editorConfig: editorState,
-              textAlign:
-                  blockStyle.alignment ?? alignment?.toTextAlign ?? textAlign,
+              textAlign: effectiveTextAlign,
               useFirstLineIndent: false,
               textSpanDecorator: (textSpan) {
                 var result = textSpan.updateTextStyle(

@@ -1241,6 +1241,16 @@ class NovidentEditorLocalizations {
     );
   }
 
+  /// `Align Justify`
+  String get textAlignJustify {
+    return Intl.message(
+      'Align Right',
+      name: 'textAlignJustify',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Convert to link`
   String get cmdConvertToLink {
     return Intl.message(

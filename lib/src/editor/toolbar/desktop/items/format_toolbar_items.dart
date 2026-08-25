@@ -39,17 +39,9 @@ class _FormatToolbarItem extends ToolbarItem {
             iconColor,
             tooltipBuilder,
           ) {
-            bool isHighlight = false;
-            if (editorState.selection != null) {
-              final selection = editorState.selection!;
-              final nodes = editorState.getNodesInSelection(selection);
-              isHighlight = nodes.allSatisfyInSelection(
-                selection,
-                (delta) =>
-                    delta.isNotEmpty &&
-                    delta.everyAttributes((attr) => attr[name] == true),
-              );
-            }
+            final selection = editorState.selection;
+            final isHighlight = selection != null &&
+                activeAttributeValue(editorState, selection, name) == true;
 
             final child = SVGIconItemWidget(
               iconName: 'toolbar/$name',

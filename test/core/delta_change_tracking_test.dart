@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:novident_editor/novident_editor.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('Transaction delta change capture', () {
     test('insertText captures start/end/shift', () {
       final doc = Document.blank(withInitialText: true);

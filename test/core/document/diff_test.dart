@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nanoid/non_secure.dart';
 
 void main() async {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('diff.dart', () {
     Node buildNodeWithId(String id, String text) {
       return Node(

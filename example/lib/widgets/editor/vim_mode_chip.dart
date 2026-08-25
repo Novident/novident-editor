@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
+import 'editor_configuration.dart';
+
 /// Compact vim mode indicator for the editor status bars: a colored dot
 /// plus the mode label (and the pending `d` operator when armed).
 class VimModeChip extends StatelessWidget {
@@ -18,7 +20,7 @@ class VimModeChip extends StatelessWidget {
         }
         final (String label, Color color) = switch (controller.mode) {
           VimMode.normal => ('NORMAL', Colors.grey.shade700),
-          VimMode.insert => ('INSERT', const Color(0xFF448AFF)),
+          VimMode.insert => ('INSERT', kEditorAccent),
           VimMode.visual => ('VISUAL', Colors.orange.shade700),
         };
         final String? pending = controller.pendingCommandBuffer;

@@ -4,8 +4,9 @@ import 'package:example/common/store/document_content_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-/// Folder blue.
-const Color _kFolderBlue = Color(0xFF6FA8DC);
+/// Folder color — a lighter indigo that harmonizes with the app's
+/// primary accent ([kEditorAccent]).
+const Color _kFolderBlue = Color(0xFF818CF8);
 
 /// Binder row for a [Directory]: animated disclosure chevron + folder
 /// icon + name + (collapsed only) children count.

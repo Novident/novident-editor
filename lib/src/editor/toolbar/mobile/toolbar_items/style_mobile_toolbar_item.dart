@@ -26,6 +26,7 @@ class _StyleMenu extends StatefulWidget {
 }
 
 class _StyleMenuState extends State<_StyleMenu> {
+  late final size = MediaQuery.sizeOf(context);
   @override
   Widget build(BuildContext context) {
     final styles = NovidentEditorStyles.of(context);
@@ -38,7 +39,6 @@ class _StyleMenuState extends State<_StyleMenu> {
     final currentStyleRef = node.attributes[blockComponentStyleRef] as String?;
 
     final style = MobileToolbarTheme.of(context);
-    final size = MediaQuery.sizeOf(context);
 
     final entries = <_StyleMenuEntry>[
       _StyleMenuEntry(
@@ -46,21 +46,21 @@ class _StyleMenuState extends State<_StyleMenu> {
         name: NovidentEditorL10n.current.noStyle,
         isSelected: currentStyleRef == null,
       ),
-      ...allStyles.map(
-        (s) => _StyleMenuEntry(
+      for (final s in allStyles)
+        _StyleMenuEntry(
           id: s.id,
           name: s.name,
           isSelected: s.id == currentStyleRef,
           style: s,
         ),
-      ),
     ];
 
     final columnCount = (entries.length / 4).ceil().clamp(1, 3);
     final itemWidth =
         (size.width - (columnCount + 1) * style.buttonSpacing) / columnCount;
 
-    final btnList = entries.map((entry) {
+    final btnList = List.generate(entries.length, (index) {
+      final entry = entries[index];
       final style = entry.style == null
           ? kDefaultBaseStyle
           : styles.resolveStyle(entry.style ?? kDefaultBaseStyle);
@@ -72,11 +72,9 @@ class _StyleMenuState extends State<_StyleMenu> {
             label: Text(
               entry.name,
               maxLines: 2,
-              overflow: TextOverflow.clip,
-              style: _buildBaseTextStyle(
-                style,
-              ).merge(
+              style: _buildBaseTextStyle(style).merge(
                 TextStyle(
+                  fontSize: 16,
                   fontWeight:
                       entry.isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
@@ -102,7 +100,7 @@ class _StyleMenuState extends State<_StyleMenu> {
           ),
         ),
       );
-    }).toList();
+    });
 
     return ConstrainedBox(
       constraints: BoxConstraints.tightFor(width: size.width),

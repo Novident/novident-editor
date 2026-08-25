@@ -1,5 +1,6 @@
 import 'package:novident_editor/src/editor/l10n/novident_editor_l10n.dart';
 
+import '../../../novident_editor.dart' show selectAllCommand;
 import '../internal_key_event_handlers/copy_paste_handler.dart';
 import 'context_menu.dart';
 
@@ -30,6 +31,12 @@ final standardContextMenuItems = [
       getName: () => NovidentEditorL10n.current.paste,
       onPressed: (editorState) {
         handlePaste(editorState);
+      },
+    ),
+    ContextMenuItem(
+      getName: () => NovidentEditorL10n.current.cmdSelectAll,
+      onPressed: (editorState) {
+        editorState.applyCommand(selectAllCommand);
       },
     ),
   ],

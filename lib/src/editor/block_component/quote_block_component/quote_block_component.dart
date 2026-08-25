@@ -121,6 +121,9 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
 
     final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
 
+    final effectiveTextAlign =
+        nodeTextAlign ?? blockStyle.alignment ?? textAlign;
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
@@ -138,8 +141,7 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
                 delegate: this,
                 node: widget.node,
                 editorConfig: editorState,
-                textAlign:
-                    alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
+                textAlign: effectiveTextAlign,
                 placeholderText: placeholderText,
                 useFirstLineIndent: false,
                 textSpanDecorator: (textSpan) => textSpan.updateTextStyle(

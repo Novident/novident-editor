@@ -7,11 +7,11 @@ String shortcutTooltips(
   String? linuxString,
 ) {
   if (kIsWeb) return '';
-  if (PlatformExtension.isMacOS && macOSString != null) {
+  if (EditorPlatform.isMacOS && macOSString != null) {
     return '\n$macOSString';
-  } else if (PlatformExtension.isWindows && windowsString != null) {
+  } else if (EditorPlatform.isWindows && windowsString != null) {
     return '\n$windowsString';
-  } else if (PlatformExtension.isLinux && linuxString != null) {
+  } else if (EditorPlatform.isLinux && linuxString != null) {
     return '\n$linuxString';
   }
   return '';
@@ -35,6 +35,8 @@ String getTooltipText(String id) {
       return NovidentEditorL10n.current.textAlignCenter;
     case 'align_right':
       return NovidentEditorL10n.current.textAlignRight;
+    case 'align_justify':
+      return NovidentEditorL10n.current.textAlignJustify;
     case 'text_direction_auto':
       return NovidentEditorL10n.current.auto;
     case 'text_direction_ltr':

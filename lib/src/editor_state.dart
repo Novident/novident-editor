@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/editor_component/service/scroll/auto_scroller.dart';
 import 'package:novident_editor/src/history/undo_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +34,7 @@ class ApplyOptions {
     this.recordUndo = true,
     this.recordRedo = false,
     this.inMemoryUpdate = false,
+    this.collapse = false,
   });
 
   /// This flag indicates that
@@ -45,6 +45,10 @@ class ApplyOptions {
 
   /// This flag used to determine whether the transaction is in-memory update.
   final bool inMemoryUpdate;
+
+  /// This flag used to determine whether the transaction after selection
+  /// will be collapsed forcely.
+  final bool collapse;
 }
 
 enum TransactionTime {
@@ -79,12 +83,6 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     undoManager.state = this;
   }
 
-  @Deprecated('use EditorState.blank() instead')
-  EditorState.empty()
-      : this(
-          document: Document.blank(),
-        );
-
   EditorState.blank({
     bool withInitialText = true,
   }) : this(
@@ -113,8 +111,16 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   /// Whether the editor should disable auto scroll.
   bool disableAutoScroll = false;
 
-  /// The edge offset of the auto scroll.
-  double autoScrollEdgeOffset = novidentEditorAutoScrollEdgeOffset;
+  /// The inset (dead zone) from each viewport edge, in logical pixels, within
+  /// which the caret does not trigger auto-scroll.
+  double autoScrollEdgeInset = novidentEditorAutoScrollEdgeInset;
+
+  /// Deprecated: use [autoScrollEdgeInset] instead.
+  @Deprecated('Use autoScrollEdgeInset instead.')
+  double get autoScrollEdgeOffset => autoScrollEdgeInset;
+
+  @Deprecated('Use autoScrollEdgeInset instead.')
+  set autoScrollEdgeOffset(double value) => autoScrollEdgeInset = value;
 
   /// The style of the editor.
   ///
@@ -147,11 +153,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   @override
   SelectionRenderer? get selectionRenderer => editorStyle.selectionRenderer;
 
-  /// @override from BlockSelectionHost
   @override
   bool isBlockSelectionMode() => selectionType == SelectionType.block;
 
-  /// @override from BlockSelectionHost
   @override
   CursorAppearance? customizeCursor({
     required Node node,
@@ -161,18 +165,14 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     return cursorAppearanceBuilder?.call(node, selection!, position);
   }
 
-  /// @override from BlockSelectionHost
   @override
   EdgeInsets? blockSelectionMargin(Node node) {
     final builder = service.rendererService.blockComponentBuilder(node.type);
     return builder?.configuration.blockSelectionAreaMargin(node);
   }
 
-  /// @override from BlockSelectionHost
   @override
   dynamic selectionDragModeValue() => selectionExtraInfo?[selectionDragModeKey];
-
-  // ---- RichTextEditorConfig overrides ----
 
   @override
   double get textScaleFactor => editorStyle.textScaleFactor;
@@ -194,6 +194,17 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
   @override
   NovidentTextSpanPipeline? get spanPipeline {
+    final effective = _effectiveSpanPipeline;
+    final wrapper = _spanPipelineWrapper;
+    if (wrapper != null) {
+      return wrapper(effective ?? const DefaultNovidentTextSpanPipeline());
+    }
+    return effective;
+  }
+
+  /// The pipeline selected by the editor configuration alone (spell check or
+  /// `null` for the default).
+  NovidentTextSpanPipeline? get _effectiveSpanPipeline {
     if (editorStyle.spellChecker == null) {
       return null;
     }
@@ -203,11 +214,34 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     );
   }
 
+  /// Wrapper registered by optional modes (e.g. zen) to compose their
+  /// pipeline layer on top of the effective one.
+  NovidentTextSpanPipeline Function(NovidentTextSpanPipeline)?
+      _spanPipelineWrapper;
+
+  /// Registers a wrapper that composes the effective span pipeline.
+  ///
+  /// Optional modes (e.g. zen) use this to layer their behavior on top of
+  /// whatever pipeline is active (spell check or the default). The wrapper
+  /// receives the effective pipeline and returns the composed one. Register
+  /// at most one wrapper; [clearSpanPipelineWrapper] restores the effective
+  /// pipeline.
+  void setSpanPipelineWrapper(
+    NovidentTextSpanPipeline Function(NovidentTextSpanPipeline) wrapper,
+  ) {
+    _spanPipelineWrapper = wrapper;
+  }
+
+  /// Clears a previously registered pipeline wrapper, restoring the
+  /// effective pipeline (spell check or default).
+  void clearSpanPipelineWrapper() {
+    _spanPipelineWrapper = null;
+  }
+
   /// The spell-check analysis service, created and attached by the editor
   /// widget when [EditorStyle.spellChecker] is set.
   SpellCheckService? spellCheckService;
 
-  /// The selection notifier of the editor.
   /// The selection notifier of the editor.
   @override
   final PropertyValueNotifier<Selection?> selectionNotifier =
@@ -270,11 +304,18 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   EditorStateDebugInfo debugInfo = EditorStateDebugInfo();
 
   /// store the auto scroller instance in here temporarily.
-  AutoScroller? autoScroller;
+  AutoScrollerService? autoScroller;
   ScrollableState? scrollableState;
 
   /// The dynamic height controller, if dynamic height mode is active.
   DynamicHeightController? dynamicHeightController;
+
+  /// Creates the [AutoScroller] for the editor.
+  ///
+  /// Override this to provide your own auto scroller (e.g. a subclass with a
+  /// custom velocity profile or resolver). Set by [NovidentEditor] during
+  /// init; defaults to a platform-tuned [AutoScroller].
+  AutoScrollerBuilder autoScrollerBuilder = defaultAutoScrollerBuilder;
 
   /// Configures log output parameters,
   /// such as log level and log output callbacks,
@@ -374,8 +415,10 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
       _onScrollViewScrolledListeners.remove(callback);
 
   void _notifyScrollViewScrolledListeners() {
-    for (final listener in Set.of(_onScrollViewScrolledListeners)) {
-      listener.call();
+    for (int index = 0;
+        index < _onScrollViewScrolledListeners.length;
+        index++) {
+      _onScrollViewScrolledListeners.elementAt(index).call();
     }
   }
 
@@ -410,6 +453,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     // broadcast to other users here
     selectionExtraInfo = extraInfo;
     _selectionUpdateReason = reason;
+    if (selection == null || reason == SelectionUpdateReason.remote) {
+      service.keyboardService?.invalidateCache();
+    }
 
     // Assign synchronously when there is no custom renderer so callers
     // (including unit tests) can read `selection` immediately after the
@@ -506,7 +552,10 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
     if (isRemote) {
       _selectionUpdateReason = SelectionUpdateReason.remote;
-      selection = _applyTransactionFromRemote(transaction);
+      final remoteSel = _applyTransactionFromRemote(transaction);
+      selection =
+          options.collapse ? remoteSel?.collapse(atStart: true) : remoteSel;
+      service.keyboardService?.invalidateCache();
     } else {
       // broadcast to other users here, before applying the transaction
       if (!_observer.isClosed) {
@@ -539,7 +588,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
         if (transaction.selectionExtraInfo != null) {
           selectionExtraInfo = transaction.selectionExtraInfo;
         }
-        selection = transaction.afterSelection;
+        selection = options.collapse
+            ? transaction.afterSelection?.collapse(atStart: true)
+            : transaction.afterSelection;
       }
     }
 
@@ -737,33 +788,31 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   ) {
     if (this.scrollableState != scrollableState) {
       autoScroller?.stopAutoScroll();
-      final bool isDesktopOrWeb = PlatformExtension.isDesktopOrWeb;
-      late AutoScroller scroller;
-      scroller = AutoScroller(
+      late AutoScrollerService scroller;
+      scroller = autoScrollerBuilder(
         scrollableState,
-        velocityScalar: 0.5,
-        minimumAutoScrollDelta: 0.07,
-        maxAutoScrollDelta: 15.0,
-        animationDuration: Duration.zero,
-        onScrollViewScrolled: () {
-          _notifyScrollViewScrolledListeners();
-          if (!isDesktopOrWeb) {
-            final dynamic dragMode = selectionExtraInfo?[selectionDragModeKey];
-            final bool isDraggingSelection = dragMode != null &&
-                dragMode.toString() != 'MobileSelectionDragMode.none';
-            if (!isDraggingSelection) {
-              return;
-            }
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (autoScroller == scroller) {
-                scroller.continueToAutoScroll();
-              }
-            });
-          }
-        },
+        onScrollViewScrolled: () => _onScrollViewScrolled(scroller),
       );
       autoScroller = scroller;
       this.scrollableState = scrollableState;
+    }
+  }
+
+  void _onScrollViewScrolled(AutoScrollerService scroller) {
+    _notifyScrollViewScrolledListeners();
+    if (!EditorPlatform.isDesktopOrWeb) {
+      final dragMode =
+          selectionExtraInfo?[selectionDragModeKey] as MobileSelectionDragMode?;
+      final bool isDraggingSelection =
+          dragMode != null && dragMode != MobileSelectionDragMode.none;
+      if (!isDraggingSelection) {
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (autoScroller == scroller) {
+          scroller.continueToAutoScroll();
+        }
+      });
     }
   }
 
@@ -803,7 +852,10 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
     _debouncedSealHistoryItemTimer?.cancel();
     _debouncedSealHistoryItemTimer = Timer(minHistoryItemDuration, () {
       if (undoManager.undoStack.isNonEmpty) {
-        NovidentEditorLog.editor.debug('Seal history item');
+        assert(() {
+          NovidentEditorLog.editor.debug('Seal history item');
+          return true;
+        }());
         final last = undoManager.undoStack.last;
         last.seal();
       }
@@ -813,7 +865,10 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   void _applyTransactionInLocal(Transaction transaction) {
     final changedNodes = <Node>[];
     for (final op in transaction.operations) {
-      NovidentEditorLog.editor.debug('apply op (local): ${op.toJson()}');
+      assert(() {
+        // NovidentEditorLog.editor.debug('apply op (local): ${op.toJson()}');
+        return true;
+      }());
 
       if (op is InsertOperation) {
         document.insert(op.path, op.nodes);
@@ -974,4 +1029,24 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
 
     return selection;
   }
+}
+
+/// The default [AutoScrollerBuilder]: a platform-tuned [AutoScroller].
+///
+/// Desktop uses a larger, instant delta profile; mobile uses a smaller, animated
+/// profile for smooth drag auto-scroll.
+AutoScrollerService defaultAutoScrollerBuilder(
+  ScrollableState scrollableState, {
+  required VoidCallback onScrollViewScrolled,
+}) {
+  final bool isDesktopOrWeb = EditorPlatform.isDesktopOrWeb;
+  return AutoScroller(
+    scrollableState,
+    velocityScalar: 0.5,
+    minimumAutoScrollDelta: isDesktopOrWeb ? 0.07 : 0.03,
+    maxAutoScrollDelta: isDesktopOrWeb ? 15.0 : 9.0,
+    animationDuration:
+        isDesktopOrWeb ? Duration.zero : const Duration(milliseconds: 5),
+    onScrollViewScrolled: onScrollViewScrolled,
+  );
 }

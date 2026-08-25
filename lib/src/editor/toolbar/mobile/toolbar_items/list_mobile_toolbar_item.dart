@@ -43,10 +43,12 @@ class _ListMenuState extends State<_ListMenu> {
   ];
   @override
   Widget build(BuildContext context) {
-    final btnList = lists.map((currentList) {
+    final node = widget.editorState.getNodeAtPath(widget.selection.start.path);
+    if (node == null) return const SizedBox.shrink();
+
+    final btnList = List.generate(lists.length, (index) {
+      final currentList = lists[index];
       // Check if current node is list and its type
-      final node =
-          widget.editorState.getNodeAtPath(widget.selection.start.path)!;
       final isSelected = node.type == currentList.name;
 
       return MobileToolbarItemMenuBtn(
@@ -70,7 +72,7 @@ class _ListMenuState extends State<_ListMenu> {
           });
         },
       );
-    }).toList();
+    });
 
     return GridView(
       shrinkWrap: true,

@@ -7,7 +7,10 @@ Future<void> onNonTextUpdate(
   TextEditingDeltaNonTextUpdate nonTextUpdate,
   EditorState editorState,
 ) async {
-  NovidentEditorLog.input.debug('onNonTextUpdate: $nonTextUpdate');
+  assert(() {
+    NovidentEditorLog.input.debug('onNonTextUpdate: $nonTextUpdate');
+    return true;
+  }());
 
   // update the selection on Windows
   //
@@ -72,7 +75,7 @@ Future<void> onNonTextUpdate(
     return;
   }
 
-  if (PlatformExtension.isWindows) {
+  if (EditorPlatform.isWindows) {
     if (nonTextUpdate.composing == TextRange.empty &&
         nonTextUpdate.selection.isCollapsed) {
       editorState.selection = Selection.collapsed(
@@ -82,7 +85,7 @@ Future<void> onNonTextUpdate(
         ),
       );
     }
-  } else if (PlatformExtension.isLinux) {
+  } else if (EditorPlatform.isLinux) {
     unawaited(
       editorState.updateSelectionWithReason(
         Selection.collapsed(
@@ -93,7 +96,7 @@ Future<void> onNonTextUpdate(
         ),
       ),
     );
-  } else if (PlatformExtension.isMacOS) {
+  } else if (EditorPlatform.isMacOS) {
     unawaited(
       editorState.updateSelectionWithReason(
         Selection.collapsed(

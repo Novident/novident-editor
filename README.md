@@ -95,8 +95,8 @@ print(editorState.document.toJson());   // persistable structure
 editorState.selection = Selection.collapsed(
   Position(path: node.path, offset: 5),
 );
-editorState.undoManager.undo();
-editorState.undoManager.redo();
+editorState.undoManager.undo(collapseSelection: false);
+editorState.undoManager.redo(collapseSelection: true);
 ```
 
 Hydrate the editor from JSON, Markdown, or Quill Delta — see
@@ -111,32 +111,46 @@ every derived style inherits font, size, spacing and colours, resolved through a
 three-tier fallback (explicit style → type default → global default):
 
 ```dart
-NovidentEditor(
+final baseStyle = NovidentStyleDefinition(
+  id: 'base',
+  name: 'Base',
+  fontSize: 12,
+  fontFamily: 'Arial',
+  indent: NovidentStyleIndent.defaultLineFilter(),
+);
+
+final editor = NovidentEditor(
   editorState: editorState,
   styles: NovidentStylesConfig(
+    defaultStyle: baseStyle,
+    defaultStylesByType: <String, NovidentStyleDefinition>{
+      'table': kDefaultTableStyle,
+    },
     registry: NovidentStyleRegistry({
-      'base': NovidentStyleDefinition(
-        id: 'base', name: 'Base',
-        fontSize: 12, fontFamily: 'Arial',
-        indent: NovidentStyleIndent.defaultLineFilter(),
-      ),
+      baseStyle.id: baseStyle,
       'body': NovidentStyleDefinition.nextSame(
-        id: 'body', name: 'Body', basedOn: 'base',
+        id: 'body',
+        name: 'Body',
+        basedOn: 'base',
         spacing: NovidentStyleSpacing(after: 8),
       ),
       'heading-1': NovidentStyleDefinition(
-        id: 'heading-1', name: 'Heading 1', basedOn: 'base',
-        fontSize: 32, bold: true,
+        id: 'heading-1',
+        name: 'Heading 1',
+        basedOn: 'base',
+        fontSize: 32,
+        bold: true,
         spacing: NovidentStyleSpacing(before: 24, after: 12),
         next: 'body',
       ),
     }),
   ),
 );
+
 ```
 
 > [!IMPORTANT]
-> Base styles require `fontSize`, `fontFamily` and `textColor` to be defined.
+> Default styles require `fontSize`, `fontFamily` and `textColor` to be defined.
 
 Toolbar items (`styleToolbarItem`, `buildFontFamilyItem`, `buildFontSizeItem`)
 resolve the current value through the same chain. See
@@ -202,16 +216,63 @@ document**, and keeps the focused block vertically centered (typewriter scroll):
 
 ```dart
 final zenController = ZenModeController();
+zenController.attach(
+  editorState: editorState,
+  scrollController: editorScrollController,
+);
 
-NovidentEditor(
+final editor = NovidentEditor(
   editorState: editorState,
   editorScrollController: editorScrollController,
   blockWrapper: zenController.blockWrapper,
-  editorStyle: EditorStyle.desktop(
-    textSpanDecorator: zenController.textSpanDecorator(),
-  ),
 );
 ```
+
+The dimming is applied through the span pipeline: `attach` registers a
+`ZenSpanPipeline` wrapper on the `EditorState` that composes over the effective
+pipeline (spell check or default).
+
+### Typewriter mode
+
+Keeps the cursor vertically centered in the viewport as you type (typewriter
+scrolling). It is **independent from zen mode** — pass a
+`TypewriterScrollStrategy` to `NovidentEditor.scrollStrategies`:
+
+```dart
+final editor = NovidentEditor(
+  editorState: editorState,
+  editorScrollController: editorScrollController,
+  scrollStrategies: const [
+    TypewriterScrollStrategy(
+      alignment: 0.45, // 0.0 = top, 0.5 = center, 1.0 = bottom
+    ),
+  ],
+);
+```
+
+The strategy keeps the cursor centered **instantly** (no animation, so no
+ping-pong) for collapsed selections, and **delegates to the default
+edge-follow** for expanded selections (e.g. while selecting text). When the
+caret is at the very top or bottom of the document (no content to scroll
+into), the scroll clamps and the caret is not centered.
+
+To **disable** the centering (the editor keeps the native caret auto-scroll),
+pass an empty list:
+
+```dart
+NovidentEditor(
+  editorState: editorState,
+  scrollStrategies: const [],
+);
+```
+
+> [!NOTE]
+> Typewriter scrolling is now a standalone feature that works with or without
+> zen mode. Zen only dims unfocused blocks; the scroll strategy only scrolls.
+
+See **[Scroll Strategies](documentation/scroll-strategies.md)** for the full
+`scrollStrategies` API — how dispatch works, the `ScrollStrategy` interface,
+and how to write your own scroll policy.
 
 ### Spell checking
 
@@ -224,7 +285,7 @@ no checker call ever runs inside `build`:
 ```dart
 final checker = MySpellChecker(); // implements NovidentSpellChecker
 
-NovidentEditor(
+final editor = NovidentEditor(
   editorState: editorState,
   editorStyle: EditorStyle.desktop(
     spellChecker: checker,
@@ -283,7 +344,7 @@ Override a built-in block or register a new one through
 `blockComponentBuilders`:
 
 ```dart
-NovidentEditor(
+final editor = NovidentEditor(
   editorState: editorState,
   blockComponentBuilders: {
     ...standardBlockComponentBuilderMap,
@@ -363,6 +424,7 @@ you need one piece without the full editor:
 | [`novident_document`](https://pub.dev/packages/novident_document) | Document tree, rich-text Deltas, delta-change events | Document models, storage, offline-first apps |
 | [`novident_editor_core`](https://pub.dev/packages/novident_editor_core) | Core editor primitives (RichText rendering base) | Low-level rendering work |
 | [`novident_editor_styles`](https://pub.dev/packages/novident_editor_styles) | Style definitions and resolution | Custom style engines |
+| [`novident_editor_quill_parser`](https://pub.dev/packages/novident_editor_quill_parser) | Encoder and Decoder of Quill Delta | Export or Import Delta/Nodes in both directions |
 | [`novident_editor_selection`](https://pub.dev/packages/novident_editor_selection) | Selection model, renderers, painters | Custom selection UIs |
 | [`novident_editor_rich_text`](https://pub.dev/packages/novident_editor_rich_text) | `NovidentRichText` + the 6-phase span pipeline | Paragraph rendering, custom decorations |
 | [`novident_editor_spell_check_interface`](https://pub.dev/packages/novident_editor_spell_check_interface) | The spell-checker contract (`NovidentSpellChecker`) | Building or swapping spell-check engines |
@@ -378,16 +440,18 @@ you need one piece without the full editor:
 
 ## Migrating
 
-If you were using version 1.0.4, see
-[migration to 1.0.4](./documentation/migrations/1.0.3_to_1.0.4.md).
+- If you were using version **1.0.5**, see
+  [migration to 1.0.6](./documentation/migrations/1.0.5_to_1.0.6.md) — zen
+  mode dimming moved to the span pipeline and typewriter scrolling became a
+  standalone feature.
+- If you were using version **1.0.4**, see
+  [migration to 1.0.4](./documentation/migrations/1.0.3_to_1.0.4.md).
 
 ## Roadmap
 
-- Improve Zen mode performance.
 - Full customization of every default block.
 - Richer clipboard copy/paste (currently plain text).
 - Translations.
-- Typewriter scrolling without Zen mode.
 - Uncouple remaining editor parts into individual packages (block
   components, keyboard service, scroll service…).
 

@@ -288,14 +288,19 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
   /// O(n²) string concatenation on every drag event. Invalidated by
   /// node list identity.
   String? _cachedPlainText;
-  Iterable<Node>? _cachedPlainTextNodes;
+  int? _cachedEndOffset;
+  List<Node>? _cachedEditableNodes;
+
+  @override
+  void invalidateCache() {
+    _cachedPlainText = null;
+    _cachedEditableNodes = null;
+  }
 
   // This function is used to get the current text editing value of the editor
   // based on the given selection.
   TextEditingValue? _getCurrentTextEditingValue(Selection selection) {
-    // Get all the editable nodes in the selection.
-    final editableNodes = editorState.document.root.children
-        .where((element) => element.delta != null);
+    final editableNodes = editorState.getNodesInSelection(selection);
 
     // if the selection is inline and the selection is updated by ui event,
     // we should clear the composing range on Android.
@@ -303,27 +308,34 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         editorState.selectionType == SelectionType.inline &&
             editorState.selectionUpdateReason == SelectionUpdateReason.uiEvent;
 
-    if (PlatformExtension.isAndroid && shouldClearComposingRange) {
+    if (EditorPlatform.isAndroid && shouldClearComposingRange) {
       textInputService.clearComposingTextRange();
     }
 
     // Get the composing text range.
     final composingTextRange =
         textInputService.composingTextRange ?? TextRange.empty;
+    _cachedEndOffset = selection.isCollapsed || selection.isSingle
+        ? null
+        : selection.startIndex;
     if (editableNodes.isNotEmpty) {
       // Cache the concatenated text by node-set identity: drag
       // selections fire ~60×/s with identical node ranges — only the
       // offsets change. A plain StringBuffer eliminates the O(n²)
       // per-event allocations of the former fold.
-      if (!identical(editableNodes, _cachedPlainTextNodes) ||
+      if (!identical(editableNodes, _cachedEditableNodes) ||
           _cachedPlainText == null) {
         final buffer = StringBuffer();
         for (final node in editableNodes) {
           buffer.writeln(node.delta?.toPlainText() ?? '');
         }
-        _cachedPlainTextNodes = editableNodes;
+        _cachedEditableNodes = editableNodes;
         _cachedPlainText = buffer.toString();
+        if (!selection.isCollapsed && !selection.isSingle) {
+          _cachedEndOffset = _cachedPlainText!.length - 1;
+        }
       }
+
       // strip trailing \n
       final text = _cachedPlainText!.substring(
         0,
@@ -333,13 +345,31 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
       return TextEditingValue(
         text: text,
         selection: TextSelection(
-          baseOffset: selection.startIndex,
-          extentOffset: selection.endIndex,
+          baseOffset: _clampOffset(selection.startIndex, text.length),
+          extentOffset: selection.isSingle
+              ? _clampOffset(selection.endIndex, text.length)
+              : _clampOffset(
+                  _cachedEndOffset ?? selection.endIndex,
+                  text.length,
+                ),
         ),
         composing: composingTextRange,
       );
     }
     return null;
+  }
+
+  /// Clamps a character offset to the valid `[0, length]` range.
+  ///
+  /// A selection can legitimately point at a non-text node (divider, image,
+  /// …) whose `delta` is null, so the concatenated text is empty while the
+  /// selection still carries non-zero offsets. Pushing such an out-of-range
+  /// selection to the IME (`setEditingState`) trips Flutter's
+  /// `TextEditingValue._textRangeIsValid` assertion, so clamp here.
+  static int _clampOffset(int offset, int length) {
+    if (offset < 0) return 0;
+    if (offset > length) return length;
+    return offset;
   }
 
   void _onFocusChanged() {

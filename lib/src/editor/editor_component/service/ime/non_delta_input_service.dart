@@ -310,8 +310,7 @@ class NonDeltaTextInputService extends TextInputService with TextInputClient {
     }
 
     // solve the issue where the Chinese IME doesn't continue deleting after the input content has been deleted.
-    if (EditorPlatform.isMacOS &&
-        (composingTextRange?.isCollapsed ?? false)) {
+    if (EditorPlatform.isMacOS && (composingTextRange?.isCollapsed ?? false)) {
       composingTextRange = TextRange.empty;
     }
   }

@@ -48,7 +48,7 @@ flowchart TB
         rt["novident_editor_rich_text<br/>NovidentRichText · 6-phase pipeline"]
         sc["novident_editor_spell_check_interface<br/>pure-Dart contract"]
     end
-    root["novident_editor (root)<br/>block components · services · plugins ·<br/>toolbar · vim/zen · find & replace"]
+    root["novident_editor (root)<br/>block components · services · plugins ·<br/>toolbar · vim/zen/typewriter · find & replace"]
 
     doc --> core
     doc --> styles
@@ -75,7 +75,7 @@ flowchart TB
   depend only on document + core; `rich_text` depends on document + core +
   styles + selection.
 - The root is the **only** place for block components, editor services,
-  plugins, toolbar, vim/zen, and find & replace.
+  plugins, toolbar, vim/zen/typewriter, and find & replace.
 - `novident_editor_spell_check_interface` must stay pure Dart — no
   `flutter` import, ever.
 - Dependencies only flow upward; a package must never import the root or a
@@ -262,7 +262,9 @@ placeholder:     5 buildPlaceholder
 per node:        6 adjustSpan (over the root span)
 ```
 
-- **Phase 1** converts attributes → `TextStyle` (over the base style).
+- **Phase 1** converts attributes → `TextStyle` (over the base style). It
+  also receives the `node` and `buildContext` (optional) so pipelines can
+  react to the node's surroundings (e.g. zen-mode color dimming).
 - **Phase 2** applies textual transforms (caps/smallCaps) — must not change
   UTF-16 length, since document offsets are measured on the original text.
 - **Phase 3** emits spans — may split text (spell-check marks, syntax
@@ -275,6 +277,13 @@ Implementations must be stateless w.r.t. the phases (any phase may run any
 number of times per build). `DefaultNovidentTextSpanPipeline` reproduces
 legacy behavior; `SpellCheckSpanPipeline` plugs in at phase 3 to underline
 misspelled words.
+
+**Pipeline composition:** `EditorState.spanPipeline` is the single
+composition point (every block component passes `editorConfig: editorState`).
+Optional modes register a wrapper via `setSpanPipelineWrapper` that composes
+over the effective pipeline (spell check or default) — e.g. `ZenSpanPipeline`
+wraps it as a delegate and only overrides `resolveStyle` for the dimming,
+keeping the modes decoupled.
 
 ### Selection rendering (`novident_editor_selection`)
 
@@ -349,12 +358,30 @@ returns the strategy list to pass to the editor.
 
 ### Zen mode (`lib/src/editor/zen_mode/`)
 
-`ZenModeController` (a `ValueNotifier<ZenModeConfiguration>`) dims
-unfocused blocks via a `blockWrapper`, neutralizes text/block colors via a
-`textSpanDecorator` (without touching the document), and keeps the focused
-block vertically centered (typewriter scrolling) by driving the
-`EditorScrollController`. It also disables the native caret auto-scroll to
-avoid fighting the typewriter scroll.
+`ZenModeController` (a `ValueNotifier<ZenModeConfiguration>`) dims unfocused
+blocks **without touching the document**: text/block colors are neutralized
+through the span pipeline (`ZenSpanPipeline`, which wraps the effective
+pipeline as a delegate) and the block background decorator. `ZenModeBlock` +
+`ZenModeScope` provide the per-block dimmed state with **O(1) rebuilds**:
+each wrapper listens to the controller's focused top-level range and only
+rebuilds when its own dimmed state flips — typing inside a block rebuilds
+nothing. Only non-text node types (e.g. images, filterable via
+`wrapNonTextTypes`) get a cheap static `Opacity` wrapper, since they have no
+text spans to style. Typewriter scrolling is a separate feature — see below.
+
+### Typewriter scrolling (`lib/src/editor/typewriter/`)
+
+`TypewriterScrollStrategy` (a `ScrollStrategy`) keeps the cursor vertically
+centered by driving the `EditorScrollController` on selection changes. It is
+independent from zen mode (usable with or without it) and is passed to
+`NovidentEditor.scrollStrategies`. It centers **instantly** for collapsed
+selections and **delegates to the default edge-follow** for expanded ones.
+
+The scroll system is decomposed into reusable pieces under
+`service/scroll/`: `ScrollTargetResolver` (edge policy), `ScrollVelocity`
+(velocity profile) and `ScrollDriver` (the follow loop), composed by
+`AutoScroller`. `ScrollStrategy` is the full-control seam (like
+`KeyboardStrategy`): the editor delegates, the strategy decides.
 
 ### Spell check (`lib/src/editor/spell_check/`)
 
@@ -438,6 +465,11 @@ per-node parsers, exposed as `Codec<Document, String>` implementations
 - **Selection rects are computed fresh per call** — global coordinates
   depend on scroll offset, so caching across frames would return stale
   positions during scroll animations.
+- **Zen dimming is O(1) per focus change** — each block's `ZenModeBlock`
+  only rebuilds when its own dimmed state flips; typing inside a block
+  rebuilds no wrapper. Config refreshes notify only the visible nodes
+  (`getVisibleNodes`), with a platform-sized fallback window when the
+  visible range is not initialized.
 - **`shrinkWrap: false` (default) uses a ListView** for virtualized
   rendering; `shrinkWrap: true` falls back to SingleChildScrollView +
   Column (documented as poor performance for large documents).

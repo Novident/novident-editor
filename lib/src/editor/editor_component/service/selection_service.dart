@@ -82,6 +82,15 @@ abstract class NovidentSelectionService {
   /// The current selection areas's rect in editor.
   List<Rect> get selectionRects;
 
+  /// The last known finger / pointer position during a drag, in global
+  /// coordinates. Null when no drag is in progress.
+  ///
+  /// The edge-follow uses this as a fallback target when the caret has moved
+  /// outside the viewport (so [selectionRects] is empty): the finger is always
+  /// inside the viewport, so the auto-scroll can still decide whether to
+  /// scroll toward it.
+  Offset? get lastPanOffset;
+
   void registerGestureInterceptor(SelectionGestureInterceptor interceptor);
   void unregisterGestureInterceptor(String key);
 

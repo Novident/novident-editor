@@ -41,7 +41,7 @@ class _SelectionServiceWidgetState extends State<SelectionServiceWidget>
 
   @override
   Widget build(BuildContext context) {
-    if (PlatformExtension.isDesktopOrWeb) {
+    if (EditorPlatform.isDesktopOrWeb) {
       return DesktopSelectionServiceWidget(
         key: forwardKey,
         cursorColor: widget.cursorColor,
@@ -89,6 +89,9 @@ class _SelectionServiceWidgetState extends State<SelectionServiceWidget>
 
   @override
   List<Rect> get selectionRects => forward.selectionRects;
+
+  @override
+  Offset? get lastPanOffset => forward.lastPanOffset;
 
   @override
   void unregisterGestureInterceptor(String key) =>

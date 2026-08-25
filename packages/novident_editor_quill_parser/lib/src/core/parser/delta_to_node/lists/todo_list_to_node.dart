@@ -1,0 +1,21 @@
+import 'package:flutter_quill_delta_easy_parser/flutter_quill_delta_easy_parser.dart'
+    hide Document;
+import 'package:novident_editor_core/novident_editor_core.dart';
+import 'package:novident_editor_document/novident_editor_document.dart';
+import '../../../../../novident_editor_quill_parser.dart';
+import 'package:novident_editor_quill_parser/src/utils/quill_rich_text_keys.dart';
+
+class TodoListToNode extends QuillDeltaToNode {
+  @override
+  List<Node> toNodes(Paragraph paragraph) {
+    final checked = paragraph.blockAttributes?[QuillRichTextKeys.list] ==
+        QuillRichTextKeys.checkedList;
+    return <Node>[
+      buildNode(
+        paragraph,
+        TodoListBlockKeys.type,
+        extra: {TodoListBlockKeys.checked: checked},
+      ),
+    ];
+  }
+}

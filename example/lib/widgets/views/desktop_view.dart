@@ -39,7 +39,7 @@ class _DesktopTreeViewExampleState extends State<DesktopTreeViewExample> {
   void initState() {
     super.initState();
     treeController = widget.controller
-      ..selectNode(widget.controller.root.atPath(<int>[1, 0]));
+      ..selectNode(widget.controller.root.atPath(<int>[0, 0]));
     final File? initial = treeController.selectedFile;
     if (initial != null) {
       _splitController.open(initial.id);

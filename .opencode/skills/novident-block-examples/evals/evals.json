@@ -1,0 +1,23 @@
+{
+  "skill_name": "novident-block-examples",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create an example of a todo list block for the Novident editor. Show me both the JSON document form and the Dart code using the node factory method.",
+      "expected_output": "A todo_list block example in both JSON (with type 'todo_list', data containing delta and checked) and Dart (todoListNode(checked: ..., text: ...)).",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I need a sample Novident document that has a heading, a bulleted list with two items, and a 2x2 table. Give me the full JSON and the Dart code to build it.",
+      "expected_output": "A complete document (page root) containing a heading, bulleted list, and a table, in both JSON and Dart using headingNode, bulletedListNode, and TableNode.fromList.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "How do I create a table in the Novident editor with a header row and a cell that has bold text? Show the Dart code using the table factory methods.",
+      "expected_output": "Dart code using TableNode.fromNodes (or fromList) with a header row, and a cell whose paragraph uses a Delta with bold attribute. Should mention column-major order.",
+      "files": []
+    }
+  ]
+}

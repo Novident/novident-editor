@@ -87,7 +87,7 @@ class _BulletedListBlockComponentWidgetState
         BlockComponentAlignMixin,
         BlockHeightReporter {
   @override
-  final forwardKey = GlobalKey(debugLabel: 'flowy_rich_text');
+  final forwardKey = GlobalKey(debugLabel: 'rich_text');
 
   @override
   GlobalKey<State<StatefulWidget>> get containerKey => widget.node.key;
@@ -128,6 +128,9 @@ class _BulletedListBlockComponentWidgetState
 
     final blockStyle = NovidentBlockStyleResolver.resolve(context, widget.node);
 
+    final effectiveTextAlign =
+        nodeTextAlign ?? blockStyle.alignment ?? textAlign;
+
     Widget child = Container(
       width: double.infinity,
       alignment: alignment,
@@ -147,8 +150,7 @@ class _BulletedListBlockComponentWidgetState
               delegate: this,
               node: widget.node,
               editorConfig: editorState,
-              textAlign:
-                  alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign,
+              textAlign: effectiveTextAlign,
               placeholderText: placeholderText,
               useFirstLineIndent: false,
               textSpanDecorator: (textSpan) => textSpan.updateTextStyle(

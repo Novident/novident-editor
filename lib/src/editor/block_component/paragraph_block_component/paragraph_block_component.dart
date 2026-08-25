@@ -87,7 +87,7 @@ class _ParagraphBlockComponentWidgetState
         BlockComponentAlignMixin,
         BlockHeightReporter {
   @override
-  final forwardKey = GlobalKey(debugLabel: 'flowy_rich_text');
+  final forwardKey = GlobalKey(debugLabel: 'rich_text');
 
   @override
   GlobalKey<State<StatefulWidget>> get containerKey => widget.node.key;
@@ -155,10 +155,8 @@ class _ParagraphBlockComponentWidgetState
       widget.node,
     );
     final effectivePadding = blockStyle.applyToPadding(padding);
-    //TODO: alignment.toTextAlign should be replaced
-    // by another method or enum that supports jutify alignment
     final effectiveTextAlign =
-        alignment?.toTextAlign ?? blockStyle.alignment ?? textAlign;
+        nodeTextAlign ?? blockStyle.alignment ?? textAlign;
 
     Widget child = Container(
       width: double.infinity,

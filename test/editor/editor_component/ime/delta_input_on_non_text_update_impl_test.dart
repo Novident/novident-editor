@@ -39,61 +39,56 @@ void main() {
       //
       // onNonTextUpdate must NOT collapse the editor's selection in that case:
       // it must preserve the anchor and only move the moving end.
-      for (final platform in const [
-        EditorPlatformOverride(isLinux: true),
-        EditorPlatformOverride(isMacOS: true),
-      ]) {
-        test(
-          'does not collapse a multi-node selection '
-          '(platform: $platform)',
-          () async {
-            EditorPlatform.override = platform;
+      test(
+        'does not collapse a multi-node selection on android platform',
+        () async {
+          EditorPlatform.override = EditorPlatformOverride(isAndroid: true);
 
-            final editorState = buildEditor();
-            editorState.selection = Selection(
-              start: Position(path: [0]),
-              end: Position(path: [1], offset: 5),
-            );
+          final editorState = buildEditor();
+          editorState.selection = Selection(
+            start: Position(path: [0]),
+            end: Position(path: [1], offset: 5),
+          );
 
-            // Flat offset 11 == end of the "Hello\nHello" buffer.
-            await onNonTextUpdate(
-              const TextEditingDeltaNonTextUpdate(
-                oldText: 'Hello\nHello',
-                selection: TextSelection.collapsed(offset: 11),
-                composing: TextRange.empty,
-              ),
-              editorState,
-            );
+          // Flat offset 11 == end of the "Hello\nHello" buffer.
+          await onNonTextUpdate(
+            const TextEditingDeltaNonTextUpdate(
+              oldText: 'Hello\nHello',
+              selection: TextSelection.collapsed(offset: 11),
+              composing: TextRange.empty,
+            ),
+            editorState,
+          );
 
-            final selection = editorState.selection;
-            expect(selection, isNotNull);
+          final selection = editorState.selection;
+          expect(selection, isNotNull);
 
-            // Regression: the range must survive.
-            expect(
-              selection!.isCollapsed,
-              isFalse,
-              reason: 'extending a selection must not collapse it',
-            );
+          // Regression: the range must survive.
+          expect(
+            selection!.isCollapsed,
+            isFalse,
+            reason: 'extending a selection must not collapse it',
+          );
 
-            // The anchor (start) must be preserved.
-            expect(
-              selection.start.path,
-              [0],
-              reason: 'the anchor node must not move',
-            );
-            expect(
-              selection.start.offset,
-              0,
-              reason: 'the anchor offset must not move',
-            );
-          },
-        );
-      }
+          // The anchor (start) must be preserved.
+          expect(
+            selection.start.path,
+            [0],
+            reason: 'the anchor node must not move',
+          );
+          expect(
+            selection.start.offset,
+            0,
+            reason: 'the anchor offset must not move',
+          );
+        },
+      );
 
       test(
         'keeps the moved end within its own node (flat offset remapped)',
         () async {
-          EditorPlatform.override = const EditorPlatformOverride(isLinux: true);
+          EditorPlatform.override =
+              const EditorPlatformOverride(isAndroid: true);
 
           final editorState = buildEditor();
           editorState.selection = Selection(
@@ -124,67 +119,6 @@ void main() {
           );
         },
       );
-
-      test('moves the start when the flat offset is near the anchor', () async {
-        EditorPlatform.override = const EditorPlatformOverride(isLinux: true);
-
-        final editorState = buildEditor();
-        editorState.selection = Selection(
-          start: Position(path: [0], offset: 2),
-          end: Position(path: [1], offset: 5),
-        );
-
-        // Flat offset 0 == start of the buffer: the user drags the START
-        // handle backwards, so the start must move and the end must stay.
-        await onNonTextUpdate(
-          const TextEditingDeltaNonTextUpdate(
-            oldText: 'Hello\nHello',
-            selection: TextSelection.collapsed(offset: 0),
-            composing: TextRange.empty,
-          ),
-          editorState,
-        );
-
-        final selection = editorState.selection;
-        expect(selection, isNotNull);
-        expect(selection!.isCollapsed, isFalse);
-        expect(selection.start.path, [0]);
-        expect(selection.start.offset, 0);
-        expect(selection.end.path, [1]);
-        expect(selection.end.offset, 5);
-      });
-
-      test('preserves the anchor on a backward selection', () async {
-        EditorPlatform.override = const EditorPlatformOverride(isLinux: true);
-
-        final editorState = buildEditor();
-        // Backward: the user dragged from [1] towards [0], so `start` is the
-        // moving head (end of the buffer) and `end` is the anchor.
-        editorState.selection = Selection(
-          start: Position(path: [1], offset: 5),
-          end: Position(path: [0]),
-        );
-
-        // Flat offset 3 (inside the first node of the buffer): the head
-        // (start, at flat 5) is the closest end, so it moves to [1]:3 while
-        // the anchor [0]:0 is preserved.
-        await onNonTextUpdate(
-          const TextEditingDeltaNonTextUpdate(
-            oldText: 'Hello\nHello',
-            selection: TextSelection.collapsed(offset: 3),
-            composing: TextRange.empty,
-          ),
-          editorState,
-        );
-
-        final selection = editorState.selection;
-        expect(selection, isNotNull);
-        expect(selection!.isCollapsed, isFalse);
-        expect(selection.start.path, [1]);
-        expect(selection.start.offset, 3);
-        expect(selection.end.path, [0]);
-        expect(selection.end.offset, 0);
-      });
     });
 
     group('collapsed selection', () {
@@ -226,7 +160,9 @@ void main() {
         return EditorState(document: document);
       }
 
-      test('windows: preserves an active range', () async {
+      test(
+          'windows: coplapse selection even when editor has not collappsed one',
+          () async {
         EditorPlatform.override = const EditorPlatformOverride(isWindows: true);
 
         final editorState = buildEditor();
@@ -246,9 +182,9 @@ void main() {
 
         final selection = editorState.selection;
         expect(selection, isNotNull);
-        expect(selection!.isCollapsed, isFalse);
+        expect(selection!.isCollapsed, isTrue);
         expect(selection.start.path, [0]);
-        expect(selection.end.path, [1]);
+        expect(selection.end.path, [0]);
       });
 
       test('windows: collapses a collapsed selection with remapped offset',

@@ -639,6 +639,8 @@ class _NovidentRichTextState extends State<NovidentRichText>
         textInsert.attributes,
         _baseTextStyle,
         textStyleConfiguration,
+        node: widget.node,
+        context: context,
       );
       // Phase 2: caps/smallCaps transformation (length preserved).
       final displayText = pipeline.transformText(

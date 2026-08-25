@@ -26,12 +26,12 @@ class _BackgroundColorOptionsWidgetsState
     final colorOptions =
         widget.backgroundColorOptions ?? generateHighlightColorOptions();
     final selection = widget.selection;
-    final nodes = widget.editorState.getNodesInSelection(selection);
-    final hasTextColor = nodes.allSatisfyInSelection(selection, (delta) {
-      return delta.everyAttributes(
-        (attributes) => attributes[RichTextKeys.backgroundColor] != null,
-      );
-    });
+    final activeColor = activeAttributeValue(
+      widget.editorState,
+      selection,
+      RichTextKeys.backgroundColor,
+    ) as String?;
+    final hasTextColor = activeColor != null;
 
     return Scrollbar(
       child: GridView(
@@ -56,18 +56,12 @@ class _BackgroundColorOptionsWidgetsState
             isSelected: !hasTextColor,
           ),
           // color option buttons
-          ...colorOptions.map((e) {
-            final isSelected = nodes.allSatisfyInSelection(selection, (delta) {
-              return delta.everyAttributes(
-                (attributes) =>
-                    attributes[RichTextKeys.backgroundColor] == e.colorHex,
-              );
-            });
-            return ColorButton(
+          for (final e in colorOptions)
+            ColorButton(
               isBackgroundColor: true,
               colorOption: e,
               onPressed: () {
-                if (!isSelected) {
+                if (activeColor != e.colorHex) {
                   setState(() {
                     formatHighlightColor(
                       widget.editorState,
@@ -77,9 +71,8 @@ class _BackgroundColorOptionsWidgetsState
                   });
                 }
               },
-              isSelected: isSelected,
-            );
-          }),
+              isSelected: activeColor == e.colorHex,
+            ),
         ],
       ),
     );

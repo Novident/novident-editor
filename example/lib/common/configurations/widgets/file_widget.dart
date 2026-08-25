@@ -36,7 +36,7 @@ class FileTile extends StatelessWidget {
                 ? CupertinoIcons.doc_text_fill
                 : CupertinoIcons.doc_text,
             size: 16,
-            color: mutedColor ?? Colors.blueGrey.shade400,
+            color: mutedColor ?? Colors.grey.shade500,
           ),
           const SizedBox(width: 6),
           Expanded(

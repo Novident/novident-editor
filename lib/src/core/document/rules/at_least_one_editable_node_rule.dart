@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:novident_editor/novident_editor.dart';
 
 /// This rule ensures that there is at least one editable node in the document.
@@ -29,6 +31,6 @@ class AtLeastOneEditableNodeRule extends DocumentRule {
       ..afterSelection = Selection.collapsed(
         Position(path: [0]),
       );
-    editorState.apply(transaction);
+    unawaited(editorState.apply(transaction));
   }
 }

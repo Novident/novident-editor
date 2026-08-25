@@ -1,5 +1,6 @@
-import 'package:novident_editor/src/editor/util/platform_extension.dart';
 import 'package:keyboard_height_plugin/keyboard_height_plugin.dart';
+
+import '../../../../../novident_editor.dart';
 
 typedef KeyboardHeightCallback = void Function(double height);
 
@@ -35,7 +36,7 @@ class KeyboardHeightObserver {
 
   void notify(double height) {
     // the keyboard height will notify twice with the same value on Android
-    if (PlatformExtension.isAndroid && height == currentKeyboardHeight) {
+    if (EditorPlatform.isAndroid && height == currentKeyboardHeight) {
       return;
     }
 

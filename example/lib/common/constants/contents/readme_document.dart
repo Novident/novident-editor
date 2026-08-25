@@ -42,8 +42,23 @@ final kReadmeAccentTable = NovidentTableStyleDefinition.nextSame(
 final Document readmeDocument = Document(
   root: pageNode(
     children: <Node>[
-      paragraphNode(text: 'Readme', styleRef: kHeadingDefaultStyles[0].id),
-      paragraphNode(text: 'So, this is just an example'),
+      paragraphNode(text: 'Welcome', styleRef: kHeadingDefaultStyles[0].id),
+      paragraphNode(
+        text: 'This workspace showcases what the Novident editor can do. '
+            'Open each document from the binder to see a different set of '
+            'capabilities: text & formatting, lists & todo, blocks & quotes, '
+            'tables, columns & layout, and two large stress-test documents '
+            'that push the editor to its limits.',
+      ),
+      paragraphNode(
+        text: 'Everything you see is editable — try the toolbar above, '
+            'toggle zen mode with the moon button, and drag documents into '
+            'the split view on desktop.',
+      ),
+      paragraphNode(
+        text: 'The rest of this document demonstrates the table block and '
+            'its built-in styles:',
+      ),
       paragraphNode(
           text: '1. Basic table', styleRef: kHeadingDefaultStyles[1].id),
       TableNode.fromList([

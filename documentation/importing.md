@@ -36,13 +36,4 @@ final editorState = EditorState(
 
 3. From Quill Delta
 
-```dart
-const json = r'''[{"insert":"Hello Novident!"},{"attributes":{"header":1},"insert":"\n"}]''';
-final delta = Delta.fromJson(jsonDecode(json));
-final document = quillDeltaEncoder.convert(delta);
-final editorState = EditorState(document: document);
-```
-
-> Notes: Some styles, such as font-size, font-family and text-align, are not supported yet.
-
-For more details, please refer to the function `_importFile` through this [link](https://github.com/Novident/novident-editor/blob/main/example/lib/home_page.dart#L298).
+See the examples in [Novident Quill Parser](https://pub.dev/packages/novident_editor_quill_parser)

@@ -31,14 +31,14 @@ class _MobileCollapsedHandleState extends State<MobileCollapsedHandle> {
   @override
   Widget build(BuildContext context) {
     final debugInfo = context.read<EditorState>().debugInfo;
-    if (PlatformExtension.isIOS) {
+    if (EditorPlatform.isIOS) {
       return _IOSCollapsedHandle(
         layerLink: widget.layerLink,
         rect: widget.rect,
         handleWidth: widget.handleWidth,
         debugPaintSizeEnabled: debugInfo.debugPaintSizeEnabled,
       );
-    } else if (PlatformExtension.isAndroid) {
+    } else if (EditorPlatform.isAndroid) {
       return _AndroidCollapsedHandle(
         layerLink: widget.layerLink,
         rect: widget.rect,
@@ -67,11 +67,12 @@ class _IOSCollapsedHandle extends StatelessWidget {
   final double handleWidth;
   final bool debugPaintSizeEnabled;
 
+  static const defaultExtend = 10.0;
+
   @override
   Widget build(BuildContext context) {
     // Extend the click area to make it easier to click.
     final editorStyle = context.read<EditorState>().editorStyle;
-    const defaultExtend = 10.0;
     final topExtend = editorStyle.mobileDragHandleTopExtend ?? defaultExtend;
     final leftExtend = editorStyle.mobileDragHandleLeftExtend ?? defaultExtend;
     final widthExtend =

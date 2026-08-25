@@ -10,9 +10,12 @@ Future<void> onFloatingCursorUpdate(
   RawFloatingCursorPoint point,
   EditorState editorState,
 ) async {
-  NovidentEditorLog.input.debug(
-    'onFloatingCursorUpdate: ${point.state}, ${point.offset}',
-  );
+  assert(() {
+    NovidentEditorLog.input.debug(
+      'onFloatingCursorUpdate: ${point.state}, ${point.offset}',
+    );
+    return true;
+  }());
 
   // support updating the cursor position via the space bar on iOS/Android.
   if (EditorPlatform.isDesktopOrWeb) {
@@ -26,15 +29,21 @@ Future<void> onFloatingCursorUpdate(
       final collapsedCursor = HandleType.collapsed.key;
       final context = collapsedCursor.currentContext;
       if (context == null) {
-        NovidentEditorLog.input.debug(
-          'onFloatingCursorUpdateStart: context is null',
-        );
+        assert(() {
+          NovidentEditorLog.input.debug(
+            'onFloatingCursorUpdateStart: context is null',
+          );
+          return true;
+        }());
         return;
       }
 
-      NovidentEditorLog.input.debug(
-        'onFloatingCursorUpdateStart: ${point.startLocation}',
-      );
+      assert(() {
+        NovidentEditorLog.input.debug(
+          'onFloatingCursorUpdateStart: ${point.startLocation}',
+        );
+        return true;
+      }());
 
       // get global offset of the cursor.
       final renderBox = context.findRenderObject() as RenderBox;
@@ -54,22 +63,31 @@ Future<void> onFloatingCursorUpdate(
       final collapsedCursor = HandleType.collapsed.key;
       final context = collapsedCursor.currentContext;
       if (context == null) {
-        NovidentEditorLog.input.debug(
-          'onFloatingCursorUpdateUpdate: context is null',
-        );
+        assert(() {
+          NovidentEditorLog.input.debug(
+            'onFloatingCursorUpdateUpdate: context is null',
+          );
+          return true;
+        }());
         return;
       } else {
-        NovidentEditorLog.input.debug(
-          'onFloatingCursorUpdateUpdate: context is not null',
-        );
+        assert(() {
+          NovidentEditorLog.input.debug(
+            'onFloatingCursorUpdateUpdate: context is not null',
+          );
+          return true;
+        }());
       }
       if (_cursorOffset == null || point.offset == null) {
         return;
       }
 
-      NovidentEditorLog.input.debug(
-        'onFloatingCursorUpdateUpdate: ${point.offset}',
-      );
+      assert(() {
+        NovidentEditorLog.input.debug(
+          'onFloatingCursorUpdateUpdate: ${point.offset}',
+        );
+        return true;
+      }());
 
       disableMagnifier = true;
       selectionService.onPanUpdate(
@@ -80,9 +98,12 @@ Future<void> onFloatingCursorUpdate(
       );
       break;
     case FloatingCursorDragState.End:
-      NovidentEditorLog.input.debug(
-        'onFloatingCursorUpdateEnd: ${point.offset}',
-      );
+      assert(() {
+        NovidentEditorLog.input.debug(
+          'onFloatingCursorUpdateEnd: ${point.offset}',
+        );
+        return true;
+      }());
 
       _cursorOffset = null;
       disableMagnifier = false;

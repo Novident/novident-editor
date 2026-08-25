@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:example/common/constants/contents/chapter_one_awakening_content.dart';
-import 'package:example/common/constants/contents/chapter_one_dark_woods_content.dart';
-import 'package:example/common/constants/contents/chapter_two_tavern_content.dart';
-import 'package:example/common/constants/contents/character_elara_content.dart';
-import 'package:example/common/constants/contents/place_hollow_forest_content.dart';
+import 'package:example/common/constants/contents/blog_post_content.dart';
+import 'package:example/common/constants/contents/recipe_content.dart';
+import 'package:example/common/constants/contents/stress_test_content.dart';
+import 'package:example/common/constants/contents/tables_content.dart';
+import 'package:example/common/constants/contents/text_formatting_content.dart';
 import 'package:example/common/nodes/directory.dart';
 import 'package:example/common/nodes/file.dart';
 import 'package:novident_editor/novident_editor.dart' show Document;
@@ -19,35 +19,45 @@ String _content(Document document) => jsonEncode(document.toJson());
 ///
 /// Every call builds NEW node instances — tests boot several workspaces
 /// without disposing shared mutable node state.
+///
+/// The workspace is a capability showcase: each document demonstrates a
+/// group of editor features with realistic content. The README must stay at
+/// root path `[0, 0]` — the desktop and mobile views select it on startup
+/// through `root.atPath([0, 0])`.
 ({List<Node> nodes, Map<String, String> contents}) buildDefaultWorkspace() {
-  final awakening = File(
-    details: NodeDetails.withLevel(2),
-    name: 'Awakening',
-    createAt: DateTime.now(),
-  );
-  final darkWoods = File(
-    details: NodeDetails.withLevel(2),
-    name: 'Dark Woods',
-    createAt: DateTime.now(),
-  );
-  final tavern = File(
-    details: NodeDetails.withLevel(2),
-    name: 'The Tavern',
-    createAt: DateTime.now(),
-  );
   final readme = File(
     details: NodeDetails.withLevel(1),
     name: 'README',
     createAt: DateTime.now(),
   );
-  final elara = File(
+  final textFormatting = File(
     details: NodeDetails.withLevel(1),
-    name: 'Elara',
+    name: 'Text & Formatting',
     createAt: DateTime.now(),
   );
-  final hollowForest = File(
+  final recipe = File(
     details: NodeDetails.withLevel(1),
-    name: 'The Hollow Forest',
+    name: 'Homemade Sourdough Bread',
+    createAt: DateTime.now(),
+  );
+  final blogPost = File(
+    details: NodeDetails.withLevel(1),
+    name: 'How we built a rich-text editor',
+    createAt: DateTime.now(),
+  );
+  final tables = File(
+    details: NodeDetails.withLevel(1),
+    name: 'Tables',
+    createAt: DateTime.now(),
+  );
+  final longStress = File(
+    details: NodeDetails.withLevel(2),
+    name: 'Long Document',
+    createAt: DateTime.now(),
+  );
+  final mediumStress = File(
+    details: NodeDetails.withLevel(2),
+    name: 'Medium Document',
     createAt: DateTime.now(),
   );
 
@@ -55,55 +65,39 @@ String _content(Document document) => jsonEncode(document.toJson());
   // own file under `constants/contents/` and is delivered through the
   // contents map below — the nodes themselves carry no content.
   //
-  // Note: `Research` must stay at root index `1` — the desktop view
-  // selects the README on startup through `root.atPath([1, 0])`.
+  // Note: `README` must stay at root path `[0, 0]` — the desktop and
+  // mobile views select it on startup through `root.atPath([0, 0])`.
   final nodes = <Node>[
     Directory(
       details: NodeDetails.zero(),
-      name: 'Manuscript',
+      name: 'Novident Showcase',
       createAt: DateTime.now(),
+      isExpanded: true,
       children: [
-        Directory(
-          details: NodeDetails(level: 1),
-          name: 'Chapter 1',
-          createAt: DateTime.now(),
-          children: [awakening, darkWoods],
-        ),
-        Directory(
-          details: NodeDetails(level: 1),
-          name: 'Chapter 2',
-          createAt: DateTime.now(),
-          children: [tavern],
-        ),
+        readme,
+        textFormatting,
+        recipe,
+        blogPost,
+        tables,
       ],
     ),
     Directory(
-      details: NodeDetails.withLevel(0),
-      name: 'Research',
+      details: NodeDetails(level: 1),
+      name: 'Stress Test',
       createAt: DateTime.now(),
-      children: [readme],
-    ),
-    Directory(
-      details: NodeDetails.withLevel(0),
-      name: 'Characters',
-      createAt: DateTime.now(),
-      children: [elara],
-    ),
-    Directory(
-      details: NodeDetails.withLevel(0),
-      name: 'Places',
-      createAt: DateTime.now(),
-      children: [hollowForest],
+      isExpanded: true,
+      children: [longStress, mediumStress],
     ),
   ];
 
   final contents = <String, String>{
-    awakening.id: _content(awakeningDocument),
-    darkWoods.id: _content(darkWoodsDocument),
-    tavern.id: _content(tavernDocument),
-    elara.id: _content(characterElaraDocument),
-    hollowForest.id: _content(placeHollowForestDocument),
     readme.id: _content(readmeDocument),
+    textFormatting.id: _content(textFormattingDocument),
+    recipe.id: _content(recipeDocument),
+    blogPost.id: _content(blogPostDocument),
+    tables.id: _content(tablesDocument),
+    longStress.id: _content(longStressDocument),
+    mediumStress.id: _content(mediumStressDocument),
   };
 
   return (nodes: nodes, contents: contents);

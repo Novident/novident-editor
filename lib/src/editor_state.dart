@@ -243,7 +243,6 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   SpellCheckService? spellCheckService;
 
   /// The selection notifier of the editor.
-  /// The selection notifier of the editor.
   @override
   final PropertyValueNotifier<Selection?> selectionNotifier =
       PropertyValueNotifier<Selection?>(null);

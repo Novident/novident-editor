@@ -20,6 +20,7 @@ StreamController<int> novidentEditorOnTapSelectionArea =
 bool disableIOSSelectWordEdgeOnTap = false;
 bool disableMagnifier = false;
 
+//TODO: @Cathood0 we probably want to make some optimizations here
 class MobileSelectionServiceWidget extends StatefulWidget {
   const MobileSelectionServiceWidget({
     super.key,

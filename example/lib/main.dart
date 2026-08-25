@@ -9,6 +9,7 @@ import 'package:novident_editor/novident_editor.dart'
     show NovidentEditorLocalizations, UniversalPlatform;
 import 'package:novident_split_view/novident_split_view.dart';
 import 'spell_check/hunspell_spell_checker.dart';
+import 'widgets/editor/editor_configuration.dart';
 import 'widgets/views/desktop_view.dart';
 
 Future<void> main() async {
@@ -56,7 +57,7 @@ class _MyAppState extends State<MyApp> {
         child: MaterialApp(
           title: 'Novident',
           theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+            colorScheme: ColorScheme.fromSeed(seedColor: kSeedColor),
             useMaterial3: true,
           ),
           debugShowCheckedModeBanner: false,

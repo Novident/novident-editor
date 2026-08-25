@@ -3,13 +3,14 @@ import 'package:example/common/configurations/widgets/file_widget.dart';
 import 'package:example/common/nodes/file.dart';
 import 'package:example/common/nodes/root.dart';
 import 'package:example/extensions/node_ext.dart';
+import 'package:example/widgets/editor/editor_configuration.dart';
 import 'package:flutter/material.dart';
 import 'package:novident_nodes/novident_nodes.dart';
 import 'package:novident_tree_view/novident_tree_view.dart';
 
 class FileComponentBuilder extends NodeComponentBuilder {
   final BorderSide borderSide = BorderSide(
-    color: Colors.blueAccent,
+    color: kEditorAccent,
     width: 2.0,
   );
 
@@ -84,7 +85,7 @@ class FileComponentBuilder extends NodeComponentBuilder {
             ? null
             : error
                 ? Colors.redAccent.withAlpha(50)
-                : Colors.blueAccent.withAlpha(50),
+                : kEditorAccent.withAlpha(50),
         borderRadius: BorderRadiusDirectional.circular(5),
       );
     }

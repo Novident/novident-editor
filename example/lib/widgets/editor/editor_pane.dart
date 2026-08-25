@@ -6,6 +6,7 @@ import 'package:novident_editor/novident_editor.dart';
 import 'package:novident_split_view/novident_split_view.dart';
 
 import 'my_editor.dart';
+import 'editor_configuration.dart';
 import 'session_controller.dart';
 import 'vim_mode_chip.dart';
 import 'word_count_chip.dart';
@@ -99,7 +100,7 @@ class _EditorPaneState extends State<EditorPane> {
     return Icon(
       CupertinoIcons.doc_text_fill,
       size: 14,
-      color: widget.isFocused ? const Color(0xFF448AFF) : Colors.grey.shade600,
+      color: widget.isFocused ? kEditorAccent : Colors.grey.shade600,
     );
   }
 
@@ -132,7 +133,7 @@ class _EditorPaneState extends State<EditorPane> {
                       ? CupertinoIcons.moon_stars_fill
                       : CupertinoIcons.moon_stars,
                   color: config.enabled
-                      ? const Color(0xFF448AFF)
+                      ? kEditorAccent
                       : Colors.grey.shade600,
                 ),
                 onPressed: _zenController.toggle,

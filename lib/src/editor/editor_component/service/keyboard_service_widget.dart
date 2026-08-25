@@ -308,7 +308,7 @@ class KeyboardServiceWidgetState extends State<KeyboardServiceWidget>
         editorState.selectionType == SelectionType.inline &&
             editorState.selectionUpdateReason == SelectionUpdateReason.uiEvent;
 
-    if (PlatformExtension.isAndroid && shouldClearComposingRange) {
+    if (EditorPlatform.isAndroid && shouldClearComposingRange) {
       textInputService.clearComposingTextRange();
     }
 

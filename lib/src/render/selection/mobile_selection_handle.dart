@@ -32,10 +32,11 @@ class MobileSelectionHandle extends StatelessWidget {
         // on iOS, the cursor will still be visible if the selection is not collapsed.
         // So, adding a threshold padding to avoid row overflow.
         const threshold = 0.25;
+        final left = handleType == HandleType.left ? rect.left + 1.5 : rect.left;
         adjustedRect = Rect.fromLTWH(
-          rect.left - 2 * (handleWidth + threshold),
+          left - 2 * (handleWidth + threshold),
           rect.top - handleBallWidth,
-          rect.width + 4 * (handleWidth + threshold),
+          rect.width + 3 * (handleWidth + threshold),
           rect.height + 2 * handleBallWidth,
         );
       } else if (EditorPlatform.isAndroid) {

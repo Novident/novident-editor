@@ -96,7 +96,7 @@ Future<void> onNonTextUpdate(
         ),
       ),
     );
-  } else if (PlatformExtension.isMacOS) {
+  } else if (EditorPlatform.isMacOS) {
     unawaited(
       editorState.updateSelectionWithReason(
         Selection.collapsed(

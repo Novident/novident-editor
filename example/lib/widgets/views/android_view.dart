@@ -56,7 +56,7 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
       ),
     );
     treeController = widget.controller
-      ..selectNode(widget.controller.root.atPath(<int>[1, 0]));
+      ..selectNode(widget.controller.root.atPath(<int>[0, 0]));
     treeController.selection.addListener(_onSelectionChanged);
     treeController.root.addListener(_onTreeChanged);
     _initAndroidNativeTextProcessActions();
@@ -327,7 +327,7 @@ class _AndroidTreeViewExampleState extends State<AndroidTreeViewExample> {
                   config.enabled
                       ? CupertinoIcons.moon_stars_fill
                       : CupertinoIcons.moon_stars,
-                  color: config.enabled ? const Color(0xFF448AFF) : null,
+                  color: config.enabled ? kEditorAccent : null,
                 ),
                 onPressed: _zenController.toggle,
               );

@@ -90,7 +90,12 @@ class VimSelectionRenderer extends SelectionRenderer {
       rects: ctx.rects,
       selectionColor: ctx.color,
       headRectIndex: ctx.headRectIndex,
-      headColor: ctx.headColor,
+      headColor: ctx.headColor == null
+          ? null
+          : _resolveColor(
+              _style,
+              ctx.headColor!,
+            ),
     );
   }
 

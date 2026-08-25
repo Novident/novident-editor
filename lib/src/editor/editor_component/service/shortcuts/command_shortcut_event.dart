@@ -80,17 +80,17 @@ class CommandShortcutEvent {
       return;
     }
     var matched = false;
-    if ((PlatformExtension.isWindows || PlatformExtension.isWebOnWindows) &&
+    if ((EditorPlatform.isWindows || EditorPlatform.isWebOnWindows) &&
         windowsCommand != null &&
         windowsCommand.isNotEmpty) {
       this.command = windowsCommand;
       matched = true;
-    } else if ((PlatformExtension.isMacOS || PlatformExtension.isWebOnMacOS) &&
+    } else if ((EditorPlatform.isMacOS || EditorPlatform.isWebOnMacOS) &&
         macOSCommand != null &&
         macOSCommand.isNotEmpty) {
       this.command = macOSCommand;
       matched = true;
-    } else if ((PlatformExtension.isLinux || PlatformExtension.isWebOnLinux) &&
+    } else if ((EditorPlatform.isLinux || EditorPlatform.isWebOnLinux) &&
         linuxCommand != null &&
         linuxCommand.isNotEmpty) {
       this.command = linuxCommand;

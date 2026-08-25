@@ -3,8 +3,20 @@ import 'package:example/common/constants/contents/readme_document.dart'
 import 'package:flutter/material.dart';
 import 'package:novident_editor/novident_editor.dart';
 
+/// The app's Material 3 seed color — drives the whole color scheme.
+/// A deep indigo that reads as calm and professional for a document editor.
+const Color kSeedColor = Color(0xFF4F46E5);
+
 /// Workspace colors (shared by the desktop, mobile and zen views).
-const Color kWorkspaceBackground = Color(0xFFECECEC);
+/// A clean, light neutral that lets the white editor sheets stand out.
+const Color kWorkspaceBackground = Color(0xFFF3F4F6);
+
+/// Primary accent: editor cursor, focused pane tint, zen toggle, vim chip
+/// and the file/directory selection highlight. Harmonizes with [kSeedColor].
+const Color kEditorAccent = Color(0xFF4F46E5);
+
+/// Translucent accent used for text selection highlights.
+const Color kEditorSelection = Color(0x334F46E5);
 
 /// Vim emulation is disabled on mobile: its normal mode would suppress
 /// the soft keyboard input.

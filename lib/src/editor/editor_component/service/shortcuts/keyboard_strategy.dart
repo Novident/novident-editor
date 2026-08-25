@@ -145,7 +145,7 @@ class DefaultEditorStrategy extends KeyboardStrategy {
     // On mobile devices, the "/" is context-sensitive,which means it can't be
     // recognized as a standalone character. This requires special handling.
     final isMobileSlash =
-        UniversalPlatform.isMobile && insertion.textInserted == '/';
+        EditorPlatform.isMobile && insertion.textInserted == '/';
 
     // In France, the backtick key is used to toggle a character style.
     // We should prevent the execution of character shortcut events when the

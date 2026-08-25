@@ -3,6 +3,7 @@ import 'package:novident_editor/novident_editor.dart';
 import '../../spell_check/hunspell_spell_checker.dart';
 import '../../spell_check/spell_check_context_menu.dart';
 import 'document_session.dart';
+import 'editor_configuration.dart';
 import 'visible_block_wrapper.dart';
 
 /// The Novident Editor surface shared by every view of the app (split
@@ -83,15 +84,17 @@ class MyEditor extends StatelessWidget {
           ? EditorStyle.mobile(
               padding: padding,
               firstLineIndent: 20,
-              cursorColor: Colors.blue.withAlpha(230),
-              selectionColor: Colors.blue.withAlpha(100),
+              cursorColor: kEditorAccent,
+              selectionColor: kEditorSelection,
+              dragHandleColor: kEditorAccent.withAlpha(255),
+              enableHapticFeedbackOnAndroid: false,
               spellChecker: HunspellSpellChecker.instance,
             )
           : EditorStyle.desktop(
               padding: padding,
               firstLineIndent: 20,
-              cursorColor: Colors.blue.withAlpha(230),
-              selectionColor: Colors.blue.withAlpha(100),
+              cursorColor: kEditorAccent,
+              selectionColor: kEditorSelection,
               selectionRenderer: VimSelectionRenderer(
                 controller: session.vimController,
               ),

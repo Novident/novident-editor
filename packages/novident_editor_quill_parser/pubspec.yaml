@@ -1,0 +1,26 @@
+name: novident_editor_quill_parser
+version: 1.0.0
+description: >-
+  Quill Delta conversion for Novident Editor — encode documents to
+  Quill Delta and decode Quill Delta back to documents. Reusable
+  independently of the full editor.
+homepage: https://github.com/Novident/
+repository: https://github.com/Novident/novident-editor/
+issue_tracker: https://github.com/Novident/novident-editor/issues
+
+environment:
+  sdk: ">=3.4.3 <4.0.0"
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dart_quill_delta: ^10.8.3
+  flutter_quill_delta_easy_parser: ^1.1.8
+  novident_editor_document: ^1.0.6
+  novident_editor_core: ^1.0.3
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter

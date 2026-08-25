@@ -3,7 +3,6 @@
 ## 1.0.7
 
 * fix(scroll#38): auto-scroll does not stop automatically when the cursor already enters into the viewport. 
-* fix: updated example to add more variation to the content and all the design of the blocks.
 * fix(ios): ios drag handles were too far from the actual selection rect.
 * fix(blocks): numbered list block does not center the position of the center respect to the list number identifier.
 * fix(styles): cannot justify items.
@@ -12,6 +11,8 @@
 * fix: most of the issues related with the workflows and the testing failing.
 * fix: make public internal paste text methods using `EditorState`.
 * chore(example): updated example to have the native toolbar for every platform.
+* chore(example): updated example to add more variation to the content and all the design of the blocks.
+* chore(skills): added new skill to allow creating content for the editor with no cost (since AI does not require to search in the codebase how are the blocks supported)
 
 ## 1.0.6
 

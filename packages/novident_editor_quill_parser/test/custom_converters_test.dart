@@ -62,7 +62,9 @@ void main() {
   group('encoder custom converters', () {
     test('via converters map', () {
       final encoder = QuillDeltaFromNovident(
-        converters: <String, NodeToQuill>{'my_custom_block': CustomBlockToDelta()},
+        converters: <String, NodeToQuill>{
+          'my_custom_block': CustomBlockToDelta()
+        },
       );
       final delta = encoder.parse([
         Node(
@@ -106,7 +108,9 @@ void main() {
   group('decoder custom converters', () {
     test('via embedConverters map', () {
       final decoder = QuillDeltaToNovident(
-        embedConverters: <String, QuillDeltaToNode>{'my_custom': CustomEmbedToNode()},
+        embedConverters: <String, QuillDeltaToNode>{
+          'my_custom': CustomEmbedToNode()
+        },
       );
       final document = decoder.parse(
         quill.Delta.fromJson(<Map<String, dynamic>>[

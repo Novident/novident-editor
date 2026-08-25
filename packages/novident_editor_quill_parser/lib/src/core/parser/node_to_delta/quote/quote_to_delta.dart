@@ -8,8 +8,8 @@ import 'package:novident_editor_quill_parser/src/utils/quill_rich_text_keys.dart
 class QuoteToDelta extends NodeToQuill {
   @override
   List<Operation> toQuill(Node node, {Map<String, dynamic>? extra}) {
-    final blockAttributes = toQuillCommonBlockAttributes(node) ??
-        <String, dynamic>{};
+    final blockAttributes =
+        toQuillCommonBlockAttributes(node) ?? <String, dynamic>{};
     blockAttributes[QuillRichTextKeys.quote] = true;
 
     return <Operation>[

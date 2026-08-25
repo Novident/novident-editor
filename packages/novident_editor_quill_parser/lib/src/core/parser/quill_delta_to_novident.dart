@@ -83,7 +83,8 @@ class QuillDeltaToNovident {
 
     for (final paragraph in parsed.paragraphs) {
       final nodes = converterFor(paragraph).toNodes(paragraph);
-      final isList = paragraph.blockAttributes?[QuillRichTextKeys.list] is String;
+      final isList =
+          paragraph.blockAttributes?[QuillRichTextKeys.list] is String;
 
       if (!isList) {
         while (stack.isNotEmpty) {
@@ -155,7 +156,8 @@ class QuillDeltaToNovident {
       return false;
     }
     final delta = node.delta;
-    final isEmpty = delta == null || delta.isEmpty || delta.toPlainText().isEmpty;
+    final isEmpty =
+        delta == null || delta.isEmpty || delta.toPlainText().isEmpty;
     if (!isEmpty) {
       return false;
     }

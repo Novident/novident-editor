@@ -67,8 +67,11 @@ void main() {
       // large alternating deltas.
       final selectionService = editorState.service.selectionService;
       // lastPanOffset is null before the drag starts.
-      expect(selectionService.lastPanOffset, isNull,
-          reason: 'no finger position before drag',);
+      expect(
+        selectionService.lastPanOffset,
+        isNull,
+        reason: 'no finger position before drag',
+      );
       selectionService.onPanStart(
         DragStartDetails(globalPosition: caretCenter),
         MobileSelectionDragMode.cursor,
@@ -91,8 +94,11 @@ void main() {
         await tester.pump();
         // The finger position is tracked so the edge-follow can fall back to
         // it when the caret leaves the viewport (selectionRects empty).
-        expect(selectionService.lastPanOffset, position,
-            reason: 'finger position tracked during drag at step $i',);
+        expect(
+          selectionService.lastPanOffset,
+          position,
+          reason: 'finger position tracked during drag at step $i',
+        );
         final offset = scrollController.offsetNotifier.value;
         final delta = offset - (lastOffset ?? offset);
         debugPrint('DIAG step=$i dy=$dy offset=$offset delta=$delta '
@@ -112,8 +118,11 @@ void main() {
       );
       await tester.pumpAndSettle();
       // The finger position is cleared once the drag ends.
-      expect(selectionService.lastPanOffset, isNull,
-          reason: 'finger position cleared after drag',);
+      expect(
+        selectionService.lastPanOffset,
+        isNull,
+        reason: 'finger position cleared after drag',
+      );
       debugPrint('DIAG endOffset=${scrollController.offsetNotifier.value}');
     },
   );

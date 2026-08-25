@@ -57,7 +57,10 @@ void main() {
     test('alignment is preserved', () {
       final document = decode([
         {'insert': 'Right'},
-        {'insert': '\n', 'attributes': {'align': 'right'}},
+        {
+          'insert': '\n',
+          'attributes': {'align': 'right'}
+        },
       ]);
       final nodes = children(document);
       expect(nodes[0].attributes[blockComponentAlign], 'right');
@@ -66,7 +69,10 @@ void main() {
     test('rtl direction is preserved', () {
       final document = decode([
         {'insert': 'שלום'},
-        {'insert': '\n', 'attributes': {'direction': 'rtl'}},
+        {
+          'insert': '\n',
+          'attributes': {'direction': 'rtl'}
+        },
       ]);
       expect(
         children(document)[0].attributes[blockComponentTextDirection],
@@ -84,7 +90,10 @@ void main() {
     test('level maps back', () {
       final document = decode([
         {'insert': 'Title'},
-        {'insert': '\n', 'attributes': {'header': 3}},
+        {
+          'insert': '\n',
+          'attributes': {'header': 3}
+        },
       ]);
       final nodes = children(document);
       expect(nodes[0].type, HeadingBlockKeys.type);
@@ -97,7 +106,10 @@ void main() {
     test('blockquote maps back', () {
       final document = decode([
         {'insert': 'To be or not to be'},
-        {'insert': '\n', 'attributes': {'blockquote': true}},
+        {
+          'insert': '\n',
+          'attributes': {'blockquote': true}
+        },
       ]);
       final nodes = children(document);
       expect(nodes[0].type, QuoteBlockKeys.type);
@@ -109,7 +121,10 @@ void main() {
     test('bulleted', () {
       final document = decode([
         {'insert': 'First'},
-        {'insert': '\n', 'attributes': {'list': 'bullet'}},
+        {
+          'insert': '\n',
+          'attributes': {'list': 'bullet'}
+        },
       ]);
       expect(children(document)[0].type, BulletedListBlockKeys.type);
       expect(text(children(document)[0]), 'First');
@@ -118,7 +133,10 @@ void main() {
     test('numbered', () {
       final document = decode([
         {'insert': 'One'},
-        {'insert': '\n', 'attributes': {'list': 'ordered'}},
+        {
+          'insert': '\n',
+          'attributes': {'list': 'ordered'}
+        },
       ]);
       expect(children(document)[0].type, NumberedListBlockKeys.type);
     });
@@ -126,7 +144,10 @@ void main() {
     test('todo checked', () {
       final document = decode([
         {'insert': 'Done'},
-        {'insert': '\n', 'attributes': {'list': 'checked'}},
+        {
+          'insert': '\n',
+          'attributes': {'list': 'checked'}
+        },
       ]);
       final node = children(document)[0];
       expect(node.type, TodoListBlockKeys.type);
@@ -136,7 +157,10 @@ void main() {
     test('todo unchecked', () {
       final document = decode([
         {'insert': 'Pending'},
-        {'insert': '\n', 'attributes': {'list': 'unchecked'}},
+        {
+          'insert': '\n',
+          'attributes': {'list': 'unchecked'}
+        },
       ]);
       final node = children(document)[0];
       expect(node.type, TodoListBlockKeys.type);
@@ -146,13 +170,25 @@ void main() {
     test('nested lists reconstruct the tree', () {
       final document = decode([
         {'insert': 'Parent'},
-        {'insert': '\n', 'attributes': {'list': 'bullet'}},
+        {
+          'insert': '\n',
+          'attributes': {'list': 'bullet'}
+        },
         {'insert': 'Child'},
-        {'insert': '\n', 'attributes': {'list': 'bullet', 'indent': 1}},
+        {
+          'insert': '\n',
+          'attributes': {'list': 'bullet', 'indent': 1}
+        },
         {'insert': 'Grand'},
-        {'insert': '\n', 'attributes': {'list': 'bullet', 'indent': 2}},
+        {
+          'insert': '\n',
+          'attributes': {'list': 'bullet', 'indent': 2}
+        },
         {'insert': 'Sibling'},
-        {'insert': '\n', 'attributes': {'list': 'bullet'}},
+        {
+          'insert': '\n',
+          'attributes': {'list': 'bullet'}
+        },
       ]);
       final nodes = children(document);
       expect(nodes, hasLength(2));
@@ -170,9 +206,15 @@ void main() {
     test('mixed nested list types keep their own type', () {
       final document = decode([
         {'insert': 'Parent'},
-        {'insert': '\n', 'attributes': {'list': 'bullet'}},
+        {
+          'insert': '\n',
+          'attributes': {'list': 'bullet'}
+        },
         {'insert': 'Child'},
-        {'insert': '\n', 'attributes': {'list': 'ordered', 'indent': 1}},
+        {
+          'insert': '\n',
+          'attributes': {'list': 'ordered', 'indent': 1}
+        },
       ]);
       final parent = children(document).single;
       final child = parent.children.single;
@@ -192,7 +234,8 @@ void main() {
       ]);
       final node = children(document).single;
       expect(node.type, ImageBlockKeys.type);
-      expect(node.attributes[ImageBlockKeys.url], 'https://example.com/pic.png');
+      expect(
+          node.attributes[ImageBlockKeys.url], 'https://example.com/pic.png');
       expect(node.attributes[ImageBlockKeys.width], 400.0);
       expect(node.attributes[ImageBlockKeys.height], 300.0);
     });
@@ -233,7 +276,10 @@ void main() {
 
     test('strike maps to strikethrough', () {
       final document = decode([
-        {'insert': 'x', 'attributes': {'strike': true}},
+        {
+          'insert': 'x',
+          'attributes': {'strike': true}
+        },
         {'insert': '\n'},
       ]);
       final op = children(document)[0].delta!.operations.single as TextInsert;
@@ -242,7 +288,10 @@ void main() {
 
     test('link maps to href', () {
       final document = decode([
-        {'insert': 'x', 'attributes': {'link': 'https://example.com'}},
+        {
+          'insert': 'x',
+          'attributes': {'link': 'https://example.com'}
+        },
         {'insert': '\n'},
       ]);
       final op = children(document)[0].delta!.operations.single as TextInsert;
@@ -264,7 +313,10 @@ void main() {
 
     test('color maps to font_color', () {
       final document = decode([
-        {'insert': 'x', 'attributes': {'color': '#336699'}},
+        {
+          'insert': 'x',
+          'attributes': {'color': '#336699'}
+        },
         {'insert': '\n'},
       ]);
       final op = children(document)[0].delta!.operations.single as TextInsert;
@@ -273,7 +325,10 @@ void main() {
 
     test('background maps to bg_color', () {
       final document = decode([
-        {'insert': 'x', 'attributes': {'background': '#AA3366'}},
+        {
+          'insert': 'x',
+          'attributes': {'background': '#AA3366'}
+        },
         {'insert': '\n'},
       ]);
       final op = children(document)[0].delta!.operations.single as TextInsert;

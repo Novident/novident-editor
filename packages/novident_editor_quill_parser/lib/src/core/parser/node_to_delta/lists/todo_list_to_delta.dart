@@ -10,8 +10,8 @@ class TodoToDelta extends NodeToQuill {
   List<Operation> toQuill(Node node, {Map<String, dynamic>? extra}) {
     final indent = extra?[QuillRichTextKeys.indent] as int?;
     final checked = node.attributes[TodoListBlockKeys.checked] == true;
-    final blockAttributes = toQuillCommonBlockAttributes(node) ??
-        <String, dynamic>{};
+    final blockAttributes =
+        toQuillCommonBlockAttributes(node) ?? <String, dynamic>{};
     blockAttributes[QuillRichTextKeys.list] = checked
         ? QuillRichTextKeys.checkedList
         : QuillRichTextKeys.unCheckedList;

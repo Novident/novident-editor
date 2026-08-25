@@ -212,8 +212,8 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
       // so the timer never fires and `startAutoScroll` is never called with the
       // finger's new position — leaving the auto-scroller target stale and the
       // scroll running long after the finger returns inside the viewport.
-      final bool isDragging =
-          dragMode != null && dragMode.toString() != 'MobileSelectionDragMode.none';
+      final bool isDragging = dragMode != null &&
+          dragMode.toString() != 'MobileSelectionDragMode.none';
 
       if (isDragging) {
         if (_forwardKey.currentContext == null) {

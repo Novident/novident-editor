@@ -184,12 +184,14 @@ Map<String, dynamic>? toNovidentInlineAttributes(Map<String, dynamic>? quill) {
     novident[RichTextKeys.fontSize] = parsed ?? fontSize;
   }
 
-  final textColor = toNovidentColor(quill[QuillRichTextKeys.textColor] as String?);
+  final textColor =
+      toNovidentColor(quill[QuillRichTextKeys.textColor] as String?);
   if (textColor != null) {
     novident[RichTextKeys.textColor] = textColor;
   }
 
-  final background = toNovidentColor(quill[QuillRichTextKeys.backgroundColor] as String?);
+  final background =
+      toNovidentColor(quill[QuillRichTextKeys.backgroundColor] as String?);
   if (background != null) {
     novident[RichTextKeys.backgroundColor] = background;
   }
@@ -244,8 +246,7 @@ String? toNovidentColor(String? color) {
 }
 
 final _rgbPattern = RegExp(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)');
-final _rgbaPattern =
-    RegExp(r'rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)');
+final _rgbaPattern = RegExp(r'rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)');
 
 String _hexByte(int value) =>
     value.toRadixString(16).padLeft(2, '0').toUpperCase();

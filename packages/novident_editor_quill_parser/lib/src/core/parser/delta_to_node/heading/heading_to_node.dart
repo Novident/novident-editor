@@ -8,8 +8,8 @@ import 'package:novident_editor_quill_parser/src/utils/quill_rich_text_keys.dart
 class HeadingToNode extends QuillDeltaToNode {
   @override
   List<Node> toNodes(Paragraph paragraph) {
-    final level = paragraph.blockAttributes?[QuillRichTextKeys.heading] as int? ??
-        1;
+    final level =
+        paragraph.blockAttributes?[QuillRichTextKeys.heading] as int? ?? 1;
     return <Node>[
       buildNode(
         paragraph,

@@ -9,8 +9,8 @@ class OrderedToDelta extends NodeToQuill {
   @override
   List<Operation> toQuill(Node node, {Map<String, dynamic>? extra}) {
     final indent = extra?[QuillRichTextKeys.indent] as int?;
-    final blockAttributes = toQuillCommonBlockAttributes(node) ??
-        <String, dynamic>{};
+    final blockAttributes =
+        toQuillCommonBlockAttributes(node) ?? <String, dynamic>{};
     blockAttributes[QuillRichTextKeys.list] = QuillRichTextKeys.ordered;
     if (indent != null) {
       blockAttributes[QuillRichTextKeys.indent] = indent;

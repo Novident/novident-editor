@@ -10,8 +10,8 @@ class HeadingToDelta extends NodeToQuill {
   @override
   List<Operation> toQuill(Node node, {Map<String, dynamic>? extra}) {
     final level = node.attributes[HeadingBlockKeys.level] as int? ?? 1;
-    final blockAttributes = toQuillCommonBlockAttributes(node) ??
-        <String, dynamic>{};
+    final blockAttributes =
+        toQuillCommonBlockAttributes(node) ?? <String, dynamic>{};
     blockAttributes[QuillRichTextKeys.heading] = level;
 
     return <Operation>[

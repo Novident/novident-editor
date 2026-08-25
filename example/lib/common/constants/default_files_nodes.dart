@@ -102,4 +102,3 @@ String _content(Document document) => jsonEncode(document.toJson());
 
   return (nodes: nodes, contents: contents);
 }
-

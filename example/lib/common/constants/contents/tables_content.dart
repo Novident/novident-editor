@@ -1,6 +1,7 @@
 import 'package:novident_editor/novident_editor.dart';
 
-import 'readme_document.dart' show kReadmeAccentTable, kReadmePlainTable, kReadmeStripedTable;
+import 'readme_document.dart'
+    show kReadmeAccentTable, kReadmePlainTable, kReadmeStripedTable;
 
 /// Content for `Novident Showcase ▸ Tables`.
 ///
@@ -39,7 +40,9 @@ final Document tablesDocument = Document(
           [
             paragraphNode(text: 'Price'),
             paragraphNode(
-              delta: Delta()..insert('15 gp', attributes: <String, dynamic>{RichTextKeys.bold: true}),
+              delta: Delta()
+                ..insert('15 gp',
+                    attributes: <String, dynamic>{RichTextKeys.bold: true}),
             ),
           ],
         ],

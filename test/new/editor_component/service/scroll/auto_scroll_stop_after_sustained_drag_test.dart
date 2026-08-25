@@ -116,8 +116,7 @@ void main() {
       expect(
         stopLatencyFrames,
         lessThanOrEqualTo(3),
-        reason:
-            'auto-scroll must stop within 3 frames after returning inside; '
+        reason: 'auto-scroll must stop within 3 frames after returning inside; '
             'it took $stopLatencyFrames frames (${stopLatencyFrames * 16}ms)',
       );
     },

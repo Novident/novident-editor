@@ -12,7 +12,8 @@ final Document recipeDocument = Document(
       paragraphNode(
         delta: Delta()
           ..insert('A ')
-          ..insert('beginner-friendly', attributes: <String, dynamic>{RichTextKeys.bold: true})
+          ..insert('beginner-friendly',
+              attributes: <String, dynamic>{RichTextKeys.bold: true})
           ..insert(' recipe for a crusty loaf with an open crumb. Total time '
               'is about 24 hours, but most of it is hands-off.'),
       ),

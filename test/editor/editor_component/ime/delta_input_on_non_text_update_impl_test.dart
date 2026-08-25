@@ -87,7 +87,8 @@ void main() {
       test(
         'keeps the moved end within its own node (flat offset remapped)',
         () async {
-          EditorPlatform.override = const EditorPlatformOverride(isAndroid: true);
+          EditorPlatform.override =
+              const EditorPlatformOverride(isAndroid: true);
 
           final editorState = buildEditor();
           editorState.selection = Selection(
@@ -159,7 +160,9 @@ void main() {
         return EditorState(document: document);
       }
 
-      test('windows: coplapse selection even when editor has not collappsed one', () async {
+      test(
+          'windows: coplapse selection even when editor has not collappsed one',
+          () async {
         EditorPlatform.override = const EditorPlatformOverride(isWindows: true);
 
         final editorState = buildEditor();

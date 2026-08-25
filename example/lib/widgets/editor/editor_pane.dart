@@ -132,9 +132,7 @@ class _EditorPaneState extends State<EditorPane> {
                   config.enabled
                       ? CupertinoIcons.moon_stars_fill
                       : CupertinoIcons.moon_stars,
-                  color: config.enabled
-                      ? kEditorAccent
-                      : Colors.grey.shade600,
+                  color: config.enabled ? kEditorAccent : Colors.grey.shade600,
                 ),
                 onPressed: _zenController.toggle,
               );

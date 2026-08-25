@@ -206,6 +206,27 @@ class _ScrollServiceWidgetState extends State<ScrollServiceWidget>
           ? const Duration(milliseconds: 2)
           : const Duration(milliseconds: 16);
 
+      // During a drag the soft keyboard is NOT animating in, so the 250ms
+      // keyboard workaround delay is unnecessary. Worse, it is re-armed every
+      // frame (the selection keeps changing as the scroll follows the finger),
+      // so the timer never fires and `startAutoScroll` is never called with the
+      // finger's new position — leaving the auto-scroller target stale and the
+      // scroll running long after the finger returns inside the viewport.
+      final bool isDragging =
+          dragMode != null && dragMode.toString() != 'MobileSelectionDragMode.none';
+
+      if (isDragging) {
+        if (_forwardKey.currentContext == null) {
+          return;
+        }
+        startAutoScroll(
+          endTouchPoint,
+          inset: editorState.autoScrollEdgeInset,
+          duration: scrollDuration,
+        );
+        return;
+      }
+
       // soft keyboard
       // workaround: wait for the soft keyboard to show up
       //TODO: @Cathood0 we need to replace the current keyboard height plugin

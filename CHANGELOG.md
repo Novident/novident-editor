@@ -2,6 +2,7 @@
 
 ## 1.0.7
 
+* fix(scroll#38): auto-scroll does not stop automatically when the cursor already enters into the viewport. 
 * fix: updated example to add more variation to the content and all the design of the blocks.
 * fix(ios): ios drag handles were too far from the actual selection rect.
 * fix(blocks): numbered list block does not center the position of the center respect to the list number identifier.

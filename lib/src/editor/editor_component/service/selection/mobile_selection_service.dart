@@ -644,6 +644,10 @@ class _MobileSelectionServiceWidgetState
       return;
     }
 
+    // Preserve the drag mode if an auto-scroll drag is in progress, so a
+    // spurious tap-up doesn't tear it down (same as `_onTapUpAndroid`).
+    final bool isDragging = dragMode != MobileSelectionDragMode.none;
+
     clearSelection();
 
     Selection? selection;
@@ -666,6 +670,7 @@ class _MobileSelectionServiceWidgetState
       selection,
       reason: SelectionUpdateReason.uiEvent,
       customSelectionType: SelectionType.inline,
+      extraInfo: isDragging ? {selectionDragModeKey: dragMode} : null,
     );
   }
 
@@ -748,6 +753,12 @@ class _MobileSelectionServiceWidgetState
   void _onTapUpAndroid(TapUpDetails details) {
     final offset = details.globalPosition;
 
+    // A tap-up can fire spuriously while the finger is held at the edge during
+    // an auto-scroll drag (the content scrolls under a stationary finger, so
+    // the tap recognizer wins the arena). Preserve the active drag mode so the
+    // tap doesn't tear down the auto-scroll.
+    final bool isDragging = dragMode != MobileSelectionDragMode.none;
+
     clearSelection();
 
     // make a collapsed selection at offset
@@ -760,6 +771,7 @@ class _MobileSelectionServiceWidgetState
       Selection.collapsed(position),
       reason: SelectionUpdateReason.uiEvent,
       customSelectionType: SelectionType.inline,
+      extraInfo: isDragging ? {selectionDragModeKey: dragMode} : null,
     );
   }
 

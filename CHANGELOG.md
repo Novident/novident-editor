@@ -2,6 +2,7 @@
 
 ## 1.0.7
 
+* feat(breaking changes): added new plugin to encode and decode Quill Delta and Novident format by @CatHood0 in https://github.com/Novident/novident-editor/pull/39
 * fix(scroll#38): auto-scroll does not stop automatically when the cursor already enters into the viewport. 
 * fix(ios): ios drag handles were too far from the actual selection rect.
 * fix(blocks): numbered list block does not center the position of the center respect to the list number identifier.

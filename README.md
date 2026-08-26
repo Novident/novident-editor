@@ -18,7 +18,13 @@ tree built from composable block components — paragraphs, headings, lists, quo
 images and tables — with vim emulation, named paragraph styles, zen mode and
 spell checking out of the box.
 
-<img src="./documentation/images/samples/screenshoot-desktop.png" />
+<div align="center">
+    <img 
+      src="https://github.com/Novident/novident-editor/blob/master/documentation/images/showcase.png?raw=true" 
+      width = "700" 
+      style = "padding: 100"
+    >
+</div>
 
 ## Quick start
 

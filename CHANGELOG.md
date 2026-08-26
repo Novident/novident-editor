@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.8
+
+* chore(readme): updated package image.
+
 ## 1.0.7
 
 * feat(breaking changes): added new plugin to encode and decode Quill Delta and Novident format by @CatHood0 in https://github.com/Novident/novident-editor/pull/39

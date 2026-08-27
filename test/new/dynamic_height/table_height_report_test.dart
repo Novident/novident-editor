@@ -54,7 +54,7 @@ void main() {
       tester,
     ) async {
       final controller = DynamicHeightController(
-        config: const DynamicHeightConfig(minHeight: 0.0),
+        config: const DynamicHeightConfig(availableWidth: 800, minHeight: 0.0),
       );
       final editorState = _editorWithTable()
         ..dynamicHeightController = controller;
@@ -81,7 +81,7 @@ void main() {
       tester,
     ) async {
       final controller = DynamicHeightController(
-        config: const DynamicHeightConfig(minHeight: 0.0),
+        config: const DynamicHeightConfig(availableWidth: 800, minHeight: 0.0),
       );
       final editorState = _editorWithTable()
         ..dynamicHeightController = controller;

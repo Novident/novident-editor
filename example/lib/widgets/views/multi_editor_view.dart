@@ -60,7 +60,8 @@ class _MultiEditorViewState extends State<MultiEditorView> {
   }
 
   void _updateFiles() {
-    _files = widget.directory.children.whereType<File>().toList(growable: false);
+    _files =
+        widget.directory.children.whereType<File>().toList(growable: false);
   }
 
   /// One editor sheet — same design as [EditorPane._buildPage].
@@ -76,7 +77,11 @@ class _MultiEditorViewState extends State<MultiEditorView> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: _files.map((f) => _buildFileSheet(context, f)).toList(),
+          children: _files
+              .map(
+                (f) => _buildFileSheet(context, f),
+              )
+              .toList(),
         ),
       ),
     );
@@ -194,20 +199,31 @@ class _FileSheetState extends State<_FileSheet> {
                         ],
                       ),
                     ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: MyEditor(
-                      session: _session,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 0,
-                      ),
-                      dynamicHeightConfig: const DynamicHeightConfig(
-                        minHeight: 80,
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return MyEditor(
+                            session: _session,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 0,
+                            ),
+                            dynamicHeightConfig: DynamicHeightConfig(
+                              availableWidth: (constraints.maxWidth - 32) -
+                                  EdgeInsets.fromLTRB(
+                                    16,
+                                    15,
+                                    16,
+                                    0,
+                                  ).horizontal,
+                              minHeight: 80,
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  ),
-                  _buildSheetStatusBar(context),
+                    _buildSheetStatusBar(context),
                   ],
                 ),
         ),

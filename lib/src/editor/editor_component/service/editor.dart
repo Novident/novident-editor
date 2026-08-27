@@ -313,6 +313,8 @@ class _NovidentEditorState extends State<NovidentEditor> {
 
   @override
   void dispose() {
+    editorState.dynamicHeightController
+        ?.removeListener(_onDynamicHeightChanged);
     // dispose the scroll controller if it's created by the editor
     if (widget.editorScrollController == null) {
       editorScrollController.dispose();
@@ -329,24 +331,6 @@ class _NovidentEditorState extends State<NovidentEditor> {
 
     if (editorState.service != oldWidget.editorState.service) {
       editorState.renderer = _renderer;
-    }
-
-    // Attach again the listeners and clean resources when required
-    final controller = editorState.dynamicHeightController;
-    if (widget.dynamicHeightController != null &&
-        controller != widget.dynamicHeightController) {
-      editorState.dynamicHeightController
-          ?.removeListener(_onDynamicHeightChanged);
-      editorState.dynamicHeightController = widget.dynamicHeightController!;
-      editorState.dynamicHeightController?.addListener(_onDynamicHeightChanged);
-    }
-
-    // disables the dynamic height mode
-    if (widget.dynamicHeightController == null &&
-        editorState.dynamicHeightController != null) {
-      controller?.removeListener(_onDynamicHeightChanged);
-      editorState.dynamicHeightController?.dispose();
-      editorState.dynamicHeightController = null;
     }
 
     if (widget.editorScrollController != oldWidget.editorScrollController) {
@@ -386,20 +370,18 @@ class _NovidentEditorState extends State<NovidentEditor> {
     );
 
     if (_useDynamicHeight) {
-      // Use IntrinsicHeight only until the first real measurement
-      // arrives; then switch to sized-box (O(1)) to avoid the
-      // double-layout pass on every subsequent frame.
-      if (editorState.dynamicHeightController != null &&
-          editorState.dynamicHeightController!.cache.hasMeasuredBlocks) {
-        child = ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: editorState.dynamicHeightController!.currentHeight,
-          ),
-          child: child,
-        );
-      } else {
-        child = IntrinsicHeight(child: child);
-      }
+      // Always a ConstrainedBox(minHeight): the editor grows freely with its
+      // content (a Column with MainAxisSize.min inside). IntrinsicHeight was
+      // removed because it computes wrong heights for tables — whose rows are
+      // synchronized asynchronously (rowDefaultHeight at first, real height
+      // after the sync) — and crashes on LayoutBuilder-based blocks.
+      final controller = editorState.dynamicHeightController;
+      child = ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: controller?.currentHeight ?? 0.0,
+        ),
+        child: child,
+      );
     }
 
     if (widget.styles != null) {
@@ -496,18 +478,42 @@ class _NovidentEditorState extends State<NovidentEditor> {
   }
 
   void _updateValues() {
-    editorState.dynamicHeightController = widget.dynamicHeightController;
-    if (editorState.dynamicHeightController != null) {
+    final externalController = widget.dynamicHeightController;
+
+    if (externalController != null) {
+      // External controller: adopt it (the caller owns its lifecycle).
+      if (editorState.dynamicHeightController != externalController) {
+        editorState.dynamicHeightController
+            ?.removeListener(_onDynamicHeightChanged);
+        editorState.dynamicHeightController = externalController;
+        externalController.addListener(_onDynamicHeightChanged);
+      }
       if (widget.dynamicHeightConfig != null &&
-          editorState.dynamicHeightController!.config !=
-              widget.dynamicHeightConfig) {
-        editorState.dynamicHeightController!
-            .updateConfig(widget.dynamicHeightConfig!);
+          externalController.config != widget.dynamicHeightConfig) {
+        externalController.updateConfig(widget.dynamicHeightConfig!);
       }
     } else if (widget.dynamicHeightConfig != null) {
-      editorState.dynamicHeightController = DynamicHeightController(
-        config: widget.dynamicHeightConfig!,
-      );
+      // Config-only: reuse the internal controller across rebuilds so its
+      // measurement cache and listeners survive. Recreating it here (and
+      // then disposing it in didUpdateWidget) left the state without a
+      // controller for a frame — the table fell back to LayoutBuilder,
+      // which crashes under the editor's IntrinsicHeight.
+      var controller = editorState.dynamicHeightController;
+      if (controller == null) {
+        controller = DynamicHeightController(
+          config: widget.dynamicHeightConfig!,
+        );
+        editorState.dynamicHeightController = controller;
+        controller.addListener(_onDynamicHeightChanged);
+      } else if (controller.config != widget.dynamicHeightConfig) {
+        controller.updateConfig(widget.dynamicHeightConfig!);
+      }
+    } else if (editorState.dynamicHeightController != null) {
+      // Dynamic height disabled: release the controller.
+      editorState.dynamicHeightController!
+          .removeListener(_onDynamicHeightChanged);
+      editorState.dynamicHeightController!.dispose();
+      editorState.dynamicHeightController = null;
     }
 
     editorState.editorStyle = widget.editorStyle;

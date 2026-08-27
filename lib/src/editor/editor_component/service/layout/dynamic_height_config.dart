@@ -7,6 +7,7 @@
 /// clamped to at least [minHeight].
 class DynamicHeightConfig {
   const DynamicHeightConfig({
+    this.availableWidth = 0,
     this.minHeight = 100.0,
     this.defaultBlockHeight = 60.0,
     this.resizeDebounce = Duration.zero,
@@ -16,6 +17,8 @@ class DynamicHeightConfig {
   ///
   /// The editor will never be smaller than this value, even when empty.
   final double minHeight;
+
+  final double availableWidth;
 
   /// Estimated height for blocks that have not been measured yet.
   ///
@@ -30,11 +33,13 @@ class DynamicHeightConfig {
   final Duration resizeDebounce;
 
   DynamicHeightConfig copyWith({
+    double? availableWidth,
     double? minHeight,
     double? defaultBlockHeight,
     Duration? resizeDebounce,
   }) {
     return DynamicHeightConfig(
+      availableWidth: availableWidth ?? this.availableWidth,
       minHeight: minHeight ?? this.minHeight,
       defaultBlockHeight: defaultBlockHeight ?? this.defaultBlockHeight,
       resizeDebounce: resizeDebounce ?? this.resizeDebounce,
@@ -46,10 +51,16 @@ class DynamicHeightConfig {
     if (identical(this, other)) return true;
     return other is DynamicHeightConfig &&
         other.minHeight == minHeight &&
+        other.availableWidth == availableWidth &&
         other.defaultBlockHeight == defaultBlockHeight &&
         other.resizeDebounce == resizeDebounce;
   }
 
   @override
-  int get hashCode => Object.hash(minHeight, defaultBlockHeight, resizeDebounce);
+  int get hashCode => Object.hash(
+        minHeight,
+        defaultBlockHeight,
+        resizeDebounce,
+        availableWidth,
+      );
 }

@@ -1,5 +1,6 @@
 import 'package:example/common/controller/tree_controller.dart';
 import 'package:example/common/nodes/directory.dart';
+import 'package:example/common/store/document_content_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -29,7 +30,7 @@ class DirectoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     // While dragged, every element of the row is muted to the same tone.
     final Color? mutedColor = beingDragged ? Colors.black.withAlpha(150) : null;
-    return Padding(
+    final Widget tile = Padding(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 3),
       child: Row(
         children: <Widget>[
@@ -78,5 +79,33 @@ class DirectoryTile extends StatelessWidget {
         ],
       ),
     );
+
+    return GestureDetector(
+      onSecondaryTapUp: (details) => _showContextMenu(context, details),
+      child: tile,
+    );
+  }
+
+  void _showContextMenu(BuildContext context, TapUpDetails details) {
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        details.globalPosition.dx,
+        details.globalPosition.dy,
+        details.globalPosition.dx,
+        details.globalPosition.dy,
+      ),
+      items: [
+        const PopupMenuItem(
+          value: 'multi',
+          child: Text('Modo múltiple'),
+        ),
+      ],
+    ).then((value) {
+      if (value == 'multi' && context.mounted) {
+        final store = DocumentContentProvider.of(context);
+        store.multiEditDirectoryId.value = directory.id;
+      }
+    });
   }
 }

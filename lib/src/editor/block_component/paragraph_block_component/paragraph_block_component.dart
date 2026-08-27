@@ -84,7 +84,8 @@ class _ParagraphBlockComponentWidgetState
         BlockComponentBackgroundColorMixin,
         NestedBlockComponentStatefulWidgetMixin,
         BlockComponentTextDirectionMixin,
-        BlockComponentAlignMixin {
+        BlockComponentAlignMixin,
+        BlockHeightReporter {
   @override
   final forwardKey = GlobalKey(debugLabel: 'rich_text');
 
@@ -109,6 +110,13 @@ class _ParagraphBlockComponentWidgetState
     super.initState();
     editorState.selectionNotifier.addListener(_onSelectionChange);
     _onSelectionChange();
+    scheduleHeightReport();
+  }
+
+  @override
+  void didUpdateWidget(covariant ParagraphBlockComponentWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    scheduleHeightReport();
   }
 
   @override

@@ -171,12 +171,24 @@ class TableBlockComponentWidget extends BlockComponentStatefulWidget {
 }
 
 class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
-    with SelectableMixin, BlockComponentConfigurable {
+    with SelectableMixin, BlockComponentConfigurable, BlockHeightReporter {
   @override
   BlockComponentConfiguration get configuration => widget.configuration;
 
   @override
   Node get node => widget.node;
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleHeightReport();
+  }
+
+  @override
+  void didUpdateWidget(covariant TableBlockComponentWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    scheduleHeightReport();
+  }
 
   late final editorState = Provider.of<EditorState>(context, listen: false);
   final _scrollController = ScrollController();
@@ -230,80 +242,34 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
 
   @override
   Widget build(BuildContext context) {
-    final style = tableStyle;
-    final noBorder = style.noBorder;
-    // Per-table override: node attribute > style default.
-    final borderPx = noBorder
-        ? 0.0
-        : (widget.node.attributes[TableBlockKeys.borderWidth] as double?) ??
-            style.verticalBorderWidth;
+    late Widget tableArea;
 
-    final enableHorizontalScroll = context.select((Node n) {
-          final value = n.attributes[TableBlockKeys.enableHorizontalScroll];
-          return value is bool ? value : null;
-        }) ??
-        tableStyle.enableHorizontalScroll;
+    if (editorState.dynamicHeightController != null) {
+      assert(
+        editorState.dynamicHeightController!.config.availableWidth > 0,
+        'availableWidth must be major than zero. '
+        'Normally, using DynamicHeightController requires to wrap the current '
+        'NovidentEditor into a LayoutBuilder to allow setting the '
+        'availableWidth since using this mode forces to the '
+        'Tables to not using LayoutBuilder since IntrinsicHeight '
+        'cannot be combined with a child that uses LayoutBuilder',
+      );
 
-    final Widget tableArea = LayoutBuilder(
-      builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth;
-        final tableNode = widget.tableNode;
-        final tablePadding = tableStyle.tablePadding;
-
-        // Minimum total width: all columns at colMinimumWidth + borders.
-        final minWidth = (tableStyle.colMinimumWidth * tableNode.colsLen) +
-            borderPx * (tableNode.colsLen + 1);
-
-        if (enableHorizontalScroll && availableWidth < minWidth) {
-          // Content overflows — render at minimum intrinsic widths.
-          final scrollWidths = _columnWidths(
-            minWidth,
-            tableNode,
-            noBorder: noBorder,
-            borderWidth: borderPx,
+      tableArea = getEffectiveView(
+        context,
+        editorState.dynamicHeightController!.config.availableWidth -
+            padding.horizontal,
+      );
+    } else {
+      tableArea = LayoutBuilder(
+        builder: (context, constraints) {
+          return getEffectiveView(
+            context,
+            constraints.maxWidth,
           );
-          return Scrollbar(
-            controller: _scrollController,
-            child: SingleChildScrollView(
-              padding: tablePadding,
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                width: minWidth,
-                child: TableView(
-                  tableNode: tableNode,
-                  editorState: editorState,
-                  menuBuilder: widget.menuBuilder,
-                  actionMenuItems: widget.actionMenuItems,
-                  tableStyleDef: tableStyle,
-                  columnWidths: scrollWidths,
-                ),
-              ),
-            ),
-          );
-        } else {
-          // Content fits — distribute available width by weights.
-          final contentWidth = availableWidth - tablePadding.horizontal;
-          final fittedWidths = _columnWidths(
-            contentWidth,
-            tableNode,
-            noBorder: noBorder,
-            borderWidth: borderPx,
-          );
-          return Padding(
-            padding: tablePadding,
-            child: TableView(
-              tableNode: tableNode,
-              editorState: editorState,
-              menuBuilder: widget.menuBuilder,
-              actionMenuItems: widget.actionMenuItems,
-              tableStyleDef: tableStyle,
-              columnWidths: fittedWidths,
-            ),
-          );
-        }
-      },
-    );
+        },
+      );
+    }
 
     Widget child = Padding(
       key: tableKey,
@@ -335,6 +301,78 @@ class _TableBlockComponentWidgetState extends State<TableBlockComponentWidget>
     }
 
     return child;
+  }
+
+  Widget getEffectiveView(BuildContext context, double availableWidth) {
+    final style = tableStyle;
+    final noBorder = style.noBorder;
+    // Per-table override: node attribute > style default.
+    final borderPx = noBorder
+        ? 0.0
+        : (widget.node.attributes[TableBlockKeys.borderWidth] as double?) ??
+            style.verticalBorderWidth;
+
+    final enableHorizontalScroll = context.select((Node n) {
+          final value = n.attributes[TableBlockKeys.enableHorizontalScroll];
+          return value is bool ? value : null;
+        }) ??
+        tableStyle.enableHorizontalScroll;
+
+    final tableNode = widget.tableNode;
+    final tablePadding = tableStyle.tablePadding;
+
+    // Minimum total width: all columns at colMinimumWidth + borders.
+    final minWidth = (tableStyle.colMinimumWidth * tableNode.colsLen) +
+        borderPx * (tableNode.colsLen + 1);
+
+    if (enableHorizontalScroll && availableWidth < minWidth) {
+      // Content overflows — render at minimum intrinsic widths.
+      final scrollWidths = _columnWidths(
+        minWidth,
+        tableNode,
+        noBorder: noBorder,
+        borderWidth: borderPx,
+      );
+      return Scrollbar(
+        controller: _scrollController,
+        child: SingleChildScrollView(
+          padding: tablePadding,
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: minWidth,
+            child: TableView(
+              tableNode: tableNode,
+              editorState: editorState,
+              menuBuilder: widget.menuBuilder,
+              actionMenuItems: widget.actionMenuItems,
+              tableStyleDef: tableStyle,
+              columnWidths: scrollWidths,
+            ),
+          ),
+        ),
+      );
+    } else {
+      // Content fits — distribute available width by weights.
+      final contentWidth = availableWidth - tablePadding.horizontal;
+      final fittedWidths = _columnWidths(
+        contentWidth,
+        tableNode,
+        noBorder: noBorder,
+        borderWidth: borderPx,
+      );
+      return Padding(
+        padding: tablePadding,
+        child: TableView(
+          tableNode: tableNode,
+          editorState: editorState,
+          menuBuilder: widget.menuBuilder,
+          actionMenuItems: widget.actionMenuItems,
+          tableStyleDef: tableStyle,
+          columnWidths: fittedWidths,
+        ),
+      );
+    }
   }
 
   final tableKey = GlobalKey();

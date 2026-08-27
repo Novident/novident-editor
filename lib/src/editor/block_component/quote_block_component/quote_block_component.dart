@@ -79,7 +79,8 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
         BlockComponentConfigurable,
         BlockComponentBackgroundColorMixin,
         BlockComponentTextDirectionMixin,
-        BlockComponentAlignMixin {
+        BlockComponentAlignMixin,
+        BlockHeightReporter {
   @override
   final forwardKey = GlobalKey(debugLabel: 'flowy_rich_text');
 
@@ -93,6 +94,18 @@ class _QuoteBlockComponentWidgetState extends State<QuoteBlockComponentWidget>
 
   @override
   BlockComponentConfiguration get configuration => widget.configuration;
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleHeightReport();
+  }
+
+  @override
+  void didUpdateWidget(covariant QuoteBlockComponentWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    scheduleHeightReport();
+  }
 
   @override
   Node get node => widget.node;

@@ -24,6 +24,7 @@ class MyEditor extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
     this.autoFocus = false,
     this.footer,
+    this.dynamicHeightConfig,
     this.showVisibleBlocks = false,
   });
 
@@ -46,6 +47,9 @@ class MyEditor extends StatelessWidget {
   /// final paragraphs).
   final Widget? footer;
 
+  /// When non-null the editor grows vertically as content is added.
+  final DynamicHeightConfig? dynamicHeightConfig;
+
   /// When true, every top-level block paints a translucent green background
   /// while it is within the editor's visible range (see [VisibleBlockWrapper]).
   final bool showVisibleBlocks;
@@ -57,6 +61,8 @@ class MyEditor extends StatelessWidget {
       editorScrollController: session.scrollController,
       focusNode: session.focusNode,
       autoFocus: autoFocus,
+      disableAutoScroll: false,
+      dynamicHeightConfig: dynamicHeightConfig,
       enableAutoComplete: true,
       showMagnifier: UniversalPlatform.isMobile,
       scrollStrategies: session.zenController?.value.enabled == true &&
@@ -105,7 +111,12 @@ class MyEditor extends StatelessWidget {
           : null,
       footer: footer,
       styles: styles,
-      contextMenuBuilder: (context, position, editorState, onPressed) {
+      contextMenuBuilder: (
+        context,
+        position,
+        editorState,
+        onPressed,
+      ) {
         if (EditorPlatform.isMobile) {
           return ContextMenu(
             position: position,

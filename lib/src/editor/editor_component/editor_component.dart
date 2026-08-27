@@ -20,6 +20,7 @@ export 'service/scroll/editor_scroll_controller.dart';
 export 'service/scroll/scroll_strategy.dart';
 export 'service/scroll_service.dart';
 export 'service/scroll_service_widget.dart';
+export 'service/layout/layout.dart';
 export 'service/selection_service.dart';
 export 'service/selection_service_widget.dart';
 export 'service/shortcuts/command/copy_paste_extension.dart';

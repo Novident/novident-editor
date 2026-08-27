@@ -307,6 +307,9 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
   AutoScrollerService? autoScroller;
   ScrollableState? scrollableState;
 
+  /// The dynamic height controller, if dynamic height mode is active.
+  DynamicHeightController? dynamicHeightController;
+
   /// Creates the [AutoScroller] for the editor.
   ///
   /// Override this to provide your own auto scroller (e.g. a subclass with a
@@ -564,6 +567,8 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
       }
 
       _applyTransactionInLocal(transaction);
+
+      _notifyDynamicHeightController(transaction);
 
       // broadcast to other users here, after applying the transaction
       if (!_observer.isClosed) {
@@ -925,6 +930,53 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
         continue;
       }
       document.emitChanges(node, const []);
+    }
+  }
+
+  void _notifyDynamicHeightController(Transaction transaction) {
+    final controller = dynamicHeightController;
+    if (controller == null) return;
+
+    for (final op in transaction.operations) {
+      if (op is InsertOperation) {
+        final path = op.path;
+        if (path.length == 1) {
+          controller.onDocumentMutation(
+            NodesInserted(atIndex: path.last, count: op.nodes.length),
+          );
+        } else if (path.isNotEmpty) {
+          // Structural change nested inside a top-level block (e.g. a table
+          // row/column added): the block's height may have changed.
+          controller.onDocumentMutation(NodeUpdated(nodeIndex: path.first));
+        }
+      } else if (op is DeleteOperation) {
+        final path = op.path;
+        if (path.length == 1) {
+          controller.onDocumentMutation(
+            NodesRemoved(atIndex: path.last, count: op.nodes.length),
+          );
+        } else if (path.isNotEmpty) {
+          // Structural change nested inside a top-level block (e.g. a table
+          // row/column removed): the block's height may have changed.
+          controller.onDocumentMutation(NodeUpdated(nodeIndex: path.first));
+        }
+      } else if (op is UpdateTextOperation) {
+        final path = op.path;
+        if (path.isNotEmpty) {
+          controller.onDocumentMutation(
+            TextChanged(nodeIndex: path.first),
+          );
+        }
+      } else if (op is UpdateOperation) {
+        final path = op.path;
+        if (path.isNotEmpty) {
+          // Attribute change (e.g. the table row-height synchronization
+          // writing cell heights): the top-level block's height may have
+          // changed. Without this, the table never re-reports after the
+          // async row-height sync.
+          controller.onDocumentMutation(NodeUpdated(nodeIndex: path.first));
+        }
+      }
     }
   }
 

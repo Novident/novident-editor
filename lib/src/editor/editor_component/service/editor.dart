@@ -57,6 +57,8 @@ class NovidentEditor extends StatefulWidget {
     this.autoScrollerBuilder,
     this.documentRules = const [],
     this.blockWrapper,
+    this.dynamicHeightConfig,
+    this.dynamicHeightController,
     this.styles,
     this.fontProvider,
   })  : blockComponentBuilders =
@@ -264,6 +266,9 @@ class NovidentEditor extends StatefulWidget {
   /// Wrap the block component with a widget.
   final BlockComponentWrapper? blockWrapper;
 
+  final DynamicHeightConfig? dynamicHeightConfig;
+  final DynamicHeightController? dynamicHeightController;
+
   /// Styles configuration for the editor.
   ///
   /// Provides [NovidentEditorStyles] to the widget tree via [InheritedWidget].
@@ -308,6 +313,8 @@ class _NovidentEditorState extends State<NovidentEditor> {
 
   @override
   void dispose() {
+    editorState.dynamicHeightController
+        ?.removeListener(_onDynamicHeightChanged);
     // dispose the scroll controller if it's created by the editor
     if (widget.editorScrollController == null) {
       editorScrollController.dispose();
@@ -337,11 +344,18 @@ class _NovidentEditorState extends State<NovidentEditor> {
     services = null;
   }
 
+  void _onDynamicHeightChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     services ??= _buildServices(context);
 
-    Widget editor = Provider.value(
+    Widget child = Provider.value(
       value: editorState,
       child: FocusScope(
         child: Overlay(
@@ -355,24 +369,61 @@ class _NovidentEditorState extends State<NovidentEditor> {
       ),
     );
 
-    if (widget.styles != null) {
-      editor = NovidentEditorStyles(
-        config: widget.styles!,
-        child: editor,
+    if (_useDynamicHeight) {
+      // Always a ConstrainedBox(minHeight): the editor grows freely with its
+      // content (a Column with MainAxisSize.min inside). IntrinsicHeight was
+      // removed because it computes wrong heights for tables — whose rows are
+      // synchronized asynchronously (rowDefaultHeight at first, real height
+      // after the sync) — and crashes on LayoutBuilder-based blocks.
+      final controller = editorState.dynamicHeightController;
+      child = ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: controller?.currentHeight ?? 0.0,
+        ),
+        child: child,
       );
     }
 
-    return editor;
+    if (widget.styles != null) {
+      child = NovidentEditorStyles(
+        config: widget.styles!,
+        child: child,
+      );
+    }
+
+    return child;
   }
 
+  bool get _useDynamicHeight =>
+      widget.dynamicHeightConfig != null ||
+      (widget.dynamicHeightController ?? editorState.dynamicHeightController) !=
+          null;
+
   Widget _buildServices(BuildContext context) {
-    Widget child = editorState.renderer.build(
-      context,
-      editorState.document.root,
-      header: widget.header,
-      footer: widget.footer,
-      wrapper: widget.blockWrapper,
-    );
+    final useDynamicHeight = _useDynamicHeight;
+
+    Widget child;
+    if (useDynamicHeight) {
+      child = DynamicHeightLayout(
+        node: editorState.document.root,
+        editorState: editorState,
+        header: widget.header,
+        footer: widget.footer,
+        wrapper: widget.blockWrapper,
+        controller: widget.dynamicHeightController ??
+            editorState.dynamicHeightController,
+        config: widget.dynamicHeightConfig ??
+            editorState.dynamicHeightController?.config,
+      );
+    } else {
+      child = editorState.renderer.build(
+        context,
+        editorState.document.root,
+        header: widget.header,
+        footer: widget.footer,
+        wrapper: widget.blockWrapper,
+      );
+    }
 
     if (!widget.disableKeyboardService) {
       child = KeyboardServiceWidget(
@@ -427,6 +478,44 @@ class _NovidentEditorState extends State<NovidentEditor> {
   }
 
   void _updateValues() {
+    final externalController = widget.dynamicHeightController;
+
+    if (externalController != null) {
+      // External controller: adopt it (the caller owns its lifecycle).
+      if (editorState.dynamicHeightController != externalController) {
+        editorState.dynamicHeightController
+            ?.removeListener(_onDynamicHeightChanged);
+        editorState.dynamicHeightController = externalController;
+        externalController.addListener(_onDynamicHeightChanged);
+      }
+      if (widget.dynamicHeightConfig != null &&
+          externalController.config != widget.dynamicHeightConfig) {
+        externalController.updateConfig(widget.dynamicHeightConfig!);
+      }
+    } else if (widget.dynamicHeightConfig != null) {
+      // Config-only: reuse the internal controller across rebuilds so its
+      // measurement cache and listeners survive. Recreating it here (and
+      // then disposing it in didUpdateWidget) left the state without a
+      // controller for a frame — the table fell back to LayoutBuilder,
+      // which crashes under the editor's IntrinsicHeight.
+      var controller = editorState.dynamicHeightController;
+      if (controller == null) {
+        controller = DynamicHeightController(
+          config: widget.dynamicHeightConfig!,
+        );
+        editorState.dynamicHeightController = controller;
+        controller.addListener(_onDynamicHeightChanged);
+      } else if (controller.config != widget.dynamicHeightConfig) {
+        controller.updateConfig(widget.dynamicHeightConfig!);
+      }
+    } else if (editorState.dynamicHeightController != null) {
+      // Dynamic height disabled: release the controller.
+      editorState.dynamicHeightController!
+          .removeListener(_onDynamicHeightChanged);
+      editorState.dynamicHeightController!.dispose();
+      editorState.dynamicHeightController = null;
+    }
+
     editorState.editorStyle = widget.editorStyle;
     editorState.editorStyles = widget.styles;
     editorState.fontProvider =

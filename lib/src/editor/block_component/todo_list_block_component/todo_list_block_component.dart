@@ -104,7 +104,8 @@ class _TodoListBlockComponentWidgetState
         BlockComponentBackgroundColorMixin,
         NestedBlockComponentStatefulWidgetMixin,
         BlockComponentTextDirectionMixin,
-        BlockComponentAlignMixin {
+        BlockComponentAlignMixin,
+        BlockHeightReporter {
   @override
   final forwardKey = GlobalKey(debugLabel: 'rich_text');
 
@@ -121,6 +122,20 @@ class _TodoListBlockComponentWidgetState
 
   @override
   Node get node => widget.node;
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleHeightReport();
+  }
+
+  @override
+  void didUpdateWidget(
+    covariant TodoListBlockComponentWidget oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+    scheduleHeightReport();
+  }
 
   bool get checked =>
       widget.node.attributes[TodoListBlockKeys.checked] ?? false;

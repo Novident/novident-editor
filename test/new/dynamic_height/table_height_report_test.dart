@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:novident_editor/novident_editor.dart';
-import 'package:novident_editor/src/editor/block_component/table_block_component/table_block_component.dart';
-import 'package:novident_editor/src/editor/editor_component/service/layout/dynamic_height_config.dart';
-import 'package:novident_editor/src/editor/editor_component/service/layout/dynamic_height_controller.dart';
-import 'package:novident_editor/src/editor/editor_component/service/layout/dynamic_height_layout.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helper.dart';
@@ -60,7 +56,8 @@ void main() {
       final controller = DynamicHeightController(
         config: const DynamicHeightConfig(minHeight: 0.0),
       );
-      final editorState = _editorWithTable();
+      final editorState = _editorWithTable()
+        ..dynamicHeightController = controller;
 
       await tester.buildAndPump(_layout(editorState, controller));
       await _settle(tester);
@@ -86,7 +83,8 @@ void main() {
       final controller = DynamicHeightController(
         config: const DynamicHeightConfig(minHeight: 0.0),
       );
-      final editorState = _editorWithTable();
+      final editorState = _editorWithTable()
+        ..dynamicHeightController = controller;
 
       await tester.buildAndPump(_layout(editorState, controller));
       await _settle(tester);
@@ -135,12 +133,13 @@ void main() {
   });
 
   group('EditorState.apply with dynamicHeightController', () {
-    test('UpdateOperation on a nested node invalidates the top-level block', (
-      ) async {
+    test('UpdateOperation on a nested node invalidates the top-level block',
+        () async {
       final controller = DynamicHeightController(
         config: const DynamicHeightConfig(),
       );
-      final editorState = _editorWithTable();
+      final editorState = _editorWithTable()
+        ..dynamicHeightController = controller;
       editorState.dynamicHeightController = controller;
       controller.initialize(1);
       controller.reportBlockHeight(0, 100.0);
@@ -169,3 +168,4 @@ void main() {
     });
   });
 }
+

@@ -57,6 +57,26 @@ void main() {
       });
     });
 
+    group('hasMeasuredBlocks', () {
+      test('is false before any measurement is reported', () {
+        cache.onNodesInserted(0, 1);
+        expect(cache.hasMeasuredBlocks, isFalse);
+      });
+
+      test('becomes true after reportHeight records a measurement', () {
+        cache.onNodesInserted(0, 1);
+        cache.reportHeight(0, 100.0);
+        expect(cache.hasMeasuredBlocks, isTrue);
+      });
+
+      test('stays true after a measurement is reported', () {
+        cache.onNodesInserted(0, 1);
+        cache.reportHeight(0, 100.0);
+        cache.reportHeight(0, 120.0);
+        expect(cache.hasMeasuredBlocks, isTrue);
+      });
+    });
+
     group('onNodesInserted', () {
       test('shifts existing indices forward', () {
         cache.onNodesInserted(0, 2);
@@ -311,7 +331,8 @@ void main() {
         expect(cache.heightOf(0), 80.0); // first paragraph unchanged
         expect(cache.heightOf(1), 60.0); // new paragraph, default
 
-        cache.reportHeight(0, 30.0); // first paragraph shrinks (text moved to new)
+        cache.reportHeight(
+            0, 30.0); // first paragraph shrinks (text moved to new)
         cache.reportHeight(1, 50.0); // new paragraph measured
         expect(cache.totalHeight, 80.0);
       });

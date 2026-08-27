@@ -67,12 +67,6 @@ class _DynamicHeightLayoutState extends State<DynamicHeightLayout> {
     _controller = widget.controller ?? _createInternalController();
     _controller!.addListener(_onHeightChanged);
     widget.node.addListener(_onNodeChanged);
-
-    // Expose the controller to EditorState so _NovidentEditorState
-    // can wrap the Overlay in a SizedBox with finite height.
-    if (widget.editorState.dynamicHeightController == null) {
-      widget.editorState.dynamicHeightController = _controller;
-    }
   }
 
   @override
@@ -122,22 +116,18 @@ class _DynamicHeightLayoutState extends State<DynamicHeightLayout> {
   @override
   Widget build(BuildContext context) {
     final items = widget.node.children;
-    final cache = _controller!.cache;
-    final hasCache = cache.hasMeasuredBlocks;
 
-    final Widget blockList = hasCache
-        ? ListView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: items.length,
-            itemBuilder: (context, i) => _buildBlock(context, items[i]),
-          )
-        : Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: items
-                .map((e) => _buildBlock(context, e))
-                .toList(growable: false),
-          );
+    // Always a plain Column: the ListView.builder branch was dead code
+    // (hasMeasuredBlocks never became true) and, once it would, it broke
+    // the editor's initial IntrinsicHeight pass ("RenderViewport does not
+    // support returning intrinsic dimensions").
+    final Widget blockList = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: items
+          .map((e) => _buildBlock(context, e))
+          .toList(growable: false),
+    );
 
     return DynamicHeightControllerProvider(
       controller: _controller!,
@@ -145,7 +135,15 @@ class _DynamicHeightLayoutState extends State<DynamicHeightLayout> {
         constraints: BoxConstraints(
           minHeight: _controller!.config.minHeight,
         ),
-        child: blockList,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.header != null) widget.header!,
+            blockList,
+            if (widget.footer != null) widget.footer!,
+          ],
+        ),
       ),
     );
   }

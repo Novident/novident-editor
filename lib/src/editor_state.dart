@@ -944,6 +944,10 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
           controller.onDocumentMutation(
             NodesInserted(atIndex: path.last, count: op.nodes.length),
           );
+        } else if (path.isNotEmpty) {
+          // Structural change nested inside a top-level block (e.g. a table
+          // row/column added): the block's height may have changed.
+          controller.onDocumentMutation(NodeUpdated(nodeIndex: path.first));
         }
       } else if (op is DeleteOperation) {
         final path = op.path;
@@ -951,6 +955,10 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
           controller.onDocumentMutation(
             NodesRemoved(atIndex: path.last, count: op.nodes.length),
           );
+        } else if (path.isNotEmpty) {
+          // Structural change nested inside a top-level block (e.g. a table
+          // row/column removed): the block's height may have changed.
+          controller.onDocumentMutation(NodeUpdated(nodeIndex: path.first));
         }
       } else if (op is UpdateTextOperation) {
         final path = op.path;
@@ -958,6 +966,15 @@ class EditorState implements BlockSelectionHost, RichTextEditorConfig {
           controller.onDocumentMutation(
             TextChanged(nodeIndex: path.first),
           );
+        }
+      } else if (op is UpdateOperation) {
+        final path = op.path;
+        if (path.isNotEmpty) {
+          // Attribute change (e.g. the table row-height synchronization
+          // writing cell heights): the top-level block's height may have
+          // changed. Without this, the table never re-reports after the
+          // async row-height sync.
+          controller.onDocumentMutation(NodeUpdated(nodeIndex: path.first));
         }
       }
     }

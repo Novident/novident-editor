@@ -69,6 +69,8 @@ class DynamicHeightController extends ChangeNotifier {
         _cache.onNodesRemoved(atIndex, count);
       case TextChanged(:final nodeIndex):
         _cache.invalidateRange(nodeIndex, nodeIndex);
+      case NodeUpdated(:final nodeIndex):
+        _cache.invalidateRange(nodeIndex, nodeIndex);
     }
     _notifyWithDebounce();
   }
@@ -145,4 +147,16 @@ final class NodesRemoved extends DocumentMutation {
 final class TextChanged extends DocumentMutation {
   final int nodeIndex;
   const TextChanged({required this.nodeIndex});
+}
+
+/// The top-level block at [nodeIndex] changed in a way that may affect its
+/// height without changing the number of top-level blocks.
+///
+/// Covers attribute updates (e.g. the table row-height synchronization
+/// writing cell heights) and structural changes nested inside a block
+/// (e.g. adding a table row or column). The cached height is preserved
+/// until the block re-reports its measured height.
+final class NodeUpdated extends DocumentMutation {
+  final int nodeIndex;
+  const NodeUpdated({required this.nodeIndex});
 }

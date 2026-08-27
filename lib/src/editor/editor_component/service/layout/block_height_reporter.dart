@@ -22,7 +22,7 @@ mixin BlockHeightReporter<T extends StatefulWidget> on State<T> {
   double? _lastReportedHeight;
 
   DynamicHeightController? _findController() {
-    if (_controller != null) return _controller;
+    if (_controller != null || !mounted) return _controller;
     final provider = context
         .findAncestorWidgetOfExactType<DynamicHeightControllerProvider>();
     if (provider != null) {
@@ -38,13 +38,18 @@ mixin BlockHeightReporter<T extends StatefulWidget> on State<T> {
   void scheduleHeightReport() {
     if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // The State may be unmounted between scheduling and the callback
+      // (e.g. the editor is disposed while a frame is pending). Accessing
+      // `context` afterwards would throw "This widget has been unmounted".
+      if (!mounted) return;
       _reportHeightIfChanged();
     });
   }
 
   void _reportHeightIfChanged() {
+    if (!mounted) return;
     final controller = _findController();
-    if (controller == null || !mounted) return;
+    if (controller == null) return;
 
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null || !renderBox.hasSize) return;
@@ -66,6 +71,12 @@ mixin BlockHeightReporter<T extends StatefulWidget> on State<T> {
   int _getNodeIndex() {
     final parent = node.parent;
     if (parent == null) return -1;
+    // Only top-level blocks (direct children of the document root) map to
+    // the flat height cache. Nested blocks (e.g. table cells) are measured
+    // as part of their top-level ancestor and must not report — their
+    // parent-relative index would collide with the ancestor's cache entry
+    // and corrupt the editor height.
+    if (parent.parent != null) return -1;
     return parent.children.indexOf(node);
   }
 }

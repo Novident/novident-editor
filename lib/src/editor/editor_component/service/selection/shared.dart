@@ -11,10 +11,13 @@ extension EditorStateSelection on EditorState {
     final min = math.max(positions.$1 - 1, 0);
     final max = positions.$2;
     if (min < 0 || max < 0) {
-      // No visible range established (e.g. dynamic height mode where
-      // every block is always visible). Return all top-level children.
-      sortedNodes.addAll(document.root.children);
-      return sortedNodes;
+      if (dynamicHeightController != null) {
+        // No visible range established (e.g. dynamic height mode where
+        // every block is always visible). Return all top-level children.
+        sortedNodes.addAll(document.root.children);
+        return sortedNodes;
+      }
+      return [];
     }
 
     // `min` already includes the "one node before the visible range" buffer

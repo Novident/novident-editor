@@ -107,7 +107,10 @@ void main() {
 
       test('returns empty when the range is invalid', () {
         controller.visibleRangeNotifier.value = (-1, -1);
-        expect(editorState.getVisibleNodes(controller), isEmpty);
+        expect(
+          editorState.getVisibleNodes(controller),
+          isEmpty,
+        );
       });
 
       test('returns a single node for a collapsed range at the start', () {

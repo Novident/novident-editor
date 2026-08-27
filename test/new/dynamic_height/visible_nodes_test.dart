@@ -6,6 +6,7 @@ void main() {
   group('EditorState.getVisibleNodes', () {
     late EditorState editorState;
     late EditorScrollController controller;
+    late DynamicHeightController heightController;
 
     setUp(() {
       final document = Document.blank()
@@ -13,7 +14,11 @@ void main() {
           [0],
           List.generate(5, (i) => paragraphNode(text: 'Paragraph $i')),
         );
-      editorState = EditorState(document: document);
+      heightController = DynamicHeightController(
+        config: DynamicHeightConfig(minHeight: 0.0),
+      );
+      editorState = EditorState(document: document)
+        ..dynamicHeightController = heightController;
       controller = EditorScrollController(editorState: editorState);
     });
 
@@ -52,7 +57,8 @@ void main() {
 
     test('dynamic height: zero blocks returns empty list gracefully', () {
       final emptyDoc = Document.blank();
-      final emptyEditor = EditorState(document: emptyDoc);
+      final emptyEditor = EditorState(document: emptyDoc)
+        ..dynamicHeightController = heightController;
       final emptyController = EditorScrollController(editorState: emptyEditor);
       emptyController.visibleRangeNotifier.value = (-1, -1);
 
@@ -66,7 +72,8 @@ void main() {
     test('dynamic height: single block returns correctly', () {
       final singleDoc = Document.blank()
         ..insert([0], [paragraphNode(text: 'Only one')]);
-      final singleEditor = EditorState(document: singleDoc);
+      final singleEditor = EditorState(document: singleDoc)
+        ..dynamicHeightController = heightController;
       final singleController =
           EditorScrollController(editorState: singleEditor);
       singleController.visibleRangeNotifier.value = (-1, -1);

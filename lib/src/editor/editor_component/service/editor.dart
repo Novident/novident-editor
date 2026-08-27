@@ -292,8 +292,6 @@ class _NovidentEditorState extends State<NovidentEditor> {
 
   late EditorScrollController editorScrollController;
 
-  DynamicHeightController? _lastController;
-
   @override
   void initState() {
     super.initState();
@@ -315,7 +313,6 @@ class _NovidentEditorState extends State<NovidentEditor> {
 
   @override
   void dispose() {
-    _lastController?.removeListener(_onDynamicHeightChanged);
     // dispose the scroll controller if it's created by the editor
     if (widget.editorScrollController == null) {
       editorScrollController.dispose();
@@ -334,6 +331,24 @@ class _NovidentEditorState extends State<NovidentEditor> {
       editorState.renderer = _renderer;
     }
 
+    // Attach again the listeners and clean resources when required
+    final controller = editorState.dynamicHeightController;
+    if (widget.dynamicHeightController != null &&
+        controller != widget.dynamicHeightController) {
+      editorState.dynamicHeightController
+          ?.removeListener(_onDynamicHeightChanged);
+      editorState.dynamicHeightController = widget.dynamicHeightController!;
+      editorState.dynamicHeightController?.addListener(_onDynamicHeightChanged);
+    }
+
+    // disables the dynamic height mode
+    if (widget.dynamicHeightController == null &&
+        editorState.dynamicHeightController != null) {
+      controller?.removeListener(_onDynamicHeightChanged);
+      editorState.dynamicHeightController?.dispose();
+      editorState.dynamicHeightController = null;
+    }
+
     if (widget.editorScrollController != oldWidget.editorScrollController) {
       editorScrollController = widget.editorScrollController ??
           EditorScrollController(
@@ -345,17 +360,16 @@ class _NovidentEditorState extends State<NovidentEditor> {
     services = null;
   }
 
+  void _onDynamicHeightChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     services ??= _buildServices(context);
-    // Lazily connect to the dynamic height controller so we
-    // rebuild when cache measurements change.
-    final controller = editorState.dynamicHeightController;
-    if (controller != null && _lastController != controller) {
-      _lastController?.removeListener(_onDynamicHeightChanged);
-      controller.addListener(_onDynamicHeightChanged);
-      _lastController = controller;
-    }
 
     Widget child = Provider.value(
       value: editorState,
@@ -375,10 +389,12 @@ class _NovidentEditorState extends State<NovidentEditor> {
       // Use IntrinsicHeight only until the first real measurement
       // arrives; then switch to sized-box (O(1)) to avoid the
       // double-layout pass on every subsequent frame.
-      if (controller != null && controller.cache.hasMeasuredBlocks) {
-        child = SizedBox(
-          width: double.infinity,
-          height: controller.currentHeight,
+      if (editorState.dynamicHeightController != null &&
+          editorState.dynamicHeightController!.cache.hasMeasuredBlocks) {
+        child = ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: editorState.dynamicHeightController!.currentHeight,
+          ),
           child: child,
         );
       } else {
@@ -396,16 +412,10 @@ class _NovidentEditorState extends State<NovidentEditor> {
     return child;
   }
 
-  void _onDynamicHeightChanged() {
-    if (!mounted) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() {});
-    });
-  }
-
   bool get _useDynamicHeight =>
       widget.dynamicHeightConfig != null ||
-      widget.dynamicHeightController != null;
+      (widget.dynamicHeightController ?? editorState.dynamicHeightController) !=
+          null;
 
   Widget _buildServices(BuildContext context) {
     final useDynamicHeight = _useDynamicHeight;
@@ -418,8 +428,10 @@ class _NovidentEditorState extends State<NovidentEditor> {
         header: widget.header,
         footer: widget.footer,
         wrapper: widget.blockWrapper,
-        controller: widget.dynamicHeightController,
-        config: widget.dynamicHeightConfig,
+        controller: widget.dynamicHeightController ??
+            editorState.dynamicHeightController,
+        config: widget.dynamicHeightConfig ??
+            editorState.dynamicHeightController?.config,
       );
     } else {
       child = editorState.renderer.build(
@@ -484,6 +496,20 @@ class _NovidentEditorState extends State<NovidentEditor> {
   }
 
   void _updateValues() {
+    editorState.dynamicHeightController = widget.dynamicHeightController;
+    if (editorState.dynamicHeightController != null) {
+      if (widget.dynamicHeightConfig != null &&
+          editorState.dynamicHeightController!.config !=
+              widget.dynamicHeightConfig) {
+        editorState.dynamicHeightController!
+            .updateConfig(widget.dynamicHeightConfig!);
+      }
+    } else if (widget.dynamicHeightConfig != null) {
+      editorState.dynamicHeightController = DynamicHeightController(
+        config: widget.dynamicHeightConfig!,
+      );
+    }
+
     editorState.editorStyle = widget.editorStyle;
     editorState.editorStyles = widget.styles;
     editorState.fontProvider =

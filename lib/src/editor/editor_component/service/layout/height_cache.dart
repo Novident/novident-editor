@@ -54,6 +54,7 @@ final class HeightCache {
     final delta = height - (old ?? defaultHeight);
     _heights[index] = height;
     _totalHeight += delta;
+    _measurementCount++;
     return true;
   }
 
@@ -163,6 +164,7 @@ final class HeightCache {
     _heights.clear();
     _totalHeight = 0.0;
     _blockCount = 0;
+    _measurementCount = 0;
   }
 
   /// Releases resources and clears all listeners.
